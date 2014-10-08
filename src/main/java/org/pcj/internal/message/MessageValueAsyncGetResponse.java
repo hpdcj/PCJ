@@ -5,7 +5,6 @@ package org.pcj.internal.message;
 
 import org.pcj.internal.network.MessageOutputStream;
 import org.pcj.internal.network.MessageInputStream;
-import java.io.IOException;
 
 /**
  * @see MessageTypes#VALUE_ASYNC_GET_RESPONSE
