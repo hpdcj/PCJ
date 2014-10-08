@@ -1,5 +1,8 @@
 *.class
 
+.idea
+*.iml
+
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
 
@@ -12,6 +15,9 @@
 hs_err_pid*
 
 # NetBeans build, dist and local dirs
-/nbproject/private/
+/nbproject/
 /build/
 /dist/
+/out/
+/gradle/
+.gradle/

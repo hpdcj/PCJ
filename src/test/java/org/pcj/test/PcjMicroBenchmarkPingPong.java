@@ -7,7 +7,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Scanner;
 import java.util.Locale;
-import org.pcj.FutureObject;
+
 import org.pcj.PCJ;
 import org.pcj.Shared;
 import org.pcj.StartPoint;

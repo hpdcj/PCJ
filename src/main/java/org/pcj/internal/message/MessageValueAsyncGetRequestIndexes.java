@@ -5,33 +5,35 @@ package org.pcj.internal.message;
 
 import org.pcj.internal.network.MessageOutputStream;
 import org.pcj.internal.network.MessageInputStream;
-import java.io.IOException;
 
 /**
- * @see MessageTypes#VALUE_ASYNC_GET_REQUEST
+ * @see MessageTypes#VALUE_ASYNC_GET_REQUEST_INDEXES
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class MessageValueAsyncGetRequest extends Message {
+final public class MessageValueAsyncGetRequestIndexes extends Message {
 
     private int senderGlobalNodeId;
     private int receiverGlobalNodeId;
+    private int[] indexes;
     private String variableName;
 
-    public MessageValueAsyncGetRequest() {
-        super(MessageTypes.VALUE_ASYNC_GET_REQUEST);
+    public MessageValueAsyncGetRequestIndexes() {
+        super(MessageTypes.VALUE_ASYNC_GET_REQUEST_INDEXES);
     }
 
     @Override
     void writeObjects(MessageOutputStream bbos) {
         bbos.writeInt(senderGlobalNodeId);
         bbos.writeInt(receiverGlobalNodeId);
+        bbos.writeIntArray(indexes);
         bbos.writeString(variableName);
     }
 
     @Override
     void readObjects(MessageInputStream bbis) {
-        senderGlobalNodeId = bbis.readInt();
-        receiverGlobalNodeId = bbis.readInt();
+        senderGlobalNodeId=bbis.readInt();
+        receiverGlobalNodeId=bbis.readInt();
+        indexes = bbis.readIntArray();
         variableName = bbis.readString();
     }
     
@@ -54,6 +56,14 @@ final public class MessageValueAsyncGetRequest extends Message {
 
     public void setReceiverGlobalNodeId(int receiverGlobalNodeId) {
         this.receiverGlobalNodeId = receiverGlobalNodeId;
+    }
+
+    public int[] getIndexes() {
+        return indexes;
+    }
+
+    public void setIndexes(int[] indexes) {
+        this.indexes = indexes;
     }
 
     public String getVariableName() {

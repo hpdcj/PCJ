@@ -1,0 +1,59 @@
+apply plugin: 'java'
+
+def number = "0"
+def version = "4.0.0"
+def type = "SNAPSHOT"
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    compile 'org.slf4j:slf4j-api:1.7.5'
+    testCompile 'junit:junit:4.11'
+}
+
+task javadoc(overwrite:true, type: Javadoc) {
+    failOnError = false
+    outputs
+}
+
+jar {
+    manifest {
+        attributes('Implementation-Version': "${version}.${number}-${type}",
+                'Implementation-Vendor': System.getProperty('user.name'),
+                'Implementation-Title': date,
+                'Sealed': true)
+        attributes(['Sealed': false], 'org/pcj/')
+    }
+}
+
+def getDate() {
+    def date = new Date()
+    def formattedDate = date.format('EEE, dd MMM yyyy HH:mm:ss ZZZZ')
+    return formattedDate
+}
+
+/*
+
+                <attribute name="Implementation-Title" value="${build.time}"/>
+                <attribute name="Implementation-Version" value="${version}.${build.number}-${type}"/>
+                <attribute name="Sealed" value="true"/>
+                <section name="org/pcj/">
+                    <attribute name="Sealed" value="false"/>
+                </section>
+META-INF/MANIFEST.MF                                                                                                                                                                                                                       314/314               100%
+Manifest-Version: 1.0
+Ant-Version: Apache Ant 1.9.4
+Created-By: 1.8.0_20-b26 (Oracle Corporation)
+Profile: compact3
+Class-Path:
+Implementation-Vendor: faramir
+Implementation-Title: Sat, 20 Sep 2014 at 22:28:38 CEST
+Implementation-Version: 4.0.0.0-SNAPSHOT
+Sealed: true
+
+Name: org/pcj/
+Sealed: false
+
+ */
