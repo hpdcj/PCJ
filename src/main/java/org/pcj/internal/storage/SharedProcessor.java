@@ -31,7 +31,7 @@ import org.pcj.Shared;
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 @SupportedAnnotationTypes("org.pcj.Shared")
-@SupportedSourceVersion(SourceVersion.RELEASE_7)
+@SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class SharedProcessor extends javax.annotation.processing.AbstractProcessor {
 
     private TypeElement serializableType;
@@ -58,9 +58,8 @@ public class SharedProcessor extends javax.annotation.processing.AbstractProcess
         typeUtils = processingEnv.getTypeUtils();
         sharedFields = new HashMap<>();
 
-        for (Element e : roundEnv.getElementsAnnotatedWith(Shared.class)) {
-            process(e);
-        }
+        roundEnv.getElementsAnnotatedWith(Shared.class).stream()
+                .forEach(element -> process(element));
 
         return true;
     }
@@ -91,13 +90,10 @@ public class SharedProcessor extends javax.annotation.processing.AbstractProcess
                 error("Class does not implement Storage interface", storage);
             }
 
-            for (Element enclosed : storage.getEnclosedElements()) {
-                if (enclosed.getKind().equals(ElementKind.METHOD)) {
-                    if (isSuppressed(enclosed, "method") == false) {
-                        warn("[method] Be sure that method does not use @Shared fields directly", enclosed);
-                    }
-                }
-            }
+            storage.getEnclosedElements().stream()
+                    .filter(element -> element.getKind().equals(ElementKind.METHOD))
+                    .filter(element -> isSuppressed(element, "method") == false)
+                    .forEach(element -> warn("[method] Be sure that method does not use @Shared fields directly", element));
 
             classFields = new HashSet<>();
             sharedFields.put(className, classFields);

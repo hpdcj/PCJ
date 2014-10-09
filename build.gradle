@@ -9,8 +9,12 @@ repositories {
 }
 
 dependencies {
-    compile 'org.slf4j:slf4j-api:1.7.5'
+//    compile 'org.slf4j:slf4j-api:1.7.5'
     testCompile 'junit:junit:4.11'
+}
+
+compileJava {
+    options.compilerArgs = ["-profile", "compact3"]
 }
 
 task javadoc(overwrite:true, type: Javadoc) {
@@ -23,14 +27,15 @@ jar {
         attributes('Implementation-Version': "${version}.${number}-${type}",
                 'Implementation-Vendor': System.getProperty('user.name'),
                 'Implementation-Title': date,
-                'Sealed': true)
+                'Sealed': true,
+                'Profile': 'compact3')
         attributes(['Sealed': false], 'org/pcj/')
     }
 }
 
 def getDate() {
     def date = new Date()
-    def formattedDate = date.format('EEE, dd MMM yyyy HH:mm:ss ZZZZ')
+    def formattedDate = date.format('yyyy-MM-dd HH:mm:ss.SSS z')
     return formattedDate
 }
 

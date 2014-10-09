@@ -20,4 +20,5 @@ hs_err_pid*
 /build/
 /dist/
 /out/
-.gradle/
+/.gradle/
+/.nb-gradle/
