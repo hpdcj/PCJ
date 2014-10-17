@@ -1,34 +1,90 @@
+defaultTasks 'info'
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'org.ajoberstar:gradle-git:+'
+    }
+}
+
 apply plugin: 'java'
 
-def number = "0"
-def version = "4.0.0"
-def type = "SNAPSHOT"
+ext.versionNumber = "4.0.0"
+ext.buildNumber = "SNAPSHOT"
+ext.repoId = org.ajoberstar.grgit.Grgit.open(project.file('.')).head().abbreviatedId
 
 repositories {
-    jcenter()
+    //    mavenCentral()
 }
 
 dependencies {
-//    compile 'org.slf4j:slf4j-api:1.7.5'
-    testCompile 'junit:junit:4.11'
+    //    testCompile 'junit:junit:4.11'
 }
 
 compileJava {
-    options.compilerArgs = ["-profile", "compact3"]
+    //options.compilerArgs = ["-profile", "compact3"]
+    options.compilerArgs = ["-source", "1.7", "-target", "1.7"]
+}
+
+task info {
+    println "PCJ -- Parallel Computing in Java build script"
 }
 
 task javadoc(overwrite:true, type: Javadoc) {
     failOnError = false
-    outputs
+    source = sourceSets.main.allJava
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) { 
+    from javadoc.destinationDir 
+} 
+
+task release {
+    //outputs.upToDateWhen { false }
+    release.dependsOn(jar, javadocJar)
+}
+
+build.dependsOn(javadocJar)
+
+gradle.taskGraph.whenReady {taskGraph ->
+    if (taskGraph.hasTask(release)) {  
+        def versionFile = file('version.properties')
+        if (versionFile.canRead()) {
+            def Properties properties = new Properties()
+
+            properties.load(new FileInputStream(versionFile))
+            
+            if (properties['buildNumber']==null) {
+                properties['buildNumber'] = 0
+            }
+
+            buildNumber = properties['buildNumber'].toInteger() + 1
+            properties['buildNumber'] = buildNumber.toString()
+            properties.store(versionFile.newWriter(), null)
+        }
+    }
+    jar.doFirst {
+        version="$versionNumber.$buildNumber"
+        classifier="bin"
+    }
+    javadocJar.doFirst {
+        version="$versionNumber.$buildNumber"
+        classifier = 'javadoc'
+    }
+
 }
 
 jar {
+    from 'LICENSE'
     manifest {
-        attributes('Implementation-Version': "${version}.${number}-${type}",
+        attributes('Implementation-Version': "$versionNumber.$buildNumber-$repoId",
                 'Implementation-Vendor': System.getProperty('user.name'),
                 'Implementation-Title': date,
                 'Sealed': true,
-                'Profile': 'compact3')
+            //                'Profile': 'compact3',
+        )
         attributes(['Sealed': false], 'org/pcj/')
     }
 }
@@ -38,27 +94,3 @@ def getDate() {
     def formattedDate = date.format('yyyy-MM-dd HH:mm:ss.SSS z')
     return formattedDate
 }
-
-/*
-
-                <attribute name="Implementation-Title" value="${build.time}"/>
-                <attribute name="Implementation-Version" value="${version}.${build.number}-${type}"/>
-                <attribute name="Sealed" value="true"/>
-                <section name="org/pcj/">
-                    <attribute name="Sealed" value="false"/>
-                </section>
-META-INF/MANIFEST.MF                                                                                                                                                                                                                       314/314               100%
-Manifest-Version: 1.0
-Ant-Version: Apache Ant 1.9.4
-Created-By: 1.8.0_20-b26 (Oracle Corporation)
-Profile: compact3
-Class-Path:
-Implementation-Vendor: faramir
-Implementation-Title: Sat, 20 Sep 2014 at 22:28:38 CEST
-Implementation-Version: 4.0.0.0-SNAPSHOT
-Sealed: true
-
-Name: org/pcj/
-Sealed: false
-
- */

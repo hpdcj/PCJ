@@ -141,15 +141,19 @@ public class SelectorProc implements Runnable {
                             continue;
                         }
 
-                        if (key.isReadable()) {
+                        int readyOps = key.readyOps();
+                        if ((readyOps & SelectionKey.OP_READ) != 0) {
                             if (read(key) == false) {
                                 worker.channelClosed((SocketChannel) key.channel());
                             }
-                        } else if (key.isWritable()) {
+                        }
+                        if ((readyOps & SelectionKey.OP_WRITE) != 0) {
                             write(key);
-                        } else if (key.isAcceptable()) {
+                        }
+                        if ((readyOps & SelectionKey.OP_ACCEPT) != 0) {
                             acceptConnection(key);
-                        } else if (key.isConnectable()) {
+                        }
+                        if ((readyOps & SelectionKey.OP_CONNECT) != 0) {
                             finishConnecting(key);
                         }
                     }
