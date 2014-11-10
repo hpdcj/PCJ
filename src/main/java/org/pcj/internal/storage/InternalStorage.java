@@ -40,14 +40,30 @@ public interface InternalStorage {
      * @throws ArrayIndexOutOfBoundsException one of indexes
      * is out of bound
      */
-    void put(String variable, Object newValue, int... indexes) throws ClassCastException, ArrayIndexOutOfBoundsException;
+    <T> void put(String variable, T newValue, int... indexes) throws ClassCastException, ArrayIndexOutOfBoundsException;
+
+    /**
+     * Compare and set. Atomically sets newValue when
+     * expectedValue is set in variable (on specified,
+     * optional indexes). Method returns value of variable
+     * before executing variable.
+     *
+     * @param <T> type of variable
+     * @param variable variable name
+     * @param expectedValue expected value of variable
+     * @param value new value for variable
+     * @param indexes optional indexes
+     * @return variable value before CAS
+     */
+    <T> T cas(String variable, T expectedValue, T newValue, int... indexes) throws ClassCastException, ArrayIndexOutOfBoundsException;
 
     /**
      * Tells to monitor variable
      *
      * @param variable name of Shared variable
      */
-    void monitor(String variable);
+    void monitor(String variable
+    );
 
     /**
      * Pauses current Thread and wait for modification of
@@ -58,7 +74,8 @@ public interface InternalStorage {
      *
      * @param variable name of Shared variable
      */
-    void waitFor(String variable);
+    void waitFor(String variable
+    );
 
     /**
      * Pauses current Thread and wait for <code>count</code>
@@ -68,7 +85,8 @@ public interface InternalStorage {
      * @param variable name of Shared variable
      * @param count number of modifications
      */
-    void waitFor(String variable, int count);
+    void waitFor(String variable, int count
+    );
 
     /**
      * Gets names of all Shared variables of the Storage
@@ -86,5 +104,6 @@ public interface InternalStorage {
      * @return true if the value can be assigned to the
      * variable
      */
-    boolean isAssignable(String variable, Object value, int... indexes);
+    boolean isAssignable(String variable, Object value, int... indexes
+    );
 }

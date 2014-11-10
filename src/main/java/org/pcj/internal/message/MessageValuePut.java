@@ -14,6 +14,7 @@ final public class MessageValuePut extends Message {
 
     private int receiverGlobalNodeId;
     private String variableName;
+    private int[] indexes;
     private byte[] variableValue;
 
     public MessageValuePut() {
@@ -24,6 +25,7 @@ final public class MessageValuePut extends Message {
     void writeObjects(MessageOutputStream bbos) {
         bbos.writeInt(receiverGlobalNodeId);
         bbos.writeString(variableName);
+        bbos.writeIntArray(indexes);
         bbos.writeByteArray(variableValue);
     }
 
@@ -31,6 +33,7 @@ final public class MessageValuePut extends Message {
     void readObjects(MessageInputStream bbis) {
         receiverGlobalNodeId = bbis.readInt();
         variableName = bbis.readString();
+        indexes = bbis.readIntArray();
         variableValue = bbis.readByteArray();
     }
     
@@ -53,6 +56,14 @@ final public class MessageValuePut extends Message {
 
     public void setVariableName(String variableName) {
         this.variableName = variableName;
+    }
+
+    public int[] getIndexes() {
+        return indexes;
+    }
+
+    public void setIndexes(int[] indexes) {
+        this.indexes = indexes;
     }
 
     public byte[] getVariableValue() {

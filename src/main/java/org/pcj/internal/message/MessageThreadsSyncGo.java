@@ -7,15 +7,15 @@ import org.pcj.internal.network.MessageOutputStream;
 import org.pcj.internal.network.MessageInputStream;
 
 /**
- * @see MessageTypes#NODES_SYNC_GO
+ * @see MessageTypes#THREADS_SYNC_GO
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class MessageNodesSyncGo extends Message {
+final public class MessageThreadsSyncGo extends Message {
 
     private int[] nodesGlobalIds;
 
-    public MessageNodesSyncGo() {
-        super(MessageTypes.NODES_SYNC_GO);
+    public MessageThreadsSyncGo() {
+        super(MessageTypes.THREADS_SYNC_GO);
     }
 
     @Override

@@ -9,6 +9,7 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * External class with methods do handle shared variables.
@@ -18,7 +19,7 @@ import java.util.Map;
 public abstract class Storage implements org.pcj.internal.storage.InternalStorage {
 
     private transient final Map<String, Field> sharedFields = new HashMap<>();
-    private transient final Map<String, Integer> monitorFields = new HashMap<>();
+    private transient final Map<String, AtomicInteger> monitorFields = new HashMap<>();
 
     protected Storage() {
         for (Field field : this.getClass().getDeclaredFields()) {
@@ -38,7 +39,7 @@ public abstract class Storage implements org.pcj.internal.storage.InternalStorag
 
                 field.setAccessible(true);
                 sharedFields.put(key, field);
-                monitorFields.put(key, 0);
+                monitorFields.put(key, new AtomicInteger(0));
             }
         }
     }
@@ -134,12 +135,15 @@ public abstract class Storage implements org.pcj.internal.storage.InternalStorag
         try {
             final Field field = getField(variable);
 
+            Object fieldValue;
+            synchronized (field) {
+                fieldValue = field.get(this);
+            }
+
             if (indexes.length == 0) {
-                return (T) field.get(this);
+                return (T) fieldValue;
             } else {
-
-                Object array = getArrayElement(field.get(this), indexes, indexes.length - 1);
-
+                Object array = getArrayElement(fieldValue, indexes, indexes.length - 1);
                 if (array.getClass().isArray() == false) {
                     throw new ClassCastException("Cannot put value to " + variable + Arrays.toString(indexes) + ".");
                 } else if (Array.getLength(array) <= indexes[indexes.length - 1]) {
@@ -168,7 +172,7 @@ public abstract class Storage implements org.pcj.internal.storage.InternalStorag
      * is out of bound
      */
     @Override
-    final public void put(String variable, Object newValue, int... indexes) throws ArrayIndexOutOfBoundsException, ClassCastException {
+    final public <T> void put(String variable, T newValue, int... indexes) throws ArrayIndexOutOfBoundsException, ClassCastException {
         if (isAssignable(variable, newValue, indexes) == false) {
             throw new ClassCastException("Cannot cast " + newValue.getClass().getCanonicalName()
                     + " to the type of variable '" + variable + "'");
@@ -176,25 +180,91 @@ public abstract class Storage implements org.pcj.internal.storage.InternalStorag
         try {
             final Field field = getField(variable);
 
-            synchronized (field) {
-                if (indexes.length == 0) {
-                    field.set(this, newValue);
-                } else {
-                    Object array = getArrayElement(field.get(this), indexes, indexes.length - 1);
+            if (indexes.length == 0) {
+                field.set(this, newValue);
+            } else {
+                Object array = getArrayElement(field.get(this), indexes, indexes.length - 1);
 
-                    if (array == null) {
-                        throw new ClassCastException("Cannot put value to " + variable + " - NullPointerException.");
-                    } else if (array.getClass().isArray() == false) {
-                        throw new ClassCastException("Cannot put value to " + variable + Arrays.toString(indexes) + ".");
-                    } else if (Array.getLength(array) <= indexes[indexes.length - 1]) {
-                        throw new ArrayIndexOutOfBoundsException("Cannot put value to " + variable + Arrays.toString(indexes) + ".");
-                    }
-
-                    Array.set(array, indexes[indexes.length - 1], newValue);
+                if (array == null) {
+                    throw new ClassCastException("Cannot put value to " + variable + " - NullPointerException.");
+                } else if (array.getClass().isArray() == false) {
+                    throw new ClassCastException("Cannot put value to " + variable + Arrays.toString(indexes) + ".");
+                } else if (Array.getLength(array) <= indexes[indexes.length - 1]) {
+                    throw new ArrayIndexOutOfBoundsException("Cannot put value to " + variable + Arrays.toString(indexes) + ".");
                 }
 
-                monitorFields.put(variable, monitorFields.get(variable) + 1);
+                Array.set(array, indexes[indexes.length - 1], newValue);
+            }
+
+            monitorFields.get(variable).getAndIncrement();
+            synchronized (field) {
                 field.notifyAll();
+            }
+        } catch (IllegalAccessException ex) {
+            throw new IllegalArgumentException(ex);
+        }
+    }
+
+    /**
+     * Compare and set. Atomically sets newValue when
+     * expectedValue is set in variable (on specified,
+     * optional indexes). Method returns value of variable
+     * before executing variable.
+     *
+     * @param <T> type of variable
+     * @param variable variable name
+     * @param expectedValue expected value of variable
+     * @param value new value for variable
+     * @param indexes optional indexes
+     * @return variable value before CAS
+     */
+    @Override
+    final public <T> T cas(String variable, T expectedValue, T newValue, int... indexes) throws ClassCastException, ArrayIndexOutOfBoundsException {
+        if (isAssignable(variable, newValue, indexes) == false) {
+            throw new ClassCastException("Cannot cast " + newValue.getClass().getCanonicalName()
+                    + " to the type of variable '" + variable + "'");
+        }
+
+        try {
+            final Field field = getField(variable);
+
+            if (indexes.length == 0) {
+                synchronized (field) {
+                    T fieldValue = (T) field.get(this);
+                    if (fieldValue == expectedValue
+                            || (fieldValue != null && fieldValue.equals(expectedValue))) {
+                        field.set(this, newValue);
+                    }
+
+                    monitorFields.get(variable).getAndIncrement();
+
+                    field.notifyAll();
+                    return fieldValue;
+                }
+            } else {
+                Object array = getArrayElement(field.get(this), indexes, indexes.length - 1);
+
+                if (array == null) {
+                    throw new ClassCastException("Cannot put value to " + variable + " - NullPointerException.");
+                } else if (array.getClass().isArray() == false) {
+                    throw new ClassCastException("Cannot put value to " + variable + Arrays.toString(indexes) + ".");
+                } else if (Array.getLength(array) <= indexes[indexes.length - 1]) {
+                    throw new ArrayIndexOutOfBoundsException("Cannot put value to " + variable + Arrays.toString(indexes) + ".");
+                }
+
+                synchronized (field) {
+                    T fieldValue = (T) Array.get(array, indexes[indexes.length - 1]);
+
+                    if (fieldValue == expectedValue
+                            || (fieldValue != null && fieldValue.equals(expectedValue))) {
+                        Array.set(array, indexes[indexes.length - 1], newValue);
+                    }
+
+                    monitorFields.get(variable).getAndIncrement();
+
+                    field.notifyAll();
+                    return fieldValue;
+                }
             }
         } catch (IllegalAccessException ex) {
             throw new IllegalArgumentException(ex);
@@ -209,10 +279,7 @@ public abstract class Storage implements org.pcj.internal.storage.InternalStorag
      */
     @Override
     final public void monitor(String variable) {
-        final Field field = getField(variable);
-        synchronized (field) {
-            monitorFields.put(variable, 0);
-        }
+        monitorFields.get(variable).set(0);
     }
 
     /**
@@ -240,16 +307,19 @@ public abstract class Storage implements org.pcj.internal.storage.InternalStorag
     @Override
     final public void waitFor(String variable, int count) {
         final Field field = getField(variable);
-        synchronized (field) {
-            int v;
-            while ((v = monitorFields.get(variable)) < count) {
-                try {
-                    field.wait();
-                } catch (InterruptedException ex) {
-                    ex.printStackTrace(System.err);
+        int v;
+        AtomicInteger atomic = monitorFields.get(variable);
+        do {
+            synchronized (field) {
+                while ((v = atomic.get()) < count) {
+                    try {
+                        field.wait();
+                    } catch (InterruptedException ex) {
+                        ex.printStackTrace(System.err);
+                    }
                 }
             }
-            monitorFields.put(variable, v - count);
-        }
+        } while (atomic.compareAndSet(v, v - count) == false);
     }
+
 }

@@ -7,41 +7,33 @@ import org.pcj.internal.network.MessageOutputStream;
 import org.pcj.internal.network.MessageInputStream;
 
 /**
- * @see MessageTypes#NODE_SYNC
+ * @see MessageTypes#VALUE_COMPARE_AND_SET_RESPONSE
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class MessageNodeSync extends Message {
+final public class MessageValueCompareAndSetResponse extends Message {
 
-    private int senderGlobalNodeId;
     private int receiverGlobalNodeId;
+    private byte[] variableValue;
 
-    public MessageNodeSync() {
-        super(MessageTypes.NODE_SYNC);
+    public MessageValueCompareAndSetResponse() {
+        super(MessageTypes.VALUE_ASYNC_GET_RESPONSE);
     }
 
     @Override
     void writeObjects(MessageOutputStream bbos) {
-        bbos.writeInt(senderGlobalNodeId);
         bbos.writeInt(receiverGlobalNodeId);
+        bbos.writeByteArray(variableValue);
     }
 
     @Override
     void readObjects(MessageInputStream bbis) {
-        senderGlobalNodeId = bbis.readInt();
-        receiverGlobalNodeId = bbis.readInt();
+        receiverGlobalNodeId=bbis.readInt();
+        variableValue=bbis.readByteArray();
     }
-
+    
     @Override
     public String paramsToString() {
         return "";
-    }
-
-    public int getSenderGlobalNodeId() {
-        return senderGlobalNodeId;
-    }
-
-    public void setSenderGlobalNodeId(int senderGlobalNodeId) {
-        this.senderGlobalNodeId = senderGlobalNodeId;
     }
 
     public int getReceiverGlobalNodeId() {
@@ -50,5 +42,13 @@ final public class MessageNodeSync extends Message {
 
     public void setReceiverGlobalNodeId(int receiverGlobalNodeId) {
         this.receiverGlobalNodeId = receiverGlobalNodeId;
+    }
+
+    public byte[] getVariableValue() {
+        return variableValue;
+    }
+
+    public void setVariableValue(byte[] variableValue) {
+        this.variableValue = variableValue;
     }
 }

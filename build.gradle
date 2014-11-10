@@ -11,7 +11,7 @@ buildscript {
 
 apply plugin: 'java'
 
-ext.versionNumber = "4.0.0"
+ext.versionNumber = "4.0.1"
 ext.buildNumber = "SNAPSHOT"
 ext.repoId = org.ajoberstar.grgit.Grgit.open(project.file('.')).head().abbreviatedId
 
@@ -45,8 +45,6 @@ task release {
     //outputs.upToDateWhen { false }
     release.dependsOn(jar, javadocJar)
 }
-
-build.dependsOn(javadocJar)
 
 gradle.taskGraph.whenReady {taskGraph ->
     if (taskGraph.hasTask(release)) {  

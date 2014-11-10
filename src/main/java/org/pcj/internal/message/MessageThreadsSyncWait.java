@@ -7,15 +7,15 @@ import org.pcj.internal.network.MessageOutputStream;
 import org.pcj.internal.network.MessageInputStream;
 
 /**
- * @see MessageTypes#NODES_SYNC_WAIT
+ * @see MessageTypes#THREADS_SYNC_WAIT
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class MessageNodesSyncWait extends Message {
+final public class MessageThreadsSyncWait extends Message {
 
     private int[] nodesGlobalIds;
 
-    public MessageNodesSyncWait() {
-        super(MessageTypes.NODES_SYNC_WAIT);
+    public MessageThreadsSyncWait() {
+        super(MessageTypes.THREADS_SYNC_WAIT);
     }
 
     @Override

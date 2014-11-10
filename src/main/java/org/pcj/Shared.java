@@ -18,7 +18,7 @@ import java.lang.annotation.Target;
 public @interface Shared {
 
     /**
-     * Name of variable
+     * @return Name of variable
      */
     String value() default "";
 }

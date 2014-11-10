@@ -37,19 +37,19 @@ import org.pcj.internal.message.MessageHelloGo;
 import org.pcj.internal.message.MessageHelloInform;
 import org.pcj.internal.message.MessageHelloResponse;
 import org.pcj.internal.message.MessageLog;
-import org.pcj.internal.message.MessageNodeSync;
-import org.pcj.internal.message.MessageNodesSyncGo;
-import org.pcj.internal.message.MessageNodesSyncWait;
+import org.pcj.internal.message.MessageThreadPairSync;
+import org.pcj.internal.message.MessageThreadsSyncGo;
+import org.pcj.internal.message.MessageThreadsSyncWait;
 import org.pcj.internal.message.MessageSyncGo;
 import org.pcj.internal.message.MessageSyncWait;
 import org.pcj.internal.network.SocketData;
 import org.pcj.internal.message.MessageTypes;
 import org.pcj.internal.message.MessageValueAsyncGetRequest;
-import org.pcj.internal.message.MessageValueAsyncGetRequestIndexes;
 import org.pcj.internal.message.MessageValueAsyncGetResponse;
 import org.pcj.internal.message.MessageValueBroadcast;
+import org.pcj.internal.message.MessageValueCompareAndSetRequest;
+import org.pcj.internal.message.MessageValueCompareAndSetResponse;
 import org.pcj.internal.message.MessageValuePut;
-import org.pcj.internal.message.MessageValuePutIndexes;
 import org.pcj.internal.network.LoopbackSocketChannel;
 import org.pcj.internal.utils.BitMask;
 import org.pcj.internal.utils.CloneObject;
@@ -201,14 +201,14 @@ public class Worker implements Runnable {
             case SYNC_GO:
                 syncGo((MessageSyncGo) message);
                 break;
-            case NODES_SYNC_WAIT:
-                nodesSyncWait((MessageNodesSyncWait) message);
+            case THREADS_SYNC_WAIT:
+                nodesSyncWait((MessageThreadsSyncWait) message);
                 break;
-            case NODES_SYNC_GO:
-                nodesSyncGo((MessageNodesSyncGo) message);
+            case THREADS_SYNC_GO:
+                nodesSyncGo((MessageThreadsSyncGo) message);
                 break;
-            case NODE_SYNC:
-                nodeSync((MessageNodeSync) message);
+            case THREAD_PAIR_SYNC:
+                nodeSync((MessageThreadPairSync) message);
                 break;
             case GROUP_JOIN_QUERY:
                 groupJoinQuery((MessageGroupJoinQuery) message);
@@ -231,17 +231,17 @@ public class Worker implements Runnable {
             case VALUE_ASYNC_GET_REQUEST:
                 valueAsyncGetRequest((MessageValueAsyncGetRequest) message);
                 break;
-            case VALUE_ASYNC_GET_REQUEST_INDEXES:
-                valueAsyncGetRequestIndexes((MessageValueAsyncGetRequestIndexes) message);
-                break;
             case VALUE_ASYNC_GET_RESPONSE:
                 valueAsyncGetResponse((MessageValueAsyncGetResponse) message);
                 break;
+            case VALUE_COMPARE_AND_SET_REQUEST:
+                valueCompareAndSetRequest((MessageValueCompareAndSetRequest) message);
+                break;
+            case VALUE_COMPARE_AND_SET_RESPONSE:
+                valueCompareAndSetResponse((MessageValueCompareAndSetResponse) message);
+                break;
             case VALUE_PUT:
                 valuePut((MessageValuePut) message);
-                break;
-            case VALUE_PUT_INDEXES:
-                valuePutIndexes((MessageValuePutIndexes) message);
                 break;
             case VALUE_BROADCAST:
                 valueBroadcast((MessageValueBroadcast) message);
@@ -324,7 +324,7 @@ public class Worker implements Runnable {
 
                     /* save information about nodes using new-physicalId */
                     if (nodesIds.containsKey(newPhysicalId) == false) {
-                        nodesIds.put(newPhysicalId, new ArrayList<>());
+                        nodesIds.put(newPhysicalId, new ArrayList<Integer>());
                     }
                     nodesIds.get(newPhysicalId).add(virtualId);
 
@@ -765,7 +765,7 @@ public class Worker implements Runnable {
         }
     }
 
-    private void nodesSyncWait(MessageNodesSyncWait message) throws IOException {
+    private void nodesSyncWait(MessageThreadsSyncWait message) throws IOException {
         int physicalId = data.getPhysicalId(message.getSocket());
         int[] nodes = message.getNodesGlobalIds();
         NodesSyncData nsd = new NodesSyncData(-1, nodes);
@@ -777,7 +777,7 @@ public class Worker implements Runnable {
 
         synchronized (nsd) {
             if (nsd.physicalSync(physicalId)) {
-                MessageNodesSyncGo msg = new MessageNodesSyncGo();
+                MessageThreadsSyncGo msg = new MessageThreadsSyncGo();
                 msg.setNodesGlobalIds(nodes);
 
                 networker.send(data.physicalNodes.get(nsd.getPhysicalIds().get(0)), msg);
@@ -785,7 +785,7 @@ public class Worker implements Runnable {
         }
     }
 
-    private void nodesSyncGo(MessageNodesSyncGo message) {
+    private void nodesSyncGo(MessageThreadsSyncGo message) {
         int[] nodes = message.getNodesGlobalIds();
         NodesSyncData nsd = new NodesSyncData(nodes);
         nsd = data.nodesSyncData.remove(nsd);
@@ -809,9 +809,9 @@ public class Worker implements Runnable {
     }
 
     /**
-     * @see MessageTypes#NODE_SYNC
+     * @see MessageTypes#THREAD_PAIR_SYNC
      */
-    private void nodeSync(MessageNodeSync message) {
+    private void nodeSync(MessageThreadPairSync message) {
         final Map<PcjThreadPair, PcjThreadPair> syncNode = data.syncNodePair;
         PcjThreadPair pair = new PcjThreadPair(
                 message.getReceiverGlobalNodeId(),
@@ -833,20 +833,6 @@ public class Worker implements Runnable {
      */
     private void valueAsyncGetRequest(MessageValueAsyncGetRequest message) throws IOException {
         Object value = data.localData.get(message.getReceiverGlobalNodeId()).getStorage().
-                get(message.getVariableName());
-
-        MessageValueAsyncGetResponse reply = new MessageValueAsyncGetResponse();
-        reply.setInReplyTo(message.getMessageId());
-        reply.setReceiverGlobalNodeId(message.getSenderGlobalNodeId());
-        reply.setVariableValue(CloneObject.serialize(value));
-        networker.send(message.getSocket(), reply);
-    }
-
-    /**
-     * @see MessageTypes#VALUE_ASYNC_GET_REQUEST_INDEXES
-     */
-    private void valueAsyncGetRequestIndexes(MessageValueAsyncGetRequestIndexes message) throws IOException {
-        Object value = data.localData.get(message.getReceiverGlobalNodeId()).getStorage().
                 get(message.getVariableName(), message.getIndexes());
 
         MessageValueAsyncGetResponse reply = new MessageValueAsyncGetResponse();
@@ -867,17 +853,33 @@ public class Worker implements Runnable {
     }
 
     /**
-     * @see MessageTypes#VALUE_PUT
+     * @see MessageTypes#VALUE_COMPARE_AND_SET_REQUEST
      */
-    private void valuePut(MessageValuePut message) {
-        data.localData.get(message.getReceiverGlobalNodeId()).getDeserializer()
-                .deserialize(message.getVariableValue(), message.getVariableName());
+    private void valueCompareAndSetRequest(MessageValueCompareAndSetRequest message) throws IOException {
+        Object value = data.localData.get(message.getReceiverGlobalNodeId()).getStorage().
+                get(message.getVariableName(), message.getIndexes());
+
+        MessageValueAsyncGetResponse reply = new MessageValueAsyncGetResponse();
+        reply.setInReplyTo(message.getMessageId());
+        reply.setReceiverGlobalNodeId(message.getSenderGlobalNodeId());
+        reply.setVariableValue(CloneObject.serialize(value));
+        networker.send(message.getSocket(), reply);
     }
 
     /**
-     * @see MessageTypes#VALUE_PUT_INDEXES
+     * @see MessageTypes#VALUE_COMPARE_AND_SET_RESPONSE
      */
-    private void valuePutIndexes(MessageValuePutIndexes message) {
+    private void valueCompareAndSetResponse(MessageValueCompareAndSetResponse message) {
+        int inReplyTo = message.getInReplyTo();
+        ResponseAttachment attachment = (ResponseAttachment) data.attachmentMap.remove(inReplyTo);
+        data.localData.get(message.getReceiverGlobalNodeId()).getDeserializer()
+                .deserialize(message.getVariableValue(), attachment);
+    }
+
+    /**
+     * @see MessageTypes#VALUE_PUT
+     */
+    private void valuePut(MessageValuePut message) {
         data.localData.get(message.getReceiverGlobalNodeId()).getDeserializer()
                 .deserialize(message.getVariableValue(), message.getVariableName(), message.getIndexes());
     }

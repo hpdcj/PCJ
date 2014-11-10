@@ -7,18 +7,20 @@ import org.pcj.internal.network.MessageOutputStream;
 import org.pcj.internal.network.MessageInputStream;
 
 /**
- * @see MessageTypes#VALUE_ASYNC_GET_REQUEST_INDEXES
+ * @see MessageTypes#VALUE_COMPARE_AND_SET_REQUEST
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class MessageValueAsyncGetRequestIndexes extends Message {
+final public class MessageValueCompareAndSetRequest extends Message {
 
     private int senderGlobalNodeId;
     private int receiverGlobalNodeId;
-    private int[] indexes;
     private String variableName;
+    private int[] indexes;
+    private byte[] expectedValue;
+    private byte[] newValue;
 
-    public MessageValueAsyncGetRequestIndexes() {
-        super(MessageTypes.VALUE_ASYNC_GET_REQUEST_INDEXES);
+    public MessageValueCompareAndSetRequest() {
+        super(MessageTypes.VALUE_ASYNC_GET_REQUEST);
     }
 
     @Override
@@ -27,16 +29,20 @@ final public class MessageValueAsyncGetRequestIndexes extends Message {
         bbos.writeInt(receiverGlobalNodeId);
         bbos.writeIntArray(indexes);
         bbos.writeString(variableName);
+        bbos.writeByteArray(getExpectedValue());
+        bbos.writeByteArray(getNewValue());
     }
 
     @Override
     void readObjects(MessageInputStream bbis) {
-        senderGlobalNodeId=bbis.readInt();
-        receiverGlobalNodeId=bbis.readInt();
+        senderGlobalNodeId = bbis.readInt();
+        receiverGlobalNodeId = bbis.readInt();
         indexes = bbis.readIntArray();
         variableName = bbis.readString();
+        expectedValue = bbis.readByteArray();
+        newValue = bbis.readByteArray();
     }
-    
+
     @Override
     public String paramsToString() {
         return "";
@@ -72,5 +78,21 @@ final public class MessageValueAsyncGetRequestIndexes extends Message {
 
     public void setVariableName(String variableName) {
         this.variableName = variableName;
+    }
+
+    public byte[] getExpectedValue() {
+        return expectedValue;
+    }
+
+    public void setExpectedValue(byte[] expectedValue) {
+        this.expectedValue = expectedValue;
+    }
+
+    public byte[] getNewValue() {
+        return newValue;
+    }
+
+    public void setNewValue(byte[] newValue) {
+        this.newValue = newValue;
     }
 }
