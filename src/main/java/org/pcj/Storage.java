@@ -218,6 +218,7 @@ public abstract class Storage implements org.pcj.internal.storage.InternalStorag
      * @param indexes optional indexes
      * @return variable value before CAS
      */
+    @SuppressWarnings("unchecked")
     @Override
     final public <T> T cas(String variable, T expectedValue, T newValue, int... indexes) throws ClassCastException, ArrayIndexOutOfBoundsException {
         if (isAssignable(variable, newValue, indexes) == false) {

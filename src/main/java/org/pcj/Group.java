@@ -6,8 +6,7 @@ package org.pcj;
 import org.pcj.internal.InternalGroup;
 
 /**
- * External class that represents group for grouped
- * communication.
+ * External class that represents group for grouped communication.
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
@@ -69,9 +68,8 @@ final public class Group extends org.pcj.internal.InternalGroup {
     }
 
     /**
-     * Fully asynchronous get operation - receives variable
-     * value from other node. If nodeId is current node, data
-     * is cloned.
+     * Fully asynchronous get operation - receives variable value from other
+     * node. If nodeId is current node, data is cloned.
      *
      * @param nodeId other node group node id
      * @param variable name of variable
@@ -91,8 +89,8 @@ final public class Group extends org.pcj.internal.InternalGroup {
     }
 
     /**
-     * Puts variable value to other node Storage space. If
-     * nodeId is current node, data is cloned.
+     * Puts variable value to other node Storage space. If nodeId is current
+     * node, data is cloned.
      *
      * @param nodeId other node group node id
      * @param variable name of variable
@@ -104,9 +102,14 @@ final public class Group extends org.pcj.internal.InternalGroup {
         super.put(nodeId, variable, newValue, indexes);
     }
 
+    public <T> FutureObject<T> cas(int nodeId, String variable, T expectedValue, T newValue, int... indexes) {
+        FutureObject<T> futureObject = new FutureObject<>();
+        return (FutureObject<T>) super.cas(futureObject, myNodeId, nodeId, variable, expectedValue, newValue, indexes);
+    }
+
     /**
-     * Broadcasts new variable value to all nodes in group and
-     * stores it in Storage space
+     * Broadcasts new variable value to all nodes in group and stores it in
+     * Storage space
      *
      * @param variable name of variable
      * @param newValue value to put

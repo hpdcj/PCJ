@@ -59,9 +59,9 @@ import org.pcj.internal.utils.WaitObject;
 
 /**
  * This class processes incoming messages.
- * 
+ *
  * At present this class can be used only in sequential manner.
- * 
+ *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 public class Worker implements Runnable {
@@ -856,10 +856,14 @@ public class Worker implements Runnable {
      * @see MessageTypes#VALUE_COMPARE_AND_SET_REQUEST
      */
     private void valueCompareAndSetRequest(MessageValueCompareAndSetRequest message) throws IOException {
+        Object expectedValue = data.localData.get(message.getReceiverGlobalNodeId()).
+                deserializeObject(message.getExpectedValue());
+        Object newValue = data.localData.get(message.getReceiverGlobalNodeId()).
+                deserializeObject(message.getNewValue());
         Object value = data.localData.get(message.getReceiverGlobalNodeId()).getStorage().
-                get(message.getVariableName(), message.getIndexes());
+                cas(message.getVariableName(), expectedValue, newValue, message.getIndexes());
 
-        MessageValueAsyncGetResponse reply = new MessageValueAsyncGetResponse();
+        MessageValueCompareAndSetResponse reply = new MessageValueCompareAndSetResponse();
         reply.setInReplyTo(message.getMessageId());
         reply.setReceiverGlobalNodeId(message.getSenderGlobalNodeId());
         reply.setVariableValue(CloneObject.serialize(value));

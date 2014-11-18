@@ -17,6 +17,7 @@ import org.pcj.internal.message.MessageThreadPairSync;
 import org.pcj.internal.message.MessageSyncWait;
 import org.pcj.internal.message.MessageValueAsyncGetRequest;
 import org.pcj.internal.message.MessageValueBroadcast;
+import org.pcj.internal.message.MessageValueCompareAndSetRequest;
 import org.pcj.internal.message.MessageValuePut;
 import org.pcj.internal.utils.BitMask;
 import org.pcj.internal.utils.CloneObject;
@@ -383,6 +384,26 @@ public class InternalGroup {
 
         try {
             InternalPCJ.getNetworker().send(nodeId, msg);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    protected <T> InternalFutureObject<T> cas(InternalFutureObject<T> futureObject, int myNodeId, int nodeId, String variable, T expectedValue, T newValue, int... indexes) {
+        nodeId = nodes.get(nodeId);
+
+        MessageValueCompareAndSetRequest msg = new MessageValueCompareAndSetRequest();
+        msg.setSenderGlobalNodeId(myNodeId);
+        msg.setReceiverGlobalNodeId(nodeId);
+        msg.setIndexes(indexes);
+        msg.setVariableName(variable);
+        msg.setExpectedValue(CloneObject.serialize(expectedValue));
+        msg.setNewValue(CloneObject.serialize(newValue));
+
+        InternalPCJ.getWorkerData().attachmentMap.put(msg.getMessageId(), futureObject);
+        try {
+            InternalPCJ.getNetworker().send(nodeId, msg);
+            return futureObject;
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }

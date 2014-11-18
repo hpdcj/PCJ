@@ -13,9 +13,9 @@ import org.pcj.internal.utils.NodesFile;
 
 /**
  * Main PCJ class with static methods.
- * 
+ *
  * Static methods provide way to use library.
- * 
+ *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 final public class PCJ extends org.pcj.internal.InternalPCJ {
@@ -152,13 +152,13 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
 
     /**
      * Returns physical node id (internal value for distinguishing nodes).
-     * 
+     *
      * @return physical node id
      */
     public static int getPhysicalNodeId() {
         return InternalPCJ.getPhysicalNodeId();
     }
-    
+
     /**
      * Returns global number of nodes used in calculations.
      *
@@ -325,6 +325,10 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
                     + " to the type of variable '" + variable + "'");
         }
         ((Group) PcjThread.threadGlobalGroup()).put(nodeId, variable, newValue, indexes);
+    }
+
+    public static <T> FutureObject<T> cas(int nodeId, String variable, T expectedValue, T newValue, int... indexes) {
+        return ((Group) PcjThread.threadGlobalGroup()).cas(nodeId, variable, expectedValue, newValue, indexes);
     }
 
     /**

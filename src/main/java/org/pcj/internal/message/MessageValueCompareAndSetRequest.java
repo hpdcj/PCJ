@@ -20,7 +20,7 @@ final public class MessageValueCompareAndSetRequest extends Message {
     private byte[] newValue;
 
     public MessageValueCompareAndSetRequest() {
-        super(MessageTypes.VALUE_ASYNC_GET_REQUEST);
+        super(MessageTypes.VALUE_COMPARE_AND_SET_REQUEST);
     }
 
     @Override

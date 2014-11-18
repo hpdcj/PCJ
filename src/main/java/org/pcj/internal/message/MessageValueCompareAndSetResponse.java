@@ -16,7 +16,7 @@ final public class MessageValueCompareAndSetResponse extends Message {
     private byte[] variableValue;
 
     public MessageValueCompareAndSetResponse() {
-        super(MessageTypes.VALUE_ASYNC_GET_RESPONSE);
+        super(MessageTypes.VALUE_COMPARE_AND_SET_RESPONSE);
     }
 
     @Override
