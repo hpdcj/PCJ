@@ -25,7 +25,7 @@ dependencies {
 
 compileJava {
     //options.compilerArgs = ["-profile", "compact3"]
-    options.compilerArgs = ["-source", "1.7", "-target", "1.7"]
+    options.compilerArgs = ["-source", "1.8", "-target", "1.8"]
 }
 
 task info {
