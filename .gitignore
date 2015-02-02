@@ -23,3 +23,10 @@ hs_err_pid*
 /.gradle/
 /.nb-gradle/
 /.nb-gradle-properties
+
+# Eclipse configuration and build output
+.project
+.classpath
+/.settings/
+/bin/
+
