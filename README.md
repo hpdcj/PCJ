@@ -3,6 +3,7 @@ PCJ
 
 PCJ library repository.
 
+Library requires at least Java 8.
 
 
 Building project

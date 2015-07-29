@@ -23,3 +23,6 @@ hs_err_pid*
 /.gradle/
 /.nb-gradle/
 /.nb-gradle-properties
+/build.version
+/build.xml
+/nb-project/

@@ -5,7 +5,8 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'org.ajoberstar:gradle-git:0.11.2'
+        classpath 'org.ajoberstar:gradle-git:1.2.0'
+        classpath 'org.eclipse.jgit:org.eclipse.jgit:4.0.1.201506240215-r'
     }
 }
 
@@ -24,8 +25,12 @@ dependencies {
 }
 
 compileJava {
-    //options.compilerArgs = ["-profile", "compact3"]
-    options.compilerArgs = ["-source", "1.7", "-target", "1.7", "-Xlint:unchecked"]
+    options.compilerArgs = [
+		"-source", "1.8",
+		"-target", "1.8",
+		"-profile", "compact3",
+		"-Xlint:unchecked"
+	]
 }
 
 task info {
@@ -71,7 +76,6 @@ gradle.taskGraph.whenReady {taskGraph ->
         version="$versionNumber.$buildNumber"
         classifier = 'javadoc'
     }
-
 }
 
 jar {
@@ -81,7 +85,7 @@ jar {
                 'Implementation-Vendor': System.getProperty('user.name'),
                 'Implementation-Title': date,
                 'Sealed': true,
-            //                'Profile': 'compact3',
+//                'Profile': 'compact3',
         )
         attributes(['Sealed': false], 'org/pcj/')
     }
@@ -92,3 +96,25 @@ def getDate() {
     def formattedDate = date.format('yyyy-MM-dd HH:mm:ss.SSS z')
     return formattedDate
 }
+
+
+
+// Code needed for running Main classes from Task Packages in NetBeans
+def createJavaExec = { String taskName ->
+    project.task (taskName, dependsOn: project.testClasses, type: JavaExec) {
+        def definedMainClass = project.hasProperty('mainClass') ? project.mainClass : ''
+        if (definedMainClass == null) definedMainClass = ''
+        definedMainClass = definedMainClass.toString()
+
+        main = definedMainClass
+        classpath = project.sourceSets.test.runtimeClasspath
+        standardInput = System.in
+        //jvmArgs = ["-Xmx3g","-Xms3g"]
+        maxHeapSize="2g"
+        
+    }
+}
+
+createJavaExec('run')
+//createJavaExec('debug')
+//debug.debug = true

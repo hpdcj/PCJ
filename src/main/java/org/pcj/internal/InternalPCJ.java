@@ -10,9 +10,12 @@ import java.io.PrintStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.UnknownHostException;
 import java.nio.channels.SocketChannel;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,8 +37,7 @@ import org.pcj.internal.utils.Utilities;
 import org.pcj.internal.utils.WaitObject;
 
 /**
- * Internal (with common ClassLoader) class for external PCJ
- * class.
+ * Internal (with common ClassLoader) class for external PCJ class.
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
@@ -205,7 +207,12 @@ public abstract class InternalPCJ {
             /* binding... */
             for (int attempt = 0; attempt <= Configuration.RETRY_COUNT; ++attempt) {
                 try {
-                    networker.bind(null, localNode.getPort());
+                    for (NetworkInterface networkInterface : Collections.list(NetworkInterface.getNetworkInterfaces())) {
+                        for (InetAddress inetAddress : Collections.list(networkInterface.getInetAddresses())) {
+                            networker.bind(inetAddress, localNode.getPort());
+                        }
+                    }
+//                    networker.bind(null, localNode.getPort());
                     break;
                 } catch (IOException ex) {
                     Utilities.sleep(Configuration.RETRY_DELAY * 100);

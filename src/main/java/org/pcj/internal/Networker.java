@@ -22,11 +22,11 @@ import org.pcj.internal.utils.Configuration;
 import org.pcj.internal.utils.Utilities;
 
 /**
- * This is intermediate file (between classes that want to
- * send data (eg. {@link org.pcj.internal.Worker}) and
- * {@link org.pcj.internal.network.SelectorProc} classes) for
- * sending data across network. It is used for binding
- * address, connecting to hosts and sending data.
+ * This is intermediate file (between classes that want to send data (eg.
+ * {@link org.pcj.internal.Worker}) and
+ * {@link org.pcj.internal.network.SelectorProc} classes) for sending data
+ * across network. It is used for binding address, connecting to hosts and
+ * sending data.
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
@@ -78,9 +78,18 @@ class Networker {
         socketChannel.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
         socketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
 
-        socketChannel.connect(new InetSocketAddress(hostAddress, port));
+//        socketChannel.connect(new InetSocketAddress(hostAddress, port));
+        if (socketChannel.connect(new InetSocketAddress(hostAddress, port))) {
+            selectorProc.connected(socketChannel);
 
-        selectorProc.register(socketChannel, SelectionKey.OP_CONNECT);
+            selectorProc.register(socketChannel, SelectionKey.OP_READ);
+            
+            synchronized (socketChannel) {
+                socketChannel.notifyAll();
+            }
+        } else {
+            selectorProc.register(socketChannel, SelectionKey.OP_CONNECT);
+        }
 
         return socketChannel;
     }

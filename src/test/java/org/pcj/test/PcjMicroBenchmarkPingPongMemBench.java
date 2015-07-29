@@ -5,24 +5,66 @@ package org.pcj.test;
  */
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.Serializable;
 import java.util.Scanner;
 import java.util.Locale;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.pcj.PCJ;
 import org.pcj.Shared;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
 
-public class PcjMicroBenchmarkPingPong extends Storage implements StartPoint {
+public class PcjMicroBenchmarkPingPongMemBench extends Storage implements StartPoint {
+
+    static public class MemUsage implements Serializable {
+
+        private long minMem = Long.MAX_VALUE;
+        private long maxMem = 0;
+        private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
+        public void start() {
+
+            Runnable r = () -> {
+                long mem = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+                if (mem < minMem) {
+                    minMem = mem;
+                }
+                if (mem > maxMem) {
+                    maxMem = mem;
+                }
+                System.gc();
+            };
+            scheduler.scheduleAtFixedRate(r, 0, 1, TimeUnit.SECONDS);
+        }
+
+        public long[] get() {
+            long[] arr = new long[2];
+            arr[0] = minMem;
+            arr[1] = maxMem;
+            return arr;
+        }
+
+        public long[] stop() {
+            scheduler.shutdown();
+            return get();
+        }
+    }
 
     @Shared
     double[] a;
 
     @Override
     public void main() {
-        int[] transmit = {1, 10, 100, 1024, 2048, 4096, 8192, 16384,
-            32768, 65536, 131072, 262144, 524288, 1048576, 2097152,
-            4194304, 8388608, 16777216,};
+        MemUsage memUsage = new MemUsage();
+        memUsage.start();
+
+        int[] transmit = {//1, 10, 100, 1024, 2048, 4096, 8192, 16384,
+//            32768, 65536, 131072, 262144, 524288, 1048576, 2097152,
+            4194304, //            8388608, 16777216,
+    };
 
         System.out.println("Maximum Heap Size: " + Runtime.getRuntime().maxMemory() + " B");
 
@@ -39,30 +81,9 @@ public class PcjMicroBenchmarkPingPong extends Storage implements StartPoint {
             b = new double[n];
 
             PCJ.barrier();
-            PCJ.log(" s " + n + " " + a.length + " " + b.length);
 
             for (int i = 0; i < n; i++) {
                 a[i] = (double) i + 1;
-            }
-            PCJ.barrier();
-
-            //get 
-            double tmin_get = Double.MAX_VALUE;
-            for (int k = 0; k < number_of_tests; k++) {
-                long time = System.nanoTime();
-                for (int i = 0; i < ntimes; i++) {
-                    if (PCJ.myId() == 0) {
-                        b = PCJ.get(1, "a");
-                    }
-                }
-                time = System.nanoTime() - time;
-                double dtime = (time / (double) ntimes) * 1e-9;
-
-                PCJ.log(PCJ.threadCount() + " get " + dtime + " " + b[n - 1]);
-                PCJ.barrier();
-                if (tmin_get > dtime) {
-                    tmin_get = dtime;
-                }
             }
             PCJ.barrier();
 
@@ -87,8 +108,8 @@ public class PcjMicroBenchmarkPingPong extends Storage implements StartPoint {
 
                 time = System.nanoTime() - time;
                 double dtime = (time / (double) ntimes) * 1e-9;
-
-                PCJ.log(PCJ.threadCount() + " put " + dtime + " " + b[n - 1]);
+                
+//                PCJ.log(PCJ.threadCount() + " put " + dtime + " " + b[n - 1]);
 
                 PCJ.barrier();
                 if (tmin_put > dtime) {
@@ -96,42 +117,17 @@ public class PcjMicroBenchmarkPingPong extends Storage implements StartPoint {
                 }
             }
 
-            // putB
-            PCJ.monitor("a");
-            PCJ.barrier();
-            for (int i = 0; i < n; i++) {
-                b[i] = (double) i + 1;
-            }
-
-            double tmin_putB = Double.MAX_VALUE;
-            for (int k = 0; k < number_of_tests; k++) {
-                long time = System.nanoTime();
-                for (int i = 0; i < ntimes; i++) {
-                    if (PCJ.myId() == i % 2) {
-                        PCJ.put((i + 1) % 2, "a", b);
-                    } else {
-                        PCJ.waitFor("a");
-                    }
-                }
-
-                time = System.nanoTime() - time;
-                double dtime = (time / (double) ntimes) * 1e-9;
-
-                PCJ.log(PCJ.threadCount() + " putB " + dtime + " " + b[n - 1]);
-
-                PCJ.barrier();
-
-                if (tmin_putB > dtime) {
-                    tmin_putB = dtime;
-                }
-            }
-
             if (PCJ.myId() == 0) {
-                System.out.format(Locale.FRANCE, "%5d size %10f \t t_get %7f \t t_put %7f \t t_putB %7f %n",
-                        PCJ.threadCount(), (double) n / 128, tmin_get, tmin_put, tmin_putB);
+                System.out.format(Locale.FRANCE, "%5d size %10f \t t_put %7f %n",
+                        PCJ.threadCount(), (double) n / 128, tmin_put);
             }
+            long[] arr = memUsage.get();
+            PCJ.log(String.format(n + " minMem: %.2f MB\tmaxMem: %.2f MB\n", arr[0] / 1024. / 1024., arr[1] / 1024. / 1024.));
 
         }
+
+        long[] arr = memUsage.stop();
+        PCJ.log(String.format("minMem: %.2f MB\tmaxMem: %.2f MB\n", arr[0] / 1024. / 1024., arr[1] / 1024. / 1024.));
     }
 
     public static void main(String[] args) {
@@ -142,6 +138,7 @@ public class PcjMicroBenchmarkPingPong extends Storage implements StartPoint {
         } catch (FileNotFoundException ex) {
             System.err.println("File not found!");
         }
+        System.out.println("Maximum Heap Size: " + Runtime.getRuntime().maxMemory() + " B");
 
         int n_nodes = 0;
         if (nf != null) {
@@ -151,7 +148,8 @@ public class PcjMicroBenchmarkPingPong extends Storage implements StartPoint {
             }
         } else {
             for (int i = 0; i < 2; ++i) {
-                nodesTxt[n_nodes] = "localhost:" + (8091 + i);
+//                nodesTxt[n_nodes] = "localhost:" + (8091 + i);
+                nodesTxt[n_nodes] = "localhost:" + (8097);
                 n_nodes++;
             }
         }
@@ -159,6 +157,6 @@ public class PcjMicroBenchmarkPingPong extends Storage implements StartPoint {
         String[] nodes = new String[2];
         nodes[0] = nodesTxt[0];
         nodes[1] = nodesTxt[1];
-        PCJ.deploy(PcjMicroBenchmarkPingPong.class, PcjMicroBenchmarkPingPong.class, nodes);
+        PCJ.deploy(PcjMicroBenchmarkPingPongMemBench.class, PcjMicroBenchmarkPingPongMemBench.class, nodes);
     }
 }

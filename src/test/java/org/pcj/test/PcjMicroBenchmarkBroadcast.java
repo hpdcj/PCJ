@@ -20,13 +20,11 @@ public class PcjMicroBenchmarkBroadcast extends Storage implements StartPoint {
     @Override
     public void main() {
 
-        int[] transmit = {1, 10, 100, 1024, 2048, 4096, 8192};
-//            ,16348, 32768, 65536, 131072, 262144, 524288,
-//            1048576};
-        //    int[] transmit = { 131072 }; 
+        int[] transmit = {1, 10, 100, 1024, 2048, 4096, 8192,
+            16348, 32768, 65536, 131072, 262144, 524288,
+            1048576};
 
-        for (int j = 0; j < transmit.length; j++) {
-            int n = transmit[j];
+        for (int n : transmit) {
             PCJ.barrier();
 
             double[] b = new double[n];
@@ -62,14 +60,21 @@ public class PcjMicroBenchmarkBroadcast extends Storage implements StartPoint {
     }
 
     public static void main(String[] args) {
-        int[] threads = {1, 4, 16};
-
-        String[] nodesUniq = new String[1024];
+        String nodesDescription = "nodes.uniq";
+        if (args.length > 0) {
+            nodesDescription = args[0];
+        }
         Scanner nf = null;
         try {
-            nf = new Scanner(new File("nodes.uniq"));
+            nf = new Scanner(new File(nodesDescription));
         } catch (FileNotFoundException ex) {
+            System.err.println("File not found: " + nodesDescription);
         }
+
+        //        int[] threads = {1, 4, 16};
+        int[] threads = {1, 2, 4, 8, 12};
+
+        String[] nodesUniq = new String[1024];
 
         int n_nodes = 0;
         if (nf != null) {
@@ -85,27 +90,20 @@ public class PcjMicroBenchmarkBroadcast extends Storage implements StartPoint {
             }
         }
 
-        int nn;
-        nn = n_nodes;
-        int nt;
-
         for (int m = n_nodes; m > 0; m = m / 2) {
-            nn = m;
+            int nn = m;
 
-            for (int n = 0; n < threads.length; n++) {
-                nt = threads[n];
+            for (int nt : threads) {
                 String[] nodes = new String[nt * nn];
                 System.out.println(" Start deploy nn=" + nn + " nt=" + nt);
                 int ii = 0;
                 for (int i = 0; i < nn; i++) {
                     for (int j = 0; j < nt; j++) {
                         nodes[ii] = nodesUniq[i];
-                        //       System.out.println(ii + " " + nodes[ii]);
                         ii++;
 
                     }
                 }
-                //System.out.println(" deploy ");
                 PCJ.deploy(PcjMicroBenchmarkBroadcast.class, PcjMicroBenchmarkBroadcast.class, nodes);
             }
         }
