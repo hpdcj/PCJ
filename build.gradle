@@ -11,6 +11,7 @@ buildscript {
 }
 
 apply plugin: 'java'
+apply plugin: 'eclipse'
 
 ext.versionNumber = "4.0.1"
 ext.buildNumber = "SNAPSHOT"
