@@ -15,10 +15,9 @@ import org.pcj.internal.storage.InternalStorage;
 import org.pcj.internal.utils.NodeInfo;
 
 /**
- * Class used for deploying PCJ when using one of deploy
- * methods.
+ * Class used for deploying PCJ when using one of deploy methods.
  *
- * @see org.pcj.PCJ#deploy(java.lang.Class, java.lang.Class) 
+ * @see org.pcj.PCJ#deploy(java.lang.Class, java.lang.Class)
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
@@ -104,9 +103,11 @@ final public class DeployPCJ {
     }
 
     private List<String> makeJvmParams(NodeInfo node) {
-        String separator = System.getProperty("file.separator");
+//        String separator = System.getProperty("file.separator");
+//        String path = System.getProperty("java.home") + separator + "bin" + separator + "java";
+        String path = "java";
+
         String classpath = System.getProperty("java.class.path");
-        String path = System.getProperty("java.home") + separator + "bin" + separator + "java";
 
         List<String> params = new ArrayList<>(Arrays.asList(
                 path, "-cp", classpath));
@@ -135,7 +136,6 @@ final public class DeployPCJ {
     }
 
     private Process exec(List<String> exec) throws IOException {
-//        System.err.println("exec(" + Arrays.toString(exec.toArray(new String[0])) + ")");
         ProcessBuilder processBuilder = new ProcessBuilder(exec);
         //processBuilder.redirectErrorStream(true);
 

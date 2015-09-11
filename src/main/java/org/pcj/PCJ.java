@@ -26,14 +26,14 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
     }
 
     /**
-     * Deploys and starts PCJ calculations on nodes using specified StartPoint
-     * and Storage class. Array <tt>nodes</tt> contains list of hostnames.
-     * Hostnames can be specified many times, so more than one instance of PCJ
-     * will be run on node. Empty hostnames means current JVM.
+     * Deploys and starts PCJ calculations on nodes using specified StartPoint and Storage class.
+     * Array <tt>nodes</tt>
+     * contains list of hostnames. Hostnames can be specified many times, so more than one instance
+     * of PCJ will be run on node. Empty hostnames means current JVM.
      *
-     * Hostnames can take port (after colon ':'), eg. ["localhost:8000",
-     * "localhost:8001", "localhost", "host2:8001", "host2"]. Default port is
-     * 8091 and can be modified using <tt>pcj.port</tt> system property value.
+     * Hostnames can take port (after colon ':'), eg. ["localhost:8000", "localhost:8001",
+     * "localhost", "host2:8001", "host2"]. Default port is 8091 and can be modified using
+     * <tt>pcj.port</tt> system property value.
      *
      * @param startPoint start point class
      * @param storage storage class
@@ -47,8 +47,7 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
     }
 
     /**
-     * Deploys and starts PCJ calculations on nodes using specified StartPoint
-     * and Storage class.
+     * Deploys and starts PCJ calculations on nodes using specified StartPoint and Storage class.
      *
      * @param startPoint start point class
      * @param storage storage class
@@ -66,9 +65,8 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
     }
 
     /**
-     * Deploys and starts PCJ calculations on nodes using specified StartPoint
-     * and Storage class. Descriptions of nodes are read from default nodefile
-     * according to the system settings:
+     * Deploys and starts PCJ calculations on nodes using specified StartPoint and Storage class.
+     * Descriptions of nodes are read from default nodefile according to the system settings:
      * <ol><li>pcj.nodefile - JVM property</li>
      * <li>NODEFILE - system property</li>
      * <li>LOADL_HOSTFILE - system property</li>
@@ -84,9 +82,8 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
     }
 
     /**
-     * Starts PCJ calculations on local node using specified StartPoint and
-     * Storage class. Array <tt>nodes</tt> contains list of all hostnames used
-     * in calculations.
+     * Starts PCJ calculations on local node using specified StartPoint and Storage class. Array
+     * <tt>nodes</tt> contains list of all hostnames used in calculations.
      *
      * @param startPoint start point class
      * @param storage storage class
@@ -100,9 +97,8 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
     }
 
     /**
-     * Starts PCJ calculations on local node using specified StartPoint and
-     * Storage class. Descriptions of all nodes used in calculations are read
-     * from supplied file.
+     * Starts PCJ calculations on local node using specified StartPoint and Storage class.
+     * Descriptions of all nodes used in calculations are read from supplied file.
      *
      * @param startPoint start point class
      * @param storage storage class
@@ -120,9 +116,9 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
     }
 
     /**
-     * Starts PCJ calculations on local node using specified StartPoint and
-     * Storage class. Descriptions of all nodes used in calculations are read
-     * from default nodefile according to the system settings:
+     * Starts PCJ calculations on local node using specified StartPoint and Storage class.
+     * Descriptions of all nodes used in calculations are read from default nodefile according to
+     * the system settings:
      * <ol><li>pcj.nodefile - JVM property</li>
      * <li>NODEFILE - system property</li>
      * <li>LOADL_HOSTFILE - system property</li>
@@ -189,9 +185,8 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
     }
 
     /**
-     * Causes the current thread to wait until the variable was <i>touched</i>.
-     * Resets the state after <i>touch</i>. The waitFor(variable) method has the
-     * same effect as:
+     * Causes the current thread to wait until the variable was <i>touched</i>. Resets the state
+     * after <i>touch</i>. The waitFor(variable) method has the same effect as:
      * <pre><code>waitFor(variable, 1)</code></pre>
      *
      * @param variable name of variable
@@ -272,8 +267,7 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
      *
      * @param variable name of variable
      * @param newValue new value of variable
-     * @throws ClassCastException when the value cannot be cast to the type of
-     * variable in Storage
+     * @throws ClassCastException when the value cannot be cast to the type of variable in Storage
      */
     public static void putLocal(String variable, Object newValue) throws ClassCastException {
         PcjThread.threadStorage().put(variable, newValue);
@@ -285,8 +279,7 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
      * @param variable name of array variable
      * @param newValue new value of variable
      * @param indexes indexes of array
-     * @throws ClassCastException when the value cannot be cast to the type of
-     * variable in Storage
+     * @throws ClassCastException when the value cannot be cast to the type of variable in Storage
      */
     public static void putLocal(String variable, Object newValue, int... indexes) throws ClassCastException {
         PcjThread.threadStorage().put(variable, newValue, indexes);
@@ -298,8 +291,7 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
      * @param nodeId other node global node id
      * @param variable name of variable
      * @param newValue new value of variable
-     * @throws ClassCastException when the value cannot be cast to the type of
-     * variable in Storage
+     * @throws ClassCastException when the value cannot be cast to the type of variable in Storage
      */
     public static <T> void put(int nodeId, String variable, T newValue) throws ClassCastException {
         if (PcjThread.threadStorage().isAssignable(variable, newValue) == false) {
@@ -316,8 +308,7 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
      * @param variable name of array variable
      * @param newValue new value of variable
      * @param indexes indexes of array
-     * @throws ClassCastException when the value cannot be cast to the type of
-     * variable in Storage
+     * @throws ClassCastException when the value cannot be cast to the type of variable in Storage
      */
     public static <T> void put(int nodeId, String variable, T newValue, int... indexes) throws ClassCastException {
         if (PcjThread.threadStorage().isAssignable(variable, newValue, indexes) == false) {
@@ -336,8 +327,7 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
      *
      * @param variable name of variable
      * @param newValue new value of variable
-     * @throws ClassCastException when the value cannot be cast to the type of
-     * variable in Storage
+     * @throws ClassCastException when the value cannot be cast to the type of variable in Storage
      */
     public static void broadcast(String variable, Object newValue) throws ClassCastException {
         if (PcjThread.threadStorage().isAssignable(variable, newValue) == false) {

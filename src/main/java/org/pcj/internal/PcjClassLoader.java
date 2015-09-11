@@ -7,19 +7,35 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 
 /**
  * Class loader for different PCJ threads.
  *
- * Purpose: the <i>same</i> class - different static data in
- * the class.
+ * Purpose: the <i>same</i> class - different static data in the class.
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 public class PcjClassLoader extends java.lang.ClassLoader {
 
+    private static class ReflectionClassLoader extends ClassLoader {
+
+        public Class<?> getClass(String name, byte[] b, int off, int len) {
+            Class<?> c = findLoadedClass(name);
+            if (c != null) {
+                return c;
+            }
+
+            return this.defineClass(name, b, off, len);
+        }
+    }
+    final private ReflectionClassLoader reflectionClassLoader;
+
     public PcjClassLoader() {
         super(PcjClassLoader.class.getClassLoader());
+
+        reflectionClassLoader = new ReflectionClassLoader();
     }
 
     @Override
@@ -43,9 +59,23 @@ public class PcjClassLoader extends java.lang.ClassLoader {
         try {
             byte[] classBytes = findClassBytecode(name);
             if (classBytes != null) {
-                c = defineClass(name, classBytes, 0, classBytes.length);
+                c = reflectionClassLoader.getClass(name, classBytes, 0, classBytes.length);
                 if (c != null) {
-                    return c;
+                    for (Method method : c.getDeclaredMethods()) {
+                        if (Modifier.isNative(method.getModifiers())) {
+                            return loadByParent(name);
+                        }
+                    }
+
+//                    for (Annotation a : c.getAnnotations()){
+//                        if (a.annotationType().getCanonicalName().equals(ContainsNative.class.getCanonicalName()))
+//                            return loadByParent(name);
+////                        System.out.println(""+a.toString()+" "+a.hashCode()+" "+a.annotationType().hashCode()+" "+ContainsNative.class.hashCode());
+//                    }
+//                    if (c.isAnnotationPresent(ContainsNative.class)) {
+//                        return loadByParent(name);
+//                    }
+                    return defineClass(name, classBytes, 0, classBytes.length);
                 }
             }
         } catch (ClassFormatError ex) {
@@ -75,12 +105,10 @@ public class PcjClassLoader extends java.lang.ClassLoader {
     }
 
     /**
-     * Tries to read content of class into byte array
-     * (<tt>byte[]</tt>).
+     * Tries to read content of class into byte array (<tt>byte[]</tt>).
      *
      * @param name The binary name of class
-     * @return The byte array (<tt>byte[]</tt>) of loaded file
-     * or <tt>null</tt>
+     * @return The byte array (<tt>byte[]</tt>) of loaded file or <tt>null</tt>
      * if class is not found.
      */
     private byte[] findClassBytecode(String name) {
@@ -103,14 +131,13 @@ public class PcjClassLoader extends java.lang.ClassLoader {
     }
 
     /**
-     * Tries to load class using parent PcjClassLoader or if
-     * it is
+     * Tries to load class using parent PcjClassLoader or if it is
      * <tt>null</tt>, system PcjClassLoader.
      *
      * @param name The binary name of class
      * @return The resulting <tt>Class</tt> object
-     * @throws ClassNotFoundException exception is thrown when
-     * class is not found
+     * @throws ClassNotFoundException exception is thrown when class is not
+     * found
      */
     private Class<?> loadByParent(String name) throws ClassNotFoundException {
         if (getParent() != null) {
