@@ -27,7 +27,8 @@ public class PcjMicroBenchmarkPingPongMemBench extends Storage implements StartP
 
         public void start() {
 
-            Runnable r = () -> {
+            Runnable r = new Runnable(){@Override
+            public void run(){
                 long mem = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
                 if (mem < minMem) {
                     minMem = mem;
@@ -36,7 +37,7 @@ public class PcjMicroBenchmarkPingPongMemBench extends Storage implements StartP
                     maxMem = mem;
                 }
                 System.gc();
-            };
+            }};
             scheduler.scheduleAtFixedRate(r, 0, 1, TimeUnit.SECONDS);
         }
 

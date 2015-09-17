@@ -7,8 +7,7 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import org.pcj.internal.utils.Configuration;
 
 /**
  * Class loader for different PCJ threads.
@@ -19,23 +18,22 @@ import java.lang.reflect.Modifier;
  */
 public class PcjClassLoader extends java.lang.ClassLoader {
 
-    private static class ReflectionClassLoader extends ClassLoader {
-
-        public Class<?> getClass(String name, byte[] b, int off, int len) {
-            Class<?> c = findLoadedClass(name);
-            if (c != null) {
-                return c;
-            }
-
-            return this.defineClass(name, b, off, len);
-        }
-    }
-    final private ReflectionClassLoader reflectionClassLoader;
-
+//    private static class ReflectionClassLoader extends ClassLoader {
+//
+//        public Class<?> getClass(String name, byte[] b, int off, int len) {
+//            Class<?> c = findLoadedClass(name);
+//            if (c != null) {
+//                return c;
+//            }
+//
+//            return this.defineClass(name, b, off, len);
+//        }
+//    }
+//    final private ReflectionClassLoader reflectionClassLoader;
     public PcjClassLoader() {
         super(PcjClassLoader.class.getClassLoader());
 
-        reflectionClassLoader = new ReflectionClassLoader();
+//        reflectionClassLoader = new ReflectionClassLoader();
     }
 
     @Override
@@ -51,6 +49,12 @@ public class PcjClassLoader extends java.lang.ClassLoader {
             return loadByParent(name);
         }
 
+        for (String p : Configuration.SYSTEM_PACKAGES) {
+            if (name.startsWith(p)) {
+                return loadByParent(name);
+            }
+        }
+
         Class<?> c = findLoadedClass(name);
         if (c != null) {
             return c;
@@ -59,13 +63,13 @@ public class PcjClassLoader extends java.lang.ClassLoader {
         try {
             byte[] classBytes = findClassBytecode(name);
             if (classBytes != null) {
-                c = reflectionClassLoader.getClass(name, classBytes, 0, classBytes.length);
-                if (c != null) {
-                    for (Method method : c.getDeclaredMethods()) {
-                        if (Modifier.isNative(method.getModifiers())) {
-                            return loadByParent(name);
-                        }
-                    }
+//                c = reflectionClassLoader.getClass(name, classBytes, 0, classBytes.length);
+//                if (c != null) {
+//                    for (Method method : c.getDeclaredMethods()) {
+//                        if (Modifier.isNative(method.getModifiers())) {
+//                            return loadByParent(name);
+//                        }
+//                    }
 
 //                    for (Annotation a : c.getAnnotations()){
 //                        if (a.annotationType().getCanonicalName().equals(ContainsNative.class.getCanonicalName()))
@@ -75,8 +79,8 @@ public class PcjClassLoader extends java.lang.ClassLoader {
 //                    if (c.isAnnotationPresent(ContainsNative.class)) {
 //                        return loadByParent(name);
 //                    }
-                    return defineClass(name, classBytes, 0, classBytes.length);
-                }
+                return defineClass(name, classBytes, 0, classBytes.length);
+//                }
             }
         } catch (ClassFormatError ex) {
             ex.printStackTrace(System.err);
@@ -136,8 +140,7 @@ public class PcjClassLoader extends java.lang.ClassLoader {
      *
      * @param name The binary name of class
      * @return The resulting <tt>Class</tt> object
-     * @throws ClassNotFoundException exception is thrown when class is not
-     * found
+     * @throws ClassNotFoundException exception is thrown when class is not found
      */
     private Class<?> loadByParent(String name) throws ClassNotFoundException {
         if (getParent() != null) {

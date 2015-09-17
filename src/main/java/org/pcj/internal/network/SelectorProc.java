@@ -166,7 +166,7 @@ public class SelectorProc implements Runnable {
     public void connected(SocketChannel socket) {
         synchronized (writeData) {
             connected.add(socket);
-            writeData.put(socket, new ConcurrentLinkedQueue<>());
+            writeData.put(socket, new ConcurrentLinkedQueue<ByteBuffer>());
             worker.connected(socket);
         }
     }

@@ -3,20 +3,24 @@
  */
 package org.pcj.internal.utils;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Configuration for PCJ.
- * 
- * <p>Configuration reads System properties.
+ *
+ * <p>
+ * Configuration reads System properties.
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 final public class Configuration {
 
     /**
-     * pcj.debug (int) default: 0 1 - print processed message
-     * 2 - print sent and broadcasted message 4 - print
-     * details of processed, sent and broadcasted message (if
-     * not 1 nor 2)
+     * pcj.debug (int) default: 0 1 - print processed message 2 - print sent and broadcasted message
+     * 4 - print details of processed, sent and broadcasted message (if not 1 nor 2)
      */
     final public static int DEBUG;
     /**
@@ -40,25 +44,26 @@ final public class Configuration {
      */
     final public static int BUFFER_SIZE;
     /**
-     * pcj.redirect.out (boolean, 1=true, otherwise false)
-     * default: 1
+     * pcj.redirect.out (boolean, 1=true, otherwise false) default: 1
      */
     final public static boolean REDIRECT_OUT;
     /**
-     * pcj.redirect.err (boolean, 1=true, otherwise false)
-     * default: 1
+     * pcj.redirect.err (boolean, 1=true, otherwise false) default: 1
      */
     final public static boolean REDIRECT_ERR;
     /**
-     * pcj.redirect.node0 (boolean, 1, true, otherwise false)
-     * default: 0
+     * pcj.redirect.node0 (boolean, 1, true, otherwise false) default: 0
      */
     final public static boolean REDIRECT_NODE0;
     /**
-     * pcj.nodefile (String) otherwise: NODEFILE,
-     * LOADL_HOSTFILE, PBS_NODEFILE or nodes.file
+     * pcj.nodefile (String) otherwise: NODEFILE, LOADL_HOSTFILE, PBS_NODEFILE or nodes.file
      */
     final public static String NODES_FILENAME;
+
+    /**
+     * pcj.syspackages (String) comma separated (,)
+     */
+    final public static List<String> SYSTEM_PACKAGES;
 
     static {
         DEBUG = getPropertyInt("pcj.debug", 0/*7*/);
@@ -70,6 +75,7 @@ final public class Configuration {
         REDIRECT_OUT = getPropertyInt("pcj.redirect.out", 1) == 1;
         REDIRECT_ERR = getPropertyInt("pcj.redirect.err", 1) == 1;
         REDIRECT_NODE0 = getPropertyInt("pcj.redirect.node0", 0) == 1;
+        SYSTEM_PACKAGES = getSystemPackagesList();
         NODES_FILENAME = getNodesFilename();
     }
 
@@ -97,5 +103,21 @@ final public class Configuration {
             nodeFileName = "nodes.file";
         }
         return nodeFileName;
+    }
+
+    private static List<String> getSystemPackagesList() {
+        String sysPackages = System.getProperty("pcj.syspackages");
+        if (sysPackages == null) {
+            return Collections.EMPTY_LIST;
+        }
+        List<String> packages = new ArrayList<>();
+        for (String p : sysPackages.split(",")) {
+            p = p.trim();
+            if (p.endsWith(".") == false && p.equals(p.toLowerCase())) {
+                p = p + ".";
+            }
+            packages.add(p);
+        }
+        return Collections.unmodifiableList(packages);
     }
 }
