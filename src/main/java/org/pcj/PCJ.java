@@ -36,8 +36,8 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
      * <tt>pcj.port</tt> system property value.
      *
      * @param startPoint start point class
-     * @param storage storage class
-     * @param nodes array of nodes
+     * @param storage    storage class
+     * @param nodes      array of nodes
      */
     public static void deploy(Class<? extends InternalStartPoint> startPoint,
             Class<? extends InternalStorage> storage,
@@ -49,8 +49,8 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
     /**
      * Deploys and starts PCJ calculations on nodes using specified StartPoint and Storage class.
      *
-     * @param startPoint start point class
-     * @param storage storage class
+     * @param startPoint    start point class
+     * @param storage       storage class
      * @param nodesFilename file with descriptions of nodes
      */
     public static void deploy(Class<? extends InternalStartPoint> startPoint,
@@ -74,7 +74,7 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
      * <li>or <i>"nodes.file"</i></li></ol>
      *
      * @param startPoint start point class
-     * @param storage storage class
+     * @param storage    storage class
      */
     public static void deploy(Class<? extends InternalStartPoint> startPoint,
             Class<? extends InternalStorage> storage) {
@@ -86,8 +86,8 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
      * <tt>nodes</tt> contains list of all hostnames used in calculations.
      *
      * @param startPoint start point class
-     * @param storage storage class
-     * @param nodes array of nodes
+     * @param storage    storage class
+     * @param nodes      array of nodes
      */
     public static void start(Class<? extends InternalStartPoint> startPoint,
             Class<? extends InternalStorage> storage,
@@ -100,8 +100,8 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
      * Starts PCJ calculations on local node using specified StartPoint and Storage class.
      * Descriptions of all nodes used in calculations are read from supplied file.
      *
-     * @param startPoint start point class
-     * @param storage storage class
+     * @param startPoint    start point class
+     * @param storage       storage class
      * @param nodesFilename file with descriptions of nodes
      */
     public static void start(Class<? extends InternalStartPoint> startPoint,
@@ -126,7 +126,7 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
      * <li>or <i>"nodes.file"</i></li></ol>
      *
      * @param startPoint start point class
-     * @param storage storage class
+     * @param storage    storage class
      */
     public static void start(Class<? extends InternalStartPoint> startPoint,
             Class<? extends InternalStorage> storage) {
@@ -191,8 +191,8 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
      *
      * @param variable name of variable
      */
-    public static void waitFor(String variable) {
-        PcjThread.threadStorage().waitFor(variable);
+    public static int waitFor(String variable) {
+        return PcjThread.threadStorage().waitFor(variable);
     }
 
     /**
@@ -200,16 +200,17 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
      * count times. Resets the state after <i>touches</i>.
      *
      * @param variable name of variable
-     * @param count number of <i>touches</i>
+     * @param count    number of <i>touches</i>
      */
-    public static void waitFor(String variable, int count) {
-        PcjThread.threadStorage().waitFor(variable, count);
+    public static int waitFor(String variable, int count) {
+        return PcjThread.threadStorage().waitFor(variable, count);
     }
 
     /**
      * Gets the value from current thread Storage.
      *
      * @param variable name of variable
+     *
      * @return value of variable
      */
     public static <T> T getLocal(String variable) {
@@ -220,7 +221,8 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
      * Gets the value from current thread Storage
      *
      * @param variable name of array variable
-     * @param indexes indexes of array
+     * @param indexes  indexes of array
+     *
      * @return value of variable
      */
     public static <T> T getLocal(String variable, int... indexes) {
@@ -230,8 +232,9 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
     /**
      * Fully asynchronous get from other thread Storage
      *
-     * @param nodeId global node id
+     * @param nodeId   global node id
      * @param variable name of array variable
+     *
      * @return FutureObject that will contain received data
      */
     public static <T> FutureObject<T> getFutureObject(int nodeId, String variable) {
@@ -241,9 +244,10 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
     /**
      * Fully asynchronous get from other thread Storage
      *
-     * @param nodeId global node id
+     * @param nodeId   global node id
      * @param variable name of array variable
-     * @param indexes indexes of array
+     * @param indexes  indexes of array
+     *
      * @return FutureObject that will contain received data
      */
     public static <T> FutureObject<T> getFutureObject(int nodeId, String variable, int... indexes) {
@@ -267,6 +271,7 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
      *
      * @param variable name of variable
      * @param newValue new value of variable
+     *
      * @throws ClassCastException when the value cannot be cast to the type of variable in Storage
      */
     public static void putLocal(String variable, Object newValue) throws ClassCastException {
@@ -278,7 +283,8 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
      *
      * @param variable name of array variable
      * @param newValue new value of variable
-     * @param indexes indexes of array
+     * @param indexes  indexes of array
+     *
      * @throws ClassCastException when the value cannot be cast to the type of variable in Storage
      */
     public static void putLocal(String variable, Object newValue, int... indexes) throws ClassCastException {
@@ -288,9 +294,10 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
     /**
      * Puts the value to other thread Storage
      *
-     * @param nodeId other node global node id
+     * @param nodeId   other node global node id
      * @param variable name of variable
      * @param newValue new value of variable
+     *
      * @throws ClassCastException when the value cannot be cast to the type of variable in Storage
      */
     public static <T> void put(int nodeId, String variable, T newValue) throws ClassCastException {
@@ -304,10 +311,11 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
     /**
      * Puts the value to other thread Storage
      *
-     * @param nodeId other node global node id
+     * @param nodeId   other node global node id
      * @param variable name of array variable
      * @param newValue new value of variable
-     * @param indexes indexes of array
+     * @param indexes  indexes of array
+     *
      * @throws ClassCastException when the value cannot be cast to the type of variable in Storage
      */
     public static <T> void put(int nodeId, String variable, T newValue, int... indexes) throws ClassCastException {
@@ -327,6 +335,7 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
      *
      * @param variable name of variable
      * @param newValue new value of variable
+     *
      * @throws ClassCastException when the value cannot be cast to the type of variable in Storage
      */
     public static void broadcast(String variable, Object newValue) throws ClassCastException {
@@ -350,6 +359,7 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
      * Returns group by name
      *
      * @param name name of the group
+     *
      * @return group by name
      */
     public static Group getGroup(String name) {
@@ -360,6 +370,7 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
      * Joins the current thread to the group
      *
      * @param name name of the group
+     *
      * @return group to which thread joined
      */
     public static Group join(String name) {

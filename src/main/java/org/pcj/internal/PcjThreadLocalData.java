@@ -18,22 +18,20 @@ import org.pcj.internal.utils.CloneObject;
  */
 class PcjThreadLocalData {
 
-    final private ClassLoader classLoader;
     final private InternalStorage storage;
     final private InternalGroup globalGroup;
     final private Deserializer deserializer;
     final private Map<Integer, InternalGroup> groups;
     final private Map<String, InternalGroup> groupsByName;
 
-    PcjThreadLocalData(ClassLoader classLoader, InternalStorage storage,
+    PcjThreadLocalData(InternalStorage storage,
             Map<Integer, InternalGroup> groups, Map<String, InternalGroup> groupsByName) {
-        this.classLoader = classLoader;
         this.storage = storage;
         this.groups = groups;
         this.groupsByName = groupsByName;
 
         this.globalGroup = groups.get(0);
-        this.deserializer = new Deserializer(classLoader, storage);
+        this.deserializer = new Deserializer(storage);
     }
 
     void addGroup(InternalGroup group) {
@@ -43,7 +41,7 @@ class PcjThreadLocalData {
 
     InternalGroup createGroup(int groupNodeId, InternalGroup internalGroup) {
         try {
-            Class<?> groupClass = classLoader.loadClass(Group.class.getCanonicalName());
+            Class<?> groupClass = getClass().getClassLoader().loadClass(Group.class.getCanonicalName());
             Constructor<?> constructor = groupClass.getDeclaredConstructor(int.class, InternalGroup.class);
             constructor.setAccessible(true);
             return (InternalGroup) constructor.newInstance(groupNodeId, internalGroup);
@@ -60,7 +58,7 @@ class PcjThreadLocalData {
 
     Object deserializeObject(byte[] bytes) {
         try {
-            return CloneObject.deserialize(bytes, classLoader);
+            return CloneObject.deserialize(bytes);
         } catch (final IOException | ClassNotFoundException ex) {
             throw new RuntimeException(ex);
         }

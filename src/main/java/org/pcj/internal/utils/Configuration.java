@@ -4,7 +4,6 @@
 package org.pcj.internal.utils;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -44,26 +43,9 @@ final public class Configuration {
      */
     final public static int BUFFER_SIZE;
     /**
-     * pcj.redirect.out (boolean, 1=true, otherwise false) default: 1
-     */
-    final public static boolean REDIRECT_OUT;
-    /**
-     * pcj.redirect.err (boolean, 1=true, otherwise false) default: 1
-     */
-    final public static boolean REDIRECT_ERR;
-    /**
-     * pcj.redirect.node0 (boolean, 1, true, otherwise false) default: 0
-     */
-    final public static boolean REDIRECT_NODE0;
-    /**
      * pcj.nodefile (String) otherwise: NODEFILE, LOADL_HOSTFILE, PBS_NODEFILE or nodes.file
      */
     final public static String NODES_FILENAME;
-
-    /**
-     * pcj.syspackages (String) comma separated (,)
-     */
-    final public static List<String> SYSTEM_PACKAGES;
 
     static {
         DEBUG = getPropertyInt("pcj.debug", 0/*7*/);
@@ -72,10 +54,6 @@ final public class Configuration {
         WAIT_TIME = getPropertyInt("pcj.waittime", 60);
         DEFAULT_PORT = getPropertyInt("pcj.port", 8091);
         BUFFER_SIZE = getPropertyInt("pcj.buffersize", 256 * 1024);
-        REDIRECT_OUT = getPropertyInt("pcj.redirect.out", 1) == 1;
-        REDIRECT_ERR = getPropertyInt("pcj.redirect.err", 1) == 1;
-        REDIRECT_NODE0 = getPropertyInt("pcj.redirect.node0", 0) == 1;
-        SYSTEM_PACKAGES = getSystemPackagesList();
         NODES_FILENAME = getNodesFilename();
     }
 
@@ -108,7 +86,7 @@ final public class Configuration {
     private static List<String> getSystemPackagesList() {
         String sysPackages = System.getProperty("pcj.syspackages");
         if (sysPackages == null) {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
         List<String> packages = new ArrayList<>();
         for (String p : sysPackages.split(",")) {

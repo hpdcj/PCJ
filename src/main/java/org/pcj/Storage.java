@@ -24,10 +24,8 @@ public abstract class Storage implements org.pcj.internal.storage.InternalStorag
     protected Storage() {
         for (Field field : this.getClass().getDeclaredFields()) {
             if (field.isAnnotationPresent(Shared.class)) {
-                String key = field.getAnnotation(Shared.class).value();
-                if (key.isEmpty()) {
-                    key = field.getName();
-                }
+                String key = field.getName();
+
                 if (sharedFields.containsKey(key)) {
                     throw new ArrayStoreException("Duplicate key value (" + key + ")");
                 }
@@ -85,6 +83,10 @@ public abstract class Storage implements org.pcj.internal.storage.InternalStorag
             fieldClass = fieldClass.getComponentType();
         }
 
+        if (clazz == null) {
+            return !fieldClass.isPrimitive();
+        }
+
         if (fieldClass.isAssignableFrom(clazz)) {
             return true;
         }
@@ -105,23 +107,28 @@ public abstract class Storage implements org.pcj.internal.storage.InternalStorag
      * Checks if value can be assigned to variable stored in Storage
      *
      * @param variable name of variable stored in Storage
-     * @param value to check
+     * @param value    to check
+     *
      * @return true if the value can be assigned to the variable
      */
     @Override
     final public boolean isAssignable(String variable, Object value, int... indexes) {
-        return isAssignableFrom(variable, value.getClass(), indexes);
+        Class<?> clazz = null;
+        if (value != null) {
+            clazz = value.getClass();
+        }
+        return isAssignableFrom(variable, clazz, indexes);
     }
 
     /**
      * Returns variable from Storages
      *
      * @param variable name of Shared variable
-     * @param indexes (optional) indexes into the array
+     * @param indexes  (optional) indexes into the array
      *
      * @return value of variable[indexes] or variable if indexes omitted
      *
-     * @throws ClassCastException there is more indexes than variable dimension
+     * @throws ClassCastException             there is more indexes than variable dimension
      * @throws ArrayIndexOutOfBoundsException one of indexes is out of bound
      */
     @Override
@@ -158,10 +165,10 @@ public abstract class Storage implements org.pcj.internal.storage.InternalStorag
      *
      * @param variable name of Shared variable
      * @param newValue new value of variable
-     * @param indexes (optional) indexes into the array
+     * @param indexes  (optional) indexes into the array
      *
-     * @throws ClassCastException there is more indexes than variable dimension
-     * or value cannot be assigned to the variable
+     * @throws ClassCastException             there is more indexes than variable dimension
+     *                                        or value cannot be assigned to the variable
      * @throws ArrayIndexOutOfBoundsException one of indexes is out of bound
      */
     @Override
@@ -203,11 +210,12 @@ public abstract class Storage implements org.pcj.internal.storage.InternalStorag
      * variable (on specified, optional indexes). Method returns value of
      * variable before executing variable.
      *
-     * @param <T> type of variable
-     * @param variable variable name
+     * @param <T>           type of variable
+     * @param variable      variable name
      * @param expectedValue expected value of variable
-     * @param value new value for variable
-     * @param indexes optional indexes
+     * @param value         new value for variable
+     * @param indexes       optional indexes
+     *
      * @return variable value before CAS
      */
     @SuppressWarnings("unchecked")
@@ -284,8 +292,8 @@ public abstract class Storage implements org.pcj.internal.storage.InternalStorag
      * @param variable name of Shared variable
      */
     @Override
-    final public void waitFor(String variable) {
-        waitFor(variable, 1);
+    final public int waitFor(String variable) {
+        return waitFor(variable, 1);
     }
 
     /**
@@ -294,18 +302,22 @@ public abstract class Storage implements org.pcj.internal.storage.InternalStorag
      * <code>count</code>.
      *
      * @param variable name of Shared variable
-     * @param count number of modifications. If 0 - the method exits immediately.
-     * 
-     * 
+     * @param count    number of modifications. If 0 - the method exits immediately.
+     *
+     *
      */
     @Override
-    final public void waitFor(String variable, int count) {
-        if (count == 0) {
-            return;
+    final public int waitFor(String variable, int count) {
+        if (count < 0) {
+            throw new IllegalArgumentException(String.format("Value count is less than zero (%d)", count));
         }
+        
         final Field field = getField(variable);
-        int v;
         AtomicInteger atomic = monitorFields.get(variable);
+        if (count == 0) {
+            return atomic.get();
+        }
+        int v;
         do {
             synchronized (field) {
                 while ((v = atomic.get()) < count) {
@@ -317,6 +329,7 @@ public abstract class Storage implements org.pcj.internal.storage.InternalStorag
                 }
             }
         } while (atomic.compareAndSet(v, v - count) == false);
-    }
 
+        return atomic.get();
+    }
 }

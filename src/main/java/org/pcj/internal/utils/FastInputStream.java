@@ -30,7 +30,7 @@ public final class FastInputStream extends InputStream {
     }
 
     public FastInputStream(byte[] buf, int size) {
-        this(Arrays.asList(buf), size);
+        this(Arrays.<byte[]>asList(buf), size);
     }
 
     FastInputStream(List<byte[]> buffers, int size) {

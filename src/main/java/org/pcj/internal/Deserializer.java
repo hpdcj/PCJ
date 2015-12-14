@@ -18,7 +18,6 @@ import org.pcj.internal.utils.CloneObject;
  */
 public class Deserializer implements Runnable {
 
-    private ClassLoader classLoader;
     private InternalStorage storage;
     final private BlockingQueue<Event> queue;
 
@@ -39,7 +38,7 @@ public class Deserializer implements Runnable {
 
         @Override
         public void doAction() {
-            Object value = deserializeObject(variableValue, classLoader);
+            Object value = deserializeObject(variableValue);
 
             attachment.setObject(value);
             if (attachment.isDone()) {
@@ -64,13 +63,12 @@ public class Deserializer implements Runnable {
 
         @Override
         public void doAction() {
-            Object value = deserializeObject(variableValue, classLoader);
+            Object value = deserializeObject(variableValue);
             storage.put(variableName, value, variableIndexes);
         }
     }
 
-    public Deserializer(ClassLoader loader, InternalStorage storage) {
-        this.classLoader = loader;
+    public Deserializer(InternalStorage storage) {
         this.storage = storage;
         queue = new LinkedBlockingQueue<>();
     }
@@ -90,9 +88,9 @@ public class Deserializer implements Runnable {
 
     }
 
-    private Object deserializeObject(byte[] bytes, ClassLoader classLoader) {
+    private Object deserializeObject(byte[] bytes) {
         try {
-            return CloneObject.deserialize(bytes, classLoader);
+            return CloneObject.deserialize(bytes);
         } catch (final IOException | ClassNotFoundException ex) {
             throw new RuntimeException(ex);
         }

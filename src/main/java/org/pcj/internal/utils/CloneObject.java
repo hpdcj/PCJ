@@ -18,9 +18,9 @@ import java.io.ObjectStreamClass;
  */
 public class CloneObject {
 
-    static public Object clone(Object object, ClassLoader loader) throws ClassNotFoundException, IOException {
+    static public Object clone(Object object) throws ClassNotFoundException, IOException {
         FastOutputStream fos = serialize0(object);
-        return deserialize(fos.getFastInputStream(), loader);
+        return deserialize(fos.getFastInputStream());
     }
 
     static private FastOutputStream serialize0(Object object) {
@@ -37,33 +37,28 @@ public class CloneObject {
         return serialize0(object).toByteArray();
     }
 
-    static private Object deserialize(InputStream fis, ClassLoader loader) throws ClassNotFoundException, IOException {
-        try (ObjectClassLoaderInputStream mis = new ObjectClassLoaderInputStream(fis, loader)) {
+    static private Object deserialize(InputStream fis) throws ClassNotFoundException, IOException {
+        try (ObjectClassLoaderInputStream mis = new ObjectClassLoaderInputStream(fis)) {
             return mis.readObject();
         }
     }
 
-    static public Object deserialize(byte[] bytes, ClassLoader loader) throws ClassNotFoundException, IOException {
-        return deserialize(new FastInputStream(bytes, bytes.length), loader);
+    static public Object deserialize(byte[] bytes) throws ClassNotFoundException, IOException {
+        return deserialize(new FastInputStream(bytes, bytes.length));
     }
 
     private static final class ObjectClassLoaderInputStream extends java.io.ObjectInputStream {
 
-        final private ClassLoader loader;
-
-        public ObjectClassLoaderInputStream(InputStream in, ClassLoader loader) throws IOException {
+        public ObjectClassLoaderInputStream(InputStream in) throws IOException {
             super(in);
-            this.loader = loader;
         }
 
         @Override
         final protected Class<?> resolveClass(ObjectStreamClass classDesc) throws IOException, ClassNotFoundException {
-            if (loader != null) {
-                Class<?> clazz = Class.forName(classDesc.getName(), false, loader);
+            Class<?> clazz = Class.forName(classDesc.getName(), false, getClass().getClassLoader());
 
-                if (clazz != null) {
-                    return clazz;
-                }
+            if (clazz != null) {
+                return clazz;
             }
             return super.resolveClass(classDesc);
         }

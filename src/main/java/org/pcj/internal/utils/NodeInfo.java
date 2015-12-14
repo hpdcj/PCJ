@@ -21,7 +21,7 @@ public class NodeInfo {
     private boolean localNode;
 
     public NodeInfo(String hostname, int port) {
-        this(hostname, port, new ArrayList<Integer>());
+        this(hostname, port, new ArrayList<>());
     }
 
     public NodeInfo(String hostname, int port, List<Integer> localIds) {

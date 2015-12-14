@@ -3,7 +3,6 @@
  */
 package org.pcj.internal;
 
-import org.pcj.internal.utils.BlackholePrintStream;
 import org.pcj.internal.utils.Version;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -15,7 +14,6 @@ import java.net.UnknownHostException;
 import java.nio.channels.SocketChannel;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -135,7 +133,7 @@ public abstract class InternalPCJ {
             for (int i = 0; i < localIds.length; ++i) {
                 int localId = localIds[i];
 
-                ClassLoader classLoader = new PcjClassLoader();
+                ClassLoader classLoader = InternalPCJ.class.getClassLoader();
 
                 InternalStartPoint lStartPoint;
 
@@ -172,10 +170,10 @@ public abstract class InternalPCJ {
                 groupsByName.put("", lGroup);
 
                 /* create PcjThreadLocalData and PcjThread*/
-                PcjThreadLocalData data = new PcjThreadLocalData(classLoader, lStorage, groups, groupsByName);
+                PcjThreadLocalData data = new PcjThreadLocalData(lStorage, groups, groupsByName);
                 localData.put(localId, data);
                 nodeThreads[i] = new PcjThread(localId, lStartPoint, data);
-                nodeThreads[i].setContextClassLoader(classLoader);
+//                nodeThreads[i].setContextClassLoader(classLoader);
             }
         } catch (final ClassNotFoundException | InstantiationException | IllegalAccessException |
                 NoSuchMethodException | IllegalArgumentException | InvocationTargetException ex) {
@@ -261,15 +259,6 @@ public abstract class InternalPCJ {
         }
 
         try {
-            if (isNode0 == false || Configuration.REDIRECT_NODE0 == true) {
-                if (Configuration.REDIRECT_OUT) {
-                    System.setOut(new BlackholePrintStream());
-                }
-                if (Configuration.REDIRECT_ERR) {
-                    System.setErr(new BlackholePrintStream());
-                }
-            }
-
             /* run InternalPCJ Threads */
             for (int i = 0; i < localIds.length; ++i) {
                 nodeThreads[i].start();
@@ -293,9 +282,6 @@ public abstract class InternalPCJ {
                     ex.printStackTrace(System.err);
                 }
             }
-//        } catch (Throwable t) {
-//            System.setOut(stdout);
-//            System.setErr(stderr);
         } finally {
             System.setOut(stdout);
             System.setErr(stderr);

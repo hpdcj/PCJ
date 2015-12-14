@@ -6,6 +6,7 @@ package org.pcj.test;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.Group;
 import org.pcj.PCJ;
 import org.pcj.Shared;
@@ -18,10 +19,11 @@ import org.pcj.Storage;
  */
 public class EasyTestInner extends Storage implements StartPoint {
 
+    private final static AtomicInteger atomic = new AtomicInteger(Integer.MAX_VALUE);
     /*
      * Shared fields
      */
-    @Shared("A")
+    @Shared
     private int A;
     @Shared
     private int AB;
@@ -34,11 +36,22 @@ public class EasyTestInner extends Storage implements StartPoint {
         private Object b = c;
         private List<Integer> d = new ArrayList<>();
     }
-    @Shared("B")
+
+    @Shared
     private Btest B = new Btest();
 
     @Override
     public void main() {
+        {
+            int min;
+            do {
+                min = atomic.get();
+                if (PCJ.myId() > min) {
+                    break;
+                }
+            } while (atomic.compareAndSet(min, PCJ.myId()) == false);
+        }
+
         PCJ.log("EasyTest.main()");
         PCJ.log("myNode:   " + PCJ.myId());
         PCJ.barrier();
@@ -135,5 +148,7 @@ public class EasyTestInner extends Storage implements StartPoint {
             Btest b = PCJ.getFutureObject(1, "B").getObject();
             System.out.printf("[%d] b.a = %d\n", PCJ.myId(), b.a);
         }
+
+        PCJ.log("atomic: " + atomic.get());
     }
 }

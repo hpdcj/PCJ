@@ -12,7 +12,7 @@ import org.pcj.Storage;
  */
 public class PcjExamplePiInt extends Storage implements StartPoint {
 
-    @Shared("sum")
+    @Shared
     private double sum;
 
     @SuppressWarnings("method")

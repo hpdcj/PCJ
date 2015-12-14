@@ -15,7 +15,7 @@ final public class BitMask {
     //AtomicLongArray ala=new AtomicLongArray(...);
     private long[] value = new long[length];
     private long[] all = new long[length];
-    private static final long MASK = 0xffffffffffffffffL;
+    private static final long MASK = 0xffff_ffff_ffff_ffffL;
     private static final long UPPER_BIT = 1L << 63;
     private static final int MASK_SIZE = Long.SIZE;
 

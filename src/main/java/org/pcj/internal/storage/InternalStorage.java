@@ -74,8 +74,7 @@ public interface InternalStorage {
      *
      * @param variable name of Shared variable
      */
-    void waitFor(String variable
-    );
+    int waitFor(String variable);
 
     /**
      * Pauses current Thread and wait for <code>count</code>
@@ -85,8 +84,7 @@ public interface InternalStorage {
      * @param variable name of Shared variable
      * @param count number of modifications
      */
-    void waitFor(String variable, int count
-    );
+    int waitFor(String variable, int count);
 
     /**
      * Gets names of all Shared variables of the Storage
