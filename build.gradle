@@ -13,7 +13,7 @@ buildscript {
 apply plugin: 'java'
 apply plugin: 'eclipse'
 
-ext.versionNumber = "4.0.1"
+ext.versionNumber = "4.1.0"
 ext.buildNumber = "SNAPSHOT"
 ext.repoId = org.ajoberstar.grgit.Grgit.open(project.file('.')).head().abbreviatedId
 
