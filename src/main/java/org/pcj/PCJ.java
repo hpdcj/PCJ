@@ -326,6 +326,18 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
         ((Group) PcjThread.threadGlobalGroup()).put(nodeId, variable, newValue, indexes);
     }
 
+    /**
+     * Puts the newValue to other thread Storage if current value of variable is the same as
+     * expectedValue. Otherwise do nothing.
+     *
+     * @param nodeId        other node global node id
+     * @param variable      name of array variable
+     * @param expectedValue expected value
+     * @param newValue      new value of variable
+     * @param indexes       indexes of array
+     *
+     * @return FutureObject that will contain previously stored data
+     */
     public static <T> FutureObject<T> cas(int nodeId, String variable, T expectedValue, T newValue, int... indexes) {
         return ((Group) PcjThread.threadGlobalGroup()).cas(nodeId, variable, expectedValue, newValue, indexes);
     }
