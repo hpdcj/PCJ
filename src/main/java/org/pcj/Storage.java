@@ -16,8 +16,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public abstract class Storage implements org.pcj.internal.storage.InternalStorage {
+public abstract class Storage {
 
+    
     private transient final Map<String, Field> sharedFields = new HashMap<>();
     private transient final Map<String, AtomicInteger> monitorFields = new HashMap<>();
 
@@ -47,7 +48,6 @@ public abstract class Storage implements org.pcj.internal.storage.InternalStorag
      *
      * @return array with names of all Shared variables
      */
-    @Override
     final public String[] getSharedFields() {
         return sharedFields.keySet().toArray(new String[0]);
     }
@@ -111,7 +111,6 @@ public abstract class Storage implements org.pcj.internal.storage.InternalStorag
      *
      * @return true if the value can be assigned to the variable
      */
-    @Override
     final public boolean isAssignable(String variable, Object value, int... indexes) {
         Class<?> clazz = null;
         if (value != null) {
@@ -131,7 +130,6 @@ public abstract class Storage implements org.pcj.internal.storage.InternalStorag
      * @throws ClassCastException             there is more indexes than variable dimension
      * @throws ArrayIndexOutOfBoundsException one of indexes is out of bound
      */
-    @Override
     @SuppressWarnings("unchecked")
     final public <T> T get(String variable, int... indexes) throws ArrayIndexOutOfBoundsException, ClassCastException {
         try {
@@ -171,7 +169,6 @@ public abstract class Storage implements org.pcj.internal.storage.InternalStorag
      *                                        or value cannot be assigned to the variable
      * @throws ArrayIndexOutOfBoundsException one of indexes is out of bound
      */
-    @Override
     final public <T> void put(String variable, T newValue, int... indexes) throws ArrayIndexOutOfBoundsException, ClassCastException {
         if (isAssignable(variable, newValue, indexes) == false) {
             throw new ClassCastException("Cannot cast " + newValue.getClass().getCanonicalName()
@@ -205,95 +202,14 @@ public abstract class Storage implements org.pcj.internal.storage.InternalStorag
         }
     }
 
-    /**
-     * Compare and set. Atomically sets newValue when expectedValue is set in
-     * variable (on specified, optional indexes). Method returns value of
-     * variable before executing variable.
-     *
-     * @param <T>           type of variable
-     * @param variable      variable name
-     * @param expectedValue expected value of variable
-     * @param value         new value for variable
-     * @param indexes       optional indexes
-     *
-     * @return variable value before CAS
-     */
-    @SuppressWarnings("unchecked")
-    @Override
-    final public <T> T cas(String variable, T expectedValue, T newValue, int... indexes) throws ClassCastException, ArrayIndexOutOfBoundsException {
-        if (isAssignable(variable, newValue, indexes) == false) {
-            throw new ClassCastException("Cannot cast " + newValue.getClass().getCanonicalName()
-                    + " to the type of variable '" + variable + "'");
-        }
-
-        try {
-            final Field field = getField(variable);
-
-            if (indexes.length == 0) {
-                synchronized (field) {
-                    T fieldValue = (T) field.get(this);
-                    if (fieldValue == expectedValue
-                            || (fieldValue != null && fieldValue.equals(expectedValue))) {
-                        field.set(this, newValue);
-                    }
-
-                    monitorFields.get(variable).getAndIncrement();
-
-                    field.notifyAll();
-                    return fieldValue;
-                }
-            } else {
-                Object array = getArrayElement(field.get(this), indexes, indexes.length - 1);
-
-                if (array == null) {
-                    throw new ClassCastException("Cannot put value to " + variable + " - NullPointerException.");
-                } else if (array.getClass().isArray() == false) {
-                    throw new ClassCastException("Cannot put value to " + variable + Arrays.toString(indexes) + ".");
-                } else if (Array.getLength(array) <= indexes[indexes.length - 1]) {
-                    throw new ArrayIndexOutOfBoundsException("Cannot put value to " + variable + Arrays.toString(indexes) + ".");
-                }
-
-                synchronized (field) {
-                    T fieldValue = (T) Array.get(array, indexes[indexes.length - 1]);
-
-                    if (fieldValue == expectedValue
-                            || (fieldValue != null && fieldValue.equals(expectedValue))) {
-                        Array.set(array, indexes[indexes.length - 1], newValue);
-                    }
-
-                    monitorFields.get(variable).getAndIncrement();
-
-                    field.notifyAll();
-                    return fieldValue;
-                }
-            }
-        } catch (IllegalAccessException ex) {
-            throw new IllegalArgumentException(ex);
-        }
-    }
 
     /**
      * Tells to monitor variable. Set the field modification counter to zero.
      *
      * @param variable name of Shared variable
      */
-    @Override
     final public void monitor(String variable) {
         monitorFields.get(variable).set(0);
-    }
-
-    /**
-     * Pauses current Thread and wait for modification of variable.
-     * <p>
-     * The same as calling waitFor method using
-     * <code>waitFor(variable, 1)</code>. After modification decreases the field
-     * modification counter by one.
-     *
-     * @param variable name of Shared variable
-     */
-    @Override
-    final public int waitFor(String variable) {
-        return waitFor(variable, 1);
     }
 
     /**
@@ -306,7 +222,6 @@ public abstract class Storage implements org.pcj.internal.storage.InternalStorag
      *
      *
      */
-    @Override
     final public int waitFor(String variable, int count) {
         if (count < 0) {
             throw new IllegalArgumentException(String.format("Value count is less than zero (%d)", count));

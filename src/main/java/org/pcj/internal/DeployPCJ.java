@@ -3,16 +3,19 @@
  */
 package org.pcj.internal;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
-import org.pcj.internal.storage.InternalStorage;
-import org.pcj.internal.utils.NodeInfo;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Stream;
+import org.pcj.NodesDescription;
+import org.pcj.StartPoint;
+import org.pcj.Storage;
 
 /**
  * Class used for deploying PCJ when using one of deploy methods.
@@ -23,89 +26,84 @@ import org.pcj.internal.utils.NodeInfo;
  */
 final public class DeployPCJ {
 
-    final private NodeInfo node0;
-    final private Integer clientsCount;
-    final private Class<? extends InternalStartPoint> startPoint;
-    final private Class<? extends InternalStorage> storage;
-    final private List<Process> processes;
-    private int processCount;
+//    static {
+//        Level level = Level.FINEST;
+//        Logger logger = Logger.getLogger("");
+//        Arrays.stream(logger.getHandlers()).forEach(handler -> handler.setLevel(level));
+//        logger.setLevel(level);
+//    }
+    
+    
+    private static final Logger LOGGER = Logger.getLogger(DeployPCJ.class.getName());
+    private final Class<? extends StartPoint> startPoint;
+    private final Class<? extends Storage> storage;
+    private final NodeInfo node0;
+    private final NodeInfo currentJvm;
+    private final Collection<NodeInfo> allNodes;
+    private final List<Process> processes;
+    private final int allNodesThreadCount;
 
-    private static class ProcessReader implements Runnable {
-
-        private final BufferedReader reader;
-        private final int processNo;
-        private final boolean err;
-
-        public ProcessReader(int count, BufferedReader reader) {
-            this(count, reader, false);
-        }
-
-        public ProcessReader(int count, BufferedReader reader, boolean err) {
-            this.reader = reader;
-            this.processNo = count;
-            this.err = err;
-        }
-
-        @Override
-        public void run() {
-            try {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    if (err) {
-                        System.err.printf("[%d] %s\n", processNo, line);
-                    } else {
-                        System.out.printf("[%d] %s\n", processNo, line);
-                    }
-                }
-                reader.close();
-            } catch (Exception ex) {
-                throw new RuntimeException(ex);
-            }
-        }
-    }
-
-    public static void main(String[] args) throws ClassNotFoundException, IOException {
-        @SuppressWarnings("unchecked")
-        Class<? extends InternalStartPoint> startPoint = (Class<? extends InternalStartPoint>) Class.forName(args[0]);
-        @SuppressWarnings("unchecked")
-        Class<? extends InternalStorage> storage = (Class<? extends InternalStorage>) Class.forName(args[1]);
-        int clientsCount = Integer.valueOf(args[2]);
-        String[] strIds = args[3].substring(1, args[3].length() - 1).split(", ");
-        List<Integer> ids = new ArrayList<>(strIds.length);
-        for (int i = 0; i < strIds.length; ++i) {
-            ids.add(Integer.valueOf(strIds[i]));
-        }
-
-        NodeInfo node0 = new NodeInfo(args[5], Integer.valueOf(args[6]));
-        NodeInfo localNode = new NodeInfo("", Integer.valueOf(args[4]), ids);
-
-        InternalPCJ.start(startPoint, storage, node0, localNode, clientsCount);
-    }
-
-    DeployPCJ(NodeInfo node0, Integer clientsCount, Class<? extends InternalStartPoint> startPoint, Class<? extends InternalStorage> storage) {
-        this.node0 = node0;
-        this.clientsCount = clientsCount;
+    private DeployPCJ(Class<? extends StartPoint> startPoint, Class<? extends Storage> storage,
+            NodesDescription nodesDescription) {
         this.startPoint = startPoint;
         this.storage = storage;
 
-        processCount = 0;
+        this.node0 = nodesDescription.getNode0();
+        this.currentJvm = nodesDescription.getCurrentJvm();
+        this.allNodes = nodesDescription.getAllNodes();
+        this.allNodesThreadCount = nodesDescription.getAllNodesThreadCount();
+
         processes = new ArrayList<>();
     }
 
-    void runPCJ(final NodeInfo localNode) {
-        try {
-            InternalPCJ.start(startPoint, storage, node0, localNode, clientsCount);
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
+    public static void main(String[] args) throws ClassNotFoundException, IOException {
+        String startPointStr = args[0];
+        String storageStr = args[1];
+        int localPort = Integer.parseInt(args[2]);
+        String node0Str = args[3];
+        int node0Port = Integer.parseInt(args[4]);
+        int allNodesThreadCount = Integer.parseInt(args[5]);
+        String threadIdsStr = args[6];
 
-        ++processCount;
+        @SuppressWarnings("unchecked")
+        Class<? extends StartPoint> startPoint = (Class<? extends StartPoint>) Class.forName(startPointStr);
+
+        @SuppressWarnings("unchecked")
+        Class<? extends Storage> storage = (Class<? extends Storage>) Class.forName(storageStr);
+
+        NodeInfo node0 = new NodeInfo(node0Str, node0Port);
+        NodeInfo currentJvm = new NodeInfo("", localPort);
+
+        String[] threadIds = threadIdsStr.substring(1, threadIdsStr.length() - 1).split(", ");
+        Stream.of(threadIds).mapToInt(Integer::parseInt).forEach(id -> currentJvm.addThreadId(id));
+
+        LOGGER.log(Level.FINE, "Invoking InternalPCJ.start({0}, {1}, {2}, {3}, {4}",
+                new Object[]{startPoint, storage, node0, currentJvm, allNodesThreadCount});
+
+        InternalPCJ.start(startPoint, storage, node0, currentJvm, allNodesThreadCount);
+    }
+
+    public static void deploy(Class<? extends StartPoint> startPoint,
+            Class<? extends Storage> storage,
+            NodesDescription nodesDescription) {
+        DeployPCJ deploy = new DeployPCJ(startPoint, storage, nodesDescription);
+        try {
+            deploy.startDeploying();
+
+            deploy.waitForFinish();
+        } catch (InterruptedException | IOException ex) {
+            LOGGER.log(Level.SEVERE, null, ex);
+        }
+    }
+
+    private void runPCJ(NodeInfo currentJvm) {
+        InternalPCJ.start(startPoint, storage, node0, currentJvm, allNodesThreadCount);
     }
 
     private List<String> makeJvmParams(NodeInfo node) {
-//        String separator = System.getProperty("file.separator");
-//        String path = System.getProperty("java.home") + separator + "bin" + separator + "java";
-        String path = "java";
+        String separator = System.getProperty("file.separator");
+        String path = System.getProperty("java.home") + separator + "bin" + separator + "java";
+//        String path = "java";
 
         String classpath = System.getProperty("java.class.path");
 
@@ -126,37 +124,38 @@ final public class DeployPCJ {
                 DeployPCJ.class.getName(),
                 startPoint.getName(), // args[0]
                 storage.getName(), // args[1]
-                Integer.toString(clientsCount), //args[2]
-                Arrays.toString(node.getLocalIds()), // args[3]
-                Integer.toString(node.getPort()), // args[4]
-                node0.getHostname(), // args[5]
-                Integer.toString(node0.getPort()) // args[6]
+                Integer.toString(node.getPort()), // args[2]
+                node0.getHostname(), // args[3]
+                Integer.toString(node0.getPort()), // args[4]
+                Long.toString(allNodesThreadCount), // args[5]
+                Arrays.toString(node.getThreadIds()) // args[6]
         ));
         return params;
     }
 
     private Process exec(List<String> exec) throws IOException {
         ProcessBuilder processBuilder = new ProcessBuilder(exec);
-        //processBuilder.redirectErrorStream(true);
+
+        processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+        processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
+
+        LOGGER.log(Level.FINE, "Starting new process {0}", exec);
 
         Process process = processBuilder.start();
-        processes.add(process);
         process.getOutputStream().close();
-        new Thread(new ProcessReader(processCount, new BufferedReader(new InputStreamReader(process.getInputStream()))), "stdout:" + processCount).start();
-        new Thread(new ProcessReader(processCount, new BufferedReader(new InputStreamReader(process.getErrorStream())), true), "stderr:" + processCount).start();
+
+        processes.add(process);
 
         return process;
     }
 
-    void runJVM(NodeInfo node) throws IOException {
+    private void runJVM(NodeInfo node) throws IOException {
         List<String> jvmExec = makeJvmParams(node);
 
         exec(jvmExec);
-
-        ++processCount;
     }
 
-    void runSSH(NodeInfo node) throws IOException {
+    private void runSSH(NodeInfo node) throws IOException {
         StringBuilder sb = new StringBuilder();
         for (String arg : makeJvmParams(node)) {
             sb.append("'");
@@ -171,13 +170,29 @@ final public class DeployPCJ {
         ));
 
         exec(sshExec);
-
-        ++processCount;
     }
 
-    void waitFor() throws InterruptedException {
+    private void waitForFinish() throws InterruptedException {
         for (Process process : processes) {
             process.waitFor();
+        }
+    }
+
+    private void startDeploying() throws IOException {
+        for (NodeInfo node : allNodes) {
+            if (node.equals(currentJvm)) {
+                continue;
+            }
+
+            if (node.isLocalAddress()) {
+                this.runJVM(node);
+            } else {
+                this.runSSH(node);
+            }
+        }
+
+        if (currentJvm != null) {
+            this.runPCJ(currentJvm);
         }
     }
 }
