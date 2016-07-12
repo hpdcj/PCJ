@@ -5,6 +5,9 @@
  */
 package org.pcj.internal;
 
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 /**
  *
  * @author faramir
@@ -12,15 +15,18 @@ package org.pcj.internal;
 public class LocalBarrier {
 
     private final int round;
-    private final WaitObject waitObject;
+    private final Object lock;
     private final Bitmask localBarrierBitmask;
     private final Bitmask localBarrierMaskBitmask;
+    private volatile boolean done;
 
     public LocalBarrier(int round, Bitmask localBitmask) {
         this.round = round;
-        this.waitObject = new WaitObject();
+        this.lock = new Object();
         this.localBarrierBitmask = new Bitmask(localBitmask.getSize());
         this.localBarrierMaskBitmask = new Bitmask(localBitmask);
+
+        this.done = false;
     }
 
     @Override
@@ -49,10 +55,32 @@ public class LocalBarrier {
     }
 
     public void signalAll() {
-        waitObject.signalAll();
+        done = true;
+        synchronized (lock) {
+            lock.notifyAll();
+        }
     }
 
     public void await() throws InterruptedException {
-        waitObject.await();
+        while (done == false) {
+            synchronized (lock) {
+                lock.wait();
+            }
+        }
+    }
+
+    public void await(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
+        while (done == false) {
+            synchronized (lock) {
+                unit.timedWait(lock, timeout);
+            }
+            if (done == false) {
+                throw new TimeoutException("Not yet done.");
+            }
+        }
+    }
+
+    public boolean isDone() {
+        return done;
     }
 }

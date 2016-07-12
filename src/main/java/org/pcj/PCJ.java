@@ -81,6 +81,10 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
         ((Group) PcjThread.threadGlobalGroup()).barrier();
     }
 
+    public static PcjFuture<Void> asyncBarrier() {
+        return ((Group) PcjThread.threadGlobalGroup()).asyncBarrier();
+    }
+
 //    /**
 //     * Returns physical node id (internal value for distinguishing nodes).
 //     *

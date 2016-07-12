@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.pcj.PcjRuntimeException;
+import org.pcj.PcjFuture;
 import org.pcj.internal.message.MessageGroupBarrierWaiting;
 
 /**
@@ -171,7 +171,11 @@ public class InternalGroup {
         throw new IllegalStateException("This method has to be overriden!");
     }
 
-    protected void barrier(int threadId) {
+    protected PcjFuture<Void> asyncBarrier() {
+        throw new IllegalStateException("This method has to be overriden!");
+    }
+
+    protected LocalBarrier barrier(int threadId) {
         LocalBarrier localBarrier = localBarrierBitmaskMap
                 .computeIfAbsent(barrierRoundCounter.get(), k -> new LocalBarrier(k, localBitmask));
 
@@ -191,11 +195,7 @@ public class InternalGroup {
             }
         }
 
-        try {
-            localBarrier.await();
-        } catch (InterruptedException ex) {
-            throw new PcjRuntimeException(ex);
-        }
+        return localBarrier;
     }
 
     public Bitmask getPhysicalBitmask(int round) {

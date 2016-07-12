@@ -3,7 +3,10 @@
  */
 package org.pcj;
 
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.pcj.internal.InternalGroup;
+import org.pcj.internal.LocalBarrier;
 
 /**
  * External class that represents group for grouped communication.
@@ -40,12 +43,58 @@ final public class Group extends InternalGroup {
         return threadId;
     }
 
+    @Override
+    public PcjFuture<Void> asyncBarrier() {
+        LocalBarrier barrier = super.barrier(threadId);
+        return new PcjFuture<Void>() {
+            @Override
+            public Void get() throws PcjRuntimeException {
+                try {
+                    barrier.await();
+                } catch (InterruptedException ex) {
+                    throw new PcjRuntimeException(ex);
+                }
+                return null;
+            }
+
+            @Override
+            public Void get(long timeout, TimeUnit unit) throws TimeoutException, PcjRuntimeException {
+                try {
+                    barrier.await(timeout, unit);
+                } catch (InterruptedException ex) {
+                    throw new PcjRuntimeException(ex);
+                }
+                return null;
+            }
+
+            @Override
+            public boolean isDone() {
+                return barrier.isDone();
+            }
+
+            @Override
+            public boolean cancel(boolean mayInterruptIfRunning) {
+                return false;
+            }
+
+            @Override
+            public boolean isCancelled() {
+                return false;
+            }
+        };
+    }
+
     /**
      * Synchronize all nodes in group
      */
     @Override
     public void barrier() {
-        super.barrier(threadId);
+        try {
+            LocalBarrier barrier = super.barrier(threadId);
+            barrier.await();
+        } catch (InterruptedException ex) {
+            throw new PcjRuntimeException(ex);
+        }
     }
 //
 //    /**
