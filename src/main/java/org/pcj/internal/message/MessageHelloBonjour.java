@@ -4,7 +4,6 @@
 package org.pcj.internal.message;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.channels.SocketChannel;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
@@ -48,12 +47,9 @@ final public class MessageHelloBonjour extends Message {
     }
 
     @Override
-    public void execute(SocketChannel sender, MessageDataInputStream in) {
-        try {
-            readObjects(in);
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
+    public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
+        readObjects(in);
+
         NodeData nodeData = InternalPCJ.getNodeData();
         nodeData.getSocketChannelByPhysicalId().put(physicalId, sender);
 

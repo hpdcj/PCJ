@@ -4,7 +4,6 @@
 package org.pcj.internal.message;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.nio.channels.SocketChannel;
 import java.util.Arrays;
@@ -74,22 +73,17 @@ final public class MessageHelloInform extends Message {
     }
 
     @Override
-    public void execute(SocketChannel sender, MessageDataInputStream in) {
-        try {
-            readObjects(in);
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
+    public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
+        readObjects(in);
 
         NodeData nodeData = InternalPCJ.getNodeData();
         nodeData.setPhysicalId(physicalId);
 
         Networker networker = InternalPCJ.getNetworker();
-        InternalGroup globalGroup = nodeData.getGlobalGroup();
+        InternalGroup globalGroup = new InternalGroup(0, InternalGroup.GLOBAL_GROUP_ID, InternalGroup.GLOBAL_GROUP_NAME);
+        nodeData.addGroup(globalGroup);
 
         nodeData.setTotalNodeCount(nodeInfoByPhysicalId.size());
-
-        globalGroup.getPhysicalSync().setSize(nodeData.getTotalNodeCount());
 
         for (Map.Entry<Integer, NodeInfo> entry : nodeInfoByPhysicalId.entrySet()) {
             Integer currentPhysicalId = entry.getKey();
@@ -97,7 +91,7 @@ final public class MessageHelloInform extends Message {
             Arrays.stream(nodeInfo.getThreadIds())
                     .forEach(threadId -> {
                         nodeData.getPhysicalIdByThreadId().put(threadId, currentPhysicalId);
-                        globalGroup.addThreadId(threadId, threadId);
+                        globalGroup.addThread(currentPhysicalId, threadId, threadId);
                     });
 
             if (0 < currentPhysicalId && currentPhysicalId < physicalId) {
@@ -105,11 +99,6 @@ final public class MessageHelloInform extends Message {
                 nodeData.getSocketChannelByPhysicalId().put(currentPhysicalId, socketChannel);
 
                 networker.send(socketChannel, new MessageHelloBonjour(physicalId));
-                // Hello(tIds) -> 0
-                // 0 -> HelloInform(pId,map)
-                // HelloBonjour(pId) -> 1,2,3,pId-1 
-                // when allSocketChannels filled: HelloCompleted(pId) -> 0
-                // when all HelloCompleted: 0 -> HelloGo
             }
         }
 

@@ -42,7 +42,7 @@ final class NodeDataBackup {
     final ConcurrentMap<String, InternalGroup> internalGroupsByName; // key - groupName, value - group
     /* virtualNodes sync */
     final ConcurrentMap<NodesSyncData, NodesSyncData> nodesSyncData;
-    final ConcurrentMap<Integer, PcjThreadLocalData> localData;
+    final ConcurrentMap<Integer, PcjThreadData> localData;
 //    final ConcurrentMap<PcjThreadPair, PcjThreadPair> syncNodePair; // key=nodeId, value=0,1,...??
     /* finish */
     final Object finishObject;
@@ -66,11 +66,11 @@ final class NodeDataBackup {
 
 //    
 //    
-//    public NodeData(int[] localIds, ConcurrentMap<Integer, PcjThreadLocalData> localData, InternalGroup globalGroup) {
+//    public NodeData(int[] localIds, ConcurrentMap<Integer, PcjThreadData> localData, InternalGroup globalGroup) {
 //        this(localIds, localData, globalGroup, null);
 //    }
 //
-//    public NodeData(int[] localIds, ConcurrentMap<Integer, PcjThreadLocalData> localData, InternalGroup globalGroup, Integer clientsCount) {
+//    public NodeData(int[] localIds, ConcurrentMap<Integer, PcjThreadData> localData, InternalGroup globalGroup, Integer clientsCount) {
 //        if (clientsCount == null) { // as normal
 //            this.clientsCount = -1;
 //            this.clientsConnected = -1;

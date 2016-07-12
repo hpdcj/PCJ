@@ -4,18 +4,9 @@
 package org.pcj.internal.message;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
-import org.pcj.internal.InternalGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
-import org.pcj.internal.NodeInfo;
-import org.pcj.internal.network.LoopbackSocketChannel;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
@@ -61,8 +52,6 @@ final public class MessageHelloGo extends Message {
             InternalPCJ.getNetworker().send(nodeData.getSocketChannelByPhysicalId().get(physicalId * 2 + 2), this);
         }
 
-        InternalGroup globalGroup = nodeData.getGlobalGroup();
-        globalGroup.getSyncObject().signal();
-
+        nodeData.getGlobalWaitObject().signal();
     }
 }

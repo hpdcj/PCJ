@@ -5,6 +5,7 @@ package org.pcj;
 
 import org.pcj.internal.DeployPCJ;
 import org.pcj.internal.InternalPCJ;
+import org.pcj.internal.PcjThread;
 
 /**
  * Main PCJ class with static methods.
@@ -23,7 +24,7 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
     /**
      * Starts PCJ calculations on local node using specified StartPoint and Storage class.
      * NodesDescription contains list of all hostnames used in calculations. Hostnames can be
- specified many times, so more than one instance of PCJ will be run on node (called threads).
+     * specified many times, so more than one instance of PCJ will be run on node (called threads).
      *
      * @param startPoint       start point class
      * @param storage          storage class
@@ -38,12 +39,12 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
     /**
      * Deploys and starts PCJ calculations on nodes using specified StartPoint and Storage class.
      * NodesDescription contains list of all hostnames used in calculations.
- Hostnames can be specified many times, so more than one instance
- of PCJ will be run on node (called threads). Empty hostnames means current JVM.
-
- Hostnames can take port (after colon ':'), eg. ["localhost:8000", "localhost:8001",
- "localhost", "host2:8001", "host2"]. Default port is 8091 and can be modified using
- <tt>pcj.port</tt> system property value.
+     * Hostnames can be specified many times, so more than one instance
+     * of PCJ will be run on node (called threads). Empty hostnames means current JVM.
+     *
+     * Hostnames can take port (after colon ':'), eg. ["localhost:8000", "localhost:8001",
+     * "localhost", "host2:8001", "host2"]. Default port is 8091 and can be modified using
+     * <tt>pcj.port</tt> system property value.
      *
      * @param startPoint       start point class
      * @param storage          storage class
@@ -54,16 +55,32 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
             NodesDescription nodesDescription) {
         DeployPCJ.deploy(startPoint, storage, nodesDescription);
     }
-//
-//    /**
-//     * Returns global thread id.
-//     *
-//     * @return global thread id
-//     */
-//    public static int myId() {
-//        return ((Group) PcjThread.threadGlobalGroup()).myId();
-//    }
-//
+
+    /**
+     * Returns global thread id.
+     *
+     * @return global thread id
+     */
+    public static int myId() {
+        return ((Group) PcjThread.threadGlobalGroup()).myId();
+    }
+
+    /**
+     * Returns global number of threads used in calculations.
+     *
+     * @return global number of threads used in calculations
+     */
+    public static int threadCount() {
+        return ((Group) PcjThread.threadGlobalGroup()).threadCount();
+    }
+
+    /**
+     * Synchronizes all threads used in calculations.
+     */
+    public static void barrier() {
+        ((Group) PcjThread.threadGlobalGroup()).barrier();
+    }
+
 //    /**
 //     * Returns physical node id (internal value for distinguishing nodes).
 //     *
@@ -72,23 +89,6 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
 //    public static int getPhysicalNodeId() {
 //        return InternalPCJ.getPhysicalNodeId();
 //    }
-//
-//    /**
-//     * Returns global number of threads used in calculations.
-//     *
-//     * @return global number of threads used in calculations
-//     */
-//    public static int threadCount() {
-//        return ((Group) PcjThread.threadGlobalGroup()).threadCount();
-//    }
-//
-//    /**
-//     * Synchronizes all threads used in calculations.
-//     */
-//    public static void barrier() {
-//        ((Group) PcjThread.threadGlobalGroup()).barrier();
-//    }
-//
 //    public static void barrier(int threadId) {
 //        ((Group) PcjThread.threadGlobalGroup()).barrier(threadId);
 //    }

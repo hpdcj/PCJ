@@ -4,12 +4,10 @@
 package org.pcj.internal.message;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.channels.SocketChannel;
 import org.pcj.internal.Bitmask;
-import org.pcj.internal.InternalGroup;
 import org.pcj.internal.InternalPCJ;
-import org.pcj.internal.NodeData;
+import org.pcj.internal.NodeData.Node0Data;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
@@ -50,16 +48,11 @@ final public class MessageHelloCompleted extends Message {
     }
 
     @Override
-    public void execute(SocketChannel sender, MessageDataInputStream in) {
-        try {
-            readObjects(in);
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
+    public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
+        readObjects(in);
 
-        NodeData nodeData = InternalPCJ.getNodeData();
-        InternalGroup globalGroup = nodeData.getGlobalGroup();
-        Bitmask bitmask = globalGroup.getPhysicalSync();
+        Node0Data node0Data = InternalPCJ.getNodeData().getNode0Data();
+        Bitmask bitmask = node0Data.getHelloBitmask();
         synchronized (bitmask) {
             bitmask.set(physicalId);
             if (bitmask.isSet()) {

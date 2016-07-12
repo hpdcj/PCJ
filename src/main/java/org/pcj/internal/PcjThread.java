@@ -20,7 +20,7 @@ public class PcjThread extends Thread {
     final private PcjThreadGroup pcjThreadGroup;
     private Throwable throwable;
 
-    PcjThread(int threadId, Class<? extends StartPoint> startPoint, PcjThreadLocalData threadData) {
+    PcjThread(int threadId, Class<? extends StartPoint> startPoint, PcjThreadData threadData) {
         super(new PcjThreadGroup("PcjThreadGroup-" + threadId, threadData), "PcjThread-" + threadId);
 
         this.pcjThreadGroup = (PcjThreadGroup) this.getThreadGroup();
@@ -30,11 +30,15 @@ public class PcjThread extends Thread {
 
     private static class PcjThreadGroup extends ThreadGroup {
 
-        private final PcjThreadLocalData threadData;
+        private final PcjThreadData threadData;
 
-        public PcjThreadGroup(String name, PcjThreadLocalData threadData) {
+        public PcjThreadGroup(String name, PcjThreadData threadData) {
             super(name);
             this.threadData = threadData;
+        }
+
+        public PcjThreadData getThreadData() {
+            return threadData;
         }
     }
 
@@ -56,7 +60,7 @@ public class PcjThread extends Thread {
     public void run() {
         try {
             StartPoint startPoint = startPointClass.newInstance();
-            
+
             startPoint.main();
         } catch (Throwable t) {
             this.throwable = t;
@@ -67,8 +71,6 @@ public class PcjThread extends Thread {
         return throwable;
     }
 
-    //<editor-fold defaultstate="collapsed" desc="static thread* methods">
-//
 //    public static Storage threadStorage() {
 //        PcjThreadGroup tg = threadPcjThreadGroup();
 //        if (tg == null) {
@@ -85,14 +87,14 @@ public class PcjThread extends Thread {
 //        return tg.data.getGroupsByName().get(name);
 //    }
 //
-//    public static InternalGroup threadGlobalGroup() {
-//        PcjThreadGroup tg = threadPcjThreadGroup();
-//        if (tg == null) {
-//            return null;
-//        }
-//        return tg.data.getGlobalGroup();
-//    }
-    //</editor-fold>
+    public static InternalGroup threadGlobalGroup() {
+        PcjThreadGroup tg = getPcjThreadGroupForCurrentThread();
+        if (tg == null) {
+            return null;
+        }
+        return tg.getThreadData().getGlobalGroup();
+    }
+
 //    public Storage getStorage() {
 //        return threadGroup.data.getStorage();
 //    }

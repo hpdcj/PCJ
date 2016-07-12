@@ -4,7 +4,6 @@
 package org.pcj.internal.message;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.Arrays;
@@ -60,16 +59,14 @@ final public class MessageHello extends Message {
     }
 
     @Override
-    public void execute(SocketChannel sender, MessageDataInputStream in) {
+    public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
+        readObjects(in);
+
         String address = null;
-        try {
-            readObjects(in);
-            if (sender instanceof LoopbackSocketChannel == false) {
-                address = ((InetSocketAddress) sender.getRemoteAddress()).getHostString();
-            }
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
+        if (sender instanceof LoopbackSocketChannel == false) {
+            address = ((InetSocketAddress) sender.getRemoteAddress()).getHostString();
         }
+
         NodeInfo currentNodeInfo = new NodeInfo(address, this.port, this.threadIds);
 
         NodeData nodeData = InternalPCJ.getNodeData();
@@ -90,6 +87,7 @@ final public class MessageHello extends Message {
             int connectedNodeCount = node0Data.getConnectedNodeCount().get();
 
             node0Data.getFinishedBitmask().setSize(connectedNodeCount);
+            node0Data.getHelloBitmask().setSize(connectedNodeCount);
 
             Map<Integer, Integer> physicalIdMapping = new HashMap<>(connectedNodeCount);
 

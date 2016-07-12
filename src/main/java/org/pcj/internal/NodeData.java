@@ -19,8 +19,7 @@ final public class NodeData {
     final private ConcurrentMap<Integer, SocketChannel> socketChannelByPhysicalId; // physicalId -> socket
     final private ConcurrentMap<Integer, Integer> physicalIdByThreadId; // threadId -> physicalId
     final private Node0Data node0Data;
-    final private WaitObject finishedObject;
-    private InternalGroup globalGroup;
+    final private WaitObject globalWaitObject;
     private int physicalId;
     private int totalNodeCount;
 
@@ -28,6 +27,7 @@ final public class NodeData {
 
         final private AtomicInteger connectedNodeCount;
         final private AtomicInteger connectedThreadCount;
+        final private Bitmask helloBitmask;
         final private Bitmask finishedBitmask;
         final private ConcurrentMap<String, Integer> groupsId; // groupName -> groupId
         final private ConcurrentMap<Integer, Integer> groupsMaster; // groupId -> physicalId
@@ -37,6 +37,7 @@ final public class NodeData {
         public Node0Data() {
             this.connectedNodeCount = new AtomicInteger(0);
             this.connectedThreadCount = new AtomicInteger(0);
+            this.helloBitmask = new Bitmask();
             this.finishedBitmask = new Bitmask();
 
             this.groupsId = new ConcurrentHashMap<>();
@@ -67,6 +68,10 @@ final public class NodeData {
             return nodeInfoByPhysicalId;
         }
 
+        public Bitmask getHelloBitmask() {
+            return helloBitmask;
+        }
+
         public Bitmask getFinishedBitmask() {
             return finishedBitmask;
         }
@@ -77,7 +82,7 @@ final public class NodeData {
         this.groupByName = new ConcurrentHashMap<>();
         this.socketChannelByPhysicalId = new ConcurrentHashMap<>();
         this.physicalIdByThreadId = new ConcurrentHashMap<>();
-        this.finishedObject = new WaitObject();
+        this.globalWaitObject = new WaitObject();
 
         if (isCurrentJvmNode0) {
             node0Data = new Node0Data();
@@ -90,22 +95,18 @@ final public class NodeData {
         return node0Data;
     }
 
-    public InternalGroup getGlobalGroup() {
-        return globalGroup;
-    }
-
-    void setGlobalGroup(InternalGroup globalGroup) {
-        this.globalGroup = addGroup(globalGroup);
-    }
-
     public InternalGroup addGroup(InternalGroup newGroup) {
         InternalGroup group = groupById.putIfAbsent(newGroup.getGroupId(), newGroup);
         if (group != null) {
             return group;
         }
 
-        groupByName.putIfAbsent(newGroup.getGroupName(), newGroup);
+        groupByName.put(newGroup.getGroupName(), newGroup);
         return newGroup;
+    }
+
+    public InternalGroup getGroupById(int id) {
+        return groupById.get(id);
     }
 
     public ConcurrentMap<Integer, SocketChannel> getSocketChannelByPhysicalId() {
@@ -132,7 +133,7 @@ final public class NodeData {
         this.totalNodeCount = totalNodeCount;
     }
 
-    public WaitObject getFinishedObject() {
-        return finishedObject;
+    public WaitObject getGlobalWaitObject() {
+        return globalWaitObject;
     }
 }

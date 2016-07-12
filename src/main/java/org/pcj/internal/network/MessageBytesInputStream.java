@@ -63,10 +63,8 @@ public class MessageBytesInputStream {
     public Message readMessage() {
         try {
             byte messageType = messageDataInputStream.readByte();
-            int messageId = messageDataInputStream.readInt();
-            int inReplyTo = messageDataInputStream.readInt();
 
-            Message message = MessageType.valueOf(messageType).create(messageId, inReplyTo);
+            Message message = MessageType.valueOf(messageType).create();
 
             return message;
         } catch (IOException ex) {

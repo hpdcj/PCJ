@@ -36,8 +36,6 @@ public class MessageBytesOutputStream implements AutoCloseable {
 
     public void writeMessage() throws IOException {
         messageDataOutputStream.writeByte(message.getType().getId());
-        messageDataOutputStream.writeInt(message.getMessageId());
-        messageDataOutputStream.writeInt(message.getInReplyTo());
 
         message.writeObjects(messageDataOutputStream);
     }

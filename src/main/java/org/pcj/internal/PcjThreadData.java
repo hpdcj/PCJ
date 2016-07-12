@@ -3,31 +3,38 @@
  */
 package org.pcj.internal;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import org.pcj.Group;
+import org.pcj.Storage;
 
 /**
  * This class represents internal data for PCJ Thread.
- * 
+ *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-class PcjThreadLocalData {
+final public class PcjThreadData {
 
-//    final private Storage storage;
-//    final private InternalGroup globalGroup;
-//    final private Map<Integer, InternalGroup> groups;
-//    final private Map<String, InternalGroup> groupsByName;
+    final private Storage storage;
+    final private Group globalGroup;
+    final private ConcurrentMap<Integer, Group> groupById;
+    final private ConcurrentMap<String, Group> groupByName;
 //
-//    PcjThreadLocalData(InternalStorage storage,
-//            Map<Integer, InternalGroup> groups, Map<String, InternalGroup> groupsByName) {
-//        this.storage = storage;
-//        this.groups = groups;
-//        this.groupsByName = groupsByName;
-//
-//        this.globalGroup = groups.get(0);
-//    }
 
-    void addGroup(InternalGroup group) {
-//        groups.put(group.getGroupId(), group);
-//        groupsByName.put(group.getGroupName(), group);
+    PcjThreadData(Group globalGroup) {
+        this.globalGroup = globalGroup;
+
+        this.storage = new Storage() {
+        };
+        this.groupById = new ConcurrentHashMap<>();
+        this.groupByName = new ConcurrentHashMap<>();
+
+        this.addGroup(globalGroup);
+    }
+
+    void addGroup(Group group) {
+        groupById.put(((InternalGroup) group).getGroupId(), group);
+        groupByName.put(group.getGroupName(), group);
     }
 
 //    InternalGroup createGroup(int groupNodeId, InternalGroup internalGroup) {
@@ -48,14 +55,14 @@ class PcjThreadLocalData {
 //        return storage;
 //    }
 //
-//    /**
-//     * Stores Group but because of ClassLoader says that holds InternalGroup
-//     *
-//     * @return
-//     */
-//    InternalGroup getGlobalGroup() {
-//        return globalGroup;
-//    }
+    /**
+     * Stores Group but because of ClassLoader says that holds InternalGroup
+     *
+     * @return
+     */
+    InternalGroup getGlobalGroup() {
+        return globalGroup;
+    }
 //
 //    /**
 //     * Stores Group but because of ClassLoader says that holds InternalGroup

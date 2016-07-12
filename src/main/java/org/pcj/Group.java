@@ -10,52 +10,43 @@ import org.pcj.internal.InternalGroup;
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class Group {//extends org.pcj.internal.InternalGroup {
-//
-//    final private int myNodeId;
-//
-//    protected Group(int nodeId, InternalGroup group) {
-//        super(group);
-//        myNodeId = nodeId;
-//    }
-//
-//    /**
-//     * Returns group name
-//     *
-//     * @return group name
-//     */
-//    @Override
-//    public String getGroupName() {
-//        return super.getGroupName();
-//    }
-//
-//    /**
-//     * Returns number of nodes in group
-//     *
-//     * @return number of nodes in group
-//     */
-//    @Override
-//    public int threadCount() {
-//        return super.threadCount();
-//    }
-//
-//    /**
-//     * Returns current thread group node id
-//     *
-//     * @return current thread group node id
-//     */
-//    @Override
-//    public int myId() {
-//        return myNodeId;
-//    }
-//
-//    /**
-//     * Synchronize all nodes in group
-//     */
-//    @Override
-//    public void barrier() {
-//        super.barrier(myNodeId);
-//    }
+final public class Group extends InternalGroup {
+
+    final private int threadId;
+
+    public Group(int threadId, InternalGroup internalGroup) {
+        super(internalGroup);
+        this.threadId = threadId;
+    }
+
+    @Override
+
+    protected int getGroupId() {
+        return super.getGroupId();
+    }
+
+    @Override
+    public String getGroupName() {
+        return super.getGroupName();
+    }
+
+    @Override
+    public int threadCount() {
+        return super.threadCount();
+    }
+
+    @Override
+    public int myId() {
+        return threadId;
+    }
+
+    /**
+     * Synchronize all nodes in group
+     */
+    @Override
+    public void barrier() {
+        super.barrier(threadId);
+    }
 //
 //    /**
 //     * Synchronize with potentially subset of nodes in group

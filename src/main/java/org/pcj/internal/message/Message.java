@@ -21,15 +21,7 @@ abstract public class Message implements Serializable {
 
     protected static final Logger LOGGER = Logger.getLogger(Message.class.getName());
     private static final long serialVersionUID = 1L;
-    private static final AtomicInteger MESSAGE_COUNTER = new AtomicInteger(0);
     private MessageType type;
-    // FIXME: w zasadzie messageId przydaje się tylko wówczas, gdy potrzeba inReplyTo
-    // może można by messageId przesyłać wówczas, gdy trzeba inReplyTo?
-    // może być problem, że jeden węzeł czeka na messageId = N,
-    // a inny węzeł będzie miał wiadomość N, która rozgłaszana jest bez zmiany messageId
-    // można ewentualnie zmieniać messageId przy rozgłaszaniu, ale to trudne
-    private int messageId;
-    private int inReplyTo;
 
     /**
      * Prevent from creating object
@@ -39,12 +31,6 @@ abstract public class Message implements Serializable {
 
     Message(MessageType type) {
         this.type = type;
-
-        messageId = getNextMessageId();
-    }
-
-    private static int getNextMessageId() {
-        return MESSAGE_COUNTER.incrementAndGet();
     }
 
     /**
@@ -54,46 +40,12 @@ abstract public class Message implements Serializable {
         return type;
     }
 
-    /**
-     * @return the messageId
-     */
-    public int getMessageId() {
-        return messageId;
-    }
-
-    /**
-     * @param messageId the messageId to set
-     */
-    protected void setMessageId(int messageId) {
-        this.messageId = messageId;
-    }
-
-    /**
-     * @return the inReplyTo
-     */
-    public int getInReplyTo() {
-        return inReplyTo;
-    }
-
-    /**
-     * @param inReplyTo the inReplyTo to set
-     */
-    protected void setInReplyTo(int inReplyTo) {
-        this.inReplyTo = inReplyTo;
-    }
-
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("Message");
 
         sb.append("{Type:");
         sb.append(type);
-
-        sb.append(", messageId:");
-        sb.append(messageId);
-
-        sb.append(", inReplyTo:");
-        sb.append(inReplyTo);
 
         sb.append(", objs:{");
         sb.append(paramsToString());
@@ -110,6 +62,6 @@ abstract public class Message implements Serializable {
 
     public abstract String paramsToString();
 
-    public abstract void execute(SocketChannel sender, MessageDataInputStream in);
+    public abstract void execute(SocketChannel sender, MessageDataInputStream in) throws IOException;
 
 }

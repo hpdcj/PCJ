@@ -3,13 +3,14 @@
  */
 package org.pcj.internal;
 
+import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.pcj.PcjRuntimeException;
+import org.pcj.internal.message.MessageGroupBarrierWaiting;
 
 /**
  * Internal (with common ClassLoader) representation of Group. It contains
@@ -19,12 +20,20 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class InternalGroup {
 
-    final private Map<Integer, Integer> threadsMapping; // groupId, globalId
+    final public static int GLOBAL_GROUP_ID = 0;
+    final public static String GLOBAL_GROUP_NAME = "";
+
+    final private ConcurrentMap<Integer, Integer> threadsMapping; // groupId, globalId
     final private int groupId;
     final private String groupName;
-    final private WaitObject syncObject;
-    final private Bitmask physicalSync;
-//    final private MessageSyncWait syncMessage;
+    final private List<Integer> localIds;
+    final private List<Integer> physicalIds;
+//    final private Bitmask localBarrierBitmask;
+    final private Bitmask localBitmask;
+    private final AtomicInteger barrierRoundCounter;
+    private final ConcurrentMap<Integer, LocalBarrier> localBarrierBitmaskMap;
+    final private ConcurrentMap<Integer, Bitmask> physicalBarrierBitmaskMap;
+//    final private MessageGroupBarrierWaiting groupBarrierWaitingMessage;
 //    final private ConcurrentMap<Integer, BitMask> joinBitmaskMap;
 //    final private AtomicInteger nodeNum = new AtomicInteger(0);
 //    /**
@@ -44,57 +53,61 @@ public class InternalGroup {
 //    /**
 //     * Physical Parent, Left, Right
 //     */
-//    final private CommunicationTree physicalCommunication;
+    final private CommunicationTree physicalTree;
 
     //private final InternalGroup g;
-    protected InternalGroup(InternalGroup g) {
+    public InternalGroup(InternalGroup g) {
         this.groupId = g.groupId;
         this.groupName = g.groupName;
+        this.physicalTree = g.physicalTree;
 
         this.threadsMapping = g.threadsMapping;
-        this.syncObject = g.syncObject;
-        this.physicalSync = g.physicalSync;
+        this.barrierRoundCounter = g.barrierRoundCounter;
+        this.physicalBarrierBitmaskMap = g.physicalBarrierBitmaskMap;
+        this.localBarrierBitmaskMap = g.localBarrierBitmaskMap;
+        this.localBitmask = g.localBitmask;
 
+//        this.groupBarrierWaitingMessage = g.groupBarrierWaitingMessage;
 //        this.joinBitmaskMap = g.joinBitmaskMap;
 //
 //        this.syncMessage = g.syncMessage;
 //
-//        this.localIds = g.localIds;
-//        this.physicalIds = g.physicalIds;
+        this.localIds = g.localIds;
+        this.physicalIds = g.physicalIds;
 //
 //        this.localSync = g.localSync;
 //        this.localSyncMask = g.localSyncMask;
-//
-//
-//
-//        this.physicalCommunication = g.physicalCommunication;
     }
 
-    protected InternalGroup(int groupId, String groupName) {
+    public InternalGroup(int groupMaster, int groupId, String groupName) {
         this.groupId = groupId;
         this.groupName = groupName;
+        physicalTree = new CommunicationTree(groupMaster);
 
-        threadsMapping = new HashMap<>();
-        syncObject = new WaitObject();
-        physicalSync = new Bitmask();
+        threadsMapping = new ConcurrentHashMap<>();
+        barrierRoundCounter = new AtomicInteger(0);
+        physicalBarrierBitmaskMap = new ConcurrentHashMap<>();
+        localBarrierBitmaskMap = new ConcurrentHashMap<>();
+        localBitmask = new Bitmask();
 
+//        groupBarrierWaitingMessage = new MessageGroupBarrierWaiting(groupId, InternalPCJ.getNodeData().getPhysicalId());
 //        this.joinBitmaskMap = new ConcurrentHashMap<>();
 //
 //        syncMessage = new MessageSyncWait();
 //        syncMessage.setGroupId(groupId);
 //
-//        localIds = new ArrayList<>();
-//        physicalIds = new ArrayList<>();
+        localIds = new ArrayList<>();
+        physicalIds = new ArrayList<>();
+
 //
 //        localSync = new BitMask();
 //        localSyncMask = new BitMask();
 //
-//        syncObject = new WaitObject();
+//        waitObject = new WaitObject();
 //
-//        physicalCommunication = new CommunicationTree();
     }
 
-    int getGroupId() {
+    protected int getGroupId() {
         return groupId;
     }
 
@@ -102,28 +115,96 @@ public class InternalGroup {
         return groupName;
     }
 
-    final public WaitObject getSyncObject() {
-        return syncObject;
+    public int getGroupMasterNode() {
+        return physicalTree.getRootNode();
+    }
+
+    public List<Integer> getChildrenNodes() {
+        return physicalTree.getChildrenNodes();
+    }
+
+    public Integer getPhysicalIdIndex(int physicalId) {
+        return physicalIds.indexOf(physicalId);
     }
 
     protected int myId() {
-        throw new IllegalStateException("This method have to be overriden!");
+        throw new IllegalStateException("This method has to be overriden!");
     }
 
     protected int threadCount() {
         return threadsMapping.size();
     }
 
+    final public void addThread(int physicalId, int groupThreadId, int globalThreadId) {
+        int currentPhysicalId = InternalPCJ.getNodeData().getPhysicalId();
+
+        threadsMapping.put(groupThreadId, globalThreadId);
+        synchronized (physicalIds) {
+            if (physicalIds.contains(physicalId) == false) {
+                physicalIds.add(physicalId);
+
+                int index = physicalIds.size() - 1;
+                if (index > 0) {
+                    if (physicalId == currentPhysicalId) {
+                        physicalTree.setParentNode((index - 1) / 2);
+                    }
+                    if (physicalIds.get((index - 1) / 2) == currentPhysicalId) {
+                        physicalTree.getChildrenNodes().add(physicalId);
+                    }
+                }
+            }
+        }
+
+        if (physicalId == currentPhysicalId) {
+            synchronized (localIds) {
+                localIds.add(groupThreadId);
+                if (groupThreadId + 1 > localBitmask.getSize()) {
+                    localBitmask.setSize(groupThreadId + 1);
+                }
+                localBitmask.set(groupThreadId);
+            }
+        }
+
+    }
+
     protected void barrier() {
-        throw new IllegalStateException("This method have to be overriden!");
+        throw new IllegalStateException("This method has to be overriden!");
     }
 
-    final public void addThreadId(int threadId, int groupThreadId) {
-        threadsMapping.put(threadId, groupThreadId);
+    protected void barrier(int threadId) {
+        LocalBarrier localBarrier = localBarrierBitmaskMap
+                .computeIfAbsent(barrierRoundCounter.get(), k -> new LocalBarrier(k, localBitmask));
+
+        synchronized (localBarrier) {
+            localBarrier.set(threadId);
+            if (localBarrier.isSet()) {
+                barrierRoundCounter.incrementAndGet();
+
+                int groupMasterId = getGroupMasterNode();
+                SocketChannel groupMasterSocket = InternalPCJ.getNodeData()
+                        .getSocketChannelByPhysicalId().get(groupMasterId);
+
+                MessageGroupBarrierWaiting message = new MessageGroupBarrierWaiting(
+                        groupId, InternalPCJ.getNodeData().getPhysicalId(), localBarrier.getRound());
+
+                InternalPCJ.getNetworker().send(groupMasterSocket, message);
+            }
+        }
+
+        try {
+            localBarrier.await();
+        } catch (InterruptedException ex) {
+            throw new PcjRuntimeException(ex);
+        }
     }
 
-    public Bitmask getPhysicalSync() {
-        return physicalSync;
+    public Bitmask getPhysicalBitmask(int round) {
+        return physicalBarrierBitmaskMap
+                .computeIfAbsent(round, k -> new Bitmask(physicalIds.size()));
+    }
+
+    public ConcurrentMap<Integer, LocalBarrier> getLocalBarrierBitmaskMap() {
+        return localBarrierBitmaskMap;
     }
 
 //    /**
@@ -212,69 +293,6 @@ public class InternalGroup {
 //        return physicalSync.isSet();
 //    }
 //
-//    Integer getPhysicalMaster() {
-////        if (physicalIds.isEmpty() == false) {
-////            return physicalIds.get(0);
-////        }
-////        return -1;
-//        return physicalCommunication.getRoot();
-//    }
-//
-//    void setPhysicalMaster(int physicalMaster) {
-//        this.physicalCommunication.setRoot(physicalMaster);
-//    }
-//
-//    Integer getPhysicalParent() {
-////        int index = (physicalIndex - 1) / 2;
-////        if (0 <= index && index < physicalIds.size()) {
-////            return physicalIds.get(index);
-////        }
-////        return -1;
-//        return physicalCommunication.getParent();
-//    }
-//
-//    void setPhysicalParent(int physicalParent) {
-//        this.physicalCommunication.setParent(physicalParent);
-//    }
-//
-//    Integer getPhysicalLeft() {
-//        List<Integer> children = physicalCommunication.getChildren();
-//        if (children.size() < 1) {
-//            return null;
-//        }
-//        return children.get(0);
-//    }
-//
-//    void setPhysicalLeft(int physicalLeft) {
-//        List<Integer> children = physicalCommunication.getChildren();
-//        if (children.size() < 1) {
-//            children.add(physicalLeft);
-//        } else {
-//            children.set(0, physicalLeft);
-//        }
-//    }
-//
-//    Integer getPhysicalRight() {
-//        List<Integer> children = physicalCommunication.getChildren();
-//        if (children.size() < 2) {
-//            return null;
-//        }
-//        return children.get(1);
-//    }
-//
-//    void setPhysicalRight(int physicalRight) {
-//        List<Integer> children = physicalCommunication.getChildren();
-//        if (children.size() < 2) {
-//            children.add(physicalRight);
-//        } else {
-//            children.set(1, physicalRight);
-//        }
-//    }
-//
-//    BitMask getPhysicalSync() {
-//        return physicalSync;
-//    }
-//
 //    /**
 //     * @return the localIds
 //     */
@@ -297,21 +315,6 @@ public class InternalGroup {
 //        return -1;
 //    }
 //
-//
-//    protected void barrier(int myNodeId) {
-//        syncObject.lock();
-//        try {
-//            localSync.set(myNodeId);
-//            if (localSync.isSet(localSyncMask)) {
-//                InternalPCJ.getNetworker().send(getPhysicalMaster(), syncMessage);
-//                localSync.clear();
-//            }
-//            syncObject.await();
-//        } catch (InterruptedException | IOException ex) {
-//            throw new RuntimeException(ex);
-//        }
-//        syncObject.unlock();
-//    }
 //
 //    /**
 //     * Synchronize current node and node with specified group nodeId
@@ -457,4 +460,37 @@ public class InternalGroup {
 //            }
 //        };
 //    }
+    /**
+     * Class for representing part of communication tree.
+     *
+     * @author Marek Nowicki (faramir@mat.umk.pl)
+     */
+    public static class CommunicationTree {
+
+        private final int rootNode;
+        private int parentNode;
+        private final List<Integer> childrenNodes;
+
+        public CommunicationTree(int rootNode) {
+            this.rootNode = rootNode;
+            childrenNodes = new ArrayList<>();
+        }
+
+        public int getRootNode() {
+            return rootNode;
+        }
+
+        public void setParentNode(int parentNode) {
+            this.parentNode = parentNode;
+        }
+
+        public int getParentNode() {
+            return parentNode;
+        }
+
+        public List<Integer> getChildrenNodes() {
+            return childrenNodes;
+        }
+    }
+
 }

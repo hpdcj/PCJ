@@ -20,6 +20,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.pcj.Configuration;
+import org.pcj.Group;
 import org.pcj.NodesDescription;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
@@ -95,30 +96,77 @@ public abstract class InternalPCJ {
 
             /* Prepare initial data */
             nodeData = new NodeData(isCurrentJvmNode0);
-            nodeData.setGlobalGroup(new InternalGroup(0, ""));
             nodeData.getSocketChannelByPhysicalId().put(0, node0Socket);
-
-            InternalGroup globalGroup = nodeData.getGlobalGroup();
 
             if (isCurrentJvmNode0) {
                 nodeData.getNode0Data().setAllNodesThreadCount(allNodesThreadCount);
             }
 
             /* send HELLO message */
-            helloPhase(globalGroup.getSyncObject(), currentJvm.getPort(), currentJvm.getThreadIds());
+            helloPhase(currentJvm.getPort(), currentJvm.getThreadIds());
 
             /* Starting execution */
             if (isCurrentJvmNode0) {
-                LOGGER.log(Level.INFO, "Starting {0} with {1,number,#} thread(s)...", new Object[]{startPointClass.getName(), globalGroup.threadCount()});
+                LOGGER.log(Level.INFO, "Starting {0} with {1,number,#} {1,choice,1#thread|1<threads}...",
+                        new Object[]{startPointClass.getName(),
+                            nodeData.getGroupById(InternalGroup.GLOBAL_GROUP_ID).threadCount()});
             }
 
-            startExecution(startPointClass, currentJvm.getThreadIds());
+
+            /* Preparing PcjThreads*/
+            Set<PcjThread> pcjThreads = preparePcjThreads(startPointClass, currentJvm.getThreadIds());
+
+            /* Starting PcjThreads*/
+            pcjThreads.forEach(pcjThread -> pcjThread.start());
+
+            /* Waiting for all threads complete */
+            waitForPcjThreadsComplete(pcjThreads);
+
+            if (isCurrentJvmNode0) {
+                LOGGER.log(Level.INFO, "Completed {0} with {1,number,#} {1,choice,1#thread|1<threads}.",
+                        new Object[]{startPointClass.getName(),
+                            nodeData.getGroupById(InternalGroup.GLOBAL_GROUP_ID).threadCount()});
+            }
 
             /* finishing */
             byePhase();
         } finally {
             networker.shutdown();
         }
+    }
+
+    private static void waitForPcjThreadsComplete(Set<PcjThread> pcjThreads) {
+        while (pcjThreads.isEmpty() == false) {
+            try {
+                for (Iterator<PcjThread> it = pcjThreads.iterator(); it.hasNext();) {
+                    PcjThread pcjThread = it.next();
+                    pcjThread.join(100);
+                    if (pcjThread.isAlive() == false) {
+                        Throwable t = pcjThread.getThrowable();
+                        if (t != null) {
+                            LOGGER.log(Level.SEVERE, "Exception occurs in thread: " + pcjThread.getName(), t);
+                        }
+                        it.remove();
+                    }
+                }
+            } catch (InterruptedException ex) {
+                LOGGER.severe("Interruption occurs while waiting for joining PcjThread");
+            }
+        }
+    }
+
+    private static Set<PcjThread> preparePcjThreads(Class<? extends StartPoint> startPointClass, int[] threadIds) {
+        InternalGroup globalGroup = nodeData.getGroupById(InternalGroup.GLOBAL_GROUP_ID);
+        Set<PcjThread> pcjThreads = new HashSet<>();
+
+        for (int threadId : threadIds) {
+            Group threadGlobalGroup = new Group(threadId, globalGroup);
+            PcjThreadData pcjThreadData = new PcjThreadData(threadGlobalGroup);
+
+            pcjThreads.add(new PcjThread(threadId, startPointClass, pcjThreadData));
+        }
+
+        return pcjThreads;
     }
 
     private static Queue<InetAddress> getHostAllNetworkInferfaces() throws UncheckedIOException {
@@ -168,6 +216,8 @@ public abstract class InternalPCJ {
     private static void connectToNode0(boolean isCurrentJvmNode0, NodeInfo node0) throws RuntimeException {
         if (isCurrentJvmNode0 == true) {
             node0Socket = LoopbackSocketChannel.getInstance();
+
+            return;
         } else {
             try {
                 LOGGER.fine("Waiting 300-500ms before attempting to connect to node0 to ensure binding completion.");
@@ -217,8 +267,10 @@ public abstract class InternalPCJ {
 
     }
 
-    private static void helloPhase(WaitObject sync, int port, int[] threadIds) throws UncheckedIOException {
+    private static void helloPhase(int port, int[] threadIds) throws UncheckedIOException {
         MessageHello messageHello = new MessageHello(port, threadIds);
+
+        WaitObject sync = nodeData.getGlobalWaitObject();
         sync.lock();
         try {
             networker.send(node0Socket, messageHello);
@@ -232,40 +284,10 @@ public abstract class InternalPCJ {
         }
     }
 
-    private static void startExecution(Class<? extends StartPoint> startPointClass, int[] threadIds) {
-        /* Preparing PcjThreads*/
-        Set<PcjThread> pcjThreads = new HashSet<>();
-        for (int threadId : threadIds) {
-            pcjThreads.add(new PcjThread(threadId, startPointClass, null));
-        }
-
-        /* Starting PcjThreads*/
-        pcjThreads.forEach(pcjThread -> pcjThread.start());
-
-        /* Waiting for all threads complete */
-        while (pcjThreads.isEmpty() == false) {
-            try {
-                for (Iterator<PcjThread> it = pcjThreads.iterator(); it.hasNext();) {
-                    PcjThread pcjThread = it.next();
-                    pcjThread.join(100);
-                    if (pcjThread.isAlive() == false) {
-                        Throwable t = pcjThread.getThrowable();
-                        if (t != null) {
-                            LOGGER.log(Level.SEVERE, "Exception occurs in thread: " + pcjThread.getName(), t);
-                        }
-                        it.remove();
-                    }
-                }
-            } catch (InterruptedException ex) {
-                LOGGER.severe("Interruption occurs while waiting for joining PcjThread");
-            }
-        }
-    }
-
     private static void byePhase() throws UncheckedIOException {
         /* Sending BYE message to node0 */
         MessageBye messageBye = new MessageBye(nodeData.getPhysicalId());
-        WaitObject finishedObject = nodeData.getFinishedObject();
+        WaitObject finishedObject = nodeData.getGlobalWaitObject();
         finishedObject.lock();
         try {
             networker.send(node0Socket, messageBye);

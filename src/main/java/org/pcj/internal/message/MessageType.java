@@ -76,56 +76,24 @@ public enum MessageType {
             return new MessageByeCompleted();
         }
     },
-    //    /**
-    //     * sent to server when all nodes with physicalNodeId less than current
-    //     * <i>welcomes</i> this node
-    //     *
-    //     * @param <i>none</i> <i>without parameters</i>
-    //     *
-    //     * @see MessageType#HELLO_BONJOUR
-    //     * @see MessageType#HELLO_GO
-    //     */
-    //    HELLO_COMPLETED(14) {
-    //                @Override
-    //                MessageHelloCompleted createMessage() {
-    //                    return new MessageHelloCompleted();
-    //                }
-    //            },
-    //    /**
-    //     * message to all nodes (using BROADCAST) to run calculations
-    //     *
-    //     * @param <i>none</i> <i>without parameters</i>
-    //     *
-    //     * @see MessageType#HELLO_COMPLETED
-    //     */
-    //    HELLO_GO(15) {
-    //                @Override
-    //                MessageHelloGo createMessage() {
-    //                    return new MessageHelloGo();
-    //                }
-    //            },
-    //    /**
-    //     * message sent by Client, when it finished all calculations
-    //     *
-    //     * @param <i>none</i> <i>without parameters</i>
-    //     */
-    //    FINISHED(16) {
-    //                @Override
-    //                MessageFinished createMessage() {
-    //                    return new MessageFinished();
-    //                }
-    //            },
-    //    /**
-    //     * message sent by server to clients to shutdown networker.
-    //     *
-    //     * @param <i>none</i> <i>without parameters</i>
-    //     */
-    //    FINISH_COMPLETED(17) {
-    //                @Override
-    //                MessageFinishCompleted createMessage() {
-    //                    return new MessageFinishCompleted();
-    //                }
-    //            },
+    /**
+     * @see MessageGroupBarrierWaiting
+     */
+    GROUP_BARRIER_WAITING((byte) 10) {
+        @Override
+        public MessageGroupBarrierWaiting create() {
+            return new MessageGroupBarrierWaiting();
+        }
+    },
+    /**
+     * @see MessageGroupBarrierGo
+     */
+    GROUP_BARRIER_GO((byte) 11) {
+        @Override
+        public MessageGroupBarrierGo create() {
+            return new MessageGroupBarrierGo();
+        }
+    },
     //    /**
     //     * after sending SYNC_WAIT Server collects it on specified group. When all
     //     * nodes in group sent that message, Server sends SYNC_GO
@@ -435,13 +403,4 @@ public enum MessageType {
      * @return Message object
      */
     public abstract Message create();
-
-    public Message create(int messageId, int inReplyTo) {
-        Message message = create();
-
-        message.setMessageId(messageId);
-        message.setInReplyTo(inReplyTo);
-
-        return message;
-    }
 }
