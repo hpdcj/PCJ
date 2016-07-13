@@ -3,6 +3,7 @@
  */
 package org.pcj;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.internal.InternalGroup;
 import org.pcj.internal.LocalBarrier;
 
@@ -13,11 +14,13 @@ import org.pcj.internal.LocalBarrier;
  */
 final public class Group extends InternalGroup {
 
-    final private int threadId;
+    private final int threadId;
+    private final AtomicInteger barrierRoundCounter;
 
     public Group(int threadId, InternalGroup internalGroup) {
         super(internalGroup);
         this.threadId = threadId;
+        barrierRoundCounter = new AtomicInteger(0);
     }
 
     @Override
@@ -43,19 +46,10 @@ final public class Group extends InternalGroup {
 
     @Override
     public PcjFuture<Void> asyncBarrier() {
-        LocalBarrier barrier = super.barrier(threadId);
+        LocalBarrier barrier = super.barrier(threadId, barrierRoundCounter.incrementAndGet());
         return barrier;
     }
 
-    /**
-     * Synchronize all nodes in group
-     */
-    @Override
-    public void barrier() {
-        LocalBarrier barrier = super.barrier(threadId);
-        barrier.get();
-    }
-//
 //    /**
 //     * Synchronize with potentially subset of nodes in group
 //     *

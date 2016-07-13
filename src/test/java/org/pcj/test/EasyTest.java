@@ -58,16 +58,25 @@ public class EasyTest extends Storage implements StartPoint {
 
 //        PCJ.start(EasyTest.class, EasyTest.class,
         PCJ.deploy(EasyTest.class, EasyTest.class, nodesDescription);
-
-        Thread.sleep(3 * nodesDescription.getAllNodesThreadCount());
     }
 
     @Override
     public void main() throws Throwable {
+//        Level level = Level.FINEST;
+//        Logger logger = Logger.getLogger("");
+//        Arrays.stream(logger.getHandlers()).forEach(handler -> handler.setLevel(level));
+//        logger.setLevel(level);
+
         System.out.println("before: " + PCJ.myId());
         PCJ.barrier();
-        Thread.sleep(2000 * PCJ.myId() + 500);
+        Thread.sleep(500 * PCJ.myId() + 500);
+        PcjFuture<Void> f0 = PCJ.asyncBarrier();
+        PcjFuture<Void> f1 = PCJ.asyncBarrier();
+        Thread.sleep(500 * PCJ.myId() + 500);
         PcjFuture<Void> f = PCJ.asyncBarrier();
+        f0.get();
+        f1.get();
+
         System.out.println("middle 2: " + PCJ.myId());
         while (f.isDone() == false) {
             try {

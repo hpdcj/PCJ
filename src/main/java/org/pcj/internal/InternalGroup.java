@@ -30,7 +30,6 @@ public class InternalGroup {
     final private List<Integer> physicalIds;
 //    final private Bitmask localBarrierBitmask;
     final private Bitmask localBitmask;
-    private final AtomicInteger barrierRoundCounter;
     private final ConcurrentMap<Integer, LocalBarrier> localBarrierBitmaskMap;
     final private ConcurrentMap<Integer, Bitmask> physicalBarrierBitmaskMap;
 //    final private MessageGroupBarrierWaiting groupBarrierWaitingMessage;
@@ -62,7 +61,6 @@ public class InternalGroup {
         this.physicalTree = g.physicalTree;
 
         this.threadsMapping = g.threadsMapping;
-        this.barrierRoundCounter = g.barrierRoundCounter;
         this.physicalBarrierBitmaskMap = g.physicalBarrierBitmaskMap;
         this.localBarrierBitmaskMap = g.localBarrierBitmaskMap;
         this.localBitmask = g.localBitmask;
@@ -85,7 +83,6 @@ public class InternalGroup {
         physicalTree = new CommunicationTree(groupMaster);
 
         threadsMapping = new ConcurrentHashMap<>();
-        barrierRoundCounter = new AtomicInteger(0);
         physicalBarrierBitmaskMap = new ConcurrentHashMap<>();
         localBarrierBitmaskMap = new ConcurrentHashMap<>();
         localBitmask = new Bitmask();
@@ -167,23 +164,18 @@ public class InternalGroup {
 
     }
 
-    protected void barrier() {
-        throw new IllegalStateException("This method has to be overriden!");
-    }
-
     protected PcjFuture<Void> asyncBarrier() {
         throw new IllegalStateException("This method has to be overriden!");
     }
 
-    protected LocalBarrier barrier(int threadId) {
+    protected LocalBarrier barrier(int threadId, int barrierRound) {
         LocalBarrier localBarrier = localBarrierBitmaskMap
-                .computeIfAbsent(barrierRoundCounter.get(), k -> new LocalBarrier(k, localBitmask));
+                .computeIfAbsent(barrierRound, round -> new LocalBarrier(round, localBitmask));
 
         synchronized (localBarrier) {
             localBarrier.set(threadId);
             if (localBarrier.isSet()) {
-                barrierRoundCounter.incrementAndGet();
-
+            System.err.println(barrierRound +" "+localBarrier.getRound()+ " " + InternalPCJ.getNodeData().getPhysicalId() + "t" + threadId + " isSet " + localBarrier.isSet());
                 int groupMasterId = getGroupMasterNode();
                 SocketChannel groupMasterSocket = InternalPCJ.getNodeData()
                         .getSocketChannelByPhysicalId().get(groupMasterId);

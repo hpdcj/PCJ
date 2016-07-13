@@ -31,7 +31,6 @@ public class MessageBytesInputStream {
     }
 
     public void offerNextBytes(ByteBuffer byteBuffer) {
-        while (byteBuffer.hasRemaining()) {
             if (currentByteBuffer == null) {
                 while (header.hasRemaining() && byteBuffer.hasRemaining()) {
                     header.put(byteBuffer.get());
@@ -57,7 +56,6 @@ public class MessageBytesInputStream {
                     currentByteBuffer = null;
                 }
             }
-        }
     }
 
     public Message readMessage() {

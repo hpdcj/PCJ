@@ -78,7 +78,7 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
      * Synchronizes all threads used in calculations.
      */
     public static void barrier() {
-        ((Group) PcjThread.threadGlobalGroup()).barrier();
+        ((Group) PcjThread.threadGlobalGroup()).asyncBarrier().get();
     }
 
     public static PcjFuture<Void> asyncBarrier() {

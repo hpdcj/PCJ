@@ -34,106 +34,106 @@ import org.pcj.internal.message.Message;
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 public class SelectorProc implements Runnable {
-
+    
     private static class InterestChange {
-
+        
         private final SelectableChannel channel;
         private final int interestOps;
-
+        
         public InterestChange(SelectableChannel channel, int interestOps) {
             this.channel = channel;
             this.interestOps = interestOps;
         }
-
+        
     }
-
+    
     private static final Logger LOGGER = Logger.getLogger(SelectorProc.class.getName());
     private final Selector selector;
     private final ByteBuffer readBuffer;
     private final ConcurrentMap<SocketChannel, MessageBytesInputStream> readMap;
     private final ConcurrentMap<SocketChannel, Queue<MessageBytesOutputStream>> writeMap;
     private final Queue<InterestChange> interestChanges;
-
+    
     public SelectorProc() {
         this.readBuffer = ByteBuffer.allocateDirect(Configuration.CHUNK_SIZE);
         this.writeMap = new ConcurrentHashMap<>();
         this.readMap = new ConcurrentHashMap<>();
         this.interestChanges = new ConcurrentLinkedQueue<>();
-
+        
         try {
             this.selector = Selector.open();
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
     }
-
+    
     private void changeInterestOps(SelectableChannel channel, int interestOps) {
         interestChanges.add(new InterestChange(channel, interestOps));
         selector.wakeup();
     }
-
+    
     private void initializeSocketChannel(SocketChannel socketChannel) throws IOException {
         LOGGER.log(Level.FINEST, "Initializing socketChannel: {0}", socketChannel);
-
+        
         socketChannel.configureBlocking(false);
         socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, true);
         socketChannel.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
         socketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
-
+        
         readMap.put(socketChannel, new MessageBytesInputStream());
         writeMap.put(socketChannel, new ConcurrentLinkedQueue<>());
     }
-
+    
     public ServerSocketChannel bind(InetAddress hostAddress, int port, int backlog) throws IOException {
         ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
         serverSocketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
         serverSocketChannel.configureBlocking(false);
-
+        
         InetSocketAddress isa;
         if (hostAddress == null) {
             isa = new InetSocketAddress(port);
         } else {
             isa = new InetSocketAddress(hostAddress, port);
         }
-
+        
         serverSocketChannel.bind(isa, backlog);
-
+        
         changeInterestOps(serverSocketChannel, SelectionKey.OP_ACCEPT);
-
+        
         return serverSocketChannel;
     }
-
+    
     public SocketChannel connectTo(InetAddress hostAddress, int port) throws IOException {
         SocketChannel socket = SocketChannel.open();
-
+        
         initializeSocketChannel(socket);
-
+        
         if (socket.connect(new InetSocketAddress(hostAddress, port))) {
             changeInterestOps(socket, SelectionKey.OP_READ);
-
+            
             synchronized (socket) {
                 socket.notifyAll();
             }
         } else {
             changeInterestOps(socket, SelectionKey.OP_CONNECT);
         }
-
+        
         return socket;
     }
-
+    
     private ByteBuffer clone(ByteBuffer original) {
         ByteBuffer clone = ByteBuffer.allocate(original.remaining());
         ByteBuffer readOnly = original.asReadOnlyBuffer();
         clone.put(readOnly);
-
+        
         clone.flip();
-
+        
         return clone;
     }
-
+    
     public void writeMessage(SocketChannel socket, Message message) {
         Queue<MessageBytesOutputStream> queue = writeMap.get(socket);
-
+        
         try (MessageBytesOutputStream objectBytes = new MessageBytesOutputStream(message)) {
             queue.add(objectBytes);
             changeInterestOps(socket, SelectionKey.OP_WRITE);
@@ -142,7 +142,7 @@ public class SelectorProc implements Runnable {
             LOGGER.log(Level.SEVERE, null, ex);
         }
     }
-
+    
     public void closeAllSockets() throws IOException {
         Set<SocketChannel> sockets = writeMap.keySet();
         for (SocketChannel socket : sockets) {
@@ -155,7 +155,7 @@ public class SelectorProc implements Runnable {
             }
         }
     }
-
+    
     @Override
     public void run() {
         for (;;) {
@@ -165,100 +165,100 @@ public class SelectorProc implements Runnable {
                     SelectableChannel channel = interestChange.channel;
                     channel.register(selector, interestChange.interestOps);
                 }
-
+                
                 if (Thread.interrupted()) {
                     return;
                 }
-
+                
                 if (selector.select() <= 0) {
                     continue;
                 }
-
+                
                 Iterator<SelectionKey> selectedKeys = selector.selectedKeys().iterator();
-
+                
                 while (selectedKeys.hasNext()) {
                     SelectionKey key = selectedKeys.next();
                     selectedKeys.remove();
-
+                    
                     if (!key.isValid()) {
                         continue;
                     }
-
+                    
                     int readyOps = key.readyOps();
-
+                    
                     if ((readyOps & SelectionKey.OP_ACCEPT) != 0) {
                         ServerSocketChannel serverSocket = (ServerSocketChannel) key.channel();
-
+                        
                         opAccept(serverSocket);
                     }
-
+                    
                     if ((readyOps & SelectionKey.OP_CONNECT) != 0) {
                         SocketChannel socket = (SocketChannel) key.channel();
-
+                        
                         opConnect(socket);
                     }
-
+                    
                     if ((readyOps & SelectionKey.OP_READ) != 0) {
                         SocketChannel socket = (SocketChannel) key.channel();
-
+                        
                         if (opRead(socket) == false) {
                             key.cancel();
                             socket.close();
                         }
                     }
-
+                    
                     if ((readyOps & SelectionKey.OP_WRITE) != 0) {
                         SocketChannel socket = (SocketChannel) key.channel();
-
+                        
                         if (opWrite(socket) == false) {
                             key.interestOps(SelectionKey.OP_READ);
                         }
                     }
-
+                    
                 }
             } catch (Exception ex) {
                 LOGGER.log(Level.SEVERE, null, ex);
             }
         }
     }
-
+    
     private void opAccept(ServerSocketChannel serverSocket) throws ClosedChannelException, IOException {
         SocketChannel socket = serverSocket.accept();
-
+        
         initializeSocketChannel(socket);
-
+        
         socket.register(selector, SelectionKey.OP_READ);
-
+        
         synchronized (socket) {
             socket.notifyAll();
         }
-
+        
         LOGGER.log(Level.FINER, "Accepted: {0}", socket);
     }
-
+    
     private void opConnect(SocketChannel socket) throws IOException, ClosedChannelException {
         try {
             if (socket.finishConnect() == true) {
                 socket.register(selector, SelectionKey.OP_READ);
-
+                
                 LOGGER.log(Level.FINER, "Connected: {0}", socket);
-
+                
                 synchronized (socket) {
                     socket.notifyAll();
                 }
             }
         } catch (IOException ex) {
             LOGGER.log(Level.FINER, "Connection failed: {0}", ex.getLocalizedMessage());
-
+            
             synchronized (socket) {
                 socket.notifyAll();
             }
         }
     }
-
+    
     private boolean opRead(SocketChannel socket) {
         readBuffer.clear();
-
+        
         try {
             int count = socket.read(readBuffer);
             if (count == -1) {
@@ -268,31 +268,32 @@ public class SelectorProc implements Runnable {
             LOGGER.log(Level.FINER, "Connection closed: {0} with exception {1}", new Object[]{socket, ex});
             return false;
         }
-
+        
         readBuffer.flip();
-
+        
         MessageBytesInputStream messageBytes = readMap.get(socket);
         while (readBuffer.hasRemaining()) {
             messageBytes.offerNextBytes(readBuffer);
             if (messageBytes.isClosed()) {
                 InternalPCJ.getNetworker().processMessageBytes(socket, messageBytes);
-                readMap.put(socket, new MessageBytesInputStream());
+                messageBytes = new MessageBytesInputStream();
+                readMap.put(socket, messageBytes);
             }
         }
-
+        
         return true;
     }
-
+    
     private boolean opWrite(SocketChannel socket) throws IOException {
         Queue<MessageBytesOutputStream> queue = writeMap.get(socket);
-
+        
         while (!queue.isEmpty()) {
             MessageBytesOutputStream messageBytes = queue.peek();
             ByteBuffer byteBuffer = messageBytes.getNextBytes();
             if (byteBuffer != null) {
                 if (socket.isOpen()) {
                     socket.write(byteBuffer);
-
+                    
                     return true;
                 } else {
                     return false;
@@ -304,8 +305,8 @@ public class SelectorProc implements Runnable {
                 queue.poll();
             }
         }
-
+        
         return false;
     }
-
+    
 }

@@ -7,6 +7,7 @@ package org.pcj.internal;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import org.pcj.PCJ;
 import org.pcj.PcjFuture;
 import org.pcj.PcjRuntimeException;
 
@@ -20,7 +21,7 @@ public class LocalBarrier implements PcjFuture<Void> {
     private final Object lock;
     private final Bitmask localBarrierBitmask;
     private final Bitmask localBarrierMaskBitmask;
-    private volatile boolean done;
+    private boolean done;
 
     public LocalBarrier(int round, Bitmask localBitmask) {
         this.round = round;
@@ -57,21 +58,24 @@ public class LocalBarrier implements PcjFuture<Void> {
     }
 
     public void signalAll() {
-        done = true;
         synchronized (lock) {
+            done = true;
             lock.notifyAll();
         }
     }
 
     @Override
     public boolean isDone() {
-        return done;
+        synchronized (lock) {
+            return done;
+        }
     }
 
     @Override
     public Void get() throws PcjRuntimeException {
-        while (done == false) {
-            synchronized (lock) {
+        System.err.println(round + "round -> done: " + done);
+        synchronized (lock) {
+            while (done == false) {
                 try {
                     lock.wait();
                 } catch (InterruptedException ex) {
@@ -87,29 +91,19 @@ public class LocalBarrier implements PcjFuture<Void> {
         long nanosTimeout = unit.toNanos(timeout);
         final long deadline = System.nanoTime() + nanosTimeout;
 
-        while (done == false) {
-            if (nanosTimeout <= 0L) {
-                throw new TimeoutException("Not done yet.");
-            }
-            synchronized (lock) {
+        synchronized (lock) {
+            while (done == false) {
+                if (nanosTimeout <= 0L) {
+                    throw new TimeoutException("Not done yet.");
+                }
                 try {
                     lock.wait(nanosTimeout / 1_000_000, (int) (nanosTimeout % 1_000_000));
                 } catch (InterruptedException ex) {
                     throw new PcjRuntimeException(ex);
                 }
+                nanosTimeout = deadline - System.nanoTime();
             }
-            nanosTimeout = deadline - System.nanoTime();
         }
         return null;
-    }
-
-    @Override
-    public boolean cancel(boolean mayInterruptIfRunning) {
-        return false;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return false;
     }
 }
