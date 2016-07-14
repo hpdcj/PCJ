@@ -11,7 +11,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import org.pcj.Configuration;
+import org.pcj.internal.Configuration;
 import org.pcj.internal.message.Message;
 
 /**

@@ -16,10 +16,12 @@ import java.util.Iterator;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import org.pcj.Configuration;
 import org.pcj.Group;
 import org.pcj.NodesDescription;
 import org.pcj.StartPoint;
@@ -91,6 +93,8 @@ public abstract class InternalPCJ {
             /* Binding on all interfaces */
             bindOnAllNetworkInterfaces(inetAddresses, currentJvm.getPort());
 
+            ScheduledFuture<?> exitTimer = sheduleExitTimer(Thread.currentThread());
+
             /* connecting to node0 */
             connectToNode0(isCurrentJvmNode0, node0);
 
@@ -101,9 +105,11 @@ public abstract class InternalPCJ {
             if (isCurrentJvmNode0) {
                 nodeData.getNode0Data().setAllNodesThreadCount(allNodesThreadCount);
             }
-
+            
             /* send HELLO message */
             helloPhase(currentJvm.getPort(), currentJvm.getThreadIds());
+
+            exitTimer.cancel(true);
 
             /* Starting execution */
             if (isCurrentJvmNode0) {
@@ -135,6 +141,19 @@ public abstract class InternalPCJ {
         }
     }
 
+    private static ScheduledFuture<?> sheduleExitTimer(Thread thread) {
+        ScheduledThreadPoolExecutor timer = new ScheduledThreadPoolExecutor(1);
+        timer.setRemoveOnCancelPolicy(true);
+        timer.setExecuteExistingDelayedTasksAfterShutdownPolicy(true);
+
+        ScheduledFuture<?> exitTimer = timer.schedule(() -> thread.interrupt(),
+                Configuration.INIT_MAXTIME, TimeUnit.SECONDS);
+
+        timer.shutdown();
+
+        return exitTimer;
+    }
+
     private static void waitForPcjThreadsComplete(Set<PcjThread> pcjThreads) {
         while (pcjThreads.isEmpty() == false) {
             try {
@@ -150,7 +169,7 @@ public abstract class InternalPCJ {
                     }
                 }
             } catch (InterruptedException ex) {
-                LOGGER.severe("Interruption occurs while waiting for joining PcjThread");
+                throw new RuntimeException("Interruption occurs while waiting for joining PcjThread", ex);
             }
         }
     }
@@ -278,7 +297,7 @@ public abstract class InternalPCJ {
             /* waiting for HELLO_GO */
             sync.await();
         } catch (InterruptedException ex) {
-            LOGGER.severe("Interruption occurs while waiting for finish HELLO phase");
+            throw new RuntimeException("Interruption occurs while waiting for finish HELLO phase", ex);
         } finally {
             sync.unlock();
         }
@@ -295,7 +314,7 @@ public abstract class InternalPCJ {
             /* waiting for BYE_COMPLETED */
             finishedObject.await();
         } catch (InterruptedException ex) {
-            LOGGER.severe("Interruption occurs while waiting for MESSAGE_BYE_COMPLETED phase");
+            throw new RuntimeException("Interruption occurs while waiting for MESSAGE_BYE_COMPLETED phase", ex);
         } finally {
             finishedObject.unlock();
         }

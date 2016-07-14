@@ -24,8 +24,7 @@ final public class PcjThreadData {
     PcjThreadData(Group globalGroup) {
         this.globalGroup = globalGroup;
 
-        this.storage = new Storage() {
-        };
+        this.storage = new Storage();
         this.groupById = new ConcurrentHashMap<>();
         this.groupByName = new ConcurrentHashMap<>();
 
@@ -63,6 +62,10 @@ final public class PcjThreadData {
     InternalGroup getGlobalGroup() {
         return globalGroup;
     }
+
+    public Storage getStorage() {
+        return storage;
+    }
 //
 //    /**
 //     * Stores Group but because of ClassLoader says that holds InternalGroup
@@ -81,4 +84,5 @@ final public class PcjThreadData {
 //    Map<String, InternalGroup> getGroupsByName() {
 //        return groupsByName;
 //    }
+
 }

@@ -14,7 +14,7 @@ import org.pcj.internal.PcjThread;
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class PCJ extends org.pcj.internal.InternalPCJ {
+final public class PCJ extends InternalPCJ {
 
     // Suppress default constructor for noninstantiability
     private PCJ() {
@@ -62,7 +62,7 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
      * @return global thread id
      */
     public static int myId() {
-        return ((Group) PcjThread.threadGlobalGroup()).myId();
+        return ((Group) PcjThread.getThreadGlobalGroup()).myId();
     }
 
     /**
@@ -71,86 +71,127 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
      * @return global number of threads used in calculations
      */
     public static int threadCount() {
-        return ((Group) PcjThread.threadGlobalGroup()).threadCount();
+        return ((Group) PcjThread.getThreadGlobalGroup()).threadCount();
+    }
+
+    /**
+     * Returns node id (internal value for distinguishing nodes).
+     * Multiple PCJ threads have the same physicalId on the same JVM.
+     *
+     * @return physical node id
+     */
+    public static int getNodeId() {
+        return InternalPCJ.getNodeData().getPhysicalId();
+    }
+
+    /**
+     * Returns total number of nodes.
+     *
+     * @return total number of nodes.
+     */
+    public static int getNodeCount() {
+        return InternalPCJ.getNodeData().getTotalNodeCount();
     }
 
     /**
      * Synchronizes all threads used in calculations.
      */
     public static void barrier() {
-        ((Group) PcjThread.threadGlobalGroup()).asyncBarrier().get();
+        asyncBarrier().get();
     }
 
+    /**
+     * Asynchronous barrier. Invoke get method of returned PcjFuture to wait for barrier completion.
+     *
+     * @return PcjFuture that can check the barrier status.
+     */
     public static PcjFuture<Void> asyncBarrier() {
-        return ((Group) PcjThread.threadGlobalGroup()).asyncBarrier();
+        return ((Group) PcjThread.getThreadGlobalGroup()).asyncBarrier();
     }
 
-//    /**
-//     * Returns physical node id (internal value for distinguishing nodes).
-//     *
-//     * @return physical node id
-//     */
-//    public static int getPhysicalNodeId() {
-//        return InternalPCJ.getPhysicalNodeId();
-//    }
-//    public static void barrier(int threadId) {
-//        ((Group) PcjThread.threadGlobalGroup()).barrier(threadId);
-//    }
-//
-//    /**
-//     * Resets the monitoring state.
-//     *
-//     * @param variable name of variable
-//     */
-//    public static void monitor(String variable) {
-//        PcjThread.threadStorage().monitor(variable);
-//    }
-//
-//    /**
-//     * Causes the current thread to wait until the variable was <i>touched</i>. Resets the state
-//     * after <i>touch</i>. The waitFor(variable) method has the same effect as:
-//     * <pre><code>waitFor(variable, 1)</code></pre>
-//     *
-//     * @param variable name of variable
-//     */
-//    public static int waitFor(String variable) {
-//        return waitFor(variable, 1);
-//    }
-//
-//    /**
-//     * Causes the current thread to wait until the variable was <i>touched</i>
-//     * count times. Resets the state after <i>touches</i>.
-//     *
-//     * @param variable name of variable
-//     * @param count    number of <i>touches</i>
-//     */
-//    public static int waitFor(String variable, int count) {
-//        return PcjThread.threadStorage().waitFor(variable, count);
-//    }
-//
-//    /**
-//     * Gets the value from current thread Storage.
-//     *
-//     * @param variable name of variable
-//     *
-//     * @return value of variable
-//     */
-//    public static <T> T getLocal(String variable) {
-//        return PcjThread.threadStorage().get(variable);
-//    }
-//
-//    /**
-//     * Gets the value from current thread Storage
-//     *
-//     * @param variable name of array variable
-//     * @param indexes  indexes of array
-//     *
-//     * @return value of variable
-//     */
-//    public static <T> T getLocal(String variable, int... indexes) {
-//        return PcjThread.threadStorage().get(variable, indexes);
-//    }
-//
+    public static void createShared(String name, Class<?> variableType) {
+        PcjThread.getThreadStorage().createShared(name, variableType);
+    }
+
+    /**
+     * Resets the monitoring state.
+     *
+     * @param variable name of variable
+     */
+    public static void monitor(String variable) {
+        PcjThread.getThreadStorage().monitor(variable);
+    }
+
+    /**
+     * Causes the current thread to wait until the variable was <i>touched</i>. Resets the state
+     * after <i>touch</i>. The waitFor(variable) method has the same effect as:
+     * <pre><code>waitFor(variable, 1)</code></pre>
+     *
+     * @param variable name of variable
+     */
+    public static int waitFor(String variable) {
+        return waitFor(variable, 1);
+    }
+
+    /**
+     * Causes the current thread to wait until the variable was <i>touched</i>
+     * count times. Resets the state after <i>touches</i>.
+     *
+     * @param variable name of variable
+     * @param count    number of <i>touches</i>
+     */
+    public static int waitFor(String variable, int count) {
+        return PcjThread.getThreadStorage().waitFor(variable, count);
+    }
+
+    /**
+     * Gets the value from current thread Storage.
+     *
+     * @param variable name of variable
+     *
+     * @return value of variable
+     */
+    public static <T> T getLocal(String variable) {
+        return PcjThread.getThreadStorage().get(variable);
+    }
+
+    /**
+     * Gets the value from current thread Storage
+     *
+     * @param variable name of array variable
+     * @param indexes  indexes of array
+     *
+     * @return value of variable
+     */
+    public static <T> T getLocal(String variable, int... indexes) {
+        return PcjThread.getThreadStorage().get(variable, indexes);
+    }
+
+    /**
+     * Puts the value to current thread Storage
+     *
+     * @param variable name of variable
+     * @param newValue new value of variable
+     *
+     * @throws ClassCastException when the value cannot be cast to the type of variable in Storage
+     */
+    public static <T> void putLocal(String variable, T newValue) throws ClassCastException {
+        PcjThread.getThreadStorage().put(variable, newValue);
+    }
+
+    /**
+     * Puts the value to current thread Storage
+     *
+     * @param variable name of array variable
+     * @param newValue new value of variable
+     * @param indexes  indexes of array
+     *
+     * @throws ClassCastException when the value cannot be cast to the type of variable in Storage
+     */
+    public static <T> void putLocal(String variable, T newValue, int... indexes) throws ClassCastException {
+        PcjThread.getThreadStorage().put(variable, newValue, indexes);
+    }
+
 //    /**
 //     * Fully asynchronous get from other thread Storage
 //     *
@@ -160,7 +201,7 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
 //     * @return FutureObject that will contain received data
 //     */
 //    public static <T> PcjFuture<T> getFutureObject(int threadId, String variable) {
-//        return ((Group) PcjThread.threadGlobalGroup()).getFutureObject(threadId, variable);
+//        return ((Group) PcjThread.getThreadGlobalGroup()).getFutureObject(threadId, variable);
 //    }
 //
 //    /**
@@ -173,7 +214,7 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
 //     * @return FutureObject that will contain received data
 //     */
 //    public static <T> PcjFuture<T> getFutureObject(int threadId, String variable, int... indexes) {
-//        return ((Group) PcjThread.threadGlobalGroup()).getFutureObject(threadId, variable, indexes);
+//        return ((Group) PcjThread.getThreadGlobalGroup()).getFutureObject(threadId, variable, indexes);
 //    }
 //
 //    public static <T> T get(int threadId, String variable) throws PcjRuntimeException{
@@ -187,32 +228,6 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
 //
 //        return futureObject.get();
 //    }
-//
-//    /**
-//     * Puts the value to current thread Storage
-//     *
-//     * @param variable name of variable
-//     * @param newValue new value of variable
-//     *
-//     * @throws ClassCastException when the value cannot be cast to the type of variable in Storage
-//     */
-//    public static void putLocal(String variable, Object newValue) throws ClassCastException {
-//        PcjThread.threadStorage().put(variable, newValue);
-//    }
-//
-//    /**
-//     * Puts the value to current thread Storage
-//     *
-//     * @param variable name of array variable
-//     * @param newValue new value of variable
-//     * @param indexes  indexes of array
-//     *
-//     * @throws ClassCastException when the value cannot be cast to the type of variable in Storage
-//     */
-//    public static void putLocal(String variable, Object newValue, int... indexes) throws ClassCastException {
-//        PcjThread.threadStorage().put(variable, newValue, indexes);
-//    }
-//
 //    /**
 //     * Puts the value to other thread Storage
 //     *
@@ -227,7 +242,7 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
 //            throw new ClassCastException("Cannot cast " + newValue.getClass().getCanonicalName()
 //                    + " to the type of variable '" + variable + "'");
 //        }
-//        return ((Group) PcjThread.threadGlobalGroup()).put(threadId, variable, newValue);
+//        return ((Group) PcjThread.getThreadGlobalGroup()).put(threadId, variable, newValue);
 //    }
 //
 //    /**
@@ -245,7 +260,7 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
 //            throw new ClassCastException("Cannot cast " + newValue.getClass().getCanonicalName()
 //                    + " to the type of variable '" + variable + "'");
 //        }
-//        return ((Group) PcjThread.threadGlobalGroup()).put(threadId, variable, newValue, indexes);
+//        return ((Group) PcjThread.getThreadGlobalGroup()).put(threadId, variable, newValue, indexes);
 //    }
 //
 //    /**
@@ -261,7 +276,7 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
 //            throw new ClassCastException("Cannot cast " + newValue.getClass().getCanonicalName()
 //                    + " to the type of variable '" + variable + "'");
 //        }
-//        return ((Group) PcjThread.threadGlobalGroup()).broadcast(variable, newValue);
+//        return ((Group) PcjThread.getThreadGlobalGroup()).broadcast(variable, newValue);
 //    }
 //    
 //    public static PcjFuture<R> asyncAt(int threadId, Function<R,T> lambda) throws PcjRuntimeException {
@@ -273,7 +288,7 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
 //     * @return the global group
 //     */
 //    public static Group getGlobalGroup() {
-//        return ((Group) PcjThread.threadGlobalGroup());
+//        return ((Group) PcjThread.getThreadGlobalGroup());
 //    }
 //
 //    /**
@@ -295,7 +310,7 @@ final public class PCJ extends org.pcj.internal.InternalPCJ {
 //     * @return group to which thread joined
 //     */
 //    public static Group join(String name) {
-//        int myThreadId = ((Group) PcjThread.threadGlobalGroup()).myId();
+//        int myThreadId = ((Group) PcjThread.getThreadGlobalGroup()).myId();
 //        return (Group) InternalPCJ.join(myThreadId, name);
 //    }
 }

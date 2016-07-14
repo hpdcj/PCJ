@@ -4,6 +4,7 @@
 package org.pcj.internal;
 
 import org.pcj.StartPoint;
+import org.pcj.Storage;
 
 /**
  * This class represents PCJ thread.
@@ -71,12 +72,21 @@ public class PcjThread extends Thread {
         return throwable;
     }
 
+    public static Storage getThreadStorage() {
+        PcjThreadGroup tg = getPcjThreadGroupForCurrentThread();
+        if (tg == null) {
+            throw new IllegalStateException("Current thread is not part of PcjThread.");
+        }
+        return tg.getThreadData().getStorage();
+    }
+
+    
 //    public static Storage threadStorage() {
 //        PcjThreadGroup tg = threadPcjThreadGroup();
 //        if (tg == null) {
 //            return null;
 //        }
-//        return tg.data.getStorage();
+//        return tg.data.getThreadStorage();
 //    }
 //
 //    public static InternalGroup threadGroup(String name) {
@@ -87,16 +97,16 @@ public class PcjThread extends Thread {
 //        return tg.data.getGroupsByName().get(name);
 //    }
 //
-    public static InternalGroup threadGlobalGroup() {
+    public static InternalGroup getThreadGlobalGroup() {
         PcjThreadGroup tg = getPcjThreadGroupForCurrentThread();
         if (tg == null) {
-            return null;
+            throw new IllegalStateException("Current thread is not part of PcjThread.");
         }
         return tg.getThreadData().getGlobalGroup();
     }
 
-//    public Storage getStorage() {
-//        return threadGroup.data.getStorage();
+//    public Storage getThreadStorage() {
+//        return threadGroup.data.getThreadStorage();
 //    }
 //
 //    public Map<String, InternalGroup> getGroups() {
@@ -105,9 +115,5 @@ public class PcjThread extends Thread {
 //
 //    public InternalGroup getGroup(String name) {
 //        return threadGroup.data.getGroupsByName().get(name);
-//    }
-//
-//    public InternalGroup getGlobalGroup() {
-//        return threadGroup.data.getGlobalGroup();
 //    }
 }

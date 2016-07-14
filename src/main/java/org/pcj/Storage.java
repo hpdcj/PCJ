@@ -5,10 +5,14 @@ package org.pcj;
 
 import java.io.Serializable;
 import java.lang.reflect.Array;
-import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -16,48 +20,147 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public abstract class Storage {
+public class Storage {
 
-    
-    private transient final Map<String, Field> sharedFields = new HashMap<>();
-    private transient final Map<String, AtomicInteger> monitorFields = new HashMap<>();
+    private static final Set<String> RESERVED_WORDS = Collections.unmodifiableSet(
+            new HashSet<>(Arrays.asList(
+                    // https://docs.oracle.com/javase/specs/jls/se8/html/jls-3.html#jls-3.8
+                    // keywords:
+                    "abstract", "continue", "for", "new", "switch",
+                    "assert", "default", "if", "package", "synchronized",
+                    "boolean", "do", "goto", "private", "this",
+                    "break", "double", "implements", "protected", "throw",
+                    "byte", "else", "import", "public", "throws",
+                    "case", "enum", "instanceof", "return", "transient",
+                    "catch", "extends", "int", "short", "try",
+                    "char", "final", "interface", "static", "void",
+                    "class", "finally", "long", "strictfp", "volatile",
+                    "const", "float", "native", "super", "while",
+                    // boolean literals:
+                    "true", "false",
+                    // null literal:
+                    "null")));
+    private static final Map<Class<?>, Set<Class<?>>> WIDENING_PRIMITIVES;
 
-    protected Storage() {
-        for (Field field : this.getClass().getDeclaredFields()) {
-            if (field.isAnnotationPresent(Shared.class)) {
-                String key = field.getName();
+    static {
+        Map<Class<?>, Set<Class<?>>> map = new HashMap<>(8, 1);
+        // https://docs.oracle.com/javase/specs/jls/se8/html/jls-5.html#jls-5.1.2
+        map.put(boolean.class, Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+                Boolean.class
+        ))));
+        map.put(byte.class, Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+                Byte.class
+        ))));
+        map.put(short.class, Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+                Short.class, Byte.class
+        ))));
+        map.put(int.class, Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+                Integer.class, Character.class, Short.class, Byte.class
+        ))));
+        map.put(long.class, Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+                Long.class, Integer.class, Character.class, Short.class, Byte.class
+        ))));
+        map.put(float.class, Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+                Float.class, Long.class, Integer.class, Character.class, Short.class, Byte.class
+        ))));
+        map.put(double.class, Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+                Double.class, Float.class, Long.class, Integer.class, Character.class, Short.class, Byte.class
+        ))));
+        map.put(char.class, Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+                Character.class
+        ))));
+        WIDENING_PRIMITIVES = Collections.unmodifiableMap(map);
+    }
 
-                if (sharedFields.containsKey(key)) {
-                    throw new ArrayStoreException("Duplicate key value (" + key + ")");
-                }
+    private final transient ConcurrentMap<String, Class<?>> variablesTypesMap;
+    private final transient ConcurrentMap<String, Object> variablesValueMap;
+    private final transient ConcurrentMap<String, AtomicInteger> modificationCountMap;
 
-                if (field.getType().isPrimitive() == false
-                        && Serializable.class.isAssignableFrom(field.getType()) == false) {
-                    throw new ClassCastException("Field (" + key + ") is not serializable");
-                }
+    public Storage() {
+        variablesTypesMap = new ConcurrentHashMap<>();
+        variablesValueMap = new ConcurrentHashMap<>();
+        modificationCountMap = new ConcurrentHashMap<>();
+    }
 
-                field.setAccessible(true);
-                sharedFields.put(key, field);
-                monitorFields.put(key, new AtomicInteger(0));
-            }
+    public void createShared(String name, Class<?> type)
+            throws NullPointerException, IllegalArgumentException, IllegalStateException {
+        if (type == null) {
+            throw new NullPointerException("Variable type cannot be null");
         }
+
+        if (type.isPrimitive() == false && Serializable.class.isAssignableFrom(type) == false) {
+            throw new IllegalArgumentException("Variable type is not serializable");
+        }
+
+        identifierNameCheck(name);
+
+        if (variablesTypesMap.containsKey(name)) {
+            throw new IllegalStateException("Variable has already been created: " + name);
+        }
+
+        modificationCountMap.put(name, new AtomicInteger(0));
+        variablesTypesMap.put(name, type);
+    }
+
+    private void identifierNameCheck(String name)
+            throws NullPointerException, IllegalArgumentException {
+        if (name == null) {
+            throw new NullPointerException("Variable name cannot be null");
+        }
+
+        if (name.isEmpty()) {
+            throw new IllegalArgumentException("Variable name cannot be empty");
+        }
+
+        if (RESERVED_WORDS.contains(name)) {
+            throw new IllegalArgumentException("Variable name is reserved word: " + name);
+        }
+
+        if (Character.isJavaIdentifierStart(name.charAt(0)) == false
+                || name.codePoints().skip(1).allMatch(Character::isJavaIdentifierPart) == false) {
+            throw new IllegalArgumentException("Variable name does not meet requirements for identifiers as stated in JSL: " + name);
+        }
+    }
+
+    private Class<?> variableType(String name) throws IllegalArgumentException {
+        if (name == null) {
+            throw new NullPointerException("Variable name cannot be null");
+        }
+        Class<?> clazz = variablesTypesMap.get(name);
+        if (clazz == null) {
+            throw new IllegalArgumentException("Variable not found: " + name);
+        }
+        return clazz;
     }
 
     /**
-     * Gets names of all Shared variables of the Storage
+     * Returns variable from Storages
      *
-     * @return array with names of all Shared variables
+     * @param name    name of Shared variable
+     * @param indexes (optional) indexes into the array
+     *
+     * @return value of variable[indexes] or variable if indexes omitted
+     *
+     * @throws ClassCastException             there is more indexes than variable dimension
+     * @throws ArrayIndexOutOfBoundsException one of indexes is out of bound
      */
-    final public String[] getSharedFields() {
-        return sharedFields.keySet().toArray(new String[0]);
-    }
+    @SuppressWarnings("unchecked")
+    final public <T> T get(String name, int... indexes) throws ArrayIndexOutOfBoundsException, ClassCastException {
+        variableType(name);
+        Object value = variablesValueMap.get(name);
 
-    private Field getField(String name) {
-        final Field field = sharedFields.get(name);
-        if (field == null) {
-            throw new ArrayStoreException("Key not found (" + name + ")");
+        if (indexes.length == 0) {
+            return (T) value;
+        } else {
+            Object array = getArrayElement(value, indexes, indexes.length - 1);
+            if (array.getClass().isArray() == false) {
+                throw new ClassCastException("Cannot put value to " + name + Arrays.toString(indexes) + ".");
+            } else if (Array.getLength(array) <= indexes[indexes.length - 1]) {
+                throw new ArrayIndexOutOfBoundsException("Cannot put value to " + name + Arrays.toString(indexes) + ".");
+            }
+
+            return (T) Array.get(array, indexes[indexes.length - 1]);
         }
-        return field;
     }
 
     private Object getArrayElement(Object array, int[] indexes, int length) throws ArrayIndexOutOfBoundsException, IllegalArgumentException, ClassCastException {
@@ -73,95 +176,11 @@ public abstract class Storage {
         return array;
     }
 
-    private boolean isAssignableFrom(String variable, Class<?> clazz, int... indexes) {
-        Class<?> fieldClass = getField(variable).getType();
-
-        for (int i = 0; i < indexes.length; ++i) {
-            if (fieldClass.isArray() == false) {
-                return false;
-            }
-            fieldClass = fieldClass.getComponentType();
-        }
-
-        if (clazz == null) {
-            return !fieldClass.isPrimitive();
-        }
-
-        if (fieldClass.isAssignableFrom(clazz)) {
-            return true;
-        }
-        if (fieldClass.isPrimitive()) {
-            return (fieldClass.equals(boolean.class) && clazz.equals(Boolean.class))
-                    || (fieldClass.equals(byte.class) && clazz.equals(Byte.class))
-                    || (fieldClass.equals(short.class) && clazz.equals(Short.class))
-                    || (fieldClass.equals(int.class) && clazz.equals(Integer.class))
-                    || (fieldClass.equals(long.class) && clazz.equals(Long.class))
-                    || (fieldClass.equals(float.class) && clazz.equals(Float.class))
-                    || (fieldClass.equals(double.class) && clazz.equals(Double.class))
-                    || (fieldClass.equals(char.class) && clazz.equals(Character.class));
-        }
-        return false;
-    }
-
-    /**
-     * Checks if value can be assigned to variable stored in Storage
-     *
-     * @param variable name of variable stored in Storage
-     * @param value    to check
-     *
-     * @return true if the value can be assigned to the variable
-     */
-    final public boolean isAssignable(String variable, Object value, int... indexes) {
-        Class<?> clazz = null;
-        if (value != null) {
-            clazz = value.getClass();
-        }
-        return isAssignableFrom(variable, clazz, indexes);
-    }
-
-    /**
-     * Returns variable from Storages
-     *
-     * @param variable name of Shared variable
-     * @param indexes  (optional) indexes into the array
-     *
-     * @return value of variable[indexes] or variable if indexes omitted
-     *
-     * @throws ClassCastException             there is more indexes than variable dimension
-     * @throws ArrayIndexOutOfBoundsException one of indexes is out of bound
-     */
-    @SuppressWarnings("unchecked")
-    final public <T> T get(String variable, int... indexes) throws ArrayIndexOutOfBoundsException, ClassCastException {
-        try {
-            final Field field = getField(variable);
-
-            Object fieldValue;
-            synchronized (field) {
-                fieldValue = field.get(this);
-            }
-
-            if (indexes.length == 0) {
-                return (T) fieldValue;
-            } else {
-                Object array = getArrayElement(fieldValue, indexes, indexes.length - 1);
-                if (array.getClass().isArray() == false) {
-                    throw new ClassCastException("Cannot put value to " + variable + Arrays.toString(indexes) + ".");
-                } else if (Array.getLength(array) <= indexes[indexes.length - 1]) {
-                    throw new ArrayIndexOutOfBoundsException("Cannot put value to " + variable + Arrays.toString(indexes) + ".");
-                }
-
-                return (T) Array.get(array, indexes[indexes.length - 1]);
-            }
-        } catch (IllegalAccessException ex) {
-            throw new IllegalArgumentException(ex);
-        }
-    }
-
     /**
      * Puts new value of variable to Storage into the array, or as variable
      * value if indexes omitted
      *
-     * @param variable name of Shared variable
+     * @param name     name of Shared variable
      * @param newValue new value of variable
      * @param indexes  (optional) indexes into the array
      *
@@ -169,52 +188,75 @@ public abstract class Storage {
      *                                        or value cannot be assigned to the variable
      * @throws ArrayIndexOutOfBoundsException one of indexes is out of bound
      */
-    final public <T> void put(String variable, T newValue, int... indexes) throws ArrayIndexOutOfBoundsException, ClassCastException {
-        if (isAssignable(variable, newValue, indexes) == false) {
+    final public <T> void put(String name, T newValue, int... indexes) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
+        Class<?> variableClass = variableType(name);
+        if (isAssignableFrom(variableClass, newValue.getClass(), indexes) == false) {
             throw new ClassCastException("Cannot cast " + newValue.getClass().getCanonicalName()
-                    + " to the type of variable '" + variable + "'");
+                    + " to the type of variable '" + name + "': " + variablesTypesMap.get(name));
         }
-        try {
-            final Field field = getField(variable);
 
-            if (indexes.length == 0) {
-                field.set(this, newValue);
-            } else {
-                Object array = getArrayElement(field.get(this), indexes, indexes.length - 1);
+        if (indexes.length == 0) {
+            variablesValueMap.put(name, newValue);
+        } else {
+            Object array = getArrayElement(variablesValueMap.get(name), indexes, indexes.length - 1);
 
-                if (array == null) {
-                    throw new ClassCastException("Cannot put value to " + variable + " - NullPointerException.");
-                } else if (array.getClass().isArray() == false) {
-                    throw new ClassCastException("Cannot put value to " + variable + Arrays.toString(indexes) + ".");
-                } else if (Array.getLength(array) <= indexes[indexes.length - 1]) {
-                    throw new ArrayIndexOutOfBoundsException("Cannot put value to " + variable + Arrays.toString(indexes) + ".");
-                }
-
-                Array.set(array, indexes[indexes.length - 1], newValue);
+            if (array == null) {
+                throw new NullPointerException("Cannot put value to: " + name);
+            } else if (array.getClass().isArray() == false) {
+                throw new ClassCastException("Cannot put value to " + name + Arrays.toString(indexes));
+            } else if (Array.getLength(array) <= indexes[indexes.length - 1]) {
+                throw new ArrayIndexOutOfBoundsException("Cannot put value to " + name + Arrays.toString(indexes));
             }
 
-            monitorFields.get(variable).getAndIncrement();
-            synchronized (field) {
-                field.notifyAll();
-            }
-        } catch (IllegalAccessException ex) {
-            throw new IllegalArgumentException(ex);
+            Array.set(array, indexes[indexes.length - 1], newValue);
+        }
+
+        AtomicInteger monitor = modificationCountMap.get(name);
+        monitor.getAndIncrement();
+        synchronized (monitor) {
+            monitor.notifyAll();
         }
     }
 
+    /**
+     * Checks if value can be assigned to variable stored in Storage
+     *
+     * @return true if the value can be assigned to the variable
+     */
+    private boolean isAssignableFrom(Class<?> variableClass, Class<?> fromClass, int... indexes) {
+        for (int i = 0; i < indexes.length; ++i) {
+            if (variableClass.isArray() == false) {
+                return false;
+            }
+            variableClass = variableClass.getComponentType();
+        }
+
+        if (fromClass == null) {
+            return !variableClass.isPrimitive();
+        }
+
+        if (variableClass.isAssignableFrom(fromClass)) {
+            return true;
+        }
+
+        if (variableClass.isPrimitive()) {
+            return WIDENING_PRIMITIVES.get(variableClass).contains(fromClass);
+        }
+        return false;
+    }
 
     /**
-     * Tells to monitor variable. Set the field modification counter to zero.
+     * Tells to monitor variable. Set the variable modification counter to zero.
      *
      * @param variable name of Shared variable
      */
     final public void monitor(String variable) {
-        monitorFields.get(variable).set(0);
+        modificationCountMap.get(variable).set(0);
     }
 
     /**
      * Pauses current Thread and wait for <code>count</code> modifications of
-     * variable. After modification decreases the field modification counter by
+     * variable. After modification decreases the variable modification counter by
      * <code>count</code>.
      *
      * @param variable name of Shared variable
@@ -224,27 +266,27 @@ public abstract class Storage {
      */
     final public int waitFor(String variable, int count) {
         if (count < 0) {
-            throw new IllegalArgumentException(String.format("Value count is less than zero (%d)", count));
+            throw new IllegalArgumentException("Value count is less than zero:" + count);
         }
-        
-        final Field field = getField(variable);
-        AtomicInteger atomic = monitorFields.get(variable);
+
+        AtomicInteger monitor = modificationCountMap.get(variable);
         if (count == 0) {
-            return atomic.get();
+            return monitor.get();
         }
         int v;
         do {
-            synchronized (field) {
-                while ((v = atomic.get()) < count) {
+            synchronized (monitor) {
+                while ((v = monitor.get()) < count) {
                     try {
-                        field.wait();
+                        monitor.wait();
                     } catch (InterruptedException ex) {
                         ex.printStackTrace(System.err);
                     }
                 }
             }
-        } while (atomic.compareAndSet(v, v - count) == false);
+        } while (monitor.compareAndSet(v, v - count) == false);
 
-        return atomic.get();
+        return monitor.get();
     }
+
 }

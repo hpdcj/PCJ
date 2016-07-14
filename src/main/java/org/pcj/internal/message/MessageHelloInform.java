@@ -10,7 +10,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Level;
-import org.pcj.Configuration;
+import org.pcj.internal.Configuration;
 import org.pcj.internal.InternalGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.Networker;

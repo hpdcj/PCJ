@@ -39,18 +39,21 @@ public class MultipleJvms {
             process.getOutputStream().close();
             processes.add(process);
         }
-        while (!processes.isEmpty()) {
-            Iterator<Process> it = processes.iterator();
-            while (it.hasNext()) {
-                Process process = it.next();
-                if (process.isAlive() == false) {
-                    int exitCode = process.waitFor();
-                    System.err.println(process + " is dead with EXIT_CODE: "+exitCode);
-                    it.remove();
-                }
-            }
-//            java.util.concurrent.locks.LockSupport.parkNanos(2_000_000_000);
-            java.util.concurrent.TimeUnit.SECONDS.sleep(1);
+        for (Process process : processes) {
+            process.waitFor();
         }
+//        while (!processes.isEmpty()) {
+//            Iterator<Process> it = processes.iterator();
+//            while (it.hasNext()) {
+//                Process process = it.next();
+//                if (process.isAlive() == false) {
+//                    int exitCode = process.waitFor();
+//                    System.err.println(process + " is dead with EXIT_CODE: "+exitCode);
+//                    it.remove();
+//                }
+//            }
+////            java.util.concurrent.locks.LockSupport.parkNanos(2_000_000_000);
+//            java.util.concurrent.TimeUnit.SECONDS.sleep(1);
+//        }
     }
 }

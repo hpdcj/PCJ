@@ -3,6 +3,7 @@
  */
 package org.pcj;
 
+import org.pcj.internal.Configuration;
 import org.pcj.internal.NodeInfo;
 import java.io.BufferedReader;
 import java.io.File;
