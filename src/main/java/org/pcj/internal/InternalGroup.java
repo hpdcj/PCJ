@@ -161,7 +161,6 @@ public class InternalGroup {
                 localBitmask.set(groupThreadId);
             }
         }
-
     }
 
     protected PcjFuture<Void> asyncBarrier() {
@@ -175,7 +174,6 @@ public class InternalGroup {
         synchronized (localBarrier) {
             localBarrier.set(threadId);
             if (localBarrier.isSet()) {
-            System.err.println(barrierRound +" "+localBarrier.getRound()+ " " + InternalPCJ.getNodeData().getPhysicalId() + "t" + threadId + " isSet " + localBarrier.isSet());
                 int groupMasterId = getGroupMasterNode();
                 SocketChannel groupMasterSocket = InternalPCJ.getNodeData()
                         .getSocketChannelByPhysicalId().get(groupMasterId);

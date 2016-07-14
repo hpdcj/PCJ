@@ -31,6 +31,7 @@ public class MessageBytesInputStream {
     }
 
     public void offerNextBytes(ByteBuffer byteBuffer) {
+        while (byteBuffer.hasRemaining()) {
             if (currentByteBuffer == null) {
                 while (header.hasRemaining() && byteBuffer.hasRemaining()) {
                     header.put(byteBuffer.get());
@@ -54,8 +55,12 @@ public class MessageBytesInputStream {
                     currentByteBuffer.flip();
                     messageInputStream.offerByteBuffer(currentByteBuffer);
                     currentByteBuffer = null;
+                    if (messageInputStream.isClosed()) {
+                        return;
+                    }
                 }
             }
+        }
     }
 
     public Message readMessage() {
@@ -71,8 +76,7 @@ public class MessageBytesInputStream {
     }
 
     public boolean isClosed() {
-        return messageInputStream.isClosed()
-                && (currentByteBuffer == null || currentByteBuffer.hasRemaining() == false);
+        return messageInputStream.isClosed() && currentByteBuffer == null;
     }
 
     public MessageDataInputStream getMessageData() {

@@ -73,7 +73,6 @@ public class LocalBarrier implements PcjFuture<Void> {
 
     @Override
     public Void get() throws PcjRuntimeException {
-        System.err.println(round + "round -> done: " + done);
         synchronized (lock) {
             while (done == false) {
                 try {

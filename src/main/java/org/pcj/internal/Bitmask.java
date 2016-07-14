@@ -83,7 +83,7 @@ final public class Bitmask {
         if (position > length || position < 0) {
             throw new IllegalArgumentException("Position " + position + " is out of bound.");
         }
-        value[position / MASK_SIZE] &= all[position / MASK_SIZE] ^ (1L << (position % MASK_SIZE));
+        value[position / MASK_SIZE] &= MASK ^ (1L << (position % MASK_SIZE));
     }
 
     synchronized public void clear() {
@@ -149,36 +149,4 @@ final public class Bitmask {
         }
         return sb.toString();
     }
-//
-//    synchronized public void insert(int position, int bit) {
-//        long v;
-//        if (bit == 0) {
-//            v = 0L;
-//        } else {
-//            v = 1L;
-//        }
-//
-//        if (position < length) {
-//            ensureLength(length + 1);
-//            int index = position / MASK_SIZE;
-//            long carry = (value[index] & UPPER_BIT) >>> (MASK_SIZE - 1);
-//            int shift = (position % MASK_SIZE);
-//            if (shift + 1 == MASK_SIZE) {
-//                value[index] = (value[index] & (UPPER_BIT - 1)) | (v << shift);
-//            } else {
-//                long lo = value[index] & ((1L << shift) - 1);
-//                value[index] = ((value[index] ^ lo) << 1) | (v << shift) | lo;
-//            }
-//            for (++index; index < value.length; ++index) {
-//                long temp = (value[index] & UPPER_BIT) >>> (MASK_SIZE - 1);
-//                value[index] = (value[index] << 1) | carry;
-//                carry = temp;
-//            }
-//        } else {
-//            ensureLength(length + 1);
-//            if (v == 1L) {
-//                set(position);
-//            }
-//        }
-//    }
 }
