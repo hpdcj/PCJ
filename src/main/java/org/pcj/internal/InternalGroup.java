@@ -348,13 +348,13 @@ public class InternalGroup {
 //        }
 //    }
 //
-//    protected <T> PcjFuture<T> getFutureObject(int myNodeId, int nodeId, String variable, int... indexes) {
+//    protected <T> PcjFuture<T> getFutureObject(int myNodeId, int nodeId, String variable, int... indices) {
 //        nodeId = nodes.get(nodeId);
 //
 //        MessageValueAsyncGetRequest msg = new MessageValueAsyncGetRequest();
 //        msg.setSenderGlobalNodeId(myNodeId);
 //        msg.setReceiverGlobalNodeId(nodeId);
-//        msg.setIndexes(indexes);
+//        msg.setIndexes(indices);
 //        msg.setVariableName(variable);
 //
 //        FutureObject<T> futureObject = new FutureObject<>();
@@ -368,13 +368,13 @@ public class InternalGroup {
 //        }
 //    }
 //
-//    protected PcjFuture<Void> put(int nodeId, String variable, Object newValue, int... indexes) {
+//    protected PcjFuture<Void> put(int nodeId, String variable, Object newValue, int... indices) {
 //        nodeId = nodes.get(nodeId);
 //
 //        MessageValuePut msg = new MessageValuePut();
 //        msg.setReceiverGlobalNodeId(nodeId);
 //        msg.setVariableName(variable);
-//        msg.setIndexes(indexes);
+//        msg.setIndexes(indices);
 //        msg.setVariableValue(CloneObject.serialize(newValue));
 //
 //        try {

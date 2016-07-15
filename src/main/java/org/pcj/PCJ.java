@@ -3,6 +3,8 @@
  */
 package org.pcj;
 
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.pcj.internal.DeployPCJ;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.PcjThread;
@@ -145,6 +147,18 @@ final public class PCJ extends InternalPCJ {
     }
 
     /**
+     * Causes the current thread to wait until the variable was <i>touched</i>
+     * count times. Resets the state after <i>touches</i>.
+     *
+     * @param variable name of variable
+     * @param count    number of <i>touches</i>
+     */
+    public static int waitFor(String variable, int count,
+            long timeout, TimeUnit unit) throws TimeoutException {
+        return PcjThread.getThreadStorage().waitFor(variable, count, timeout, unit);
+    }
+
+    /**
      * Gets the value from current thread Storage.
      *
      * @param variable name of variable
@@ -159,12 +173,12 @@ final public class PCJ extends InternalPCJ {
      * Gets the value from current thread Storage
      *
      * @param variable name of array variable
-     * @param indexes  indexes of array
+     * @param indices  indices of array
      *
      * @return value of variable
      */
-    public static <T> T getLocal(String variable, int... indexes) {
-        return PcjThread.getThreadStorage().get(variable, indexes);
+    public static <T> T getLocal(String variable, int... indices) {
+        return PcjThread.getThreadStorage().get(variable, indices);
     }
 
     /**
@@ -184,12 +198,12 @@ final public class PCJ extends InternalPCJ {
      *
      * @param variable name of array variable
      * @param newValue new value of variable
-     * @param indexes  indexes of array
+     * @param indices  indices of array
      *
      * @throws ClassCastException when the value cannot be cast to the type of variable in Storage
      */
-    public static <T> void putLocal(String variable, T newValue, int... indexes) throws ClassCastException {
-        PcjThread.getThreadStorage().put(variable, newValue, indexes);
+    public static <T> void putLocal(String variable, T newValue, int... indices) throws ClassCastException {
+        PcjThread.getThreadStorage().put(variable, newValue, indices);
     }
 
 //    /**
@@ -209,12 +223,12 @@ final public class PCJ extends InternalPCJ {
 //     *
 //     * @param threadId global thread id
 //     * @param variable name of array variable
-//     * @param indexes  indexes of array
+//     * @param indices  indices of array
 //     *
 //     * @return FutureObject that will contain received data
 //     */
-//    public static <T> PcjFuture<T> getFutureObject(int threadId, String variable, int... indexes) {
-//        return ((Group) PcjThread.getThreadGlobalGroup()).getFutureObject(threadId, variable, indexes);
+//    public static <T> PcjFuture<T> getFutureObject(int threadId, String variable, int... indices) {
+//        return ((Group) PcjThread.getThreadGlobalGroup()).getFutureObject(threadId, variable, indices);
 //    }
 //
 //    public static <T> T get(int threadId, String variable) throws PcjRuntimeException{
@@ -223,8 +237,8 @@ final public class PCJ extends InternalPCJ {
 //        return futureObject.get();
 //    }
 //
-//    public static <T> T get(int threadId, String variable, int... indexes) throws PcjRuntimeException {
-//        PcjFuture<T> futureObject = getFutureObject(threadId, variable, indexes);
+//    public static <T> T get(int threadId, String variable, int... indices) throws PcjRuntimeException {
+//        PcjFuture<T> futureObject = getFutureObject(threadId, variable, indices);
 //
 //        return futureObject.get();
 //    }
@@ -251,16 +265,16 @@ final public class PCJ extends InternalPCJ {
 //     * @param threadId other thread global thread id
 //     * @param variable name of array variable
 //     * @param newValue new value of variable
-//     * @param indexes  indexes of array
+//     * @param indices  indices of array
 //     *
 //     * @throws ClassCastException when the value cannot be cast to the type of variable in Storage
 //     */
-//    public static <T> PcjFuture<Void> put(int threadId, String variable, T newValue, int... indexes) throws ClassCastException, PcjRuntimeException {
-//        if (PcjThread.threadStorage().isAssignable(variable, newValue, indexes) == false) {
+//    public static <T> PcjFuture<Void> put(int threadId, String variable, T newValue, int... indices) throws ClassCastException, PcjRuntimeException {
+//        if (PcjThread.threadStorage().isAssignable(variable, newValue, indices) == false) {
 //            throw new ClassCastException("Cannot cast " + newValue.getClass().getCanonicalName()
 //                    + " to the type of variable '" + variable + "'");
 //        }
-//        return ((Group) PcjThread.getThreadGlobalGroup()).put(threadId, variable, newValue, indexes);
+//        return ((Group) PcjThread.getThreadGlobalGroup()).put(threadId, variable, newValue, indices);
 //    }
 //
 //    /**

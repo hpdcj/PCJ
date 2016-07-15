@@ -11,6 +11,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.internal.PrimitiveTypes;
 
@@ -93,27 +95,19 @@ public class Storage {
         }
     }
 
-    private Class<?> variableType(String name) throws IllegalArgumentException {
-        Class<?> clazz = typesMap.get(name);
-        if (clazz == null) {
-            throw new IllegalArgumentException("Variable not found: " + name);
-        }
-        return clazz;
-    }
-
     /**
      * Returns variable from Storages
      *
      * @param name    name of Shared variable
-     * @param indexes (optional) indexes into the array
+     * @param indices (optional) indices into the array
      *
-     * @return value of variable[indexes] or variable if indexes omitted
+     * @return value of variable[indices] or variable if indices omitted
      *
-     * @throws ClassCastException             there is more indexes than variable dimension
-     * @throws ArrayIndexOutOfBoundsException one of indexes is out of bound
+     * @throws ClassCastException             there is more indices than variable dimension
+     * @throws ArrayIndexOutOfBoundsException one of indices is out of bound
      */
     @SuppressWarnings("unchecked")
-    final public <T> T get(String name, int... indexes) throws ArrayIndexOutOfBoundsException, ClassCastException {
+    final public <T> T get(String name, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException {
         if (name == null) {
             throw new NullPointerException("Variable name cannot be null");
         }
@@ -122,28 +116,28 @@ public class Storage {
         }
         Object value = valueMap.get(name);
 
-        if (indexes.length == 0) {
+        if (indices.length == 0) {
             return (T) value;
         } else {
-            Object array = getArrayElement(value, indexes, indexes.length - 1);
+            Object array = getArrayElement(value, indices, indices.length - 1);
             if (array.getClass().isArray() == false) {
-                throw new ClassCastException("Cannot put value to " + name + Arrays.toString(indexes) + ".");
-            } else if (Array.getLength(array) <= indexes[indexes.length - 1]) {
-                throw new ArrayIndexOutOfBoundsException("Cannot put value to " + name + Arrays.toString(indexes) + ".");
+                throw new ClassCastException("Cannot put value to " + name + Arrays.toString(indices) + ".");
+            } else if (Array.getLength(array) <= indices[indices.length - 1]) {
+                throw new ArrayIndexOutOfBoundsException("Cannot put value to " + name + Arrays.toString(indices) + ".");
             }
 
-            return (T) Array.get(array, indexes[indexes.length - 1]);
+            return (T) Array.get(array, indices[indices.length - 1]);
         }
     }
 
-    private Object getArrayElement(Object array, int[] indexes, int length) throws ArrayIndexOutOfBoundsException, IllegalArgumentException, ClassCastException {
+    private Object getArrayElement(Object array, int[] indices, int length) throws ArrayIndexOutOfBoundsException, IllegalArgumentException, ClassCastException {
         for (int index = 0; index < length; ++index) {
             if (array.getClass().isArray() == false) {
                 throw new ClassCastException("Wrong dimension at point " + index + ".");
-            } else if (Array.getLength(array) <= indexes[index]) {
+            } else if (Array.getLength(array) <= indices[index]) {
                 throw new ArrayIndexOutOfBoundsException("Wrong size at point " + index + ".");
             }
-            array = Array.get(array, indexes[index]);
+            array = Array.get(array, indices[index]);
         }
 
         return array;
@@ -151,15 +145,15 @@ public class Storage {
 
     /**
      * Puts new value of variable to Storage into the array, or as variable
-     * value if indexes omitted
+     * value if indices omitted
      *
      * @param name     name of Shared variable
      * @param newValue new value of variable
-     * @param indices  (optional) indexes into the array
+     * @param indices  (optional) indices into the array
      *
-     * @throws ClassCastException             there is more indexes than variable dimension
+     * @throws ClassCastException             there is more indices than variable dimension
      *                                        or value cannot be assigned to the variable
-     * @throws ArrayIndexOutOfBoundsException one of indexes is out of bound
+     * @throws ArrayIndexOutOfBoundsException one of indices is out of bound
      */
     final public <T> void put(String name, T value, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
         if (name == null) {
@@ -302,8 +296,49 @@ public class Storage {
                     try {
                         monitor.wait();
                     } catch (InterruptedException ex) {
-                        ex.printStackTrace(System.err);
+                        throw new PcjRuntimeException(ex);
                     }
+                }
+            }
+        } while (monitor.compareAndSet(v, v - count) == false);
+
+        return monitor.get();
+    }
+
+    /**
+     * Pauses current Thread and wait for <code>count</code> modifications of
+     * variable. After modification decreases the variable modification counter by
+     * <code>count</code>.
+     *
+     * @param variable name of Shared variable
+     * @param count    number of modifications. If 0 - the method exits immediately.
+     */
+    final public int waitFor(String variable, int count, long timeout, TimeUnit unit) throws TimeoutException {
+        if (count < 0) {
+            throw new IllegalArgumentException("Value count is less than zero:" + count);
+        }
+
+        AtomicInteger monitor = modificationCountMap.get(variable);
+        if (count == 0) {
+            return monitor.get();
+        }
+        long nanosTimeout = unit.toNanos(timeout);
+        final long deadline = System.nanoTime() + nanosTimeout;
+
+        int v;
+        do {
+
+            synchronized (monitor) {
+                while ((v = monitor.get()) < count) {
+                    if (nanosTimeout <= 0L) {
+                        throw new TimeoutException();
+                    }
+                    try {
+                        monitor.wait(nanosTimeout / 1_000_000, (int) (nanosTimeout % 1_000_000));
+                    } catch (InterruptedException ex) {
+                        throw new PcjRuntimeException(ex);
+                    }
+                    nanosTimeout = deadline - System.nanoTime();
                 }
             }
         } while (monitor.compareAndSet(v, v - count) == false);

@@ -66,16 +66,16 @@ final public class Group extends InternalGroup {
 //     *
 //     * @param nodeId   other node group node id
 //     * @param variable name of variable
-//     * @param indexes  indexes of variable array (not needed)
+//     * @param indices  indices of variable array (not needed)
 //     *
 //     * @return FutureObject that will contain received object
 //     */
-//    public <T> PcjFuture<T> getFutureObject(int nodeId, String variable, int... indexes) {
-//        return (PcjFuture<T>) super.getFutureObject(myNodeId, nodeId, variable, indexes);
+//    public <T> PcjFuture<T> getFutureObject(int nodeId, String variable, int... indices) {
+//        return (PcjFuture<T>) super.getFutureObject(myNodeId, nodeId, variable, indices);
 //    }
 //
-//    public <T> T get(int nodeId, String variable, int... indexes) {
-//        PcjFuture<T> futureObject = getFutureObject(nodeId, variable, indexes);
+//    public <T> T get(int nodeId, String variable, int... indices) {
+//        PcjFuture<T> futureObject = getFutureObject(nodeId, variable, indices);
 //
 //        return futureObject.get();
 //    }
@@ -87,11 +87,11 @@ final public class Group extends InternalGroup {
 //     * @param nodeId   other node group node id
 //     * @param variable name of variable
 //     * @param newValue value to put
-//     * @param indexes  indexes of variable array (not needed)
+//     * @param indices  indices of variable array (not needed)
 //     */
 //    @Override
-//    public PcjFuture<Void> put(int nodeId, String variable, Object newValue, int... indexes) {
-//        return super.put(nodeId, variable, newValue, indexes);
+//    public PcjFuture<Void> put(int nodeId, String variable, Object newValue, int... indices) {
+//        return super.put(nodeId, variable, newValue, indices);
 //    }
 //
 //    /**

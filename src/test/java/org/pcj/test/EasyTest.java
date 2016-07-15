@@ -4,6 +4,8 @@
 package org.pcj.test;
 
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.pcj.NodesDescription;
@@ -72,7 +74,13 @@ public class EasyTest extends Storage implements StartPoint {
         PCJ.createShared("a", double.class);
         PCJ.createShared("b", double.class);
         PCJ.createShared("c", Double.class);
-        PCJ.putLocal("a", new Long(2));
+        long start=System.nanoTime();
+        new Thread(() -> {
+            LockSupport.parkNanos(4_999_999_999L);
+            PCJ.putLocal("a", (System.nanoTime()-start)/1e9);
+        }).start();
+        PCJ.waitFor("a", 1, 5, TimeUnit.SECONDS);
+//        PCJ.putLocal("a", new Long(2));
         PCJ.putLocal("b", 'b');
         PCJ.putLocal("c", 2);
 
