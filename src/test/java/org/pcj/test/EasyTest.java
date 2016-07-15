@@ -69,10 +69,17 @@ public class EasyTest extends Storage implements StartPoint {
             PCJ.barrier();
         }
 
-        PCJ.createShared("a", Long[].class);
-        PCJ.putLocal("a", new Long[1]);
-        PCJ.putLocal("a", 2L, 0);
+        PCJ.createShared("a", double.class);
+        PCJ.createShared("b", double.class);
+        PCJ.createShared("c", Double.class);
+        PCJ.putLocal("a", new Long(2));
+        PCJ.putLocal("b", 'b');
+        PCJ.putLocal("c", 2);
 
-        System.out.println("a=" +Arrays.toString((Long[])PCJ.getLocal("a")));
+        System.out.println("a=" + PCJ.getLocal("a") + " " + PCJ.getLocal("a").getClass());
+        System.out.println("b=" + PCJ.getLocal("b") + " " + PCJ.getLocal("b").getClass());
+        System.out.println("c=" + PCJ.getLocal("c"));
+        PCJ.putLocal("c", null);
+        System.out.println("c=" + PCJ.getLocal("c"));
     }
 }
