@@ -8,7 +8,7 @@ import java.nio.channels.SocketChannel;
 import java.util.List;
 import org.pcj.internal.InternalGroup;
 import org.pcj.internal.InternalPCJ;
-import org.pcj.internal.LocalBarrier;
+import org.pcj.internal.futures.LocalBarrier;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
@@ -63,7 +63,7 @@ final public class MessageGroupBarrierGo extends Message {
         children.stream().map(nodeData.getSocketChannelByPhysicalId()::get)
                 .forEach(socket -> InternalPCJ.getNetworker().send(socket, this));
 
-        LocalBarrier barrier = group.getLocalBarrierBitmaskMap().remove(round);
+        LocalBarrier barrier = group.getLocalBarrierMap().remove(round);
         barrier.signalAll();
     }
 }

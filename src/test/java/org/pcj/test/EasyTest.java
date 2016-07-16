@@ -11,13 +11,13 @@ import java.util.logging.Logger;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
 import org.pcj.StartPoint;
-import org.pcj.Storage;
+import org.pcj.internal.InternalStorage;
 
 /**
  *
  * @author faramir
  */
-public class EasyTest extends Storage implements StartPoint {
+public class EasyTest extends InternalStorage implements StartPoint {
 
     public static void main(String[] args) throws InterruptedException {
         Level level = Level.INFO;

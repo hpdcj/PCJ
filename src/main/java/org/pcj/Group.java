@@ -5,7 +5,6 @@ package org.pcj;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.internal.InternalGroup;
-import org.pcj.internal.LocalBarrier;
 
 /**
  * External class that represents group for grouped communication.
@@ -14,12 +13,12 @@ import org.pcj.internal.LocalBarrier;
  */
 final public class Group extends InternalGroup {
 
-    private final int threadId;
+    private final int myThreadId;
     private final AtomicInteger barrierRoundCounter;
 
     public Group(int threadId, InternalGroup internalGroup) {
         super(internalGroup);
-        this.threadId = threadId;
+        this.myThreadId = threadId;
         barrierRoundCounter = new AtomicInteger(0);
     }
 
@@ -41,39 +40,29 @@ final public class Group extends InternalGroup {
 
     @Override
     public int myId() {
-        return threadId;
+        return myThreadId;
     }
 
     @Override
     public PcjFuture<Void> asyncBarrier() {
-        LocalBarrier barrier = super.barrier(threadId, barrierRoundCounter.incrementAndGet());
-        return barrier;
+        return super.barrier(myThreadId, barrierRoundCounter.incrementAndGet());
     }
 
-//    /**
-//     * Synchronize with potentially subset of nodes in group
-//     *
-//     * @param nodes nodes group node id
-//     */
+    /**
+     * Fully asynchronous get operation - receives variable value from other
+     * thread. If threadId is current thread, data is cloned.
+     *
+     * @param threadId   other node group thread id
+     * @param variable name of variable
+     * @param indices  indices of variable array (not needed)
+     *
+     * @return FutureObject that will contain received object
+     */
 //    @Override
-//    public void barrier(int nodes) {
-//        super.barrier(myNodeId, nodes);
+//    public <T> PcjFuture<T> asyncGet(int threadId, String variable, int... indices) {
+//        return (PcjFuture<T>) super.asyncGet(myThreadId, threadId, variable, indices);
 //    }
-//
-//    /**
-//     * Fully asynchronous get operation - receives variable value from other
-//     * node. If nodeId is current node, data is cloned.
-//     *
-//     * @param nodeId   other node group node id
-//     * @param variable name of variable
-//     * @param indices  indices of variable array (not needed)
-//     *
-//     * @return FutureObject that will contain received object
-//     */
-//    public <T> PcjFuture<T> getFutureObject(int nodeId, String variable, int... indices) {
-//        return (PcjFuture<T>) super.getFutureObject(myNodeId, nodeId, variable, indices);
-//    }
-//
+
 //    public <T> T get(int nodeId, String variable, int... indices) {
 //        PcjFuture<T> futureObject = getFutureObject(nodeId, variable, indices);
 //

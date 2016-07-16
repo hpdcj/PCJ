@@ -3,6 +3,7 @@
  */
 package org.pcj;
 
+import org.pcj.internal.InternalStorage;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.pcj.internal.DeployPCJ;
@@ -24,7 +25,7 @@ final public class PCJ extends InternalPCJ {
     }
 
     /**
-     * Starts PCJ calculations on local node using specified StartPoint and Storage class.
+     * Starts PCJ calculations on local node using specified StartPoint and InternalStorage class.
      * NodesDescription contains list of all hostnames used in calculations. Hostnames can be
      * specified many times, so more than one instance of PCJ will be run on node (called threads).
      *
@@ -33,13 +34,13 @@ final public class PCJ extends InternalPCJ {
      * @param nodesDescription description of used nodes (and threads)
      */
     public static void start(Class<? extends StartPoint> startPoint,
-            Class<? extends Storage> storage,
+            Class<? extends InternalStorage> storage,
             NodesDescription nodesDescription) {
-        InternalPCJ.start(startPoint, storage, nodesDescription);
+        InternalPCJ.start(startPoint, nodesDescription);
     }
 
     /**
-     * Deploys and starts PCJ calculations on nodes using specified StartPoint and Storage class.
+     * Deploys and starts PCJ calculations on nodes using specified StartPoint and InternalStorage class.
      * NodesDescription contains list of all hostnames used in calculations.
      * Hostnames can be specified many times, so more than one instance
      * of PCJ will be run on node (called threads). Empty hostnames means current JVM.
@@ -53,9 +54,9 @@ final public class PCJ extends InternalPCJ {
      * @param nodesDescription description of used nodes (and threads)
      */
     public static void deploy(Class<? extends StartPoint> startPoint,
-            Class<? extends Storage> storage,
+            Class<? extends InternalStorage> storage,
             NodesDescription nodesDescription) {
-        DeployPCJ.deploy(startPoint, storage, nodesDescription);
+        DeployPCJ.deploy(startPoint, nodesDescription);
     }
 
     /**
@@ -159,7 +160,7 @@ final public class PCJ extends InternalPCJ {
     }
 
     /**
-     * Gets the value from current thread Storage.
+     * Gets the value from current thread InternalStorage.
      *
      * @param variable name of variable
      *
@@ -170,7 +171,7 @@ final public class PCJ extends InternalPCJ {
     }
 
     /**
-     * Gets the value from current thread Storage
+     * Gets the value from current thread InternalStorage
      *
      * @param variable name of array variable
      * @param indices  indices of array
@@ -182,25 +183,25 @@ final public class PCJ extends InternalPCJ {
     }
 
     /**
-     * Puts the value to current thread Storage
+     * Puts the value to current thread InternalStorage
      *
      * @param variable name of variable
      * @param newValue new value of variable
      *
-     * @throws ClassCastException when the value cannot be cast to the type of variable in Storage
+     * @throws ClassCastException when the value cannot be cast to the type of variable in InternalStorage
      */
     public static <T> void putLocal(String variable, T newValue) throws ClassCastException {
         PcjThread.getThreadStorage().put(variable, newValue);
     }
 
     /**
-     * Puts the value to current thread Storage
+     * Puts the value to current thread InternalStorage
      *
      * @param variable name of array variable
      * @param newValue new value of variable
      * @param indices  indices of array
      *
-     * @throws ClassCastException when the value cannot be cast to the type of variable in Storage
+     * @throws ClassCastException when the value cannot be cast to the type of variable in InternalStorage
      */
     public static <T> void putLocal(String variable, T newValue, int... indices) throws ClassCastException {
         PcjThread.getThreadStorage().put(variable, newValue, indices);
@@ -214,10 +215,10 @@ final public class PCJ extends InternalPCJ {
 //     *
 //     * @return FutureObject that will contain received data
 //     */
-//    public static <T> PcjFuture<T> getFutureObject(int threadId, String variable) {
-//        return ((Group) PcjThread.getThreadGlobalGroup()).getFutureObject(threadId, variable);
+//    public static <T> PcjFuture<T> asyncGet(int threadId, String variable) {
+//        return ((Group) PcjThread.getThreadGlobalGroup()).asyncGet(threadId, variable);
 //    }
-//
+////
 //    /**
 //     * Fully asynchronous get from other thread Storage
 //     *
@@ -243,13 +244,13 @@ final public class PCJ extends InternalPCJ {
 //        return futureObject.get();
 //    }
 //    /**
-//     * Puts the value to other thread Storage
+//     * Puts the value to other thread InternalStorage
 //     *
 //     * @param threadId other thread global thread id
 //     * @param variable name of variable
 //     * @param newValue new value of variable
 //     *
-//     * @throws ClassCastException when the value cannot be cast to the type of variable in Storage
+//     * @throws ClassCastException when the value cannot be cast to the type of variable in InternalStorage
 //     */
 //    public static <T> PcjFuture<Void> put(int threadId, String variable, T newValue) throws ClassCastException, PcjRuntimeException {
 //        if (PcjThread.threadStorage().isAssignable(variable, newValue) == false) {
@@ -260,14 +261,14 @@ final public class PCJ extends InternalPCJ {
 //    }
 //
 //    /**
-//     * Puts the value to other thread Storage
+//     * Puts the value to other thread InternalStorage
 //     *
 //     * @param threadId other thread global thread id
 //     * @param variable name of array variable
 //     * @param newValue new value of variable
 //     * @param indices  indices of array
 //     *
-//     * @throws ClassCastException when the value cannot be cast to the type of variable in Storage
+//     * @throws ClassCastException when the value cannot be cast to the type of variable in InternalStorage
 //     */
 //    public static <T> PcjFuture<Void> put(int threadId, String variable, T newValue, int... indices) throws ClassCastException, PcjRuntimeException {
 //        if (PcjThread.threadStorage().isAssignable(variable, newValue, indices) == false) {
@@ -278,12 +279,12 @@ final public class PCJ extends InternalPCJ {
 //    }
 //
 //    /**
-//     * Broadcast the value to all threads and inserts it into Storage
+//     * Broadcast the value to all threads and inserts it into InternalStorage
 //     *
 //     * @param variable name of variable
 //     * @param newValue new value of variable
 //     *
-//     * @throws ClassCastException when the value cannot be cast to the type of variable in Storage
+//     * @throws ClassCastException when the value cannot be cast to the type of variable in InternalStorage
 //     */
 //    public static PcjFuture<Void> broadcast(String variable, Object newValue) throws ClassCastException, PcjRuntimeException {
 //        if (PcjThread.threadStorage().isAssignable(variable, newValue) == false) {

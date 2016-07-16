@@ -3,6 +3,7 @@
  */
 package org.pcj.internal;
 
+import org.pcj.internal.futures.LocalBarrier;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,8 +30,8 @@ public class InternalGroup {
     final private List<Integer> physicalIds;
 //    final private Bitmask localBarrierBitmask;
     final private Bitmask localBitmask;
-    private final ConcurrentMap<Integer, LocalBarrier> localBarrierBitmaskMap;
-    final private ConcurrentMap<Integer, Bitmask> physicalBarrierBitmaskMap;
+    private final ConcurrentMap<Integer, LocalBarrier> localBarrierMap;
+    final private ConcurrentMap<Integer, Bitmask> physicalBitmaskMap;
 //    final private MessageGroupBarrierWaiting groupBarrierWaitingMessage;
 //    final private ConcurrentMap<Integer, BitMask> joinBitmaskMap;
 //    final private AtomicInteger nodeNum = new AtomicInteger(0);
@@ -60,8 +61,8 @@ public class InternalGroup {
         this.physicalTree = g.physicalTree;
 
         this.threadsMapping = g.threadsMapping;
-        this.physicalBarrierBitmaskMap = g.physicalBarrierBitmaskMap;
-        this.localBarrierBitmaskMap = g.localBarrierBitmaskMap;
+        this.physicalBitmaskMap = g.physicalBitmaskMap;
+        this.localBarrierMap = g.localBarrierMap;
         this.localBitmask = g.localBitmask;
 
 //        this.groupBarrierWaitingMessage = g.groupBarrierWaitingMessage;
@@ -82,8 +83,8 @@ public class InternalGroup {
         physicalTree = new CommunicationTree(groupMaster);
 
         threadsMapping = new ConcurrentHashMap<>();
-        physicalBarrierBitmaskMap = new ConcurrentHashMap<>();
-        localBarrierBitmaskMap = new ConcurrentHashMap<>();
+        physicalBitmaskMap = new ConcurrentHashMap<>();
+        localBarrierMap = new ConcurrentHashMap<>();
         localBitmask = new Bitmask();
 
 //        groupBarrierWaitingMessage = new MessageGroupBarrierWaiting(groupId, InternalPCJ.getNodeData().getPhysicalId());
@@ -167,7 +168,7 @@ public class InternalGroup {
     }
 
     protected LocalBarrier barrier(int threadId, int barrierRound) {
-        LocalBarrier localBarrier = localBarrierBitmaskMap
+        LocalBarrier localBarrier = localBarrierMap
                 .computeIfAbsent(barrierRound, round -> new LocalBarrier(round, localBitmask));
 
         synchronized (localBarrier) {
@@ -188,14 +189,33 @@ public class InternalGroup {
     }
 
     public Bitmask getPhysicalBitmask(int round) {
-        return physicalBarrierBitmaskMap
+        return physicalBitmaskMap
                 .computeIfAbsent(round, k -> new Bitmask(physicalIds.size()));
     }
 
-    public ConcurrentMap<Integer, LocalBarrier> getLocalBarrierBitmaskMap() {
-        return localBarrierBitmaskMap;
+    public ConcurrentMap<Integer, LocalBarrier> getLocalBarrierMap() {
+        return localBarrierMap;
     }
 
+//    protected <T> PcjFuture<T> asyncGet(int myThreadId, int threadId, String variable, int... indices) {
+//        threadId = nodes.get(threadId);
+//        
+//        MessageValueAsyncGetRequest msg = new MessageValueAsyncGetRequest();
+//        msg.setSenderGlobalNodeId(myThreadId);
+//        msg.setReceiverGlobalNodeId(threadId);
+//        msg.setIndexes(indices);
+//        msg.setVariableName(variable);
+//        
+//        FutureObject<T> futureObject = new FutureObject<>();
+//        
+//        InternalPCJ.getWorkerData().attachmentMap.put(msg.getMessageId(), futureObject);
+//        try {
+//            InternalPCJ.getNetworker().send(threadId, msg);
+//            return futureObject;
+//        } catch (IOException ex) {
+//            throw new PcjRuntimeException(ex);
+//        }
+//    }
 //    /**
 //     * Used while joining. joinBitmaskMap stores information about nodes that
 //     * received information about new node (current) and send bonjour message.
@@ -348,25 +368,6 @@ public class InternalGroup {
 //        }
 //    }
 //
-//    protected <T> PcjFuture<T> getFutureObject(int myNodeId, int nodeId, String variable, int... indices) {
-//        nodeId = nodes.get(nodeId);
-//
-//        MessageValueAsyncGetRequest msg = new MessageValueAsyncGetRequest();
-//        msg.setSenderGlobalNodeId(myNodeId);
-//        msg.setReceiverGlobalNodeId(nodeId);
-//        msg.setIndexes(indices);
-//        msg.setVariableName(variable);
-//
-//        FutureObject<T> futureObject = new FutureObject<>();
-//        
-//        InternalPCJ.getWorkerData().attachmentMap.put(msg.getMessageId(), futureObject);
-//        try {
-//            InternalPCJ.getNetworker().send(nodeId, msg);
-//            return futureObject;
-//        } catch (IOException ex) {
-//            throw new PcjRuntimeException(ex);
-//        }
-//    }
 //
 //    protected PcjFuture<Void> put(int nodeId, String variable, Object newValue, int... indices) {
 //        nodeId = nodes.get(nodeId);

@@ -80,23 +80,6 @@ public class PcjThread extends Thread {
         return tg.getThreadData().getStorage();
     }
 
-    
-//    public static Storage threadStorage() {
-//        PcjThreadGroup tg = threadPcjThreadGroup();
-//        if (tg == null) {
-//            return null;
-//        }
-//        return tg.data.getThreadStorage();
-//    }
-//
-//    public static InternalGroup threadGroup(String name) {
-//        PcjThreadGroup tg = threadPcjThreadGroup();
-//        if (tg == null) {
-//            return null;
-//        }
-//        return tg.data.getGroupsByName().get(name);
-//    }
-//
     public static InternalGroup getThreadGlobalGroup() {
         PcjThreadGroup tg = getPcjThreadGroupForCurrentThread();
         if (tg == null) {
@@ -105,7 +88,7 @@ public class PcjThread extends Thread {
         return tg.getThreadData().getGlobalGroup();
     }
 
-//    public Storage getThreadStorage() {
+//    public InternalStorage getThreadStorage() {
 //        return threadGroup.data.getThreadStorage();
 //    }
 //

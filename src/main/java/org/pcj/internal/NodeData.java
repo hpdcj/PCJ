@@ -3,6 +3,7 @@
  */
 package org.pcj.internal;
 
+import org.pcj.internal.futures.WaitObject;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;

@@ -15,7 +15,6 @@ import java.util.logging.Logger;
 import java.util.stream.Stream;
 import org.pcj.NodesDescription;
 import org.pcj.StartPoint;
-import org.pcj.Storage;
 
 /**
  * Class used for deploying PCJ when using one of deploy methods.
@@ -32,21 +31,17 @@ final public class DeployPCJ {
 //        Arrays.stream(logger.getHandlers()).forEach(handler -> handler.setLevel(level));
 //        logger.setLevel(level);
 //    }
-    
-    
     private static final Logger LOGGER = Logger.getLogger(DeployPCJ.class.getName());
     private final Class<? extends StartPoint> startPoint;
-    private final Class<? extends Storage> storage;
     private final NodeInfo node0;
     private final NodeInfo currentJvm;
     private final Collection<NodeInfo> allNodes;
     private final List<Process> processes;
     private final int allNodesThreadCount;
 
-    private DeployPCJ(Class<? extends StartPoint> startPoint, Class<? extends Storage> storage,
+    private DeployPCJ(Class<? extends StartPoint> startPoint,
             NodesDescription nodesDescription) {
         this.startPoint = startPoint;
-        this.storage = storage;
 
         this.node0 = nodesDescription.getNode0();
         this.currentJvm = nodesDescription.getCurrentJvm();
@@ -58,18 +53,14 @@ final public class DeployPCJ {
 
     public static void main(String[] args) throws ClassNotFoundException, IOException {
         String startPointStr = args[0];
-        String storageStr = args[1];
-        int localPort = Integer.parseInt(args[2]);
-        String node0Str = args[3];
-        int node0Port = Integer.parseInt(args[4]);
-        int allNodesThreadCount = Integer.parseInt(args[5]);
-        String threadIdsStr = args[6];
+        int localPort = Integer.parseInt(args[1]);
+        String node0Str = args[2];
+        int node0Port = Integer.parseInt(args[3]);
+        int allNodesThreadCount = Integer.parseInt(args[4]);
+        String threadIdsStr = args[5];
 
         @SuppressWarnings("unchecked")
         Class<? extends StartPoint> startPoint = (Class<? extends StartPoint>) Class.forName(startPointStr);
-
-        @SuppressWarnings("unchecked")
-        Class<? extends Storage> storage = (Class<? extends Storage>) Class.forName(storageStr);
 
         NodeInfo node0 = new NodeInfo(node0Str, node0Port);
         NodeInfo currentJvm = new NodeInfo("", localPort);
@@ -77,16 +68,15 @@ final public class DeployPCJ {
         String[] threadIds = threadIdsStr.substring(1, threadIdsStr.length() - 1).split(", ");
         Stream.of(threadIds).mapToInt(Integer::parseInt).forEach(id -> currentJvm.addThreadId(id));
 
-        LOGGER.log(Level.FINE, "Invoking InternalPCJ.start({0}, {1}, {2}, {3}, {4}",
-                new Object[]{startPoint, storage, node0, currentJvm, allNodesThreadCount});
+        LOGGER.log(Level.FINE, "Invoking InternalPCJ.start({0}, {1}, {2}, {3})",
+                new Object[]{startPoint, node0, currentJvm, allNodesThreadCount});
 
-        InternalPCJ.start(startPoint, storage, node0, currentJvm, allNodesThreadCount);
+        InternalPCJ.start(startPoint, node0, currentJvm, allNodesThreadCount);
     }
 
     public static void deploy(Class<? extends StartPoint> startPoint,
-            Class<? extends Storage> storage,
             NodesDescription nodesDescription) {
-        DeployPCJ deploy = new DeployPCJ(startPoint, storage, nodesDescription);
+        DeployPCJ deploy = new DeployPCJ(startPoint, nodesDescription);
         try {
             deploy.startDeploying();
 
@@ -97,7 +87,7 @@ final public class DeployPCJ {
     }
 
     private void runPCJ(NodeInfo currentJvm) {
-        InternalPCJ.start(startPoint, storage, node0, currentJvm, allNodesThreadCount);
+        InternalPCJ.start(startPoint, node0, currentJvm, allNodesThreadCount);
     }
 
     private List<String> makeJvmParams(NodeInfo node) {
@@ -123,12 +113,11 @@ final public class DeployPCJ {
         params.addAll(Arrays.asList(
                 DeployPCJ.class.getName(),
                 startPoint.getName(), // args[0]
-                storage.getName(), // args[1]
-                Integer.toString(node.getPort()), // args[2]
-                node0.getHostname(), // args[3]
-                Integer.toString(node0.getPort()), // args[4]
-                Long.toString(allNodesThreadCount), // args[5]
-                Arrays.toString(node.getThreadIds()) // args[6]
+                Integer.toString(node.getPort()), // args[1]
+                node0.getHostname(), // args[2]
+                Integer.toString(node0.getPort()), // args[3]
+                Long.toString(allNodesThreadCount), // args[4]
+                Arrays.toString(node.getThreadIds()) // args[5]
         ));
         return params;
     }

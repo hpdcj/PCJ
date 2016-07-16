@@ -1,7 +1,7 @@
 /*
  * This file is the internal part of the PCJ Library
  */
-package org.pcj.internal;
+package org.pcj.internal.futures;
 
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;

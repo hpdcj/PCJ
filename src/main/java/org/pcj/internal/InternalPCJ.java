@@ -3,6 +3,7 @@
  */
 package org.pcj.internal;
 
+import org.pcj.internal.futures.WaitObject;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
@@ -25,7 +26,6 @@ import java.util.stream.Collectors;
 import org.pcj.Group;
 import org.pcj.NodesDescription;
 import org.pcj.StartPoint;
-import org.pcj.Storage;
 import org.pcj.internal.message.MessageBye;
 import org.pcj.internal.message.MessageHello;
 import org.pcj.internal.network.LoopbackSocketChannel;
@@ -57,16 +57,14 @@ public abstract class InternalPCJ {
     }
 
     protected static void start(Class<? extends StartPoint> startPoint,
-            Class<? extends Storage> storage,
             NodesDescription nodesFile) {
         NodeInfo node0 = nodesFile.getNode0();
         NodeInfo currentJvm = nodesFile.getCurrentJvm();
         int allNodesThreadCount = nodesFile.getAllNodesThreadCount();
-        start(startPoint, storage, node0, currentJvm, allNodesThreadCount);
+        start(startPoint, node0, currentJvm, allNodesThreadCount);
     }
 
     protected static void start(Class<? extends StartPoint> startPointClass,
-            Class<? extends Storage> storage,
             NodeInfo node0, NodeInfo currentJvm, int allNodesThreadCount) {
 
         if (currentJvm == null) {
@@ -105,7 +103,7 @@ public abstract class InternalPCJ {
             if (isCurrentJvmNode0) {
                 nodeData.getNode0Data().setAllNodesThreadCount(allNodesThreadCount);
             }
-            
+
             /* send HELLO message */
             helloPhase(currentJvm.getPort(), currentJvm.getThreadIds());
 

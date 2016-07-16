@@ -24,7 +24,7 @@ final public class PcjThreadData {
     PcjThreadData(Group globalGroup) {
         this.globalGroup = globalGroup;
 
-        this.storage = new Storage();
+        this.storage = new InternalStorage();
         this.groupById = new ConcurrentHashMap<>();
         this.groupByName = new ConcurrentHashMap<>();
 
@@ -38,7 +38,7 @@ final public class PcjThreadData {
 
 //    InternalGroup createGroup(int groupNodeId, InternalGroup internalGroup) {
 //        try {
-//            Class<?> groupClass = getClass().getClassLoader().loadClass(Group.class.getCanonicalName());
+//            Class<?> groupClass = getClass().getClassLoader().loadClass(ThreadGroup.class.getCanonicalName());
 //            Constructor<?> constructor = groupClass.getDeclaredConstructor(int.class, InternalGroup.class);
 //            constructor.setAccessible(true);
 //            return (InternalGroup) constructor.newInstance(groupNodeId, internalGroup);
@@ -50,7 +50,7 @@ final public class PcjThreadData {
 //    }
 //
 //
-//    Storage getStorage() {
+//    InternalStorage getStorage() {
 //        return storage;
 //    }
 //
@@ -68,7 +68,7 @@ final public class PcjThreadData {
     }
 //
 //    /**
-//     * Stores Group but because of ClassLoader says that holds InternalGroup
+//     * Stores ThreadGroup but because of ClassLoader says that holds InternalGroup
 //     *
 //     * @return the groups
 //     */
@@ -77,7 +77,7 @@ final public class PcjThreadData {
 //    }
 //
 //    /**
-//     * Stores Group but because of ClassLoader says that holds InternalGroup
+//     * Stores ThreadGroup but because of ClassLoader says that holds InternalGroup
 //     *
 //     * @return the groupsByName
 //     */

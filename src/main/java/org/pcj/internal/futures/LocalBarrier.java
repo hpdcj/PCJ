@@ -3,13 +3,14 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.pcj.internal;
+package org.pcj.internal.futures;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.pcj.PCJ;
 import org.pcj.PcjFuture;
 import org.pcj.PcjRuntimeException;
+import org.pcj.internal.Bitmask;
 
 /**
  *
