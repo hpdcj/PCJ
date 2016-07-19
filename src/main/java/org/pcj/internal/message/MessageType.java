@@ -94,6 +94,18 @@ public enum MessageType {
             return new MessageGroupBarrierGo();
         }
     },
+    VALUE_GET_REQUEST((byte) 20) {
+        @Override
+        public MessageValueGetRequest create() {
+            return new MessageValueGetRequest();
+        }
+    },
+    VALUE_GET_RESPONSE((byte) 21) {
+        @Override
+        public MessageValueGetResponse create() {
+            return new MessageValueGetResponse();
+        }
+    },
     //    /**
     //     * after sending SYNC_WAIT Server collects it on specified group. When all
     //     * nodes in group sent that message, Server sends SYNC_GO

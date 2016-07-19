@@ -28,8 +28,7 @@ public class EasyTest extends InternalStorage implements StartPoint {
 
         NodesDescription nodesDescription = new NodesDescription(new String[]{
             "localhost:8091", //            "localhost:8091",
-        //            "localhost:8091",
-        //            "localhost:8002",
+            "localhost:8091", //            "localhost:8002",
         //            "localhost:8003",
         //            "localhost:8004",
         //            "localhost:8003",
@@ -74,15 +73,14 @@ public class EasyTest extends InternalStorage implements StartPoint {
         PCJ.createShared("a", double.class);
         PCJ.createShared("b", double.class);
         PCJ.createShared("c", Double.class);
-        long start=System.nanoTime();
-        new Thread(() -> {
-            LockSupport.parkNanos(4_999_999_999L);
-            PCJ.putLocal("a", (System.nanoTime()-start)/1e9);
-        }).start();
-        PCJ.waitFor("a", 1, 5, TimeUnit.SECONDS);
-//        PCJ.putLocal("a", new Long(2));
+        
+        PCJ.putLocal("a", PCJ.myId());
         PCJ.putLocal("b", 'b');
         PCJ.putLocal("c", 2);
+        PCJ.barrier();
+        if (PCJ.myId() == 0) {
+            System.out.println("a@1 = " + PCJ.asyncGet(1, "a").get());
+        }
 
         System.out.println("a=" + PCJ.getLocal("a") + " " + PCJ.getLocal("a").getClass());
         System.out.println("b=" + PCJ.getLocal("b") + " " + PCJ.getLocal("b").getClass());

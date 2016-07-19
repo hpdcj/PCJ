@@ -19,11 +19,13 @@ public class PcjThread extends Thread {
 
     final private Class<? extends StartPoint> startPointClass;
     final private PcjThreadGroup pcjThreadGroup;
+    final private int threadId;
     private Throwable throwable;
 
     PcjThread(int threadId, Class<? extends StartPoint> startPoint, PcjThreadData threadData) {
         super(new PcjThreadGroup("PcjThreadGroup-" + threadId, threadData), "PcjThread-" + threadId);
 
+        this.threadId = threadId;
         this.pcjThreadGroup = (PcjThreadGroup) this.getThreadGroup();
 
         this.startPointClass = startPoint;
@@ -41,6 +43,14 @@ public class PcjThread extends Thread {
         public PcjThreadData getThreadData() {
             return threadData;
         }
+    }
+
+    public int getThreadId() {
+        return threadId;
+    }
+
+    public PcjThreadData getThreadData() {
+        return pcjThreadGroup.getThreadData();
     }
 
     private static PcjThreadGroup getPcjThreadGroupForCurrentThread() {

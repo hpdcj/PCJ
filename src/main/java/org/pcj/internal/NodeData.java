@@ -19,6 +19,7 @@ final public class NodeData {
     final private ConcurrentMap<String, InternalGroup> groupByName;
     final private ConcurrentMap<Integer, SocketChannel> socketChannelByPhysicalId; // physicalId -> socket
     final private ConcurrentMap<Integer, Integer> physicalIdByThreadId; // threadId -> physicalId
+    final private ConcurrentMap<Integer, PcjThread> pcjThreads;
     final private Node0Data node0Data;
     final private WaitObject globalWaitObject;
     private int physicalId;
@@ -83,6 +84,7 @@ final public class NodeData {
         this.groupByName = new ConcurrentHashMap<>();
         this.socketChannelByPhysicalId = new ConcurrentHashMap<>();
         this.physicalIdByThreadId = new ConcurrentHashMap<>();
+        this.pcjThreads = new ConcurrentHashMap<>();
         this.globalWaitObject = new WaitObject();
 
         if (isCurrentJvmNode0) {
@@ -118,6 +120,10 @@ final public class NodeData {
         return physicalIdByThreadId;
     }
 
+    public ConcurrentMap<Integer, PcjThread> getPcjThreads() {
+        return pcjThreads;
+    }
+    
     public int getPhysicalId() {
         return physicalId;
     }

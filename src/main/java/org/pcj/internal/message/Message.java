@@ -6,7 +6,6 @@ package org.pcj.internal.message;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.channels.SocketChannel;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
@@ -56,9 +55,9 @@ abstract public class Message implements Serializable {
         return sb.toString();
     }
 
-    public abstract void writeObjects(MessageDataOutputStream out) throws IOException;
+    public abstract void readObjects(MessageDataInputStream in) throws IOException, ClassNotFoundException;
 
-    public abstract void readObjects(MessageDataInputStream in) throws IOException;
+    public abstract void writeObjects(MessageDataOutputStream out) throws IOException;
 
     public abstract String paramsToString();
 

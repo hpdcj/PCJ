@@ -66,6 +66,10 @@ final public class PcjThreadData {
     public Storage getStorage() {
         return storage;
     }
+    
+    public Group getGroupById(int groupId) {
+        return groupById.get(groupId);
+    }
 //
 //    /**
 //     * Stores ThreadGroup but because of ClassLoader says that holds InternalGroup

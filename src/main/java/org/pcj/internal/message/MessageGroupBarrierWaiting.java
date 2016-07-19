@@ -4,7 +4,6 @@
 package org.pcj.internal.message;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.channels.SocketChannel;
 import org.pcj.internal.Bitmask;
 import org.pcj.internal.InternalGroup;
@@ -19,8 +18,8 @@ import org.pcj.internal.network.MessageDataOutputStream;
  */
 final public class MessageGroupBarrierWaiting extends Message {
 
-    private int groupId;
     private int physicalId;
+    private int groupId;
     private int round;
 
     public MessageGroupBarrierWaiting() {
@@ -30,28 +29,28 @@ final public class MessageGroupBarrierWaiting extends Message {
     public MessageGroupBarrierWaiting(int groupId, int physicalId, int round) {
         this();
 
-        this.groupId = groupId;
         this.physicalId = physicalId;
+        this.groupId = groupId;
         this.round = round;
     }
 
     @Override
     public void writeObjects(MessageDataOutputStream out) throws IOException {
-        out.writeInt(groupId);
         out.writeInt(physicalId);
+        out.writeInt(groupId);
         out.writeInt(round);
     }
 
     @Override
     public void readObjects(MessageDataInputStream in) throws IOException {
-        groupId = in.readInt();
         physicalId = in.readInt();
+        groupId = in.readInt();
         round = in.readInt();
     }
 
     @Override
     public String paramsToString() {
-        return String.format("groupId:%d,physicalId:%d,round:%d", groupId, physicalId, round);
+        return String.format("physicalId:%d,groupId:%d,round:%d", physicalId, groupId, round);
     }
 
     @Override

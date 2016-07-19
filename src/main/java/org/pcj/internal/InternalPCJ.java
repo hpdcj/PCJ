@@ -17,6 +17,7 @@ import java.util.Iterator;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -119,6 +120,7 @@ public abstract class InternalPCJ {
 
             /* Preparing PcjThreads*/
             Set<PcjThread> pcjThreads = preparePcjThreads(startPointClass, currentJvm.getThreadIds());
+            pcjThreads.forEach(pcjThread -> nodeData.getPcjThreads().put(pcjThread.getThreadId(), pcjThread));
 
             /* Starting PcjThreads*/
             pcjThreads.forEach(pcjThread -> pcjThread.start());
@@ -179,8 +181,9 @@ public abstract class InternalPCJ {
         for (int threadId : threadIds) {
             Group threadGlobalGroup = new Group(threadId, globalGroup);
             PcjThreadData pcjThreadData = new PcjThreadData(threadGlobalGroup);
+            PcjThread pcjThread = new PcjThread(threadId, startPointClass, pcjThreadData);
 
-            pcjThreads.add(new PcjThread(threadId, startPointClass, pcjThreadData));
+            pcjThreads.add(pcjThread);
         }
 
         return pcjThreads;

@@ -207,17 +207,17 @@ final public class PCJ extends InternalPCJ {
         PcjThread.getThreadStorage().put(variable, newValue, indices);
     }
 
-//    /**
-//     * Fully asynchronous get from other thread Storage
-//     *
-//     * @param threadId global thread id
-//     * @param variable name of array variable
-//     *
-//     * @return FutureObject that will contain received data
-//     */
-//    public static <T> PcjFuture<T> asyncGet(int threadId, String variable) {
-//        return ((Group) PcjThread.getThreadGlobalGroup()).asyncGet(threadId, variable);
-//    }
+    /**
+     * Fully asynchronous get from other thread Storage
+     *
+     * @param threadId global thread id
+     * @param variable name of array variable
+     *
+     * @return FutureObject that will contain received data
+     */
+    public static <T> PcjFuture<T> asyncGet(int threadId, String variable) {
+        return ((Group) PcjThread.getThreadGlobalGroup()).asyncGet(threadId, variable);
+    }
 ////
 //    /**
 //     * Fully asynchronous get from other thread Storage

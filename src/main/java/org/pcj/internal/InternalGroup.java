@@ -9,7 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.PcjFuture;
+import org.pcj.internal.futures.GetVariable;
 import org.pcj.internal.message.MessageGroupBarrierWaiting;
 
 /**
@@ -20,18 +22,18 @@ import org.pcj.internal.message.MessageGroupBarrierWaiting;
  */
 public class InternalGroup {
 
-    final public static int GLOBAL_GROUP_ID = 0;
-    final public static String GLOBAL_GROUP_NAME = "";
+    public static final int GLOBAL_GROUP_ID = 0;
+    public static final String GLOBAL_GROUP_NAME = "";
 
-    final private ConcurrentMap<Integer, Integer> threadsMapping; // groupId, globalId
-    final private int groupId;
-    final private String groupName;
-    final private List<Integer> localIds;
-    final private List<Integer> physicalIds;
+    private final ConcurrentMap<Integer, Integer> threadsMapping; // groupThreadId, globalThreadId
+    private final int groupId;
+    private final String groupName;
+    private final List<Integer> localIds;
+    private final List<Integer> physicalIds;
 //    final private Bitmask localBarrierBitmask;
-    final private Bitmask localBitmask;
+    private final Bitmask localBitmask;
+    private final ConcurrentMap<Integer, Bitmask> physicalBitmaskMap;
     private final ConcurrentMap<Integer, LocalBarrier> localBarrierMap;
-    final private ConcurrentMap<Integer, Bitmask> physicalBitmaskMap;
 //    final private MessageGroupBarrierWaiting groupBarrierWaitingMessage;
 //    final private ConcurrentMap<Integer, BitMask> joinBitmaskMap;
 //    final private AtomicInteger nodeNum = new AtomicInteger(0);
@@ -62,8 +64,8 @@ public class InternalGroup {
 
         this.threadsMapping = g.threadsMapping;
         this.physicalBitmaskMap = g.physicalBitmaskMap;
-        this.localBarrierMap = g.localBarrierMap;
         this.localBitmask = g.localBitmask;
+        this.localBarrierMap = g.localBarrierMap;
 
 //        this.groupBarrierWaitingMessage = g.groupBarrierWaitingMessage;
 //        this.joinBitmaskMap = g.joinBitmaskMap;
@@ -83,9 +85,11 @@ public class InternalGroup {
         physicalTree = new CommunicationTree(groupMaster);
 
         threadsMapping = new ConcurrentHashMap<>();
+
         physicalBitmaskMap = new ConcurrentHashMap<>();
-        localBarrierMap = new ConcurrentHashMap<>();
+
         localBitmask = new Bitmask();
+        localBarrierMap = new ConcurrentHashMap<>();
 
 //        groupBarrierWaitingMessage = new MessageGroupBarrierWaiting(groupId, InternalPCJ.getNodeData().getPhysicalId());
 //        this.joinBitmaskMap = new ConcurrentHashMap<>();
@@ -104,23 +108,23 @@ public class InternalGroup {
 //
     }
 
-    protected int getGroupId() {
+    final protected int getGroupId() {
         return groupId;
     }
 
-    protected String getGroupName() {
+    final protected String getGroupName() {
         return groupName;
     }
 
-    public int getGroupMasterNode() {
+    final public int getGroupMasterNode() {
         return physicalTree.getRootNode();
     }
 
-    public List<Integer> getChildrenNodes() {
+    final public List<Integer> getChildrenNodes() {
         return physicalTree.getChildrenNodes();
     }
 
-    public Integer getPhysicalIdIndex(int physicalId) {
+    final public Integer getPhysicalIdIndex(int physicalId) {
         return physicalIds.indexOf(physicalId);
     }
 
@@ -128,8 +132,12 @@ public class InternalGroup {
         throw new IllegalStateException("This method has to be overriden!");
     }
 
-    protected int threadCount() {
+    final public int threadCount() {
         return threadsMapping.size();
+    }
+
+    final public int getGlobalThreadId(int groupThreadId) {
+        return threadsMapping.get(groupThreadId);
     }
 
     final public void addThread(int physicalId, int groupThreadId, int globalThreadId) {
@@ -167,7 +175,7 @@ public class InternalGroup {
         throw new IllegalStateException("This method has to be overriden!");
     }
 
-    protected LocalBarrier barrier(int threadId, int barrierRound) {
+    final protected LocalBarrier barrier(int threadId, int barrierRound) {
         LocalBarrier localBarrier = localBarrierMap
                 .computeIfAbsent(barrierRound, round -> new LocalBarrier(round, localBitmask));
 
@@ -179,7 +187,7 @@ public class InternalGroup {
                         .getSocketChannelByPhysicalId().get(groupMasterId);
 
                 MessageGroupBarrierWaiting message = new MessageGroupBarrierWaiting(
-                        groupId, InternalPCJ.getNodeData().getPhysicalId(), localBarrier.getRound());
+                        groupId, InternalPCJ.getNodeData().getPhysicalId(), barrierRound);
 
                 InternalPCJ.getNetworker().send(groupMasterSocket, message);
             }
@@ -188,34 +196,19 @@ public class InternalGroup {
         return localBarrier;
     }
 
-    public Bitmask getPhysicalBitmask(int round) {
+    final public Bitmask getPhysicalBitmask(int round) {
         return physicalBitmaskMap
                 .computeIfAbsent(round, k -> new Bitmask(physicalIds.size()));
     }
 
-    public ConcurrentMap<Integer, LocalBarrier> getLocalBarrierMap() {
+    final public ConcurrentMap<Integer, LocalBarrier> getLocalBarrierMap() {
         return localBarrierMap;
     }
+    
+    protected <T> PcjFuture<T> asyncGet(int threadId, String variable, int... indices) {
+        throw new IllegalStateException("This method has to be overriden!");
+    }
 
-//    protected <T> PcjFuture<T> asyncGet(int myThreadId, int threadId, String variable, int... indices) {
-//        threadId = nodes.get(threadId);
-//        
-//        MessageValueAsyncGetRequest msg = new MessageValueAsyncGetRequest();
-//        msg.setSenderGlobalNodeId(myThreadId);
-//        msg.setReceiverGlobalNodeId(threadId);
-//        msg.setIndexes(indices);
-//        msg.setVariableName(variable);
-//        
-//        FutureObject<T> futureObject = new FutureObject<>();
-//        
-//        InternalPCJ.getWorkerData().attachmentMap.put(msg.getMessageId(), futureObject);
-//        try {
-//            InternalPCJ.getNetworker().send(threadId, msg);
-//            return futureObject;
-//        } catch (IOException ex) {
-//            throw new PcjRuntimeException(ex);
-//        }
-//    }
 //    /**
 //     * Used while joining. joinBitmaskMap stores information about nodes that
 //     * received information about new node (current) and send bonjour message.
@@ -450,6 +443,7 @@ public class InternalGroup {
 //            }
 //        };
 //    }
+
     /**
      * Class for representing part of communication tree.
      *

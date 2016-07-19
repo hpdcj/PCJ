@@ -7,6 +7,8 @@ package org.pcj.internal.futures;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.pcj.PcjFuture;
 import org.pcj.PcjRuntimeException;
 import org.pcj.internal.Bitmask;
@@ -15,26 +17,13 @@ import org.pcj.internal.Bitmask;
  *
  * @author faramir
  */
-public class LocalBarrier extends InternalFuture<Void> implements PcjFuture<Void> {
+public class GetVariable<T> extends InternalFuture<T> implements PcjFuture<T> {
 
-    private final Bitmask localBarrierBitmask;
-    private final Bitmask localBarrierMaskBitmask;
+    private T variableValue;
 
-    public LocalBarrier(int round, Bitmask localBitmask) {
-        this.localBarrierBitmask = new Bitmask(localBitmask.getSize());
-        this.localBarrierMaskBitmask = new Bitmask(localBitmask);
-    }
-
-    public void set(int index) {
-        localBarrierBitmask.set(index);
-    }
-
-    public boolean isSet() {
-        return localBarrierBitmask.isSet(localBarrierMaskBitmask);
-    }
-
-    @Override
-    public void signalAll() {
+    @SuppressWarnings("unchecked")
+    public void setVariableValue(Object variableValue) {
+        this.variableValue = (T) variableValue;
         super.signalAll();
     }
 
@@ -44,22 +33,22 @@ public class LocalBarrier extends InternalFuture<Void> implements PcjFuture<Void
     }
 
     @Override
-    public Void get() throws PcjRuntimeException {
+    public T get() throws PcjRuntimeException {
         try {
             super.await();
         } catch (InterruptedException ex) {
             throw new PcjRuntimeException(ex);
         }
-        return null;
+        return variableValue;
     }
 
     @Override
-    public Void get(long timeout, TimeUnit unit) throws TimeoutException, PcjRuntimeException {
+    public T get(long timeout, TimeUnit unit) throws TimeoutException, PcjRuntimeException {
         try {
             super.await(timeout, unit);
         } catch (InterruptedException ex) {
             throw new PcjRuntimeException(ex);
         }
-        return null;
+        return variableValue;
     }
 }
