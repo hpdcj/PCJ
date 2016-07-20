@@ -10,9 +10,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.internal.InternalGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.futures.GetVariable;
-import org.pcj.internal.message.MessageGroupBarrierWaiting;
-import org.pcj.internal.message.MessageType;
+import org.pcj.internal.futures.PutVariable;
 import org.pcj.internal.message.MessageValueGetRequest;
+import org.pcj.internal.message.MessageValuePutRequest;
 
 /**
  * External class that represents group for grouped communication.
@@ -25,13 +25,21 @@ final public class Group extends InternalGroup {
     private final AtomicInteger barrierRoundCounter;
     private final AtomicInteger getVariableCounter;
     private final ConcurrentMap<Integer, GetVariable> getVariableMap;
+    private final AtomicInteger putVariableCounter;
+    private final ConcurrentMap<Integer, PutVariable> putVariableMap;
 
     public Group(int threadId, InternalGroup internalGroup) {
         super(internalGroup);
+
         this.myThreadId = threadId;
+
         barrierRoundCounter = new AtomicInteger(0);
+
         getVariableCounter = new AtomicInteger(0);
         getVariableMap = new ConcurrentHashMap<>();
+
+        putVariableCounter = new AtomicInteger(0);
+        putVariableMap = new ConcurrentHashMap<>();
     }
 
     @Override
@@ -55,18 +63,17 @@ final public class Group extends InternalGroup {
      * @return FutureObject that will contain received object
      */
     @Override
-    public <T> PcjFuture<T> asyncGet(int threadId, String variable, int... indices) {
+    public <T> PcjFuture<T> asyncGet(int threadId, Enum<? extends Shared> variable, int... indices) {
         int requestNum = getVariableCounter.incrementAndGet();
         GetVariable<T> getVariable = new GetVariable<>();
         getVariableMap.put(requestNum, getVariable);
 
         int globalThreadId = super.getGlobalThreadId(threadId);
         int physicalId = InternalPCJ.getNodeData().getPhysicalIdByThreadId().get(globalThreadId);
-        SocketChannel socket = InternalPCJ.getNodeData()
-                .getSocketChannelByPhysicalId().get(physicalId);
+        SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalId);
 
         MessageValueGetRequest message = new MessageValueGetRequest(
-                requestNum, super.getGroupId(), myThreadId, threadId, variable, indices);
+                requestNum, super.getGroupId(), myThreadId, threadId, variable.name(), indices);
 
         InternalPCJ.getNetworker().send(socket, message);
 
@@ -77,6 +84,29 @@ final public class Group extends InternalGroup {
         return getVariableMap;
     }
 
+    public <T> PcjFuture<Void> asyncPut(int threadId, Enum<? extends Shared> variable, T newValue, int... indices) {
+        int requestNum = putVariableCounter.incrementAndGet();
+        PutVariable putVariable = new PutVariable();
+        putVariableMap.put(requestNum, putVariable);
+
+        int globalThreadId = super.getGlobalThreadId(threadId);
+        int physicalId = InternalPCJ.getNodeData().getPhysicalIdByThreadId().get(globalThreadId);
+        SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalId);
+
+        MessageValuePutRequest message = new MessageValuePutRequest(
+                requestNum, super.getGroupId(), myThreadId, threadId, variable.name(), indices, newValue);
+
+        InternalPCJ.getNetworker().send(socket, message);
+
+        return putVariable;
+    }
+
+    public ConcurrentMap<Integer, PutVariable> getPutVariableMap() {
+        return putVariableMap;
+    }
+//
+    
+    
 //    public <T> T get(int nodeId, String variable, int... indices) {
 //        PcjFuture<T> futureObject = getFutureObject(nodeId, variable, indices);
 //

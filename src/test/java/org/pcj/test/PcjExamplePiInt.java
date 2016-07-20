@@ -68,7 +68,7 @@ public class PcjExamplePiInt implements StartPoint {
         if (PCJ.myId() == 0) {
             PcjFuture[] data = new PcjFuture[PCJ.threadCount()];
             for (int i = 1; i < PCJ.threadCount(); ++i) {
-                data[i] = PCJ.asyncGet(i, "sum");
+                data[i] = PCJ.asyncGet(i, SharedEnum.sum);
             }
             for (int i = 1; i < PCJ.threadCount(); ++i) {
                 sum = sum + (double) data[i].get();

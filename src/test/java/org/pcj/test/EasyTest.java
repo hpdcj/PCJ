@@ -8,6 +8,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
+import org.pcj.PcjFuture;
 import org.pcj.Shared;
 import org.pcj.StartPoint;
 import org.pcj.internal.InternalStorage;
@@ -93,13 +94,17 @@ public class EasyTest extends InternalStorage implements StartPoint {
         PCJ.putLocal(SharedEnum.c, 2);
         PCJ.barrier();
         if (PCJ.myId() == 0) {
-            System.out.println("a@1 = " + PCJ.asyncGet(1, "a").get());
+            System.out.println("a@1 = " + PCJ.asyncGet(1, SharedEnum.a).get());
+        } else if (PCJ.myId() == 1) {
+            PCJ.asyncPut(0, SharedEnum.a, 1000).get();
         }
 
-        System.out.println("a=" + PCJ.getLocal(SharedEnum.a) + " " + PCJ.getLocal(SharedEnum.a).getClass());
-        System.out.println("b=" + PCJ.getLocal(SharedEnum.b) + " " + PCJ.getLocal(SharedEnum.b).getClass());
-        System.out.println("c=" + PCJ.getLocal(SharedEnum.c));
+        PCJ.barrier();
+
+        System.out.println(PCJ.myId() + "a=" + PCJ.getLocal(SharedEnum.a) + " " + PCJ.getLocal(SharedEnum.a).getClass());
+        System.out.println(PCJ.myId() + "b=" + PCJ.getLocal(SharedEnum.b) + " " + PCJ.getLocal(SharedEnum.b).getClass());
+        System.out.println(PCJ.myId() + "c=" + PCJ.getLocal(SharedEnum.c));
         PCJ.putLocal(SharedEnum.c, null);
-        System.out.println("c=" + PCJ.getLocal(SharedEnum.c));
+        System.out.println(PCJ.myId() + "c=" + PCJ.getLocal(SharedEnum.c));
     }
 }

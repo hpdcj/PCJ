@@ -40,7 +40,8 @@ final public class PCJ extends InternalPCJ {
     }
 
     /**
-     * Deploys and starts PCJ calculations on nodes using specified StartPoint and InternalStorage class.
+     * Deploys and starts PCJ calculations on nodes using specified StartPoint and InternalStorage
+     * class.
      * NodesDescription contains list of all hostnames used in calculations.
      * Hostnames can be specified many times, so more than one instance
      * of PCJ will be run on node (called threads). Empty hostnames means current JVM.
@@ -96,19 +97,19 @@ final public class PCJ extends InternalPCJ {
     }
 
     /**
-     * Synchronizes all threads used in calculations.
-     */
-    public static void barrier() {
-        asyncBarrier().get();
-    }
-
-    /**
      * Asynchronous barrier. Invoke get method of returned PcjFuture to wait for barrier completion.
      *
      * @return PcjFuture that can check the barrier status.
      */
     public static PcjFuture<Void> asyncBarrier() {
         return ((Group) PcjThread.getThreadGlobalGroup()).asyncBarrier();
+    }
+
+    /**
+     * Synchronizes all threads used in calculations.
+     */
+    public static void barrier() {
+        PCJ.asyncBarrier().get();
     }
 
     public static void createShared(Enum<? extends Shared> variable) {
@@ -187,7 +188,8 @@ final public class PCJ extends InternalPCJ {
      * @param variable name of variable
      * @param newValue new value of variable
      *
-     * @throws ClassCastException when the value cannot be cast to the type of variable in InternalStorage
+     * @throws ClassCastException when the value cannot be cast to the type of variable in
+     *                            InternalStorage
      */
     public static <T> void putLocal(Enum<? extends Shared> variable, T newValue) throws ClassCastException {
         PcjThread.getThreadStorage().put(variable, newValue);
@@ -200,7 +202,8 @@ final public class PCJ extends InternalPCJ {
      * @param newValue new value of variable
      * @param indices  indices of array
      *
-     * @throws ClassCastException when the value cannot be cast to the type of variable in InternalStorage
+     * @throws ClassCastException when the value cannot be cast to the type of variable in
+     *                            InternalStorage
      */
     public static <T> void putLocal(Enum<? extends Shared> variable, T newValue, int... indices) throws ClassCastException {
         PcjThread.getThreadStorage().put(variable, newValue, indices);
@@ -214,43 +217,22 @@ final public class PCJ extends InternalPCJ {
      *
      * @return FutureObject that will contain received data
      */
-    public static <T> PcjFuture<T> asyncGet(int threadId, String variable) {
-        return ((Group) PcjThread.getThreadGlobalGroup()).asyncGet(threadId, variable);
+    public static <T> PcjFuture<T> asyncGet(int threadId, Enum<? extends Shared> variable, int... indices) {
+        return ((Group) PcjThread.getThreadGlobalGroup()).asyncGet(threadId, variable, indices);
     }
-////
-//    /**
-//     * Fully asynchronous get from other thread Storage
-//     *
-//     * @param threadId global thread id
-//     * @param variable name of array variable
-//     * @param indices  indices of array
-//     *
-//     * @return FutureObject that will contain received data
-//     */
-//    public static <T> PcjFuture<T> getFutureObject(int threadId, String variable, int... indices) {
-//        return ((Group) PcjThread.getThreadGlobalGroup()).getFutureObject(threadId, variable, indices);
-//    }
-//
-//    public static <T> T get(int threadId, String variable) throws PcjRuntimeException{
-//        PcjFuture<T> futureObject = getFutureObject(threadId, variable);
-//
-//        return futureObject.get();
-//    }
-//
-//    public static <T> T get(int threadId, String variable, int... indices) throws PcjRuntimeException {
-//        PcjFuture<T> futureObject = getFutureObject(threadId, variable, indices);
-//
-//        return futureObject.get();
-//    }
-//    /**
-//     * Puts the value to other thread InternalStorage
-//     *
-//     * @param threadId other thread global thread id
-//     * @param variable name of variable
-//     * @param newValue new value of variable
-//     *
-//     * @throws ClassCastException when the value cannot be cast to the type of variable in InternalStorage
-//     */
+
+    public static <T> T get(int threadId, Enum<? extends Shared> variable, int... indices) throws PcjRuntimeException {
+        return PCJ.<T>asyncGet(threadId, variable, indices).get();
+    }
+
+    public static <T> PcjFuture<Void> asyncPut(int threadId, Enum<? extends Shared> variable, T newValue, int... indices) {
+        return ((Group) PcjThread.getThreadGlobalGroup()).asyncPut(threadId, variable, newValue, indices);
+    }
+
+    public static <T> void put(int threadId, Enum<? extends Shared> variable, T newValue, int... indices) {
+        PCJ.<T>asyncPut(threadId, variable, newValue, indices);
+    }
+
 //    public static <T> PcjFuture<Void> put(int threadId, String variable, T newValue) throws ClassCastException, PcjRuntimeException {
 //        if (PcjThread.threadStorage().isAssignable(variable, newValue) == false) {
 //            throw new ClassCastException("Cannot cast " + newValue.getClass().getCanonicalName()

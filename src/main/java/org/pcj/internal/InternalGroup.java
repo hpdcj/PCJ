@@ -9,9 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.PcjFuture;
-import org.pcj.internal.futures.GetVariable;
+import org.pcj.Shared;
 import org.pcj.internal.message.MessageGroupBarrierWaiting;
 
 /**
@@ -205,7 +204,7 @@ public class InternalGroup {
         return localBarrierMap;
     }
     
-    protected <T> PcjFuture<T> asyncGet(int threadId, String variable, int... indices) {
+    protected <T> PcjFuture<T> asyncGet(int threadId, Enum<? extends Shared> variable, int... indices) {
         throw new IllegalStateException("This method has to be overriden!");
     }
 

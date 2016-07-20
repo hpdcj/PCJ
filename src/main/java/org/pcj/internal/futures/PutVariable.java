@@ -14,13 +14,11 @@ import org.pcj.PcjRuntimeException;
  *
  * @author faramir
  */
-public class GetVariable<T> extends InternalFuture<T> implements PcjFuture<T> {
-
-    private T variableValue;
+public class PutVariable extends InternalFuture<Void> implements PcjFuture<Void> {
 
     @SuppressWarnings("unchecked")
-    public void setVariableValue(Object variableValue) {
-        this.variableValue = (T) variableValue;
+    @Override
+    public void signalAll() {
         super.signalAll();
     }
 
@@ -30,22 +28,22 @@ public class GetVariable<T> extends InternalFuture<T> implements PcjFuture<T> {
     }
 
     @Override
-    public T get() throws PcjRuntimeException {
+    public Void get() throws PcjRuntimeException {
         try {
             super.await();
         } catch (InterruptedException ex) {
             throw new PcjRuntimeException(ex);
         }
-        return variableValue;
+        return null;
     }
 
     @Override
-    public T get(long timeout, TimeUnit unit) throws TimeoutException, PcjRuntimeException {
+    public Void get(long timeout, TimeUnit unit) throws TimeoutException, PcjRuntimeException {
         try {
             super.await(timeout, unit);
         } catch (InterruptedException ex) {
             throw new PcjRuntimeException(ex);
         }
-        return variableValue;
+        return null;
     }
 }
