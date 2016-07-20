@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.Arrays;
 import org.pcj.internal.InternalPCJ;
+import org.pcj.internal.InternalStorage;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.PcjThread;
 import org.pcj.internal.network.MessageDataInputStream;
@@ -79,7 +80,8 @@ final public class MessageValueGetRequest extends Message {
         NodeData nodeData = InternalPCJ.getNodeData();
         int globalThreadId = nodeData.getGroupById(groupId).getGlobalThreadId(threadId);
         PcjThread pcjThread = nodeData.getPcjThreads().get(globalThreadId);
-        Object variableValue = pcjThread.getThreadData().getStorage().get(name, indices);
+        InternalStorage storage = (InternalStorage) pcjThread.getThreadData().getStorage();
+        Object variableValue = storage.get0(name, indices);
 
         MessageValueGetResponse messageValueGetResponse = new MessageValueGetResponse(
                 requestNum, groupId, requesterThreadId, variableValue);

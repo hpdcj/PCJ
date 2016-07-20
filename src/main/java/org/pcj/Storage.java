@@ -14,12 +14,12 @@ import java.util.concurrent.TimeoutException;
  */
 public interface Storage {
     
-    void createShared(String name, Class<?> type) throws NullPointerException, IllegalArgumentException, IllegalStateException;
+    void createShared(Enum<? extends Shared> variable) throws NullPointerException, IllegalArgumentException, IllegalStateException;
 
     /**
      * Returns variable from Storages
      *
-     * @param name    name of Shared variable
+     * @param variable    name of Shared variable
      * @param indices (optional) indices into the array
      *
      * @return value of variable[indices] or variable if indices omitted
@@ -28,20 +28,13 @@ public interface Storage {
      * @throws ArrayIndexOutOfBoundsException one of indices is out of bound
      */
     @SuppressWarnings(value = "unchecked")
-    <T> T get(String name, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException;
-
-    /**
-     * Tells to monitor variable. Set the variable modification counter to zero.
-     *
-     * @param variable name of Shared variable
-     */
-    void monitor(String variable);
+    <T> T get(Enum<? extends Shared> variable, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException;
 
     /**
      * Puts new value of variable to Storage into the array, or as variable
      * value if indices omitted
      *
-     * @param name     name of Shared variable
+     * @param variable     name of Shared variable
      * @param newValue new value of variable
      * @param indices  (optional) indices into the array
      *
@@ -49,7 +42,14 @@ public interface Storage {
      *                                        or value cannot be assigned to the variable
      * @throws ArrayIndexOutOfBoundsException one of indices is out of bound
      */
-    <T> void put(String name, T value, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException;
+    <T> void put(Enum<? extends Shared> variable, T value, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException;
+
+    /**
+     * Tells to monitor variable. Set the variable modification counter to zero.
+     *
+     * @param variable name of Shared variable
+     */
+    void monitor(Enum<? extends Shared> variable);
 
     /**
      * Pauses current Thread and wait for <code>count</code> modifications of
@@ -61,7 +61,7 @@ public interface Storage {
      *
      *
      */
-    int waitFor(String variable, int count);
+    int waitFor(Enum<? extends Shared> variable, int count);
 
     /**
      * Pauses current Thread and wait for <code>count</code> modifications of
@@ -71,6 +71,6 @@ public interface Storage {
      * @param variable name of Shared variable
      * @param count    number of modifications. If 0 - the method exits immediately.
      */
-    int waitFor(String variable, int count, long timeout, TimeUnit unit) throws TimeoutException;
+    int waitFor(Enum<? extends Shared> variable, int count, long timeout, TimeUnit unit) throws TimeoutException;
     
 }

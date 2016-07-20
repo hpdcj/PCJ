@@ -54,7 +54,6 @@ final public class PCJ extends InternalPCJ {
      * @param nodesDescription description of used nodes (and threads)
      */
     public static void deploy(Class<? extends StartPoint> startPoint,
-            Class<? extends InternalStorage> storage,
             NodesDescription nodesDescription) {
         DeployPCJ.deploy(startPoint, nodesDescription);
     }
@@ -112,8 +111,8 @@ final public class PCJ extends InternalPCJ {
         return ((Group) PcjThread.getThreadGlobalGroup()).asyncBarrier();
     }
 
-    public static void createShared(String name, Class<?> variableType) {
-        PcjThread.getThreadStorage().createShared(name, variableType);
+    public static void createShared(Enum<? extends Shared> variable) {
+        PcjThread.getThreadStorage().createShared(variable);
     }
 
     /**
@@ -121,7 +120,7 @@ final public class PCJ extends InternalPCJ {
      *
      * @param variable name of variable
      */
-    public static void monitor(String variable) {
+    public static void monitor(Enum<? extends Shared> variable) {
         PcjThread.getThreadStorage().monitor(variable);
     }
 
@@ -132,7 +131,7 @@ final public class PCJ extends InternalPCJ {
      *
      * @param variable name of variable
      */
-    public static int waitFor(String variable) {
+    public static int waitFor(Enum<? extends Shared> variable) {
         return waitFor(variable, 1);
     }
 
@@ -143,7 +142,7 @@ final public class PCJ extends InternalPCJ {
      * @param variable name of variable
      * @param count    number of <i>touches</i>
      */
-    public static int waitFor(String variable, int count) {
+    public static int waitFor(Enum<? extends Shared> variable, int count) {
         return PcjThread.getThreadStorage().waitFor(variable, count);
     }
 
@@ -154,7 +153,7 @@ final public class PCJ extends InternalPCJ {
      * @param variable name of variable
      * @param count    number of <i>touches</i>
      */
-    public static int waitFor(String variable, int count,
+    public static int waitFor(Enum<? extends Shared> variable, int count,
             long timeout, TimeUnit unit) throws TimeoutException {
         return PcjThread.getThreadStorage().waitFor(variable, count, timeout, unit);
     }
@@ -166,7 +165,7 @@ final public class PCJ extends InternalPCJ {
      *
      * @return value of variable
      */
-    public static <T> T getLocal(String variable) {
+    public static <T> T getLocal(Enum<? extends Shared> variable) {
         return PcjThread.getThreadStorage().get(variable);
     }
 
@@ -178,7 +177,7 @@ final public class PCJ extends InternalPCJ {
      *
      * @return value of variable
      */
-    public static <T> T getLocal(String variable, int... indices) {
+    public static <T> T getLocal(Enum<? extends Shared> variable, int... indices) {
         return PcjThread.getThreadStorage().get(variable, indices);
     }
 
@@ -190,7 +189,7 @@ final public class PCJ extends InternalPCJ {
      *
      * @throws ClassCastException when the value cannot be cast to the type of variable in InternalStorage
      */
-    public static <T> void putLocal(String variable, T newValue) throws ClassCastException {
+    public static <T> void putLocal(Enum<? extends Shared> variable, T newValue) throws ClassCastException {
         PcjThread.getThreadStorage().put(variable, newValue);
     }
 
@@ -203,7 +202,7 @@ final public class PCJ extends InternalPCJ {
      *
      * @throws ClassCastException when the value cannot be cast to the type of variable in InternalStorage
      */
-    public static <T> void putLocal(String variable, T newValue, int... indices) throws ClassCastException {
+    public static <T> void putLocal(Enum<? extends Shared> variable, T newValue, int... indices) throws ClassCastException {
         PcjThread.getThreadStorage().put(variable, newValue, indices);
     }
 

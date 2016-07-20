@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.PcjRuntimeException;
+import org.pcj.Shared;
 import org.pcj.Storage;
 
 /**
@@ -54,7 +55,18 @@ public class InternalStorage implements Storage {
     }
 
     @Override
-    public void createShared(String name, Class<?> type)
+    public void createShared(Enum<? extends Shared> variable)
+            throws NullPointerException, IllegalArgumentException, IllegalStateException {
+        if (variable instanceof Shared == false) {
+            throw new IllegalArgumentException("Not shared enum type: " + variable);
+        }
+        Shared shared = (Shared) variable;
+        Class<?> type = shared.type();
+        String name = shared.name();
+        createShared0(name, type);
+    }
+
+    private void createShared0(String name, Class<?> type)
             throws NullPointerException, IllegalArgumentException, IllegalStateException {
         if (type == null) {
             throw new NullPointerException("Variable type cannot be null");
@@ -108,9 +120,13 @@ public class InternalStorage implements Storage {
      * @throws ClassCastException             there is more indices than variable dimension
      * @throws ArrayIndexOutOfBoundsException one of indices is out of bound
      */
-    @SuppressWarnings("unchecked")
     @Override
-    final public <T> T get(String name, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException {
+    final public <T> T get(Enum<? extends Shared> variable, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException {
+        return get0(variable.name());
+    }
+
+    @SuppressWarnings("unchecked")
+    final public <T> T get0(String name, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException {
         if (name == null) {
             throw new NullPointerException("Variable name cannot be null");
         }
@@ -148,7 +164,7 @@ public class InternalStorage implements Storage {
 
     /**
      * Puts new value of variable to InternalStorage into the array, or as variable
- value if indices omitted
+     * value if indices omitted
      *
      * @param name     name of Shared variable
      * @param newValue new value of variable
@@ -159,7 +175,11 @@ public class InternalStorage implements Storage {
      * @throws ArrayIndexOutOfBoundsException one of indices is out of bound
      */
     @Override
-    final public <T> void put(String name, T value, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
+    final public <T> void put(Enum<? extends Shared> variable, T value, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
+        put0(variable.name(), value, indices);
+    }
+
+    final public <T> void put0(String name, T value, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
         if (name == null) {
             throw new NullPointerException("Variable name cannot be null");
         }
@@ -271,7 +291,11 @@ public class InternalStorage implements Storage {
      * @param variable name of Shared variable
      */
     @Override
-    final public void monitor(String variable) {
+    final public void monitor(Enum<? extends Shared> variable) {
+        monitor0(variable.name());
+    }
+
+    final public void monitor0(String variable) {
         modificationCountMap.get(variable).set(0);
     }
 
@@ -286,6 +310,10 @@ public class InternalStorage implements Storage {
      *
      */
     @Override
+    final public int waitFor(Enum<? extends Shared> variable, int count) {
+        return waitFor(variable.name(), count);
+    }
+
     final public int waitFor(String variable, int count) {
         if (count < 0) {
             throw new IllegalArgumentException("Value count is less than zero:" + count);
@@ -320,6 +348,10 @@ public class InternalStorage implements Storage {
      * @param count    number of modifications. If 0 - the method exits immediately.
      */
     @Override
+    final public int waitFor(Enum<? extends Shared> variable, int count, long timeout, TimeUnit unit) throws TimeoutException {
+        return waitFor(variable.name(), count, timeout, unit);
+    }
+
     final public int waitFor(String variable, int count, long timeout, TimeUnit unit) throws TimeoutException {
         if (count < 0) {
             throw new IllegalArgumentException("Value count is less than zero:" + count);
