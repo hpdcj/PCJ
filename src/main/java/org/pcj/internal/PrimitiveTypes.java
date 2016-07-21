@@ -89,7 +89,7 @@ final public class PrimitiveTypes {
         } else if (value instanceof Double) {
             return ((Double) value);
         }
-        throw new ClassCastException("Unable to cast: " + value.getClass().getCanonicalName());
+        throw new ClassCastException("Unable to cast: " + value.getClass().getName());
     }
 
     public static <T> float convertToFloat(T value) {
@@ -108,7 +108,7 @@ final public class PrimitiveTypes {
         } else if (value instanceof Double) {
             return ((Double) value).floatValue();
         }
-        throw new ClassCastException("Unable to cast: " + value.getClass().getCanonicalName());
+        throw new ClassCastException("Unable to cast: " + value.getClass().getName());
     }
 
     public static <T> long convertToLong(T value) {
@@ -127,7 +127,7 @@ final public class PrimitiveTypes {
         } else if (value instanceof Double) {
             return ((Double) value).longValue();
         }
-        throw new ClassCastException("Unable to cast: " + value.getClass().getCanonicalName());
+        throw new ClassCastException("Unable to cast: " + value.getClass().getName());
     }
 
     public static <T> int convertToInt(T value) {
@@ -146,7 +146,7 @@ final public class PrimitiveTypes {
         } else if (value instanceof Double) {
             return ((Double) value).intValue();
         }
-        throw new ClassCastException("Unable to cast: " + value.getClass().getCanonicalName());
+        throw new ClassCastException("Unable to cast: " + value.getClass().getName());
     }
 
     public static <T> char convertToChar(T value) {
@@ -165,7 +165,7 @@ final public class PrimitiveTypes {
         } else if (value instanceof Double) {
             return (char) ((Double) value).doubleValue();
         }
-        throw new ClassCastException("Unable to cast: " + value.getClass().getCanonicalName());
+        throw new ClassCastException("Unable to cast: " + value.getClass().getName());
     }
 
     public static <T> short convertToShort(T value) {
@@ -184,7 +184,7 @@ final public class PrimitiveTypes {
         } else if (value instanceof Double) {
             return ((Double) value).shortValue();
         }
-        throw new ClassCastException("Unable to cast: " + value.getClass().getCanonicalName());
+        throw new ClassCastException("Unable to cast: " + value.getClass().getName());
     }
 
     public static <T> byte convertToByte(T value) {
@@ -203,13 +203,13 @@ final public class PrimitiveTypes {
         } else if (value instanceof Double) {
             return ((Double) value).byteValue();
         }
-        throw new ClassCastException("Unable to cast: " + value.getClass().getCanonicalName());
+        throw new ClassCastException("Unable to cast: " + value.getClass().getName());
     }
 
     public static <T> boolean convertToBoolean(T value) {
         if (value instanceof Boolean) {
             return ((Boolean) value);
         }
-        throw new ClassCastException("Unable to cast: " + value.getClass().getCanonicalName());
+        throw new ClassCastException("Unable to cast: " + value.getClass().getName());
     }
 }

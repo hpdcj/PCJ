@@ -24,6 +24,7 @@ final public class MessageValueGetRequest extends Message {
     private int groupId;
     private int requesterThreadId;
     private int threadId;
+    private String storageName;
     private String name;
     private int[] indices;
 
@@ -31,13 +32,15 @@ final public class MessageValueGetRequest extends Message {
         super(MessageType.VALUE_GET_REQUEST);
     }
 
-    public MessageValueGetRequest(int requestNum, int groupId, int requesterThreadId, int threadId, String name, int[] indices) {
+    public MessageValueGetRequest(int requestNum, int groupId, int requesterThreadId, int threadId,
+            String storageName, String name, int[] indices) {
         this();
 
         this.requestNum = requestNum;
         this.groupId = groupId;
         this.requesterThreadId = requesterThreadId;
         this.threadId = threadId;
+        this.storageName = storageName;
         this.name = name;
         this.indices = indices;
     }
@@ -48,6 +51,7 @@ final public class MessageValueGetRequest extends Message {
         groupId = in.readInt();
         requesterThreadId = in.readInt();
         threadId = in.readInt();
+        storageName = in.readString();
         name = in.readString();
         indices = in.readIntArray();
     }
@@ -58,6 +62,7 @@ final public class MessageValueGetRequest extends Message {
         out.writeInt(groupId);
         out.writeInt(requesterThreadId);
         out.writeInt(threadId);
+        out.writeString(storageName);
         out.writeString(name);
         out.writeIntArray(indices);
     }
@@ -68,9 +73,10 @@ final public class MessageValueGetRequest extends Message {
                 + "groupId:%d,"
                 + "requesterThreadId:%d,"
                 + "threadId:%d,"
+                + "storageName:%s,"
                 + "name:%s,"
                 + "indices:%s",
-                requestNum, groupId, requesterThreadId, threadId, name, Arrays.toString(indices));
+                requestNum, groupId, requesterThreadId, threadId, storageName, name, Arrays.toString(indices));
     }
 
     @Override
@@ -81,7 +87,7 @@ final public class MessageValueGetRequest extends Message {
         int globalThreadId = nodeData.getGroupById(groupId).getGlobalThreadId(threadId);
         PcjThread pcjThread = nodeData.getPcjThreads().get(globalThreadId);
         InternalStorage storage = (InternalStorage) pcjThread.getThreadData().getStorage();
-        Object variableValue = storage.get0(name, indices);
+        Object variableValue = storage.get0(storageName, name, indices);
 
         MessageValueGetResponse messageValueGetResponse = new MessageValueGetResponse(
                 requestNum, groupId, requesterThreadId, variableValue);

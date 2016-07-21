@@ -6,9 +6,6 @@ package org.pcj.internal;
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -25,33 +22,45 @@ import org.pcj.Storage;
  */
 public class InternalStorage implements Storage {
 
-    private static final Set<String> RESERVED_WORDS = Collections.unmodifiableSet(
-            new HashSet<>(Arrays.asList(
-                    // https://docs.oracle.com/javase/specs/jls/se8/html/jls-3.html#jls-3.8
-                    // keywords:
-                    "abstract", "continue", "for", "new", "switch",
-                    "assert", "default", "if", "package", "synchronized",
-                    "boolean", "do", "goto", "private", "this",
-                    "break", "double", "implements", "protected", "throw",
-                    "byte", "else", "import", "public", "throws",
-                    "case", "enum", "instanceof", "return", "transient",
-                    "catch", "extends", "int", "short", "try",
-                    "char", "final", "interface", "static", "void",
-                    "class", "finally", "long", "strictfp", "volatile",
-                    "const", "float", "native", "super", "while",
-                    // boolean literals:
-                    "true", "false",
-                    // null literal:
-                    "null")));
+    private class StorageField {
 
-    private final transient ConcurrentMap<String, Class<?>> typesMap;
-    private final transient ConcurrentMap<String, Object> valueMap;
-    private final transient ConcurrentMap<String, AtomicInteger> modificationCountMap;
+        private final Class<?> type;
+        private final AtomicInteger modificationCount;
+        private Object value;
+
+        public StorageField(Class<?> type) {
+            this.type = type;
+            this.modificationCount = new AtomicInteger(0);
+
+            if (type.isPrimitive()) {
+                this.value = PrimitiveTypes.defaultValue(type);
+            } else {
+                this.value = null;
+            }
+        }
+
+        public Class<?> getType() {
+            return type;
+        }
+
+        public AtomicInteger getModificationCount() {
+            return modificationCount;
+        }
+
+        public Object getValue() {
+            return value;
+        }
+
+        public void setValue(Object value) {
+            this.value = value;
+        }
+
+    }
+
+    private final transient ConcurrentMap<String, ConcurrentMap<String, StorageField>> storageMap;
 
     public InternalStorage() {
-        typesMap = new ConcurrentHashMap<>();
-        valueMap = new ConcurrentHashMap<>();
-        modificationCountMap = new ConcurrentHashMap<>();
+        storageMap = new ConcurrentHashMap<>();
     }
 
     @Override
@@ -63,10 +72,10 @@ public class InternalStorage implements Storage {
         Shared shared = (Shared) variable;
         Class<?> type = shared.type();
         String name = shared.name();
-        createShared0(name, type);
+        createShared0(variable.getDeclaringClass().getName(), name, type);
     }
 
-    private void createShared0(String name, Class<?> type)
+    private void createShared0(String storageName, String name, Class<?> type)
             throws NullPointerException, IllegalArgumentException, IllegalStateException {
         if (type == null) {
             throw new NullPointerException("Variable type cannot be null");
@@ -76,37 +85,17 @@ public class InternalStorage implements Storage {
             throw new IllegalArgumentException("Variable type is not serializable");
         }
 
-        identifierNameCheck(name);
+        ConcurrentMap<String, StorageField> storage = getStorage(storageName);
+        StorageField field = new StorageField(type);
 
-        if (typesMap.containsKey(name)) {
+        if (storage.putIfAbsent(name, field) != null) {
             throw new IllegalStateException("Variable has already been created: " + name);
         }
-
-        modificationCountMap.put(name, new AtomicInteger(0));
-        if (type.isPrimitive()) {
-            valueMap.put(name, PrimitiveTypes.defaultValue(type));
-        }
-        typesMap.put(name, type);
     }
 
-    private void identifierNameCheck(String name)
-            throws NullPointerException, IllegalArgumentException {
-        if (name == null) {
-            throw new NullPointerException("Variable name cannot be null");
-        }
-
-        if (name.isEmpty()) {
-            throw new IllegalArgumentException("Variable name cannot be empty");
-        }
-
-        if (RESERVED_WORDS.contains(name)) {
-            throw new IllegalArgumentException("Variable name is reserved word: " + name);
-        }
-
-        if (Character.isJavaIdentifierStart(name.charAt(0)) == false
-                || name.codePoints().skip(1).allMatch(Character::isJavaIdentifierPart) == false) {
-            throw new IllegalArgumentException("Variable name does not meet requirements for identifiers as stated in JSL: " + name);
-        }
+    private ConcurrentMap<String, StorageField> getStorage(String storageName) {
+        ConcurrentMap<String, StorageField> storage = storageMap.computeIfAbsent(storageName, key -> new ConcurrentHashMap<>());
+        return storage;
     }
 
     /**
@@ -122,18 +111,22 @@ public class InternalStorage implements Storage {
      */
     @Override
     final public <T> T get(Enum<? extends Shared> variable, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException {
-        return get0(variable.name());
+        if (variable == null) {
+            throw new NullPointerException("Variable name cannot be null");
+        }
+
+        return get0(variable.getDeclaringClass().getName(), variable.name());
     }
 
     @SuppressWarnings("unchecked")
-    final public <T> T get0(String name, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException {
-        if (name == null) {
-            throw new NullPointerException("Variable name cannot be null");
-        }
-        if (typesMap.containsKey(name) == false) {
+    final public <T> T get0(String storageName, String name, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException {
+        ConcurrentMap<String, StorageField> storage = getStorage(storageName);
+
+        StorageField field = storage.get(name);
+        if (field == null) {
             throw new IllegalArgumentException("Variable not found: " + name);
         }
-        Object value = valueMap.get(name);
+        Object value = field.getValue();
 
         if (indices.length == 0) {
             return (T) value;
@@ -176,22 +169,27 @@ public class InternalStorage implements Storage {
      */
     @Override
     final public <T> void put(Enum<? extends Shared> variable, T value, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
-        put0(variable.name(), value, indices);
-    }
-
-    final public <T> void put0(String name, T value, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
-        if (name == null) {
+        if (variable == null) {
             throw new NullPointerException("Variable name cannot be null");
         }
-        Class<?> variableClass = typesMap.get(name);
-        if (variableClass == null) {
+
+        put0(variable.getDeclaringClass().getName(), variable.name(), value, indices);
+    }
+
+    final public <T> void put0(String storageName, String name, T value, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
+        ConcurrentMap<String, StorageField> storage = getStorage(storageName);
+
+        StorageField field = storage.get(name);
+        if (field == null) {
             throw new IllegalArgumentException("Variable not found: " + name);
         }
+
+        Class<?> variableClass = field.getType();
         Class<?> targetClass = getTargetClass(variableClass, indices);
         Class<?> fromClass = getValueClass(value);
 
         if (isAssignableFrom(targetClass, fromClass) == false) {
-            throw new ClassCastException("Cannot cast " + fromClass.getCanonicalName()
+            throw new ClassCastException("Cannot cast " + fromClass.getName()
                     + " to the type of variable '" + name + "'"
                     + (indices.length == 0 ? "" : " with indices: " + Arrays.toString(indices))
                     + ": " + targetClass);
@@ -205,13 +203,9 @@ public class InternalStorage implements Storage {
         }
 
         if (indices.length == 0) {
-            if (newValue != null) {
-                valueMap.put(name, newValue);
-            } else {
-                valueMap.remove(name);
-            }
+            field.setValue(newValue);
         } else {
-            Object array = getArrayElement(valueMap.get(name), indices, indices.length - 1);
+            Object array = getArrayElement(field.getValue(), indices, indices.length - 1);
 
             if (array == null) {
                 throw new NullPointerException("Cannot put value to: " + name);
@@ -224,10 +218,9 @@ public class InternalStorage implements Storage {
             Array.set(array, indices[indices.length - 1], newValue);
         }
 
-        AtomicInteger monitor = modificationCountMap.get(name);
-        monitor.getAndIncrement();
-        synchronized (monitor) {
-            monitor.notifyAll();
+        field.getModificationCount().getAndIncrement();
+        synchronized (field) {
+            field.notifyAll();
         }
     }
 
@@ -292,11 +285,22 @@ public class InternalStorage implements Storage {
      */
     @Override
     final public void monitor(Enum<? extends Shared> variable) {
-        monitor0(variable.name());
+        if (variable == null) {
+            throw new NullPointerException("Variable name cannot be null");
+        }
+
+        monitor0(variable.getDeclaringClass().getName(), variable.name());
     }
 
-    final public void monitor0(String variable) {
-        modificationCountMap.get(variable).set(0);
+    final public void monitor0(String storageName, String name) {
+        ConcurrentMap<String, StorageField> storage = getStorage(storageName);
+
+        StorageField field = storage.get(name);
+        if (field == null) {
+            throw new IllegalArgumentException("Variable not found: " + name);
+        }
+
+        field.getModificationCount().set(0);
     }
 
     /**
@@ -311,32 +315,43 @@ public class InternalStorage implements Storage {
      */
     @Override
     final public int waitFor(Enum<? extends Shared> variable, int count) {
-        return waitFor(variable.name(), count);
+        if (variable == null) {
+            throw new NullPointerException("Variable name cannot be null");
+        }
+
+        return waitFor0(variable.getDeclaringClass().getName(), variable.name(), count);
     }
 
-    final public int waitFor(String variable, int count) {
+    final public int waitFor0(String storageName, String name, int count) {
         if (count < 0) {
             throw new IllegalArgumentException("Value count is less than zero:" + count);
         }
+        ConcurrentMap<String, StorageField> storage = getStorage(storageName);
 
-        AtomicInteger monitor = modificationCountMap.get(variable);
-        if (count == 0) {
-            return monitor.get();
+        StorageField field = storage.get(name);
+        if (field == null) {
+            throw new IllegalArgumentException("Variable not found: " + name);
         }
+
+        AtomicInteger modificationCount = field.getModificationCount();
+        if (count == 0) {
+            return modificationCount.get();
+        }
+
         int v;
         do {
-            synchronized (monitor) {
-                while ((v = monitor.get()) < count) {
+            synchronized (field) {
+                while ((v = modificationCount.get()) < count) {
                     try {
-                        monitor.wait();
+                        field.wait();
                     } catch (InterruptedException ex) {
                         throw new PcjRuntimeException(ex);
                     }
                 }
             }
-        } while (monitor.compareAndSet(v, v - count) == false);
+        } while (modificationCount.compareAndSet(v, v - count) == false);
 
-        return monitor.get();
+        return modificationCount.get();
     }
 
     /**
@@ -349,17 +364,28 @@ public class InternalStorage implements Storage {
      */
     @Override
     final public int waitFor(Enum<? extends Shared> variable, int count, long timeout, TimeUnit unit) throws TimeoutException {
-        return waitFor(variable.name(), count, timeout, unit);
+        if (variable == null) {
+            throw new NullPointerException("Variable name cannot be null");
+        }
+
+        return waitFor0(variable.getDeclaringClass().getName(), variable.name(), count, timeout, unit);
     }
 
-    final public int waitFor(String variable, int count, long timeout, TimeUnit unit) throws TimeoutException {
+    final public int waitFor0(String storageName, String name, int count, long timeout, TimeUnit unit) throws TimeoutException {
         if (count < 0) {
             throw new IllegalArgumentException("Value count is less than zero:" + count);
         }
 
-        AtomicInteger monitor = modificationCountMap.get(variable);
+        ConcurrentMap<String, StorageField> storage = getStorage(storageName);
+
+        StorageField field = storage.get(name);
+        if (field == null) {
+            throw new IllegalArgumentException("Variable not found: " + name);
+        }
+
+        AtomicInteger modificationCount = field.getModificationCount();
         if (count == 0) {
-            return monitor.get();
+            return modificationCount.get();
         }
         long nanosTimeout = unit.toNanos(timeout);
         final long deadline = System.nanoTime() + nanosTimeout;
@@ -367,22 +393,22 @@ public class InternalStorage implements Storage {
         int v;
         do {
 
-            synchronized (monitor) {
-                while ((v = monitor.get()) < count) {
+            synchronized (field) {
+                while ((v = modificationCount.get()) < count) {
                     if (nanosTimeout <= 0L) {
                         throw new TimeoutException();
                     }
                     try {
-                        monitor.wait(nanosTimeout / 1_000_000, (int) (nanosTimeout % 1_000_000));
+                        field.wait(nanosTimeout / 1_000_000, (int) (nanosTimeout % 1_000_000));
                     } catch (InterruptedException ex) {
                         throw new PcjRuntimeException(ex);
                     }
                     nanosTimeout = deadline - System.nanoTime();
                 }
             }
-        } while (monitor.compareAndSet(v, v - count) == false);
+        } while (modificationCount.compareAndSet(v, v - count) == false);
 
-        return monitor.get();
+        return modificationCount.get();
     }
 
 }

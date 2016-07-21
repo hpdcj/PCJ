@@ -73,7 +73,8 @@ final public class Group extends InternalGroup {
         SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalId);
 
         MessageValueGetRequest message = new MessageValueGetRequest(
-                requestNum, super.getGroupId(), myThreadId, threadId, variable.name(), indices);
+                requestNum, super.getGroupId(), myThreadId, threadId,
+                variable.getDeclaringClass().getName(), variable.name(), indices);
 
         InternalPCJ.getNetworker().send(socket, message);
 
@@ -94,7 +95,8 @@ final public class Group extends InternalGroup {
         SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalId);
 
         MessageValuePutRequest message = new MessageValuePutRequest(
-                requestNum, super.getGroupId(), myThreadId, threadId, variable.name(), indices, newValue);
+                requestNum, super.getGroupId(), myThreadId, threadId,
+                variable.getDeclaringClass().getName(), variable.name(), indices, newValue);
 
         InternalPCJ.getNetworker().send(socket, message);
 
@@ -105,8 +107,7 @@ final public class Group extends InternalGroup {
         return putVariableMap;
     }
 //
-    
-    
+
 //    public <T> T get(int nodeId, String variable, int... indices) {
 //        PcjFuture<T> futureObject = getFutureObject(nodeId, variable, indices);
 //
