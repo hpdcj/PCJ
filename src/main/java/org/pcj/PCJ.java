@@ -3,11 +3,13 @@
  */
 package org.pcj;
 
-import org.pcj.internal.InternalStorage;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.pcj.internal.DeployPCJ;
+import org.pcj.internal.InternalGroup;
 import org.pcj.internal.InternalPCJ;
+import org.pcj.internal.InternalStorage;
 import org.pcj.internal.PcjThread;
 
 /**
@@ -65,7 +67,7 @@ final public class PCJ extends InternalPCJ {
      * @return global thread id
      */
     public static int myId() {
-        return ((Group) PcjThread.getThreadGlobalGroup()).myId();
+        return ((InternalGroup) PcjThread.getThreadGlobalGroup()).myId();
     }
 
     /**
@@ -74,7 +76,7 @@ final public class PCJ extends InternalPCJ {
      * @return global number of threads used in calculations
      */
     public static int threadCount() {
-        return ((Group) PcjThread.getThreadGlobalGroup()).threadCount();
+        return ((InternalGroup) PcjThread.getThreadGlobalGroup()).threadCount();
     }
 
     /**
@@ -102,7 +104,7 @@ final public class PCJ extends InternalPCJ {
      * @return PcjFuture that can check the barrier status.
      */
     public static PcjFuture<Void> asyncBarrier() {
-        return ((Group) PcjThread.getThreadGlobalGroup()).asyncBarrier();
+        return ((InternalGroup) PcjThread.getThreadGlobalGroup()).asyncBarrier();
     }
 
     /**
@@ -114,6 +116,17 @@ final public class PCJ extends InternalPCJ {
 
     public static void createShared(Enum<? extends Shared> variable) {
         PcjThread.getThreadStorage().createShared(variable);
+    }
+
+    public static void createShared(Class<? extends Enum<? extends Shared>> sharedEnum) {
+        if (sharedEnum.isEnum() == false) {
+            throw new IllegalArgumentException("Argument is not enum");
+        }
+        if (sharedEnum.isAssignableFrom(Shared.class)) {
+            throw new IllegalArgumentException("Argument is not enum");
+        }
+        Storage storage = PcjThread.getThreadStorage();
+        Arrays.stream(sharedEnum.getEnumConstants()).forEach(storage::createShared);
     }
 
     /**
@@ -218,7 +231,7 @@ final public class PCJ extends InternalPCJ {
      * @return FutureObject that will contain received data
      */
     public static <T> PcjFuture<T> asyncGet(int threadId, Enum<? extends Shared> variable, int... indices) {
-        return ((Group) PcjThread.getThreadGlobalGroup()).asyncGet(threadId, variable, indices);
+        return ((InternalGroup) PcjThread.getThreadGlobalGroup()).asyncGet(threadId, variable, indices);
     }
 
     public static <T> T get(int threadId, Enum<? extends Shared> variable, int... indices) throws PcjRuntimeException {
@@ -226,7 +239,7 @@ final public class PCJ extends InternalPCJ {
     }
 
     public static <T> PcjFuture<Void> asyncPut(int threadId, Enum<? extends Shared> variable, T newValue, int... indices) {
-        return ((Group) PcjThread.getThreadGlobalGroup()).asyncPut(threadId, variable, newValue, indices);
+        return ((InternalGroup) PcjThread.getThreadGlobalGroup()).asyncPut(threadId, variable, newValue, indices);
     }
 
     public static <T> void put(int threadId, Enum<? extends Shared> variable, T newValue, int... indices) {
@@ -238,7 +251,7 @@ final public class PCJ extends InternalPCJ {
 //            throw new ClassCastException("Cannot cast " + newValue.getClass().getCanonicalName()
 //                    + " to the type of variable '" + variable + "'");
 //        }
-//        return ((Group) PcjThread.getThreadGlobalGroup()).put(threadId, variable, newValue);
+//        return ((InternalGroup) PcjThread.getThreadGlobalGroup()).put(threadId, variable, newValue);
 //    }
 //
 //    /**
@@ -256,7 +269,7 @@ final public class PCJ extends InternalPCJ {
 //            throw new ClassCastException("Cannot cast " + newValue.getClass().getCanonicalName()
 //                    + " to the type of variable '" + variable + "'");
 //        }
-//        return ((Group) PcjThread.getThreadGlobalGroup()).put(threadId, variable, newValue, indices);
+//        return ((InternalGroup) PcjThread.getThreadGlobalGroup()).put(threadId, variable, newValue, indices);
 //    }
 //
 //    /**
@@ -272,7 +285,7 @@ final public class PCJ extends InternalPCJ {
 //            throw new ClassCastException("Cannot cast " + newValue.getClass().getCanonicalName()
 //                    + " to the type of variable '" + variable + "'");
 //        }
-//        return ((Group) PcjThread.getThreadGlobalGroup()).broadcast(variable, newValue);
+//        return ((InternalGroup) PcjThread.getThreadGlobalGroup()).broadcast(variable, newValue);
 //    }
 //    
 //    public static PcjFuture<R> asyncAt(int threadId, Function<R,T> lambda) throws PcjRuntimeException {
@@ -283,8 +296,8 @@ final public class PCJ extends InternalPCJ {
 //     *
 //     * @return the global group
 //     */
-//    public static Group getGlobalGroup() {
-//        return ((Group) PcjThread.getThreadGlobalGroup());
+//    public static InternalGroup getGlobalGroup() {
+//        return ((InternalGroup) PcjThread.getThreadGlobalGroup());
 //    }
 //
 //    /**
@@ -294,8 +307,8 @@ final public class PCJ extends InternalPCJ {
 //     *
 //     * @return group by name
 //     */
-//    public static Group getGroup(String name) {
-//        return (Group) PcjThread.threadGroup(name);
+//    public static InternalGroup getGroup(String name) {
+//        return (InternalGroup) PcjThread.threadGroup(name);
 //    }
 //
 //    /**
@@ -305,8 +318,8 @@ final public class PCJ extends InternalPCJ {
 //     *
 //     * @return group to which thread joined
 //     */
-//    public static Group join(String name) {
-//        int myThreadId = ((Group) PcjThread.getThreadGlobalGroup()).myId();
-//        return (Group) InternalPCJ.join(myThreadId, name);
+//    public static InternalGroup join(String name) {
+//        int myThreadId = ((InternalGroup) PcjThread.getThreadGlobalGroup()).myId();
+//        return (InternalGroup) InternalPCJ.join(myThreadId, name);
 //    }
 }

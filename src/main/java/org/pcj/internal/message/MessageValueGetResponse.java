@@ -8,8 +8,8 @@ package org.pcj.internal.message;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.Objects;
-import org.pcj.Group;
 import org.pcj.PcjRuntimeException;
+import org.pcj.internal.InternalGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.PcjThread;
@@ -78,7 +78,7 @@ class MessageValueGetResponse extends Message {
         int globalThreadId = nodeData.getGroupById(groupId).getGlobalThreadId(requesterThreadId);
 
         PcjThread pcjThread = nodeData.getPcjThreads().get(globalThreadId);
-        Group group = pcjThread.getThreadData().getGroupById(groupId);
+        InternalGroup group = pcjThread.getThreadData().getGroupById(groupId);
 
         GetVariable getVariable = group.getGetVariableMap().remove(requestNum);
         getVariable.setVariableValue(variableValue);

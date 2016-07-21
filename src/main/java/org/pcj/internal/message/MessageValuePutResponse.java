@@ -7,8 +7,8 @@ package org.pcj.internal.message;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
-import org.pcj.Group;
 import org.pcj.PcjRuntimeException;
+import org.pcj.internal.InternalGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.PcjThread;
@@ -72,7 +72,7 @@ class MessageValuePutResponse extends Message {
         int globalThreadId = nodeData.getGroupById(groupId).getGlobalThreadId(requesterThreadId);
 
         PcjThread pcjThread = nodeData.getPcjThreads().get(globalThreadId);
-        Group group = pcjThread.getThreadData().getGroupById(groupId);
+        InternalGroup group = pcjThread.getThreadData().getGroupById(groupId);
 
         PutVariable putVariable = group.getPutVariableMap().remove(requestNum);
         putVariable.signalAll();

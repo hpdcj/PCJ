@@ -8,7 +8,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
-import org.pcj.PcjFuture;
 import org.pcj.Shared;
 import org.pcj.StartPoint;
 import org.pcj.internal.InternalStorage;

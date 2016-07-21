@@ -3,7 +3,6 @@
  */
 package org.pcj.internal;
 
-import org.pcj.internal.futures.WaitObject;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
@@ -17,16 +16,15 @@ import java.util.Iterator;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import org.pcj.Group;
 import org.pcj.NodesDescription;
 import org.pcj.StartPoint;
+import org.pcj.internal.futures.WaitObject;
 import org.pcj.internal.message.MessageBye;
 import org.pcj.internal.message.MessageHello;
 import org.pcj.internal.network.LoopbackSocketChannel;
@@ -114,7 +112,7 @@ public abstract class InternalPCJ {
             if (isCurrentJvmNode0) {
                 LOGGER.log(Level.INFO, "Starting {0} with {1,number,#} {1,choice,1#thread|1<threads}...",
                         new Object[]{startPointClass.getName(),
-                            nodeData.getGroupById(InternalGroup.GLOBAL_GROUP_ID).threadCount()});
+                            nodeData.getGroupById(InternalCommonGroup.GLOBAL_GROUP_ID).threadCount()});
             }
 
 
@@ -131,7 +129,7 @@ public abstract class InternalPCJ {
             if (isCurrentJvmNode0) {
                 LOGGER.log(Level.INFO, "Completed {0} with {1,number,#} {1,choice,1#thread|1<threads}.",
                         new Object[]{startPointClass.getName(),
-                            nodeData.getGroupById(InternalGroup.GLOBAL_GROUP_ID).threadCount()});
+                            nodeData.getGroupById(InternalCommonGroup.GLOBAL_GROUP_ID).threadCount()});
             }
 
             /* finishing */
@@ -175,11 +173,11 @@ public abstract class InternalPCJ {
     }
 
     private static Set<PcjThread> preparePcjThreads(Class<? extends StartPoint> startPointClass, int[] threadIds) {
-        InternalGroup globalGroup = nodeData.getGroupById(InternalGroup.GLOBAL_GROUP_ID);
+        InternalCommonGroup globalGroup = nodeData.getGroupById(InternalCommonGroup.GLOBAL_GROUP_ID);
         Set<PcjThread> pcjThreads = new HashSet<>();
 
         for (int threadId : threadIds) {
-            Group threadGlobalGroup = new Group(threadId, globalGroup);
+            InternalGroup threadGlobalGroup = new InternalGroup(threadId, globalGroup);
             PcjThreadData pcjThreadData = new PcjThreadData(threadGlobalGroup);
             PcjThread pcjThread = new PcjThread(threadId, startPointClass, pcjThreadData);
 
@@ -336,8 +334,8 @@ public abstract class InternalPCJ {
 //    protected static int getPhysicalNodeId() {
 //        return nodeData.physicalId;
 //    }
-//    protected static InternalGroup join(int myNodeId, String groupName) {
-//        InternalGroup group = PcjThread.threadGroup(groupName);
+//    protected static InternalCommonGroup join(int myNodeId, String groupName) {
+//        InternalCommonGroup group = PcjThread.threadGroup(groupName);
 //        if (group != null) {
 //            return group;
 //        }

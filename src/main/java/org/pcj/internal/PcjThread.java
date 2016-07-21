@@ -90,7 +90,7 @@ public class PcjThread extends Thread {
         return tg.getThreadData().getStorage();
     }
 
-    public static InternalGroup getThreadGlobalGroup() {
+    public static InternalCommonGroup getThreadGlobalGroup() {
         PcjThreadGroup tg = getPcjThreadGroupForCurrentThread();
         if (tg == null) {
             throw new IllegalStateException("Current thread is not part of PcjThread.");
@@ -102,11 +102,11 @@ public class PcjThread extends Thread {
 //        return threadGroup.data.getThreadStorage();
 //    }
 //
-//    public Map<String, InternalGroup> getGroups() {
+//    public Map<String, InternalCommonGroup> getGroups() {
 //        return threadGroup.data.getGroupsByName();
 //    }
 //
-//    public InternalGroup getGroup(String name) {
+//    public InternalCommonGroup getGroup(String name) {
 //        return threadGroup.data.getGroupsByName().get(name);
 //    }
 }

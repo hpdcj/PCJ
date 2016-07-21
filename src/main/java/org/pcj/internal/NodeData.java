@@ -3,11 +3,11 @@
  */
 package org.pcj.internal;
 
-import org.pcj.internal.futures.WaitObject;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.pcj.internal.futures.WaitObject;
 
 /**
  *
@@ -15,8 +15,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 final public class NodeData {
 
-    final private ConcurrentMap<Integer, InternalGroup> groupById;
-    final private ConcurrentMap<String, InternalGroup> groupByName;
+    final private ConcurrentMap<Integer, InternalCommonGroup> groupById;
+    final private ConcurrentMap<String, InternalCommonGroup> groupByName;
     final private ConcurrentMap<Integer, SocketChannel> socketChannelByPhysicalId; // physicalId -> socket
     final private ConcurrentMap<Integer, Integer> physicalIdByThreadId; // threadId -> physicalId
     final private ConcurrentMap<Integer, PcjThread> pcjThreads;
@@ -98,8 +98,8 @@ final public class NodeData {
         return node0Data;
     }
 
-    public InternalGroup addGroup(InternalGroup newGroup) {
-        InternalGroup group = groupById.putIfAbsent(newGroup.getGroupId(), newGroup);
+    public InternalCommonGroup addGroup(InternalCommonGroup newGroup) {
+        InternalCommonGroup group = groupById.putIfAbsent(newGroup.getGroupId(), newGroup);
         if (group != null) {
             return group;
         }
@@ -108,7 +108,7 @@ final public class NodeData {
         return newGroup;
     }
 
-    public InternalGroup getGroupById(int id) {
+    public InternalCommonGroup getGroupById(int id) {
         return groupById.get(id);
     }
 

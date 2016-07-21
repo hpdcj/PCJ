@@ -15,10 +15,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.pcj.internal.message.Message;
-import org.pcj.internal.network.LoopbackSocketChannel;
-import org.pcj.internal.network.SelectorProc;
 import org.pcj.internal.network.LoopbackMessageBytesStream;
+import org.pcj.internal.network.LoopbackSocketChannel;
 import org.pcj.internal.network.MessageBytesInputStream;
+import org.pcj.internal.network.SelectorProc;
 
 /**
  * This is intermediate class (between classes that want to send data (eg.

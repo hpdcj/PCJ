@@ -6,10 +6,10 @@ package org.pcj.internal.message;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.List;
-import org.pcj.internal.InternalGroup;
+import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
-import org.pcj.internal.futures.LocalBarrier;
 import org.pcj.internal.NodeData;
+import org.pcj.internal.futures.LocalBarrier;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
@@ -57,7 +57,7 @@ final public class MessageGroupBarrierGo extends Message {
         
         NodeData nodeData = InternalPCJ.getNodeData();
         
-        InternalGroup group = nodeData.getGroupById(groupId);
+        InternalCommonGroup group = nodeData.getGroupById(groupId);
         List<Integer> children = group.getChildrenNodes();
         
         children.stream().map(nodeData.getSocketChannelByPhysicalId()::get)

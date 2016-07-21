@@ -1,479 +1,144 @@
 /*
- * This file is the internal part of the PCJ Library
+ * This file is the part of the PCJ Library
  */
 package org.pcj.internal;
 
-import org.pcj.internal.futures.LocalBarrier;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.pcj.Group;
 import org.pcj.PcjFuture;
 import org.pcj.Shared;
-import org.pcj.internal.message.MessageGroupBarrierWaiting;
+import org.pcj.internal.futures.GetVariable;
+import org.pcj.internal.futures.PutVariable;
+import org.pcj.internal.message.MessageValueGetRequest;
+import org.pcj.internal.message.MessageValuePutRequest;
 
 /**
- * Internal (with common ClassLoader) representation of Group. It contains
- * common data for groups.
+ * External class that represents group for grouped communication.
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public class InternalGroup {
+final public class InternalGroup extends InternalCommonGroup implements Group {
 
-    public static final int GLOBAL_GROUP_ID = 0;
-    public static final String GLOBAL_GROUP_NAME = "";
+    private final int myThreadId;
+    private final AtomicInteger barrierRoundCounter;
+    private final AtomicInteger getVariableCounter;
+    private final ConcurrentMap<Integer, GetVariable> getVariableMap;
+    private final AtomicInteger putVariableCounter;
+    private final ConcurrentMap<Integer, PutVariable> putVariableMap;
 
-    private final ConcurrentMap<Integer, Integer> threadsMapping; // groupThreadId, globalThreadId
-    private final int groupId;
-    private final String groupName;
-    private final List<Integer> localIds;
-    private final List<Integer> physicalIds;
-//    final private Bitmask localBarrierBitmask;
-    private final Bitmask localBitmask;
-    private final ConcurrentMap<Integer, Bitmask> physicalBitmaskMap;
-    private final ConcurrentMap<Integer, LocalBarrier> localBarrierMap;
-//    final private MessageGroupBarrierWaiting groupBarrierWaitingMessage;
-//    final private ConcurrentMap<Integer, BitMask> joinBitmaskMap;
-//    final private AtomicInteger nodeNum = new AtomicInteger(0);
-//    /**
-//     * list of local node group ids
-//     */
-//    final private ArrayList<Integer> localIds;
-//    /**
-//     * list of remote computers ids in this group (for broadcast)
-//     */
-//    final private List<Integer> physicalIds;
-//    /**
-//     * sync
-//     */
-//    final private BitMask localSync;
-//    final private BitMask localSyncMask;
-//    final private BitMask physicalSync;
-//    /**
-//     * Physical Parent, Left, Right
-//     */
-    final private CommunicationTree physicalTree;
+    public InternalGroup(int threadId, InternalCommonGroup internalGroup) {
+        super(internalGroup);
 
-    //private final InternalGroup g;
-    public InternalGroup(InternalGroup g) {
-        this.groupId = g.groupId;
-        this.groupName = g.groupName;
-        this.physicalTree = g.physicalTree;
+        this.myThreadId = threadId;
 
-        this.threadsMapping = g.threadsMapping;
-        this.physicalBitmaskMap = g.physicalBitmaskMap;
-        this.localBitmask = g.localBitmask;
-        this.localBarrierMap = g.localBarrierMap;
+        barrierRoundCounter = new AtomicInteger(0);
 
-//        this.groupBarrierWaitingMessage = g.groupBarrierWaitingMessage;
-//        this.joinBitmaskMap = g.joinBitmaskMap;
-//
-//        this.syncMessage = g.syncMessage;
-//
-        this.localIds = g.localIds;
-        this.physicalIds = g.physicalIds;
-//
-//        this.localSync = g.localSync;
-//        this.localSyncMask = g.localSyncMask;
+        getVariableCounter = new AtomicInteger(0);
+        getVariableMap = new ConcurrentHashMap<>();
+
+        putVariableCounter = new AtomicInteger(0);
+        putVariableMap = new ConcurrentHashMap<>();
     }
 
-    public InternalGroup(int groupMaster, int groupId, String groupName) {
-        this.groupId = groupId;
-        this.groupName = groupName;
-        physicalTree = new CommunicationTree(groupMaster);
-
-        threadsMapping = new ConcurrentHashMap<>();
-
-        physicalBitmaskMap = new ConcurrentHashMap<>();
-
-        localBitmask = new Bitmask();
-        localBarrierMap = new ConcurrentHashMap<>();
-
-//        groupBarrierWaitingMessage = new MessageGroupBarrierWaiting(groupId, InternalPCJ.getNodeData().getPhysicalId());
-//        this.joinBitmaskMap = new ConcurrentHashMap<>();
-//
-//        syncMessage = new MessageSyncWait();
-//        syncMessage.setGroupId(groupId);
-//
-        localIds = new ArrayList<>();
-        physicalIds = new ArrayList<>();
-
-//
-//        localSync = new BitMask();
-//        localSyncMask = new BitMask();
-//
-//        waitObject = new WaitObject();
-//
+    @Override
+    public int myId() {
+        return myThreadId;
     }
 
-    final protected int getGroupId() {
-        return groupId;
+    @Override
+    public PcjFuture<Void> asyncBarrier() {
+        return super.barrier(myThreadId, barrierRoundCounter.incrementAndGet());
     }
-
-    final protected String getGroupName() {
-        return groupName;
-    }
-
-    final public int getGroupMasterNode() {
-        return physicalTree.getRootNode();
-    }
-
-    final public List<Integer> getChildrenNodes() {
-        return physicalTree.getChildrenNodes();
-    }
-
-    final public Integer getPhysicalIdIndex(int physicalId) {
-        return physicalIds.indexOf(physicalId);
-    }
-
-    protected int myId() {
-        throw new IllegalStateException("This method has to be overriden!");
-    }
-
-    final public int threadCount() {
-        return threadsMapping.size();
-    }
-
-    final public int getGlobalThreadId(int groupThreadId) {
-        return threadsMapping.get(groupThreadId);
-    }
-
-    final public void addThread(int physicalId, int groupThreadId, int globalThreadId) {
-        int currentPhysicalId = InternalPCJ.getNodeData().getPhysicalId();
-
-        threadsMapping.put(groupThreadId, globalThreadId);
-        synchronized (physicalIds) {
-            if (physicalIds.contains(physicalId) == false) {
-                physicalIds.add(physicalId);
-
-                int index = physicalIds.size() - 1;
-                if (index > 0) {
-                    if (physicalId == currentPhysicalId) {
-                        physicalTree.setParentNode((index - 1) / 2);
-                    }
-                    if (physicalIds.get((index - 1) / 2) == currentPhysicalId) {
-                        physicalTree.getChildrenNodes().add(physicalId);
-                    }
-                }
-            }
-        }
-
-        if (physicalId == currentPhysicalId) {
-            synchronized (localIds) {
-                localIds.add(groupThreadId);
-                if (groupThreadId + 1 > localBitmask.getSize()) {
-                    localBitmask.setSize(groupThreadId + 1);
-                }
-                localBitmask.set(groupThreadId);
-            }
-        }
-    }
-
-    protected PcjFuture<Void> asyncBarrier() {
-        throw new IllegalStateException("This method has to be overriden!");
-    }
-
-    final protected LocalBarrier barrier(int threadId, int barrierRound) {
-        LocalBarrier localBarrier = localBarrierMap
-                .computeIfAbsent(barrierRound, round -> new LocalBarrier(round, localBitmask));
-
-        synchronized (localBarrier) {
-            localBarrier.set(threadId);
-            if (localBarrier.isSet()) {
-                int groupMasterId = getGroupMasterNode();
-                SocketChannel groupMasterSocket = InternalPCJ.getNodeData()
-                        .getSocketChannelByPhysicalId().get(groupMasterId);
-
-                MessageGroupBarrierWaiting message = new MessageGroupBarrierWaiting(
-                        groupId, InternalPCJ.getNodeData().getPhysicalId(), barrierRound);
-
-                InternalPCJ.getNetworker().send(groupMasterSocket, message);
-            }
-        }
-
-        return localBarrier;
-    }
-
-    final public Bitmask getPhysicalBitmask(int round) {
-        return physicalBitmaskMap
-                .computeIfAbsent(round, k -> new Bitmask(physicalIds.size()));
-    }
-
-    final public ConcurrentMap<Integer, LocalBarrier> getLocalBarrierMap() {
-        return localBarrierMap;
-    }
-    
-    protected <T> PcjFuture<T> asyncGet(int threadId, Enum<? extends Shared> variable, int... indices) {
-        throw new IllegalStateException("This method has to be overriden!");
-    }
-
-//    /**
-//     * Used while joining. joinBitmaskMap stores information about nodes that
-//     * received information about new node (current) and send bonjour message.
-//     *
-//     * @param groupNodeId
-//     *
-//     * @return
-//     */
-//    BitMask getJoinBitmask(int groupNodeId) {
-//        BitMask newMask = new BitMask(groupNodeId + 1);
-//        BitMask mask = joinBitmaskMap.putIfAbsent(groupNodeId, newMask);
-//        if (mask == null) {
-//            mask = newMask;
-//            synchronized (mask) {
-//                mask.set(groupNodeId);
-//            }
-//        }
-//        return mask;
-//    }
-//
-//    /**
-//     * @return the nodeNum
-//     */
-//    int nextNodeNum() {
-//        return nodeNum.getAndIncrement();
-//    }
-//
-//    synchronized int addPhysicalId(int id) {
-//        int index = physicalIds.indexOf(id);
-//        if (index < 0) {
-//            physicalIds.add(id);
-//            // FIXME: to wszystko psuje ---v-v-v---
-//            // sortowanie powinno być wykonywane w jakiś mądrzejszy sposób
-//            // ...
-//            // dodatkowo bez sortowania kolejność fizycznych węzłów na liście
-//            // jest różna, a co za tym idzie, broadcast może się zapętlić...
-//            // ...
-//            // kolejność powinna być w jakiś sposób wspólna dla wszystkich
-//            // nawet w trakcie tworzenia grupy
-//            // ...
-//            // może przez wysyłanie razem z numerem groupId, wartości index?
-//            //Collections.sort(physicalIds);
-//            index = physicalIds.size() - 1;
-//            physicalSync.insert(index, 0);
-//        }
-//        return index;
-//    }
-//
-//    /**
-//     * adds info about new node in group, or nothing if groupNodeId exists in
-//     * group
-//     *
-//     * @param groupNodeId          groupNodeId of adding node
-//     * @param globalNodeId         globalNodeId of adding node
-//     * @param remotePhysicalNodeId physicalId of adding node
-//     */
-//    synchronized void add(int groupNodeId, int globalNodeId, int remotePhysicalNodeId) {
-//        if (nodes.containsKey(groupNodeId) == false) {
-//            nodes.put(groupNodeId, globalNodeId);
-////            addPhysicalId(remotePhysicalNodeId);
-//
-//            int size = Math.max(localSync.getSize(), groupNodeId + 1);
-//            localSync.setSize(size);
-//            localSyncMask.setSize(size);
-//            if (remotePhysicalNodeId == InternalPCJ.getWorkerData().physicalId) {
-//                localIds.add(groupNodeId);
-//                localSyncMask.set(groupNodeId);
-//            }
-//        }
-//    }
-//
-//    synchronized int[] getPhysicalIds() {
-//        int[] ids = new int[physicalIds.size()];
-//        int i = 0;
-//        for (int id : physicalIds) {
-//            ids[i++] = id;
-//        }
-//        return ids;
-//    }
-//
-//    boolean physicalSync(int physicalId) {
-//        int position = physicalIds.indexOf(physicalId);
-//        physicalSync.set(position);
-//        return physicalSync.isSet();
-//    }
-//
-//    /**
-//     * @return the localIds
-//     */
-//    List<Integer> getLocalIds() {
-//        return localIds;
-//    }
-//
-//    /**
-//     * Gets global node id from group node id
-//     *
-//     * @param nodeId group node id
-//     *
-//     * @return global node id or -1 if group doesn't have specified group node
-//     *         id
-//     */
-//    int getNode(int nodeId) {
-//        if (nodes.containsKey(nodeId)) {
-//            return nodes.get(nodeId);
-//        }
-//        return -1;
-//    }
-//
-//
-//    /**
-//     * Synchronize current node and node with specified group nodeId
-//     *
-//     * @param nodeId group node id
-//     */
-//    protected void barrier(int myNodeId, int nodeId) {
-//        // FIXME: trzeba sprawdzić jak to będzie działać w pętli.
-////        if (true) {
-////            sync(myNodeId, new int[]{nodeId});
-////        }
-//
-//        /* change current group nodeId to global nodeId */
-//        nodeId = nodes.get(nodeId);
-//        myNodeId = nodes.get(myNodeId);
-//
-//        try {
-//            MessageThreadPairSync msg = new MessageThreadPairSync();
-//            msg.setSenderGlobalNodeId(myNodeId);
-//            msg.setReceiverGlobalNodeId(nodeId);
-//
-//            InternalPCJ.getNetworker().send(nodeId, msg);
-//        } catch (IOException ex) {
-//            throw new RuntimeException(ex);
-//        }
-//
-//        final Map<PcjThreadPair, PcjThreadPair> syncNode = InternalPCJ.getWorkerData().syncNodePair;
-//        PcjThreadPair pair = new PcjThreadPair(myNodeId, nodeId);
-//        synchronized (syncNode) {
-//            while (syncNode.containsKey(pair) == false) {
-//                try {
-//                    syncNode.wait();
-//                } catch (InterruptedException ex) {
-//                    throw new RuntimeException(ex);
-//                }
-//            }
-//            pair = syncNode.remove(pair);
-//            if (pair.get() > 1) {
-//                pair.decrease();
-//                syncNode.put(pair, pair);
-//            }
-//        }
-//    }
-//
-//
-//    protected PcjFuture<Void> put(int nodeId, String variable, Object newValue, int... indices) {
-//        nodeId = nodes.get(nodeId);
-//
-//        MessageValuePut msg = new MessageValuePut();
-//        msg.setReceiverGlobalNodeId(nodeId);
-//        msg.setVariableName(variable);
-//        msg.setIndexes(indices);
-//        msg.setVariableValue(CloneObject.serialize(newValue));
-//
-//        try {
-//            InternalPCJ.getNetworker().send(nodeId, msg);
-//            return new PcjFuture<Void>() {
-//                @Override
-//                public boolean cancel(boolean mayInterruptIfRunning) {
-//                    throw new IllegalStateException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-//                }
-//
-//                @Override
-//                public boolean isCancelled() {
-//                    throw new IllegalStateException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-//                }
-//
-//                @Override
-//                public boolean isDone() {
-//                    throw new IllegalStateException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-//                }
-//
-//                @Override
-//                public Void get() {
-//                    throw new IllegalStateException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-//                }
-//
-//                @Override
-//                public Void get(long timeout, TimeUnit unit) throws TimeoutException {
-//                    throw new IllegalStateException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-//                }
-//            };
-//        } catch (IOException ex) {
-//            throw new RuntimeException(ex);
-//        }
-//    }
-//
-//    protected PcjFuture<Void> broadcast(String variable, Object newValue) {
-//        MessageValueBroadcast msg = new MessageValueBroadcast();
-//        msg.setGroupId(groupId);
-//        msg.setVariableName(variable);
-//        msg.setVariableValue(CloneObject.serialize(newValue));
-//
-//        try {
-//            InternalPCJ.getNetworker().send(this, msg);
-//        } catch (IOException ex) {
-//            throw new RuntimeException(ex);
-//        }
-//
-//        return new PcjFuture<Void>() {
-//            @Override
-//            public boolean cancel(boolean mayInterruptIfRunning) {
-//                throw new IllegalStateException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-//            }
-//
-//            @Override
-//            public boolean isCancelled() {
-//                throw new IllegalStateException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-//            }
-//
-//            @Override
-//            public boolean isDone() {
-//                throw new IllegalStateException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-//            }
-//
-//            @Override
-//            public Void get() {
-//                throw new IllegalStateException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-//            }
-//
-//            @Override
-//            public Void get(long timeout, TimeUnit unit) throws TimeoutException {
-//                throw new IllegalStateException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-//            }
-//        };
-//    }
 
     /**
-     * Class for representing part of communication tree.
+     * Fully asynchronous get operation - receives variable value from other
+     * thread. If threadId is current thread, data is cloned.
      *
-     * @author Marek Nowicki (faramir@mat.umk.pl)
+     * @param threadId other node group thread id
+     * @param variable name of variable
+     * @param indices  indices of variable array (not needed)
+     *
+     * @return FutureObject that will contain received object
      */
-    public static class CommunicationTree {
+    @Override
+    public <T> PcjFuture<T> asyncGet(int threadId, Enum<? extends Shared> variable, int... indices) {
+        int requestNum = getVariableCounter.incrementAndGet();
+        GetVariable<T> getVariable = new GetVariable<>();
+        getVariableMap.put(requestNum, getVariable);
 
-        private final int rootNode;
-        private int parentNode;
-        private final List<Integer> childrenNodes;
+        int globalThreadId = super.getGlobalThreadId(threadId);
+        int physicalId = InternalPCJ.getNodeData().getPhysicalIdByThreadId().get(globalThreadId);
+        SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalId);
 
-        public CommunicationTree(int rootNode) {
-            this.rootNode = rootNode;
-            childrenNodes = new ArrayList<>();
-        }
+        MessageValueGetRequest message = new MessageValueGetRequest(
+                requestNum, super.getGroupId(), myThreadId, threadId,
+                variable.getDeclaringClass().getName(), variable.name(), indices);
 
-        public int getRootNode() {
-            return rootNode;
-        }
+        InternalPCJ.getNetworker().send(socket, message);
 
-        public void setParentNode(int parentNode) {
-            this.parentNode = parentNode;
-        }
-
-        public int getParentNode() {
-            return parentNode;
-        }
-
-        public List<Integer> getChildrenNodes() {
-            return childrenNodes;
-        }
+        return getVariable;
     }
 
+    public ConcurrentMap<Integer, GetVariable> getGetVariableMap() {
+        return getVariableMap;
+    }
+
+    @Override
+    public <T> PcjFuture<Void> asyncPut(int threadId, Enum<? extends Shared> variable, T newValue, int... indices) {
+        int requestNum = putVariableCounter.incrementAndGet();
+        PutVariable putVariable = new PutVariable();
+        putVariableMap.put(requestNum, putVariable);
+
+        int globalThreadId = super.getGlobalThreadId(threadId);
+        int physicalId = InternalPCJ.getNodeData().getPhysicalIdByThreadId().get(globalThreadId);
+        SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalId);
+
+        MessageValuePutRequest message = new MessageValuePutRequest(
+                requestNum, super.getGroupId(), myThreadId, threadId,
+                variable.getDeclaringClass().getName(), variable.name(), indices, newValue);
+
+        InternalPCJ.getNetworker().send(socket, message);
+
+        return putVariable;
+    }
+
+    public ConcurrentMap<Integer, PutVariable> getPutVariableMap() {
+        return putVariableMap;
+    }
+//
+
+//    public <T> T get(int nodeId, String variable, int... indices) {
+//        PcjFuture<T> futureObject = getFutureObject(nodeId, variable, indices);
+//
+//        return futureObject.get();
+//    }
+//
+//    /**
+//     * Puts variable value to other node Storage space. If nodeId is current
+//     * node, data is cloned.
+//     *
+//     * @param nodeId   other node group node id
+//     * @param variable name of variable
+//     * @param newValue value to put
+//     * @param indices  indices of variable array (not needed)
+//     */
+//    @Override
+//    public PcjFuture<Void> put(int nodeId, String variable, Object newValue, int... indices) {
+//        return super.put(nodeId, variable, newValue, indices);
+//    }
+//
+//    /**
+//     * Broadcasts new variable value to all nodes in group and stores it in
+//     * Storage space
+//     *
+//     * @param variable name of variable
+//     * @param newValue value to put
+//     */
+//    @Override
+//    public PcjFuture<Void> broadcast(String variable, Object newValue) {
+//        return super.broadcast(variable, newValue);
+//    }
 }

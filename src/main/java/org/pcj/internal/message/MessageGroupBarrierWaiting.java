@@ -6,7 +6,7 @@ package org.pcj.internal.message;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import org.pcj.internal.Bitmask;
-import org.pcj.internal.InternalGroup;
+import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
@@ -57,7 +57,7 @@ final public class MessageGroupBarrierWaiting extends Message {
     public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
         readObjects(in);
 
-        InternalGroup group = InternalPCJ.getNodeData().getGroupById(groupId);
+        InternalCommonGroup group = InternalPCJ.getNodeData().getGroupById(groupId);
         int index = group.getPhysicalIdIndex(physicalId);
 
         Bitmask bitmask = group.getPhysicalBitmask(round);

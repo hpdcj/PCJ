@@ -5,7 +5,6 @@ package org.pcj.internal;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import org.pcj.Group;
 import org.pcj.Storage;
 
 /**
@@ -16,12 +15,12 @@ import org.pcj.Storage;
 final public class PcjThreadData {
 
     final private Storage storage;
-    final private Group globalGroup;
-    final private ConcurrentMap<Integer, Group> groupById;
-    final private ConcurrentMap<String, Group> groupByName;
+    final private InternalGroup globalGroup;
+    final private ConcurrentMap<Integer, InternalGroup> groupById;
+    final private ConcurrentMap<String, InternalGroup> groupByName;
 //
 
-    PcjThreadData(Group globalGroup) {
+    PcjThreadData(InternalGroup globalGroup) {
         this.globalGroup = globalGroup;
 
         this.storage = new InternalStorage();
@@ -31,17 +30,17 @@ final public class PcjThreadData {
         this.addGroup(globalGroup);
     }
 
-    void addGroup(Group group) {
-        groupById.put(((InternalGroup) group).getGroupId(), group);
+    void addGroup(InternalGroup group) {
+        groupById.put(((InternalCommonGroup) group).getGroupId(), group);
         groupByName.put(group.getGroupName(), group);
     }
 
-//    InternalGroup createGroup(int groupNodeId, InternalGroup internalGroup) {
+//    InternalCommonGroup createGroup(int groupNodeId, InternalCommonGroup internalGroup) {
 //        try {
 //            Class<?> groupClass = getClass().getClassLoader().loadClass(ThreadGroup.class.getCanonicalName());
-//            Constructor<?> constructor = groupClass.getDeclaredConstructor(int.class, InternalGroup.class);
+//            Constructor<?> constructor = groupClass.getDeclaredConstructor(int.class, InternalCommonGroup.class);
 //            constructor.setAccessible(true);
-//            return (InternalGroup) constructor.newInstance(groupNodeId, internalGroup);
+//            return (InternalCommonGroup) constructor.newInstance(groupNodeId, internalGroup);
 //        } catch (final ClassNotFoundException | NoSuchMethodException |
 //                InstantiationException | IllegalAccessException |
 //                IllegalArgumentException | InvocationTargetException ex) {
@@ -55,11 +54,11 @@ final public class PcjThreadData {
 //    }
 //
     /**
-     * Stores Group but because of ClassLoader says that holds InternalGroup
+     * Stores InternalGroup but because of ClassLoader says that holds InternalCommonGroup
      *
      * @return
      */
-    InternalGroup getGlobalGroup() {
+    InternalCommonGroup getGlobalGroup() {
         return globalGroup;
     }
 
@@ -67,25 +66,25 @@ final public class PcjThreadData {
         return storage;
     }
     
-    public Group getGroupById(int groupId) {
+    public InternalGroup getGroupById(int groupId) {
         return groupById.get(groupId);
     }
 //
 //    /**
-//     * Stores ThreadGroup but because of ClassLoader says that holds InternalGroup
+//     * Stores ThreadGroup but because of ClassLoader says that holds InternalCommonGroup
 //     *
 //     * @return the groups
 //     */
-//    Map<Integer, InternalGroup> getGroups() {
+//    Map<Integer, InternalCommonGroup> getGroups() {
 //        return groups;
 //    }
 //
 //    /**
-//     * Stores ThreadGroup but because of ClassLoader says that holds InternalGroup
+//     * Stores ThreadGroup but because of ClassLoader says that holds InternalCommonGroup
 //     *
 //     * @return the groupsByName
 //     */
-//    Map<String, InternalGroup> getGroupsByName() {
+//    Map<String, InternalCommonGroup> getGroupsByName() {
 //        return groupsByName;
 //    }
 
