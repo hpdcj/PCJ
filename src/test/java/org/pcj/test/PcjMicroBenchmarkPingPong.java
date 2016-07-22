@@ -8,11 +8,9 @@ import java.io.FileNotFoundException;
 import java.util.Scanner;
 import java.util.Locale;
 import org.pcj.NodesDescription;
-
 import org.pcj.PCJ;
 import org.pcj.Shared;
 import org.pcj.StartPoint;
-import org.pcj.Storage;
 
 public class PcjMicroBenchmarkPingPong implements StartPoint {
 

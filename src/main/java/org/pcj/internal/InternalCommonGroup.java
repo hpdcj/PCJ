@@ -136,7 +136,11 @@ public class InternalCommonGroup {
     }
 
     final public int getGlobalThreadId(int groupThreadId) {
-        return threadsMapping.get(groupThreadId);
+        Integer globalThreadId = threadsMapping.get(groupThreadId);
+        if (globalThreadId == null) {
+            throw new IllegalArgumentException("Invail group threadId: " + groupThreadId);
+        }
+        return globalThreadId;
     }
 
     final public void addThread(int physicalId, int groupThreadId, int globalThreadId) {
@@ -203,7 +207,7 @@ public class InternalCommonGroup {
     final public ConcurrentMap<Integer, LocalBarrier> getLocalBarrierMap() {
         return localBarrierMap;
     }
-    
+
     protected <T> PcjFuture<T> asyncGet(int threadId, Enum<? extends Shared> variable, int... indices) {
         throw new IllegalStateException("This method has to be overriden!");
     }
@@ -442,7 +446,6 @@ public class InternalCommonGroup {
 //            }
 //        };
 //    }
-
     /**
      * Class for representing part of communication tree.
      *

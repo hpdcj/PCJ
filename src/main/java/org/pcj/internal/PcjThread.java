@@ -3,8 +3,10 @@
  */
 package org.pcj.internal;
 
+import java.util.List;
+import org.pcj.PCJ;
+import org.pcj.Shared;
 import org.pcj.StartPoint;
-import org.pcj.Storage;
 
 /**
  * This class represents PCJ thread.
@@ -18,17 +20,20 @@ import org.pcj.Storage;
 public class PcjThread extends Thread {
 
     final private Class<? extends StartPoint> startPointClass;
+    private final List<Class<? extends Enum<? extends Shared>>> storages;
     final private PcjThreadGroup pcjThreadGroup;
     final private int threadId;
     private Throwable throwable;
 
-    PcjThread(int threadId, Class<? extends StartPoint> startPoint, PcjThreadData threadData) {
+    PcjThread(int threadId, Class<? extends StartPoint> startPoint, PcjThreadData threadData,
+            List<Class<? extends Enum<? extends Shared>>> storages) {
         super(new PcjThreadGroup("PcjThreadGroup-" + threadId, threadData), "PcjThread-" + threadId);
 
         this.threadId = threadId;
         this.pcjThreadGroup = (PcjThreadGroup) this.getThreadGroup();
 
         this.startPointClass = startPoint;
+        this.storages = storages;
     }
 
     private static class PcjThreadGroup extends ThreadGroup {
@@ -70,8 +75,9 @@ public class PcjThread extends Thread {
     @Override
     public void run() {
         try {
+            storages.forEach(PCJ::createShared);
             StartPoint startPoint = startPointClass.newInstance();
-
+            
             startPoint.main();
         } catch (Throwable t) {
             this.throwable = t;
@@ -82,7 +88,7 @@ public class PcjThread extends Thread {
         return throwable;
     }
 
-    public static Storage getThreadStorage() {
+    public static InternalStorage getThreadStorage() {
         PcjThreadGroup tg = getPcjThreadGroupForCurrentThread();
         if (tg == null) {
             throw new IllegalStateException("Current thread is not part of PcjThread.");

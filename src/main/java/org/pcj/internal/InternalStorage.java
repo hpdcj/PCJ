@@ -13,14 +13,13 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.PcjRuntimeException;
 import org.pcj.Shared;
-import org.pcj.Storage;
 
 /**
  * External class with methods do handle shared variables.
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public class InternalStorage implements Storage {
+public class InternalStorage {
 
     private class StorageField {
 
@@ -63,7 +62,6 @@ public class InternalStorage implements Storage {
         storageMap = new ConcurrentHashMap<>();
     }
 
-    @Override
     public void createShared(Enum<? extends Shared> variable)
             throws NullPointerException, IllegalArgumentException, IllegalStateException {
         if (variable instanceof Shared == false) {
@@ -109,7 +107,6 @@ public class InternalStorage implements Storage {
      * @throws ClassCastException             there is more indices than variable dimension
      * @throws ArrayIndexOutOfBoundsException one of indices is out of bound
      */
-    @Override
     final public <T> T get(Enum<? extends Shared> variable, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException {
         if (variable == null) {
             throw new NullPointerException("Variable name cannot be null");
@@ -167,7 +164,6 @@ public class InternalStorage implements Storage {
      *                                        or value cannot be assigned to the variable
      * @throws ArrayIndexOutOfBoundsException one of indices is out of bound
      */
-    @Override
     final public <T> void put(Enum<? extends Shared> variable, T value, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
         if (variable == null) {
             throw new NullPointerException("Variable name cannot be null");
@@ -283,7 +279,6 @@ public class InternalStorage implements Storage {
      *
      * @param variable name of Shared variable
      */
-    @Override
     final public void monitor(Enum<? extends Shared> variable) {
         if (variable == null) {
             throw new NullPointerException("Variable name cannot be null");
@@ -313,7 +308,6 @@ public class InternalStorage implements Storage {
      *
      *
      */
-    @Override
     final public int waitFor(Enum<? extends Shared> variable, int count) {
         if (variable == null) {
             throw new NullPointerException("Variable name cannot be null");
@@ -362,7 +356,6 @@ public class InternalStorage implements Storage {
      * @param variable name of Shared variable
      * @param count    number of modifications. If 0 - the method exits immediately.
      */
-    @Override
     final public int waitFor(Enum<? extends Shared> variable, int count, long timeout, TimeUnit unit) throws TimeoutException {
         if (variable == null) {
             throw new NullPointerException("Variable name cannot be null");
@@ -410,5 +403,4 @@ public class InternalStorage implements Storage {
 
         return modificationCount.get();
     }
-
 }

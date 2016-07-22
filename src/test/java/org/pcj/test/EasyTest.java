@@ -35,20 +35,17 @@ public class EasyTest extends InternalStorage implements StartPoint {
 
     }
 
-    {
-        PCJ.createShared(SharedEnum.class);
-    }
-
     public static void main(String[] args) throws InterruptedException {
-        Level level = Level.INFO;
-//        Level level = Level.FINEST;
+//        Level level = Level.INFO;
+        Level level = Level.FINEST;
         Logger logger = Logger.getLogger("");
         Arrays.stream(logger.getHandlers()).forEach(handler -> handler.setLevel(level));
         logger.setLevel(level);
 
         NodesDescription nodesDescription = new NodesDescription(new String[]{
-            "localhost:8091",
-            "localhost:8002", //            "localhost:8003",
+            "localhost:8001",
+            "localhost:8001",
+//            "localhost:8002", //            "localhost:8003",
         //            "localhost:8004",
         //            "localhost:8003",
         //            "localhost:8005",
@@ -72,7 +69,7 @@ public class EasyTest extends InternalStorage implements StartPoint {
         });
 
 //        PCJ.start(EasyTest.class, EasyTest.class,
-        PCJ.deploy(EasyTest.class, nodesDescription);
+        PCJ.deploy(EasyTest.class, nodesDescription, SharedEnum.class);
     }
 
     @Override
