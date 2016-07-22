@@ -27,7 +27,7 @@ class MessageValuePutResponse extends Message {
     private int requesterThreadId;
 
     public MessageValuePutResponse() {
-        super(MessageType.VALUE_GET_RESPONSE);
+        super(MessageType.VALUE_PUT_RESPONSE);
     }
 
     public MessageValuePutResponse(int requestNum, int groupId, int requesterThreadId) {

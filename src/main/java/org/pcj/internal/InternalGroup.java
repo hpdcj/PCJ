@@ -28,6 +28,8 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     private final ConcurrentMap<Integer, GetVariable> getVariableMap;
     private final AtomicInteger putVariableCounter;
     private final ConcurrentMap<Integer, PutVariable> putVariableMap;
+    private final AtomicInteger broadcastCounter;
+    private final ConcurrentMap<Integer, PutVariable> broadcastMap;
 
     public InternalGroup(int threadId, InternalCommonGroup internalGroup) {
         super(internalGroup);
@@ -41,6 +43,9 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
 
         putVariableCounter = new AtomicInteger(0);
         putVariableMap = new ConcurrentHashMap<>();
+        
+        broadcastCounter = new AtomicInteger(0);
+        broadcastMap = new ConcurrentHashMap<>();
     }
 
     @Override
@@ -53,16 +58,6 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         return super.barrier(myThreadId, barrierRoundCounter.incrementAndGet());
     }
 
-    /**
-     * Fully asynchronous get operation - receives variable value from other
-     * thread. If threadId is current thread, data is cloned.
-     *
-     * @param threadId other node group thread id
-     * @param variable name of variable
-     * @param indices  indices of variable array (not needed)
-     *
-     * @return FutureObject that will contain received object
-     */
     @Override
     public <T> PcjFuture<T> asyncGet(int threadId, Enum<? extends Shared> variable, int... indices) {
         int requestNum = getVariableCounter.incrementAndGet();
@@ -108,37 +103,9 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     public ConcurrentMap<Integer, PutVariable> getPutVariableMap() {
         return putVariableMap;
     }
-//
 
-//    public <T> T get(int nodeId, String variable, int... indices) {
-//        PcjFuture<T> futureObject = getFutureObject(nodeId, variable, indices);
-//
-//        return futureObject.get();
-//    }
-//
-//    /**
-//     * Puts variable value to other node Storage space. If nodeId is current
-//     * node, data is cloned.
-//     *
-//     * @param nodeId   other node group node id
-//     * @param variable name of variable
-//     * @param newValue value to put
-//     * @param indices  indices of variable array (not needed)
-//     */
-//    @Override
-//    public PcjFuture<Void> put(int nodeId, String variable, Object newValue, int... indices) {
-//        return super.put(nodeId, variable, newValue, indices);
-//    }
-//
-//    /**
-//     * Broadcasts new variable value to all nodes in group and stores it in
-//     * Storage space
-//     *
-//     * @param variable name of variable
-//     * @param newValue value to put
-//     */
-//    @Override
-//    public PcjFuture<Void> broadcast(String variable, Object newValue) {
-//        return super.broadcast(variable, newValue);
-//    }
+    @Override
+    public PcjFuture<Void> broadcast(Enum<? extends Shared> variable, Object newValue) {
+        throw new UnsupportedOperationException();
+    }
 }

@@ -18,7 +18,7 @@ import org.pcj.internal.InternalStorage;
  */
 public class EasyTest extends InternalStorage implements StartPoint {
 
-    private static enum SharedEnum implements Shared {
+    enum SharedEnum implements Shared {
         a(double.class),
         b(double.class),
         c(Double.class);
@@ -35,6 +35,10 @@ public class EasyTest extends InternalStorage implements StartPoint {
 
     }
 
+    {
+        PCJ.createShared(SharedEnum.class);
+    }
+
     public static void main(String[] args) throws InterruptedException {
         Level level = Level.INFO;
 //        Level level = Level.FINEST;
@@ -43,9 +47,8 @@ public class EasyTest extends InternalStorage implements StartPoint {
         logger.setLevel(level);
 
         NodesDescription nodesDescription = new NodesDescription(new String[]{
-            "localhost:8091", //            "localhost:8091",
-            "localhost:8091", //            "localhost:8002",
-        //            "localhost:8003",
+            "localhost:8091",
+            "localhost:8002", //            "localhost:8003",
         //            "localhost:8004",
         //            "localhost:8003",
         //            "localhost:8005",
@@ -85,8 +88,6 @@ public class EasyTest extends InternalStorage implements StartPoint {
             }
             PCJ.barrier();
         }
-
-        Arrays.stream(SharedEnum.values()).forEach(PCJ::createShared);
 
         PCJ.putLocal(SharedEnum.a, PCJ.myId());
         PCJ.putLocal(SharedEnum.b, 'b');
