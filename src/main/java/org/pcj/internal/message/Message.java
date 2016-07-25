@@ -41,25 +41,10 @@ abstract public class Message implements Serializable {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("Message");
-
-        sb.append("{Type:");
-        sb.append(type);
-
-        sb.append(", objs:{");
-        sb.append(paramsToString());
-        sb.append("}");
-
-        sb.append("}");
-
-        return sb.toString();
+        return "Message{Type:" + type + "}";
     }
 
-    public abstract void readObjects(MessageDataInputStream in) throws IOException, ClassNotFoundException;
-
-    public abstract void writeObjects(MessageDataOutputStream out) throws IOException;
-
-    public abstract String paramsToString();
+    public abstract void write(MessageDataOutputStream out) throws IOException;
 
     public abstract void execute(SocketChannel sender, MessageDataInputStream in) throws IOException;
 

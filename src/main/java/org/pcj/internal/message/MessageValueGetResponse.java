@@ -7,7 +7,6 @@ package org.pcj.internal.message;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
-import java.util.Objects;
 import org.pcj.PcjRuntimeException;
 import org.pcj.internal.InternalGroup;
 import org.pcj.internal.InternalPCJ;
@@ -27,6 +26,7 @@ class MessageValueGetResponse extends Message {
     private int groupId;
     private int requesterThreadId;
     private Object variableValue;
+    private Exception exception;
 
     public MessageValueGetResponse() {
         super(MessageType.VALUE_GET_RESPONSE);
@@ -40,39 +40,28 @@ class MessageValueGetResponse extends Message {
         this.variableValue = variableValue;
     }
 
-    @Override
-    public void readObjects(MessageDataInputStream in) throws IOException, ClassNotFoundException {
-        requestNum = in.readInt();
-        groupId = in.readInt();
-        requesterThreadId = in.readInt();
-        variableValue = in.readObject();
+    public void setException(Exception exception) {
+        this.exception = exception;
     }
 
     @Override
-    public void writeObjects(MessageDataOutputStream out) throws IOException {
+    public void write(MessageDataOutputStream out) throws IOException {
         out.writeInt(requestNum);
         out.writeInt(groupId);
         out.writeInt(requesterThreadId);
-        out.writeObject(variableValue);
-    }
-
-    @Override
-    public String paramsToString() {
-        return String.format("requestNum:%d,"
-                + "groupId:%d,"
-                + "requesterThreadId:%d,"
-                + "object:%s",
-                requestNum, groupId, requesterThreadId, Objects.toString(variableValue));
+        out.writeBoolean(exception != null);
+        if (exception == null) {
+            out.writeObject(variableValue);
+        } else {
+            out.writeObject(exception);
+        }
     }
 
     @Override
     public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
-        try {
-            readObjects(in);
-        } catch (ClassNotFoundException ex) {
-            // TODO: wyjatek przerzucic do wywolujacego
-            throw new PcjRuntimeException(ex);
-        }
+        requestNum = in.readInt();
+        groupId = in.readInt();
+        requesterThreadId = in.readInt();
 
         NodeData nodeData = InternalPCJ.getNodeData();
         int globalThreadId = nodeData.getGroupById(groupId).getGlobalThreadId(requesterThreadId);
@@ -81,7 +70,20 @@ class MessageValueGetResponse extends Message {
         InternalGroup group = pcjThread.getThreadData().getGroupById(groupId);
 
         GetVariable getVariable = group.getGetVariableMap().remove(requestNum);
-        getVariable.setVariableValue(variableValue);
+
+        boolean exceptionOccurs = in.readBoolean();
+        try {
+            if (exceptionOccurs) {
+                exception = (Exception) in.readObject();
+                getVariable.setException(exception);
+            } else {
+                variableValue = in.readObject();
+                getVariable.setVariableValue(variableValue);
+            }
+        } catch (Exception ex) {
+            getVariable.setException(new PcjRuntimeException(ex));
+        }
+
     }
 
 }

@@ -123,7 +123,7 @@ final public class NodeData {
     public ConcurrentMap<Integer, PcjThread> getPcjThreads() {
         return pcjThreads;
     }
-    
+
     public int getPhysicalId() {
         return physicalId;
     }

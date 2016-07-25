@@ -64,7 +64,7 @@ final public class PcjThreadData {
     public InternalStorage getStorage() {
         return storage;
     }
-    
+
     public InternalGroup getGroupById(int groupId) {
         return groupById.get(groupId);
     }

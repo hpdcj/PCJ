@@ -42,25 +42,15 @@ final public class MessageHello extends Message {
     }
 
     @Override
-    public void writeObjects(MessageDataOutputStream out) throws IOException {
+    public void write(MessageDataOutputStream out) throws IOException {
         out.writeInt(port);
         out.writeIntArray(threadIds);
     }
 
     @Override
-    public void readObjects(MessageDataInputStream in) throws IOException {
+    public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
         port = in.readInt();
         threadIds = in.readIntArray();
-    }
-
-    @Override
-    public String paramsToString() {
-        return String.format("port:%d, threadIds:%s", port, Arrays.toString(threadIds));
-    }
-
-    @Override
-    public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
-        readObjects(in);
 
         String address = null;
         if (sender instanceof LoopbackSocketChannel == false) {

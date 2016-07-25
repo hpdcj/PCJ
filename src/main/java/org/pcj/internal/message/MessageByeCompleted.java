@@ -22,16 +22,7 @@ final public class MessageByeCompleted extends Message {
     }
 
     @Override
-    public void writeObjects(MessageDataOutputStream out) throws IOException {
-    }
-
-    @Override
-    public void readObjects(MessageDataInputStream in) throws IOException {
-    }
-
-    @Override
-    public String paramsToString() {
-        return "";
+    public void write(MessageDataOutputStream out) throws IOException {
     }
 
     @Override

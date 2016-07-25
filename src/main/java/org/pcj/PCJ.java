@@ -140,7 +140,7 @@ final public class PCJ extends InternalPCJ {
     }
 
     public static <T> void put(int threadId, Enum<? extends Shared> variable, T newValue, int... indices) {
-        PCJ.<T>asyncPut(threadId, variable, newValue, indices);
+        PCJ.<T>asyncPut(threadId, variable, newValue, indices).get();
     }
 
 //    /**

@@ -60,7 +60,6 @@ final public class Networker {
 
     }
 
-
     ServerSocketChannel bind(InetAddress hostAddress, int port, int backlog) throws IOException {
         return selectorProc.bind(hostAddress, port, backlog);
     }
@@ -87,7 +86,7 @@ final public class Networker {
             return;
         }
         shuttingDown = true;
-        
+
         while (true) {
             try {
                 selectorProc.closeAllSockets();
@@ -96,7 +95,7 @@ final public class Networker {
                 LOGGER.log(Level.FINEST, "Exception while closing sockets: {0}", ex.getMessage());
             }
         }
-        
+
         selectorProcThread.interrupt();
         workers.shutdownNow();
     }
@@ -126,6 +125,7 @@ final public class Networker {
             LOGGER.log(Level.SEVERE, null, t);
         }
     }
+
     public void processMessageBytes(SocketChannel socket, MessageBytesInputStream messageBytes) {
         Message message = messageBytes.readMessage();
         if (LOGGER.isLoggable(Level.FINEST)) {

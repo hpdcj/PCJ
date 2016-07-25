@@ -77,7 +77,7 @@ public class PcjThread extends Thread {
         try {
             storages.forEach(PCJ::createShared);
             StartPoint startPoint = startPointClass.newInstance();
-            
+
             startPoint.main();
         } catch (Throwable t) {
             this.throwable = t;

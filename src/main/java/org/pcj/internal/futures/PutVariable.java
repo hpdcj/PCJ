@@ -16,7 +16,13 @@ import org.pcj.PcjRuntimeException;
  */
 public class PutVariable extends InternalFuture<Void> implements PcjFuture<Void> {
 
-    @SuppressWarnings("unchecked")
+    private Exception exception;
+
+    public void setException(Exception exception) {
+        this.exception = exception;
+        super.signalAll();
+    }
+
     @Override
     public void signalAll() {
         super.signalAll();
@@ -34,6 +40,9 @@ public class PutVariable extends InternalFuture<Void> implements PcjFuture<Void>
         } catch (InterruptedException ex) {
             throw new PcjRuntimeException(ex);
         }
+        if (exception != null) {
+            throw new PcjRuntimeException(exception);
+        }
         return null;
     }
 
@@ -43,6 +52,9 @@ public class PutVariable extends InternalFuture<Void> implements PcjFuture<Void>
             super.await(timeout, unit);
         } catch (InterruptedException ex) {
             throw new PcjRuntimeException(ex);
+        }
+        if (exception != null) {
+            throw new PcjRuntimeException(exception);
         }
         return null;
     }

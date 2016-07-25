@@ -59,6 +59,10 @@ public class MessageDataOutputStream extends OutputStream {
         return temp;
     }
 
+    public void writeBoolean(boolean value) throws IOException {
+        output.write(value ? 1 : 0);
+    }
+
     public void writeByte(byte value) throws IOException {
         output.write(value);
     }

@@ -43,7 +43,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
 
         putVariableCounter = new AtomicInteger(0);
         putVariableMap = new ConcurrentHashMap<>();
-        
+
         broadcastCounter = new AtomicInteger(0);
         broadcastMap = new ConcurrentHashMap<>();
     }

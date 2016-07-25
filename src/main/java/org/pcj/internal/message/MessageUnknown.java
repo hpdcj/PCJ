@@ -21,16 +21,7 @@ final public class MessageUnknown extends Message {
     }
 
     @Override
-    public void writeObjects(MessageDataOutputStream out) {
-    }
-
-    @Override
-    public void readObjects(MessageDataInputStream in) {
-    }
-
-    @Override
-    public String paramsToString() {
-        return "";
+    public void write(MessageDataOutputStream out) {
     }
 
     @Override

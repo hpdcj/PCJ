@@ -5,8 +5,8 @@ package org.pcj.internal.message;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
-import java.util.Arrays;
-import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.pcj.PcjRuntimeException;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.InternalStorage;
@@ -50,19 +50,7 @@ final public class MessageValuePutRequest extends Message {
     }
 
     @Override
-    public void readObjects(MessageDataInputStream in) throws IOException, ClassNotFoundException {
-        requestNum = in.readInt();
-        groupId = in.readInt();
-        requesterThreadId = in.readInt();
-        threadId = in.readInt();
-        storageName = in.readString();
-        name = in.readString();
-        indices = in.readIntArray();
-        newValue = in.readObject();
-    }
-
-    @Override
-    public void writeObjects(MessageDataOutputStream out) throws IOException {
+    public void write(MessageDataOutputStream out) throws IOException {
         out.writeInt(requestNum);
         out.writeInt(groupId);
         out.writeInt(requesterThreadId);
@@ -74,36 +62,29 @@ final public class MessageValuePutRequest extends Message {
     }
 
     @Override
-    public String paramsToString() {
-        return String.format("requestNum:%d,"
-                + "groupId:%d,"
-                + "requesterThreadId:%d,"
-                + "threadId:%d,"
-                + "storageName:%s,"
-                + "name:%s,"
-                + "indices:%s,"
-                + "newValue:%s",
-                requestNum, groupId, requesterThreadId, threadId, storageName, name,
-                Arrays.toString(indices), Objects.toString(newValue));
-    }
-
-    @Override
     public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
-        try {
-            readObjects(in);
-        } catch (ClassNotFoundException ex) {
-            // TODO: wyjatek przerzucic do wywolujacego
-            throw new PcjRuntimeException(ex);
-        }
+        requestNum = in.readInt();
+        groupId = in.readInt();
+        requesterThreadId = in.readInt();
+        threadId = in.readInt();
+        storageName = in.readString();
+        name = in.readString();
+        indices = in.readIntArray();
 
         NodeData nodeData = InternalPCJ.getNodeData();
         int globalThreadId = nodeData.getGroupById(groupId).getGlobalThreadId(threadId);
         PcjThread pcjThread = nodeData.getPcjThreads().get(globalThreadId);
         InternalStorage storage = (InternalStorage) pcjThread.getThreadData().getStorage();
-        storage.put0(storageName, name, newValue, indices);
 
         MessageValuePutResponse messageValuePutResponse = new MessageValuePutResponse(
                 requestNum, groupId, requesterThreadId);
+        try {
+            newValue = in.readObject();
+            storage.put0(storageName, name, newValue, indices);
+        } catch (Exception ex) {
+            messageValuePutResponse.setException(ex);
+        }
+
         InternalPCJ.getNetworker().send(sender, messageValuePutResponse);
     }
 }

@@ -35,27 +35,17 @@ final public class MessageGroupBarrierWaiting extends Message {
     }
 
     @Override
-    public void writeObjects(MessageDataOutputStream out) throws IOException {
+    public void write(MessageDataOutputStream out) throws IOException {
         out.writeInt(physicalId);
         out.writeInt(groupId);
         out.writeInt(round);
     }
 
     @Override
-    public void readObjects(MessageDataInputStream in) throws IOException {
+    public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
         physicalId = in.readInt();
         groupId = in.readInt();
         round = in.readInt();
-    }
-
-    @Override
-    public String paramsToString() {
-        return String.format("physicalId:%d,groupId:%d,round:%d", physicalId, groupId, round);
-    }
-
-    @Override
-    public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
-        readObjects(in);
 
         InternalCommonGroup group = InternalPCJ.getNodeData().getGroupById(groupId);
         int index = group.getPhysicalIdIndex(physicalId);

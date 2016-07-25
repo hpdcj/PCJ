@@ -4,21 +4,17 @@ import java.io.File;
 import java.io.IOException;
 import java.util.LinkedHashSet;
 import java.util.Scanner;
-import java.util.Locale;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
 import org.pcj.StartPoint;
 
-public class PcjMicroBenchmarkBarrier
-        implements StartPoint {
+public class PcjMicroBenchmarkBarrier implements StartPoint {
 
     @Override
     public void main() {
-        int number_of_tests = 5;
-        int ntimes = 1000;
+        int number_of_tests = 10;
+        int ntimes = 10000;
 
         PCJ.barrier();
 
@@ -31,54 +27,57 @@ public class PcjMicroBenchmarkBarrier
             }
 
             rTime = System.nanoTime() - rTime;
-            double t = (rTime / (double) ntimes) * 1e-9;
+            double dtime = (rTime / (double) ntimes) * 1e-9;
 
-            if (tmin > t) {
-                tmin = t;
+            if (tmin > dtime) {
+                tmin = dtime;
             }
 
-            System.out.println(PCJ.threadCount() + " " + t);
+//            System.out.println(PCJ.threadCount() + " " + t);
             PCJ.barrier();
         }
 
         if (PCJ.myId() == 0) {
-            System.out.format(Locale.FRANCE,
-                    "%5d \t time %7f%n",
+            System.out.format("Barrier\t%5d\ttime\t%12.7f\n",
                     PCJ.threadCount(), tmin);
         }
     }
 
     public static void main(String[] args) {
-        int[] threads = {1, 2, 4, 8, 16, 32};
+        int[] threads = {1, 2, 4, 8, 12, 24, 48};
 
+        String nodesFile = "nodes.txt";
+        if (args.length > 0) {
+            nodesFile = args[0];
+        }
         Set<String> nodesSet = new LinkedHashSet<>();
-        try (Scanner s = new Scanner(new File("nodes.txt"))) {
+        try (Scanner s = new Scanner(new File(nodesFile))) {
             while (s.hasNextLine()) {
                 String node = s.nextLine();
                 nodesSet.add(node);
             }
         } catch (IOException ex) {
-            nodesSet.add("localhost");
-            Logger.getLogger(PcjMicroBenchmarkBarrier.class.getName())
-                    .log(Level.SEVERE, "Unable to load descriptor file", ex);
-//            System.exit(1);
+            System.err.println(nodesFile + ": file not found");
+            System.exit(1);
         }
 
         String[] nodesUniq = nodesSet.toArray(new String[0]);
 
-        for (int nn = nodesUniq.length; nn > 0; nn = nn / 2) {
-            for (int nt : threads) {
-                String[] nodes = new String[nt * nn];
-                System.out.printf(" Start deploy nn=%d nt=%d", nn, nt);
-                int ii = 0;
-                for (int i = 0; i < nn; i++) {
-                    for (int j = 0; j < nt; j++, ii++) {
-                        nodes[ii] = nodesUniq[i];
-                    }
+        int nn = nodesUniq.length;
+//        for (int nn = nodesUniq.length; nn > 0; nn = nn / 2) {
+        for (int nt : threads) {
+            String[] nodes = new String[nt * nn];
+            System.out.printf(" Start deploy nn=%d nt=%d\n", nn, nt);
+            int ii = 0;
+            for (int i = 0; i < nn; i++) {
+                for (int j = 0; j < nt; j++, ii++) {
+                    nodes[ii] = nodesUniq[i];
                 }
-                
-                PCJ.deploy(PcjMicroBenchmarkBarrier.class, new NodesDescription(nodes));
             }
+
+            PCJ.start(PcjMicroBenchmarkBarrier.class, new NodesDescription(nodes));
+//                PCJ.deploy(PcjMicroBenchmarkBarrier.class, new NodesDescription(nodes));
         }
+//        }
     }
 }

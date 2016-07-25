@@ -33,23 +33,13 @@ final public class MessageHelloCompleted extends Message {
     }
 
     @Override
-    public void writeObjects(MessageDataOutputStream out) throws IOException {
+    public void write(MessageDataOutputStream out) throws IOException {
         out.writeInt(physicalId);
     }
 
     @Override
-    public void readObjects(MessageDataInputStream in) throws IOException {
-        physicalId = in.readInt();
-    }
-
-    @Override
-    public String paramsToString() {
-        return String.format("physicalId: %d", physicalId);
-    }
-
-    @Override
     public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
-        readObjects(in);
+        physicalId = in.readInt();
 
         Node0Data node0Data = InternalPCJ.getNodeData().getNode0Data();
         Bitmask bitmask = node0Data.getHelloBitmask();

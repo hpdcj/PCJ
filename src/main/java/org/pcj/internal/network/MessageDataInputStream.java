@@ -51,6 +51,10 @@ public class MessageDataInputStream extends InputStream {
                 | ((long) (bytes[7] & 0xff)));
     }
 
+    public boolean readBoolean() throws IOException {
+        return input.read() != 0;
+    }
+
     public byte readByte() throws IOException {
         return (byte) input.read();
     }

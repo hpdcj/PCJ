@@ -32,23 +32,13 @@ final public class MessageHelloBonjour extends Message {
     }
 
     @Override
-    public void writeObjects(MessageDataOutputStream out) throws IOException {
+    public void write(MessageDataOutputStream out) throws IOException {
         out.writeInt(physicalId);
     }
 
     @Override
-    public void readObjects(MessageDataInputStream in) throws IOException {
-        physicalId = in.readInt();
-    }
-
-    @Override
-    public String paramsToString() {
-        return String.format("physicalId: %d", physicalId);
-    }
-
-    @Override
     public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
-        readObjects(in);
+        physicalId = in.readInt();
 
         NodeData nodeData = InternalPCJ.getNodeData();
         nodeData.getSocketChannelByPhysicalId().put(physicalId, sender);

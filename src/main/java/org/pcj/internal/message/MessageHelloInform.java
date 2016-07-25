@@ -45,13 +45,13 @@ final public class MessageHelloInform extends Message {
     }
 
     @Override
-    public void writeObjects(MessageDataOutputStream out) throws IOException {
+    public void write(MessageDataOutputStream out) throws IOException {
         out.writeInt(physicalId);
         out.writeObject(nodeInfoByPhysicalId);
     }
 
     @Override
-    public void readObjects(MessageDataInputStream in) throws IOException {
+    public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
         physicalId = in.readInt();
         try {
             Object obj = in.readObject();
@@ -64,17 +64,6 @@ final public class MessageHelloInform extends Message {
             LOGGER.log(Level.SEVERE, "Unable to read nodeInfoByPhysicalId", ex);
             throw new RuntimeException(ex);
         }
-    }
-
-    @Override
-    public String paramsToString() {
-        return String.format("physicalId: %d, nodeInfoByPhysicalId:%s",
-                physicalId, Objects.toString(nodeInfoByPhysicalId));
-    }
-
-    @Override
-    public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
-        readObjects(in);
 
         NodeData nodeData = InternalPCJ.getNodeData();
         nodeData.setPhysicalId(physicalId);

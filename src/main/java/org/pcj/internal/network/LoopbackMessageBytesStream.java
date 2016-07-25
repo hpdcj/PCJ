@@ -36,7 +36,7 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
     }
 
     public void writeMessage() throws IOException {
-        message.writeObjects(messageDataOutputStream);
+        message.write(messageDataOutputStream);
     }
 
     public MessageDataInputStream getMessageData() {
@@ -193,4 +193,3 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
         }
     }
 }
-

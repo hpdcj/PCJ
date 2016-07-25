@@ -25,6 +25,7 @@ class MessageValuePutResponse extends Message {
     private int requestNum;
     private int groupId;
     private int requesterThreadId;
+    private Exception exception;
 
     public MessageValuePutResponse() {
         super(MessageType.VALUE_PUT_RESPONSE);
@@ -37,36 +38,26 @@ class MessageValuePutResponse extends Message {
         this.requesterThreadId = requesterThreadId;
     }
 
-    @Override
-    public void readObjects(MessageDataInputStream in) throws IOException, ClassNotFoundException {
-        requestNum = in.readInt();
-        groupId = in.readInt();
-        requesterThreadId = in.readInt();
+    public void setException(Exception exception) {
+        this.exception = exception;
     }
 
     @Override
-    public void writeObjects(MessageDataOutputStream out) throws IOException {
+    public void write(MessageDataOutputStream out) throws IOException {
         out.writeInt(requestNum);
         out.writeInt(groupId);
         out.writeInt(requesterThreadId);
-    }
-
-    @Override
-    public String paramsToString() {
-        return String.format("requestNum:%d,"
-                + "groupId:%d,"
-                + "requesterThreadId:%d",
-                requestNum, groupId, requesterThreadId);
+        out.writeBoolean(exception != null);
+        if (exception != null) {
+            out.writeObject(exception);
+        }
     }
 
     @Override
     public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
-        try {
-            readObjects(in);
-        } catch (ClassNotFoundException ex) {
-            // TODO: wyjatek przerzucic do wywolujacego
-            throw new PcjRuntimeException(ex);
-        }
+        requestNum = in.readInt();
+        groupId = in.readInt();
+        requesterThreadId = in.readInt();
 
         NodeData nodeData = InternalPCJ.getNodeData();
         int globalThreadId = nodeData.getGroupById(groupId).getGlobalThreadId(requesterThreadId);
@@ -75,7 +66,18 @@ class MessageValuePutResponse extends Message {
         InternalGroup group = pcjThread.getThreadData().getGroupById(groupId);
 
         PutVariable putVariable = group.getPutVariableMap().remove(requestNum);
-        putVariable.signalAll();
+
+        boolean exceptionOccurs = in.readBoolean();
+        try {
+            if (exceptionOccurs) {
+                exception = (Exception) in.readObject();
+                putVariable.setException(exception);
+            } else {
+                putVariable.signalAll();
+            }
+        } catch (Exception ex) {
+            putVariable.setException(new PcjRuntimeException(ex));
+        }
     }
 
 }

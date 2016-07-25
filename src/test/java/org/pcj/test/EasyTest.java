@@ -8,6 +8,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
+import org.pcj.PcjRuntimeException;
 import org.pcj.Shared;
 import org.pcj.StartPoint;
 import org.pcj.internal.InternalStorage;
@@ -44,8 +45,7 @@ public class EasyTest extends InternalStorage implements StartPoint {
 
         NodesDescription nodesDescription = new NodesDescription(new String[]{
             "localhost:8001",
-            "localhost:8001",
-//            "localhost:8002", //            "localhost:8003",
+            "localhost:8001", //            "localhost:8002", //            "localhost:8003",
         //            "localhost:8004",
         //            "localhost:8003",
         //            "localhost:8005",
@@ -69,39 +69,46 @@ public class EasyTest extends InternalStorage implements StartPoint {
         });
 
 //        PCJ.start(EasyTest.class, EasyTest.class,
-        PCJ.deploy(EasyTest.class, nodesDescription, SharedEnum.class);
+        PCJ.deploy(EasyTest.class, nodesDescription);//, SharedEnum.class);
     }
 
     @Override
     public void main() throws Throwable {
-//        Level level = Level.FINEST;
-//        Logger logger = Logger.getLogger("");
-//        Arrays.stream(logger.getHandlers()).forEach(handler -> handler.setLevel(level));
-//        logger.setLevel(level);
-
-        for (int i = 0; i < PCJ.threadCount(); ++i) {
-            if (PCJ.myId() == i) {
-                System.out.println("Starting as " + PCJ.myId());
-            }
-            PCJ.barrier();
-        }
-
-        PCJ.putLocal(SharedEnum.a, PCJ.myId());
-        PCJ.putLocal(SharedEnum.b, 'b');
-        PCJ.putLocal(SharedEnum.c, 2);
-        PCJ.barrier();
         if (PCJ.myId() == 0) {
-            System.out.println("a@1 = " + PCJ.asyncGet(1, SharedEnum.a).get());
-        } else if (PCJ.myId() == 1) {
-            PCJ.asyncPut(0, SharedEnum.a, 1000).get();
+            try {
+                PCJ.put(1, SharedEnum.c, 2);
+            } catch (PcjRuntimeException e) {
+                e.printStackTrace();
+            }
         }
-
-        PCJ.barrier();
-
-        System.out.println(PCJ.myId() + "a=" + PCJ.getLocal(SharedEnum.a) + " " + PCJ.getLocal(SharedEnum.a).getClass());
-        System.out.println(PCJ.myId() + "b=" + PCJ.getLocal(SharedEnum.b) + " " + PCJ.getLocal(SharedEnum.b).getClass());
-        System.out.println(PCJ.myId() + "c=" + PCJ.getLocal(SharedEnum.c));
-        PCJ.putLocal(SharedEnum.c, null);
-        System.out.println(PCJ.myId() + "c=" + PCJ.getLocal(SharedEnum.c));
+////        Level level = Level.FINEST;
+////        Logger logger = Logger.getLogger("");
+////        Arrays.stream(logger.getHandlers()).forEach(handler -> handler.setLevel(level));
+////        logger.setLevel(level);
+//
+//        for (int i = 0; i < PCJ.threadCount(); ++i) {
+//            if (PCJ.myId() == i) {
+//                System.out.println("Starting as " + PCJ.myId());
+//            }
+//            PCJ.barrier();
+//        }
+//
+//        PCJ.putLocal(SharedEnum.a, PCJ.myId());
+//        PCJ.putLocal(SharedEnum.b, 'b');
+//        PCJ.putLocal(SharedEnum.c, 2);
+//        PCJ.barrier();
+//        if (PCJ.myId() == 0) {
+//            System.out.println("a@1 = " + PCJ.asyncGet(1, SharedEnum.a).get());
+//        } else if (PCJ.myId() == 1) {
+//            PCJ.asyncPut(0, SharedEnum.a, 1000).get();
+//        }
+//
+//        PCJ.barrier();
+//
+//        System.out.println(PCJ.myId() + "a=" + PCJ.getLocal(SharedEnum.a) + " " + PCJ.getLocal(SharedEnum.a).getClass());
+//        System.out.println(PCJ.myId() + "b=" + PCJ.getLocal(SharedEnum.b) + " " + PCJ.getLocal(SharedEnum.b).getClass());
+//        System.out.println(PCJ.myId() + "c=" + PCJ.getLocal(SharedEnum.c));
+//        PCJ.putLocal(SharedEnum.c, null);
+//        System.out.println(PCJ.myId() + "c=" + PCJ.getLocal(SharedEnum.c));
     }
 }

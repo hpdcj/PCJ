@@ -17,10 +17,16 @@ import org.pcj.PcjRuntimeException;
 public class GetVariable<T> extends InternalFuture<T> implements PcjFuture<T> {
 
     private T variableValue;
+    private Exception exception;
 
     @SuppressWarnings("unchecked")
     public void setVariableValue(Object variableValue) {
         this.variableValue = (T) variableValue;
+        super.signalAll();
+    }
+
+    public void setException(Exception exception) {
+        this.exception = exception;
         super.signalAll();
     }
 
@@ -36,6 +42,9 @@ public class GetVariable<T> extends InternalFuture<T> implements PcjFuture<T> {
         } catch (InterruptedException ex) {
             throw new PcjRuntimeException(ex);
         }
+        if (exception != null) {
+            throw new PcjRuntimeException(exception);
+        }
         return variableValue;
     }
 
@@ -45,6 +54,9 @@ public class GetVariable<T> extends InternalFuture<T> implements PcjFuture<T> {
             super.await(timeout, unit);
         } catch (InterruptedException ex) {
             throw new PcjRuntimeException(ex);
+        }
+        if (exception != null) {
+            throw new PcjRuntimeException(exception);
         }
         return variableValue;
     }
