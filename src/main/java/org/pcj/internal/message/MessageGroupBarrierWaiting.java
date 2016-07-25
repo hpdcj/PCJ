@@ -5,9 +5,9 @@ package org.pcj.internal.message;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
-import org.pcj.internal.Bitmask;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
+import org.pcj.internal.futures.BarrierState;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
@@ -20,50 +20,59 @@ final public class MessageGroupBarrierWaiting extends Message {
 
     private int physicalId;
     private int groupId;
-    private int round;
+    private int barrierRound;
 
     public MessageGroupBarrierWaiting() {
         super(MessageType.GROUP_BARRIER_WAITING);
     }
 
-    public MessageGroupBarrierWaiting(int groupId, int physicalId, int round) {
+    public MessageGroupBarrierWaiting(int groupId, int physicalId, int barrierRound) {
         this();
 
         this.physicalId = physicalId;
         this.groupId = groupId;
-        this.round = round;
+        this.barrierRound = barrierRound;
     }
 
     @Override
     public void write(MessageDataOutputStream out) throws IOException {
         out.writeInt(physicalId);
         out.writeInt(groupId);
-        out.writeInt(round);
+        out.writeInt(barrierRound);
     }
 
     @Override
     public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
         physicalId = in.readInt();
         groupId = in.readInt();
-        round = in.readInt();
+        barrierRound = in.readInt();
 
         InternalCommonGroup group = InternalPCJ.getNodeData().getGroupById(groupId);
-        int index = group.getPhysicalIdIndex(physicalId);
 
-        Bitmask bitmask = group.getPhysicalBitmask(round);
-        synchronized (bitmask) {
-            bitmask.set(index);
+        BarrierState barrierState = group.getBarrierState(barrierRound);
 
-            if (bitmask.isSet()) {
-                bitmask.clear();
+        synchronized (barrierState) {
+            barrierState.setPhysical(physicalId);
 
-                MessageGroupBarrierGo messageGroupBarrierGo = new MessageGroupBarrierGo(groupId, round);
+            if (barrierState.isLocalSet() && barrierState.isPhysicalSet()) {
+                if (physicalId == group.getGroupMasterNode()) {
+                    MessageGroupBarrierGo messageGroupBarrierGo = new MessageGroupBarrierGo(groupId, barrierRound);
 
-                int groupMasterId = group.getGroupMasterNode();
-                SocketChannel groupMasterSocket = InternalPCJ.getNodeData()
-                        .getSocketChannelByPhysicalId().get(groupMasterId);
+                    int groupMasterId = group.getGroupMasterNode();
+                    SocketChannel groupMasterSocket = InternalPCJ.getNodeData()
+                            .getSocketChannelByPhysicalId().get(groupMasterId);
 
-                InternalPCJ.getNetworker().send(groupMasterSocket, messageGroupBarrierGo);
+                    InternalPCJ.getNetworker().send(groupMasterSocket, messageGroupBarrierGo);
+                } else {
+                    int parentId = group.getParentNode();
+                    SocketChannel parentSocket = InternalPCJ.getNodeData()
+                            .getSocketChannelByPhysicalId().get(parentId);
+
+                    MessageGroupBarrierWaiting message = new MessageGroupBarrierWaiting(
+                            groupId, InternalPCJ.getNodeData().getPhysicalId(), barrierRound);
+
+                    InternalPCJ.getNetworker().send(parentSocket, message);
+                }
             }
         }
     }

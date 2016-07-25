@@ -29,7 +29,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     private final AtomicInteger putVariableCounter;
     private final ConcurrentMap<Integer, PutVariable> putVariableMap;
     private final AtomicInteger broadcastCounter;
-    private final ConcurrentMap<Integer, PutVariable> broadcastMap;
+    private final ConcurrentMap<Integer, Void> broadcastMap;
 
     public InternalGroup(int threadId, InternalCommonGroup internalGroup) {
         super(internalGroup);

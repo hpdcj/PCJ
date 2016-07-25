@@ -10,7 +10,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.pcj.PcjFuture;
 import org.pcj.Shared;
-import org.pcj.internal.futures.LocalBarrier;
+import org.pcj.internal.futures.BarrierState;
+import org.pcj.internal.message.MessageGroupBarrierGo;
 import org.pcj.internal.message.MessageGroupBarrierWaiting;
 
 /**
@@ -31,8 +32,8 @@ public class InternalCommonGroup {
     private final List<Integer> physicalIds;
 //    final private Bitmask localBarrierBitmask;
     private final Bitmask localBitmask;
-    private final ConcurrentMap<Integer, Bitmask> physicalBitmaskMap;
-    private final ConcurrentMap<Integer, LocalBarrier> localBarrierMap;
+//    private final ConcurrentMap<Integer, Bitmask> physicalBitmaskMap;
+    private final ConcurrentMap<Integer, BarrierState> barrierStateMap;
 //    final private MessageGroupBarrierWaiting groupBarrierWaitingMessage;
 //    final private ConcurrentMap<Integer, BitMask> joinBitmaskMap;
 //    final private AtomicInteger nodeNum = new AtomicInteger(0);
@@ -62,9 +63,9 @@ public class InternalCommonGroup {
         this.physicalTree = g.physicalTree;
 
         this.threadsMapping = g.threadsMapping;
-        this.physicalBitmaskMap = g.physicalBitmaskMap;
+//        this.physicalBitmaskMap = g.physicalBitmaskMap;
         this.localBitmask = g.localBitmask;
-        this.localBarrierMap = g.localBarrierMap;
+        this.barrierStateMap = g.barrierStateMap;
 
 //        this.groupBarrierWaitingMessage = g.groupBarrierWaitingMessage;
 //        this.joinBitmaskMap = g.joinBitmaskMap;
@@ -85,10 +86,9 @@ public class InternalCommonGroup {
 
         threadsMapping = new ConcurrentHashMap<>();
 
-        physicalBitmaskMap = new ConcurrentHashMap<>();
-
+//        physicalBitmaskMap = new ConcurrentHashMap<>();
         localBitmask = new Bitmask();
-        localBarrierMap = new ConcurrentHashMap<>();
+        barrierStateMap = new ConcurrentHashMap<>();
 
 //        groupBarrierWaitingMessage = new MessageGroupBarrierWaiting(groupId, InternalPCJ.getNodeData().getPhysicalId());
 //        this.joinBitmaskMap = new ConcurrentHashMap<>();
@@ -119,12 +119,12 @@ public class InternalCommonGroup {
         return physicalTree.getRootNode();
     }
 
-    final public List<Integer> getChildrenNodes() {
-        return physicalTree.getChildrenNodes();
+    final public int getParentNode() {
+        return physicalTree.getParentNode();
     }
 
-    final public Integer getPhysicalIdIndex(int physicalId) {
-        return physicalIds.indexOf(physicalId);
+    final public List<Integer> getChildrenNodes() {
+        return physicalTree.getChildrenNodes();
     }
 
     protected int myId() {
@@ -178,34 +178,49 @@ public class InternalCommonGroup {
         throw new IllegalStateException("This method has to be overriden!");
     }
 
-    final protected LocalBarrier barrier(int threadId, int barrierRound) {
-        LocalBarrier localBarrier = localBarrierMap
-                .computeIfAbsent(barrierRound, round -> new LocalBarrier(round, localBitmask));
+    final protected BarrierState barrier(int threadId, int barrierRound) {
+        BarrierState barrierState = getBarrierState(barrierRound);
 
-        synchronized (localBarrier) {
-            localBarrier.set(threadId);
-            if (localBarrier.isSet()) {
-                int groupMasterId = getGroupMasterNode();
-                SocketChannel groupMasterSocket = InternalPCJ.getNodeData()
-                        .getSocketChannelByPhysicalId().get(groupMasterId);
+        synchronized (barrierState) {
+            barrierState.setLocal(threadId);
+           
+            if (barrierState.isLocalSet() && barrierState.isPhysicalSet()) {
+                int physicalId = InternalPCJ.getNodeData().getPhysicalId();
+                if (physicalId == this.getGroupMasterNode()) {
+                    MessageGroupBarrierGo messageGroupBarrierGo = new MessageGroupBarrierGo(groupId, barrierRound);
 
-                MessageGroupBarrierWaiting message = new MessageGroupBarrierWaiting(
-                        groupId, InternalPCJ.getNodeData().getPhysicalId(), barrierRound);
+                    int groupMasterId = this.getGroupMasterNode();
+                    SocketChannel groupMasterSocket = InternalPCJ.getNodeData()
+                            .getSocketChannelByPhysicalId().get(groupMasterId);
 
-                InternalPCJ.getNetworker().send(groupMasterSocket, message);
+                    InternalPCJ.getNetworker().send(groupMasterSocket, messageGroupBarrierGo);
+                } else {
+                    int parentId = this.getParentNode();
+                    SocketChannel parentSocket = InternalPCJ.getNodeData()
+                            .getSocketChannelByPhysicalId().get(parentId);
+
+                    MessageGroupBarrierWaiting message = new MessageGroupBarrierWaiting(
+                            groupId, physicalId, barrierRound);
+
+                    InternalPCJ.getNetworker().send(parentSocket, message);
+                }
             }
         }
 
-        return localBarrier;
+        return barrierState;
     }
 
-    final public Bitmask getPhysicalBitmask(int round) {
-        return physicalBitmaskMap
-                .computeIfAbsent(round, k -> new Bitmask(physicalIds.size()));
+//    final public Bitmask getPhysicalBitmask(int round) {
+//        return physicalBitmaskMap
+//                .computeIfAbsent(round, k -> new Bitmask(physicalIds.size()));
+//    }
+    final public BarrierState getBarrierState(int barrierRound) {
+        return barrierStateMap.computeIfAbsent(barrierRound,
+                round -> new BarrierState(round, localBitmask, getChildrenNodes()));
     }
 
-    final public ConcurrentMap<Integer, LocalBarrier> getLocalBarrierMap() {
-        return localBarrierMap;
+    final public BarrierState removeBarrierState(int barrierRound) {
+        return barrierStateMap.remove(barrierRound);
     }
 
     protected <T> PcjFuture<T> asyncGet(int threadId, Enum<? extends Shared> variable, int... indices) {
@@ -226,7 +241,7 @@ public class InternalCommonGroup {
 //        if (mask == null) {
 //            mask = newMask;
 //            synchronized (mask) {
-//                mask.set(groupNodeId);
+//                mask.setLocal(groupNodeId);
 //            }
 //        }
 //        return mask;
@@ -278,7 +293,7 @@ public class InternalCommonGroup {
 //            localSyncMask.setSize(size);
 //            if (remotePhysicalNodeId == InternalPCJ.getWorkerData().physicalId) {
 //                localIds.add(groupNodeId);
-//                localSyncMask.set(groupNodeId);
+//                localSyncMask.setLocal(groupNodeId);
 //            }
 //        }
 //    }
@@ -294,8 +309,8 @@ public class InternalCommonGroup {
 //
 //    boolean physicalSync(int physicalId) {
 //        int position = physicalIds.indexOf(physicalId);
-//        physicalSync.set(position);
-//        return physicalSync.isSet();
+//        physicalSync.setLocal(position);
+//        return physicalSync.isLocalSet();
 //    }
 //
 //    /**

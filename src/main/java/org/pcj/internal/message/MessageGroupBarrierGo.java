@@ -9,7 +9,7 @@ import java.util.List;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
-import org.pcj.internal.futures.LocalBarrier;
+import org.pcj.internal.futures.BarrierState;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
@@ -53,7 +53,7 @@ final public class MessageGroupBarrierGo extends Message {
         children.stream().map(nodeData.getSocketChannelByPhysicalId()::get)
                 .forEach(socket -> InternalPCJ.getNetworker().send(socket, this));
 
-        LocalBarrier barrier = group.getLocalBarrierMap().remove(round);
+        BarrierState barrier = group.removeBarrierState(round);
         barrier.signalAll();
     }
 }

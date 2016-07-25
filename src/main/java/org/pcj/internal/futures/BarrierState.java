@@ -5,6 +5,9 @@
  */
 package org.pcj.internal.futures;
 
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.pcj.PcjFuture;
@@ -15,22 +18,34 @@ import org.pcj.internal.Bitmask;
  *
  * @author faramir
  */
-public class LocalBarrier extends InternalFuture<Void> implements PcjFuture<Void> {
+public class BarrierState extends InternalFuture<Void> implements PcjFuture<Void> {
 
+    private final Set<Integer> childrenSet;
     private final Bitmask localBarrierBitmask;
     private final Bitmask localBarrierMaskBitmask;
 
-    public LocalBarrier(int round, Bitmask localBitmask) {
+    public BarrierState(int round, Bitmask localBitmask, List<Integer> childrenNodes) {
+        this.childrenSet = ConcurrentHashMap.newKeySet(childrenNodes.size());
+        childrenNodes.forEach(childrenSet::add);
+        
         this.localBarrierBitmask = new Bitmask(localBitmask.getSize());
         this.localBarrierMaskBitmask = new Bitmask(localBitmask);
     }
 
-    public void set(int index) {
+    public void setLocal(int index) {
         localBarrierBitmask.set(index);
     }
 
-    public boolean isSet() {
+    public boolean isLocalSet() {
         return localBarrierBitmask.isSet(localBarrierMaskBitmask);
+    }
+    
+    public void setPhysical(int physicalId) {
+        childrenSet.remove(physicalId);
+    }
+    
+    public boolean isPhysicalSet() {
+        return childrenSet.isEmpty();
     }
 
     @Override
