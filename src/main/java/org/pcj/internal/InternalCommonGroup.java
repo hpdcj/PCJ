@@ -135,6 +135,10 @@ public class InternalCommonGroup {
         return threadsMapping.size();
     }
 
+    final public int[] getLocalThreadsId() {
+        return localIds.stream().mapToInt(Integer::intValue).toArray();
+    }
+
     final public int getGlobalThreadId(int groupThreadId) {
         Integer globalThreadId = threadsMapping.get(groupThreadId);
         if (globalThreadId == null) {
@@ -313,13 +317,7 @@ public class InternalCommonGroup {
 //        return physicalSync.isLocalSet();
 //    }
 //
-//    /**
-//     * @return the localIds
-//     */
-//    List<Integer> getLocalIds() {
-//        return localIds;
-//    }
-//
+
 //    /**
 //     * Gets global node id from group node id
 //     *

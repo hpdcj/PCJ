@@ -19,5 +19,5 @@ public interface Group {
 
     <T> PcjFuture<Void> asyncPut(int threadId, Shared variable, T newValue, int... indices);
 
-    PcjFuture<Void> broadcast(Shared variable, Object newValue);
+    <T> PcjFuture<Void> asyncBroadcast(Shared variable, T newValue);
 }

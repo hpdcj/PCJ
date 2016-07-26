@@ -46,6 +46,7 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
     @Override
     public void close() throws IOException {
         messageDataOutputStream.close();
+        messageDataInputStream.close();
     }
 
     private static class LoopbackOutputStream extends OutputStream {
@@ -133,12 +134,6 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
 
         @Override
         public int read() {
-//            byte[] bytes = new byte[1];
-//            if (read(bytes, 0, bytes.length) == -1) {
-//                return -1;
-//            }
-//            return bytes[0];
-
             while (true) {
                 ByteBuffer byteBuffer = queue.peek();
                 if (byteBuffer == null) {

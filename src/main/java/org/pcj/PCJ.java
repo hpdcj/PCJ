@@ -144,14 +144,14 @@ final public class PCJ extends InternalPCJ {
     public static <T> void put(int threadId, Shared variable, T newValue, int... indices) {
         PCJ.<T>asyncPut(threadId, variable, newValue, indices).get();
     }
-//
-//    public static <T> PcjFuture<Void> asyncBroadcast(Shared variable, T newValue) {
-//        return ((InternalGroup) PcjThread.getThreadGlobalGroup()).asyncBroadcast(variable, newValue);
-//    }
-//
-//    public static <T> void broadcast(Shared variable, T newValue) {
-//        PCJ.<T>asyncBroadcast(variable, newValue).get();
-//    }
+
+    public static <T> PcjFuture<Void> asyncBroadcast(Shared variable, T newValue) {
+        return ((InternalGroup) PcjThread.getThreadGlobalGroup()).asyncBroadcast(variable, newValue);
+    }
+
+    public static <T> void broadcast(Shared variable, T newValue) {
+        PCJ.<T>asyncBroadcast(variable, newValue).get();
+    }
 
 //    /**
 //     * Broadcast the value to all threads and inserts it into InternalStorage

@@ -6,12 +6,16 @@ package org.pcj.internal;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.Group;
 import org.pcj.PcjFuture;
+import org.pcj.PcjRuntimeException;
 import org.pcj.Shared;
 import org.pcj.internal.futures.GetVariable;
 import org.pcj.internal.futures.PutVariable;
+import org.pcj.internal.message.MessageValueBroadcastRequest;
 import org.pcj.internal.message.MessageValueGetRequest;
 import org.pcj.internal.message.MessageValuePutRequest;
 
@@ -68,9 +72,10 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         int physicalId = InternalPCJ.getNodeData().getPhysicalIdByThreadId().get(globalThreadId);
         SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalId);
 
-        MessageValueGetRequest message = new MessageValueGetRequest(
-                requestNum, super.getGroupId(), myThreadId, threadId,
-                variable.parent(), variable.name(), indices);
+        MessageValueGetRequest message
+                = new MessageValueGetRequest(
+                        requestNum, super.getGroupId(), myThreadId, threadId,
+                        variable.parent(), variable.name(), indices);
 
         InternalPCJ.getNetworker().send(socket, message);
 
@@ -91,9 +96,10 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         int physicalId = InternalPCJ.getNodeData().getPhysicalIdByThreadId().get(globalThreadId);
         SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalId);
 
-        MessageValuePutRequest message = new MessageValuePutRequest(
-                requestNum, super.getGroupId(), myThreadId, threadId,
-                variable.parent(), variable.name(), indices, newValue);
+        MessageValuePutRequest message
+                = new MessageValuePutRequest(
+                        requestNum, super.getGroupId(), myThreadId, threadId,
+                        variable.parent(), variable.name(), indices, newValue);
 
         InternalPCJ.getNetworker().send(socket, message);
 
@@ -105,7 +111,35 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     }
 
     @Override
-    public PcjFuture<Void> broadcast(Shared variable, Object newValue) {
-        throw new UnsupportedOperationException();
+    public <T> PcjFuture<Void> asyncBroadcast(Shared variable, T newValue) {
+        int requestNum = broadcastCounter.incrementAndGet();
+//        BroadcastVariable broadcastVariable = new BroadcastVariable();
+//        broadcastMap.put(requestNum, broadcastVariable);
+
+        int physicalMasterId = super.getGroupMasterNode();
+        SocketChannel masterSocket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalMasterId);
+
+        MessageValueBroadcastRequest message
+                = new MessageValueBroadcastRequest(requestNum, super.getGroupId(), myThreadId,
+                        variable.parent(), variable.name(), newValue);
+        InternalPCJ.getNetworker().send(masterSocket, message);
+
+//        return broadcastVariable;
+return new PcjFuture<Void>() {
+            @Override
+            public Void get() throws PcjRuntimeException {
+return null;
+            }
+
+            @Override
+            public Void get(long timeout, TimeUnit unit) throws TimeoutException, PcjRuntimeException {
+                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            }
+
+            @Override
+            public boolean isDone() {
+                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            }
+        };
     }
 }

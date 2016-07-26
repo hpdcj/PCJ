@@ -118,6 +118,30 @@ public enum MessageType {
             return new MessageValuePutResponse();
         }
     },
+    VALUE_BROADCAST_REQUEST((byte) 24) {
+        @Override
+        public MessageValueBroadcastRequest create() {
+            return new MessageValueBroadcastRequest();
+        }
+    },
+    VALUE_BROADCAST_BYTES((byte) 25) {
+        @Override
+        public MessageValueBroadcastBytes create() {
+            return new MessageValueBroadcastBytes();
+        }
+    },
+    VALUE_BROADCAST_INFORM((byte) 26) {
+        @Override
+        public MessageValueBroadcastInform create() {
+            return new MessageValueBroadcastInform();
+        }
+    },
+    VALUE_BROADCAST_RESPONSE((byte) 27) {
+        @Override
+        public MessageValueBroadcastResponse create() {
+            return new MessageValueBroadcastResponse();
+        }
+    },
     //    /**
     //     * after sending SYNC_WAIT Server collects it on specified group. When all
     //     * nodes in group sent that message, Server sends SYNC_GO
