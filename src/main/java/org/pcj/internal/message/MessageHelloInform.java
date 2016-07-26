@@ -103,21 +103,21 @@ final public class MessageHelloInform extends Message {
         for (int attempt = 0; attempt <= Configuration.RETRY_COUNT; ++attempt) {
             try {
                 if (LOGGER.isLoggable(Level.FINE)) {
-                    LOGGER.fine(String.format("Connecting to: %s:%s",
-                            hostname, port));
+                    LOGGER.log(Level.FINE, "Connecting to: {0}:{1,number,#}",
+                            new Object[]{hostname, port});
                 }
                 InetAddress inetAddressNode0 = InetAddress.getByName(hostname);
                 SocketChannel socket = InternalPCJ.getNetworker().connectTo(inetAddressNode0, port);
                 if (LOGGER.isLoggable(Level.FINER)) {
-                    LOGGER.finer(String.format("Connected to %s:%s: %s",
-                            hostname, port, Objects.toString(socket)));
+                    LOGGER.log(Level.FINER, "Connected to {0}:{1,number,#}: {2}",
+                            new Object[]{hostname, port, Objects.toString(socket)});
                 }
                 return socket;
             } catch (IOException ex) {
                 if (attempt < Configuration.RETRY_COUNT) {
-                    LOGGER.warning(String.format("(%d attempt of %d) Connecting to %s:%d failed: %s.",
-                            attempt + 1, Configuration.RETRY_COUNT + 1,
-                            hostname, port, ex.getMessage()));
+                    LOGGER.log(Level.WARNING,
+                            "({0,number,#} attempt of {1,number,#}) Connecting to {2}:{3,number,#} failed: {4}. Retrying.",
+                            new Object[]{attempt + 1, Configuration.RETRY_COUNT + 1, hostname, port, ex.getMessage()});
 
                     try {
                         Thread.sleep(Configuration.RETRY_DELAY * 1000 + (int) (Math.random() * 1000));
@@ -130,7 +130,8 @@ final public class MessageHelloInform extends Message {
                 }
             } catch (InterruptedException ex) {
                 LOGGER.log(Level.SEVERE,
-                        String.format("Interruption occurs while connecting to %s:%d.", hostname, port));
+                        "Interruption occurs while connecting to {0}:{1,number,#}.",
+                        new Object[]{hostname, port});
             }
         }
         throw new IllegalStateException("Unreachable code.");

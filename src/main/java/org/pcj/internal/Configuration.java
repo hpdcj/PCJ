@@ -3,6 +3,7 @@
  */
 package org.pcj.internal;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -49,12 +50,12 @@ final public class Configuration {
         CHUNK_SIZE = getPropertyShort("pcj.chunksize", (short) (1500 - 64));
         INIT_MAXTIME = getPropertyInt("pcj.init.maxtime", Math.max((RETRY_COUNT + 1) * RETRY_DELAY, 60));
 
-        LOGGER.config(String.format("BACKLOG_COUNT: %s", BACKLOG_COUNT));
-        LOGGER.config(String.format("RETRY_COUNT:   %s", RETRY_COUNT));
-        LOGGER.config(String.format("RETRY_DELAY:   %s", RETRY_DELAY));
-        LOGGER.config(String.format("DEFAULT_PORT:  %s", DEFAULT_PORT));
-        LOGGER.config(String.format("CHUNK_SIZE:    %s", CHUNK_SIZE));
-        LOGGER.config(String.format("INIT_MAXTIME:  %s", INIT_MAXTIME));
+        LOGGER.log(Level.CONFIG, "BACKLOG_COUNT: {0,number,#}", BACKLOG_COUNT);
+        LOGGER.log(Level.CONFIG, "RETRY_COUNT:   {0,number,#}", RETRY_COUNT);
+        LOGGER.log(Level.CONFIG, "RETRY_DELAY:   {0,number,#}", RETRY_DELAY);
+        LOGGER.log(Level.CONFIG, "DEFAULT_PORT:  {0,number,#}", DEFAULT_PORT);
+        LOGGER.log(Level.CONFIG, "CHUNK_SIZE:    {0,number,#}", CHUNK_SIZE);
+        LOGGER.log(Level.CONFIG, "INIT_MAXTIME:  {0,number,#}", INIT_MAXTIME);
     }
 
     private static int getPropertyInt(String name, int defaultValue) {

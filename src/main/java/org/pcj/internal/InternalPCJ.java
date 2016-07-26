@@ -9,6 +9,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.nio.channels.SocketChannel;
+import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.HashSet;
@@ -112,6 +113,7 @@ public abstract class InternalPCJ {
 
             exitTimer.cancel(true);
 
+            long nanoTime = System.nanoTime();
             /* Starting execution */
             if (isCurrentJvmNode0) {
                 LOGGER.log(Level.INFO, "Starting {0} with {1,number,#} {1,choice,1#thread|1<threads}...",
@@ -131,9 +133,18 @@ public abstract class InternalPCJ {
             waitForPcjThreadsComplete(pcjThreads);
 
             if (isCurrentJvmNode0) {
-                LOGGER.log(Level.INFO, "Completed {0} with {1,number,#} {1,choice,1#thread|1<threads}.",
-                        new Object[]{startPointClass.getName(),
-                            nodeData.getGroupById(InternalCommonGroup.GLOBAL_GROUP_ID).threadCount()});
+                long timer = (System.nanoTime() - nanoTime) / 1_000_000_000L;
+                long h = timer / (60 * 60);
+                long m = (timer / 60) % 60;
+                long s = (timer % 60);
+
+                LOGGER.log(Level.INFO, "Completed {0} with {1,number,#} {1,choice,1#thread|1<threads}"
+                        + " after {2,number,#}h {3,number,#}m {4,number,#}s.",
+                        new Object[]{
+                            startPointClass.getName(),
+                            nodeData.getGroupById(InternalCommonGroup.GLOBAL_GROUP_ID).threadCount(),
+                            h, m, s
+                        });
             }
 
             /* finishing */
@@ -213,11 +224,15 @@ public abstract class InternalPCJ {
                     it.remove();
                 } catch (IOException ex) {
                     if (attempt <= Configuration.RETRY_COUNT) {
-                        LOGGER.warning(String.format("(%d attempt of %d) Binding on port %d failed: %s.",
-                                attempt + 1, Configuration.RETRY_COUNT + 1, bindingPort, ex.getMessage()));
+                        LOGGER.log(Level.WARNING,
+                                "({0,number,#} attempt of {1,number,#}) Binding on port {2,number,#} failed: {3}. Retrying.",
+                                new Object[]{
+                                    attempt + 1,
+                                    Configuration.RETRY_COUNT + 1,
+                                    bindingPort,
+                                    ex.getMessage()});
                     } else {
-                        throw new UncheckedIOException(
-                                String.format("Binding on port %s failed!", bindingPort), ex);
+                        throw new UncheckedIOException(String.format("Binding on port %s failed!", bindingPort), ex);
                     }
                 }
             }
@@ -251,24 +266,25 @@ public abstract class InternalPCJ {
             for (int attempt = 0; attempt <= Configuration.RETRY_COUNT; ++attempt) {
                 try {
                     if (LOGGER.isLoggable(Level.FINE)) {
-                        LOGGER.fine(String.format("Connecting to node0 (%s:%s)...",
-                                node0.getHostname(), node0.getPort()));
+                        LOGGER.log(Level.FINE, "Connecting to node0 ({0}:{1,number,#})...",
+                                new Object[]{node0.getHostname(), node0.getPort()});
                     }
 
                     InetAddress inetAddressNode0 = InetAddress.getByName(node0.getHostname());
                     node0Socket = networker.connectTo(inetAddressNode0, node0.getPort());
 
                     if (LOGGER.isLoggable(Level.FINER)) {
-                        LOGGER.finer(String.format("Connected to node0 (%s:%s): %s",
-                                node0.getHostname(), node0.getPort(), Objects.toString(node0Socket)));
+                        LOGGER.log(Level.FINER, "Connected to node0 ({0}:{1,number,#}): {2}",
+                                new Object[]{node0.getHostname(), node0.getPort(), Objects.toString(node0Socket)});
                     }
 
                     return;
                 } catch (IOException ex) {
                     if (attempt < Configuration.RETRY_COUNT) {
-                        LOGGER.warning(String.format("(%d attempt of %d) Connecting to node0 (%s:%d) failed: %s.",
-                                attempt + 1, Configuration.RETRY_COUNT + 1,
-                                node0.getHostname(), node0.getPort(), ex.getMessage()));
+                        LOGGER.log(Level.WARNING,
+                                "({0,number,#} attempt of {1,number,#}) Connecting to node0 ({2}:{3,number,#}) failed: {4,number,#}. Retrying.",
+                                new Object[]{attempt + 1, Configuration.RETRY_COUNT + 1,
+                                    node0.getHostname(), node0.getPort(), ex.getMessage()});
                         try {
                             Thread.sleep(Configuration.RETRY_DELAY * 1000 + (int) (Math.random() * 1000));
                         } catch (InterruptedException e) {
