@@ -14,4 +14,13 @@ public interface Shared {
     String name();
 
     Class<?> type();
+
+    @SuppressWarnings("unchecked")
+    default String parent() {
+        if (this instanceof Enum) {
+            return ((Enum<? extends Shared>) this).getDeclaringClass().getName();
+        } else {
+            return this.getClass().getName();
+        }
+    }
 }

@@ -15,9 +15,9 @@ public interface Group {
 
     PcjFuture<Void> asyncBarrier();
 
-    <T> PcjFuture<T> asyncGet(int threadId, Enum<? extends Shared> variable, int... indices);
+    <T> PcjFuture<T> asyncGet(int threadId, Shared variable, int... indices);
 
-    <T> PcjFuture<Void> asyncPut(int threadId, Enum<? extends Shared> variable, T newValue, int... indices);
+    <T> PcjFuture<Void> asyncPut(int threadId, Shared variable, T newValue, int... indices);
 
-    PcjFuture<Void> broadcast(Enum<? extends Shared> variable, Object newValue);
+    PcjFuture<Void> broadcast(Shared variable, Object newValue);
 }

@@ -62,15 +62,12 @@ public class InternalStorage {
         storageMap = new ConcurrentHashMap<>();
     }
 
-    public void createShared(Enum<? extends Shared> variable)
+    public void createShared(Shared variable)
             throws NullPointerException, IllegalArgumentException, IllegalStateException {
         if (variable instanceof Shared == false) {
-            throw new IllegalArgumentException("Not shared enum type: " + variable);
+            throw new IllegalArgumentException("Not shared type: " + variable);
         }
-        Shared shared = (Shared) variable;
-        Class<?> type = shared.type();
-        String name = shared.name();
-        createShared0(variable.getDeclaringClass().getName(), name, type);
+        createShared0(((Shared) variable).parent(), ((Shared) variable).name(), ((Shared) variable).type());
     }
 
     private void createShared0(String storageName, String name, Class<?> type)
@@ -107,12 +104,12 @@ public class InternalStorage {
      * @throws ClassCastException             there is more indices than variable dimension
      * @throws ArrayIndexOutOfBoundsException one of indices is out of bound
      */
-    final public <T> T get(Enum<? extends Shared> variable, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException {
+    final public <T> T get(Shared variable, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException {
         if (variable == null) {
             throw new NullPointerException("Variable name cannot be null");
         }
 
-        return get0(variable.getDeclaringClass().getName(), variable.name());
+        return get0(variable.parent(), variable.name());
     }
 
     @SuppressWarnings("unchecked")
@@ -164,12 +161,12 @@ public class InternalStorage {
      *                                        or value cannot be assigned to the variable
      * @throws ArrayIndexOutOfBoundsException one of indices is out of bound
      */
-    final public <T> void put(Enum<? extends Shared> variable, T value, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
+    final public <T> void put(Shared variable, T value, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
         if (variable == null) {
             throw new NullPointerException("Variable name cannot be null");
         }
 
-        put0(variable.getDeclaringClass().getName(), variable.name(), value, indices);
+        put0(variable.parent(), variable.name(), value, indices);
     }
 
     final public <T> void put0(String storageName, String name, T value, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
@@ -279,12 +276,12 @@ public class InternalStorage {
      *
      * @param variable name of Shared variable
      */
-    final public void monitor(Enum<? extends Shared> variable) {
+    final public void monitor(Shared variable) {
         if (variable == null) {
             throw new NullPointerException("Variable name cannot be null");
         }
 
-        monitor0(variable.getDeclaringClass().getName(), variable.name());
+        monitor0(variable.parent(), variable.name());
     }
 
     final public void monitor0(String storageName, String name) {
@@ -308,12 +305,12 @@ public class InternalStorage {
      *
      *
      */
-    final public int waitFor(Enum<? extends Shared> variable, int count) {
+    final public int waitFor(Shared variable, int count) {
         if (variable == null) {
             throw new NullPointerException("Variable name cannot be null");
         }
 
-        return waitFor0(variable.getDeclaringClass().getName(), variable.name(), count);
+        return waitFor0(variable.parent(), variable.name(), count);
     }
 
     final public int waitFor0(String storageName, String name, int count) {
@@ -356,12 +353,12 @@ public class InternalStorage {
      * @param variable name of Shared variable
      * @param count    number of modifications. If 0 - the method exits immediately.
      */
-    final public int waitFor(Enum<? extends Shared> variable, int count, long timeout, TimeUnit unit) throws TimeoutException {
+    final public int waitFor(Shared variable, int count, long timeout, TimeUnit unit) throws TimeoutException {
         if (variable == null) {
             throw new NullPointerException("Variable name cannot be null");
         }
 
-        return waitFor0(variable.getDeclaringClass().getName(), variable.name(), count, timeout, unit);
+        return waitFor0(variable.parent(), variable.name(), count, timeout, unit);
     }
 
     final public int waitFor0(String storageName, String name, int count, long timeout, TimeUnit unit) throws TimeoutException {

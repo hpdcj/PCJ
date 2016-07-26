@@ -59,7 +59,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     }
 
     @Override
-    public <T> PcjFuture<T> asyncGet(int threadId, Enum<? extends Shared> variable, int... indices) {
+    public <T> PcjFuture<T> asyncGet(int threadId, Shared variable, int... indices) {
         int requestNum = getVariableCounter.incrementAndGet();
         GetVariable<T> getVariable = new GetVariable<>();
         getVariableMap.put(requestNum, getVariable);
@@ -70,7 +70,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
 
         MessageValueGetRequest message = new MessageValueGetRequest(
                 requestNum, super.getGroupId(), myThreadId, threadId,
-                variable.getDeclaringClass().getName(), variable.name(), indices);
+                variable.parent(), variable.name(), indices);
 
         InternalPCJ.getNetworker().send(socket, message);
 
@@ -82,7 +82,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     }
 
     @Override
-    public <T> PcjFuture<Void> asyncPut(int threadId, Enum<? extends Shared> variable, T newValue, int... indices) {
+    public <T> PcjFuture<Void> asyncPut(int threadId, Shared variable, T newValue, int... indices) {
         int requestNum = putVariableCounter.incrementAndGet();
         PutVariable putVariable = new PutVariable();
         putVariableMap.put(requestNum, putVariable);
@@ -93,7 +93,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
 
         MessageValuePutRequest message = new MessageValuePutRequest(
                 requestNum, super.getGroupId(), myThreadId, threadId,
-                variable.getDeclaringClass().getName(), variable.name(), indices, newValue);
+                variable.parent(), variable.name(), indices, newValue);
 
         InternalPCJ.getNetworker().send(socket, message);
 
@@ -105,7 +105,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     }
 
     @Override
-    public PcjFuture<Void> broadcast(Enum<? extends Shared> variable, Object newValue) {
+    public PcjFuture<Void> broadcast(Shared variable, Object newValue) {
         throw new UnsupportedOperationException();
     }
 }

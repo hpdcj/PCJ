@@ -78,7 +78,7 @@ final public class PCJ extends InternalPCJ {
         return InternalPCJ.getNodeData().getTotalNodeCount();
     }
 
-    public static void createShared(Enum<? extends Shared> variable) {
+    public static void createShared(Shared variable) {
         PcjThread.getThreadStorage().createShared(variable);
     }
 
@@ -91,7 +91,9 @@ final public class PCJ extends InternalPCJ {
             throw new IllegalArgumentException("Argument is not shared");
         }
         InternalStorage storage = PcjThread.getThreadStorage();
-        Arrays.stream(sharedEnum.getEnumConstants()).forEach(storage::createShared);
+        Arrays.stream(sharedEnum.getEnumConstants())
+                .map(e -> (Shared) e)
+                .forEach(storage::createShared);
     }
 
     public static PcjFuture<Void> asyncBarrier() {
@@ -102,46 +104,54 @@ final public class PCJ extends InternalPCJ {
         PCJ.asyncBarrier().get();
     }
 
-    public static void monitor(Enum<? extends Shared> variable) {
+    public static void monitor(Shared variable) {
         PcjThread.getThreadStorage().monitor(variable);
     }
 
-    public static int waitFor(Enum<? extends Shared> variable) {
+    public static int waitFor(Shared variable) {
         return waitFor(variable, 1);
     }
 
-    public static int waitFor(Enum<? extends Shared> variable, int count) {
+    public static int waitFor(Shared variable, int count) {
         return PcjThread.getThreadStorage().waitFor(variable, count);
     }
 
-    public static int waitFor(Enum<? extends Shared> variable, int count,
+    public static int waitFor(Shared variable, int count,
             long timeout, TimeUnit unit) throws TimeoutException {
         return PcjThread.getThreadStorage().waitFor(variable, count, timeout, unit);
     }
 
-    public static <T> T getLocal(Enum<? extends Shared> variable, int... indices) {
+    public static <T> T getLocal(Shared variable, int... indices) {
         return PcjThread.getThreadStorage().get(variable, indices);
     }
 
-    public static <T> void putLocal(Enum<? extends Shared> variable, T newValue, int... indices) throws ClassCastException {
+    public static <T> void putLocal(Shared variable, T newValue, int... indices) throws ClassCastException {
         PcjThread.getThreadStorage().put(variable, newValue, indices);
     }
 
-    public static <T> PcjFuture<T> asyncGet(int threadId, Enum<? extends Shared> variable, int... indices) {
+    public static <T> PcjFuture<T> asyncGet(int threadId, Shared variable, int... indices) {
         return ((InternalGroup) PcjThread.getThreadGlobalGroup()).asyncGet(threadId, variable, indices);
     }
 
-    public static <T> T get(int threadId, Enum<? extends Shared> variable, int... indices) throws PcjRuntimeException {
+    public static <T> T get(int threadId, Shared variable, int... indices) throws PcjRuntimeException {
         return PCJ.<T>asyncGet(threadId, variable, indices).get();
     }
 
-    public static <T> PcjFuture<Void> asyncPut(int threadId, Enum<? extends Shared> variable, T newValue, int... indices) {
+    public static <T> PcjFuture<Void> asyncPut(int threadId, Shared variable, T newValue, int... indices) {
         return ((InternalGroup) PcjThread.getThreadGlobalGroup()).asyncPut(threadId, variable, newValue, indices);
     }
 
-    public static <T> void put(int threadId, Enum<? extends Shared> variable, T newValue, int... indices) {
+    public static <T> void put(int threadId, Shared variable, T newValue, int... indices) {
         PCJ.<T>asyncPut(threadId, variable, newValue, indices).get();
     }
+//
+//    public static <T> PcjFuture<Void> asyncBroadcast(Shared variable, T newValue) {
+//        return ((InternalGroup) PcjThread.getThreadGlobalGroup()).asyncBroadcast(variable, newValue);
+//    }
+//
+//    public static <T> void broadcast(Shared variable, T newValue) {
+//        PCJ.<T>asyncBroadcast(variable, newValue).get();
+//    }
 
 //    /**
 //     * Broadcast the value to all threads and inserts it into InternalStorage
