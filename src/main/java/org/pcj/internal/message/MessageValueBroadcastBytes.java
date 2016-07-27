@@ -15,6 +15,7 @@ import org.pcj.internal.NodeData;
 import org.pcj.internal.PcjThread;
 import static org.pcj.internal.message.Message.LOGGER;
 import org.pcj.internal.LargeByteArray;
+import org.pcj.internal.futures.BroadcastState;
 import org.pcj.internal.network.LargeByteArrayInputStream;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
@@ -64,10 +65,10 @@ final public class MessageValueBroadcastBytes extends Message {
         requestNum = in.readInt();
         groupId = in.readInt();
         requesterThreadId = in.readInt();
+        
         storageName = in.readString();
         name = in.readString();
         clonedData = in.readLargeByteArray();
-        
 
         NodeData nodeData = InternalPCJ.getNodeData();
         InternalCommonGroup group = nodeData.getGroupById(groupId);
@@ -96,5 +97,8 @@ final public class MessageValueBroadcastBytes extends Message {
                 LOGGER.log(Level.SEVERE, "ClassCastException...", ex);
             }
         }
+
+        BroadcastState broadcastState = group.getBroadcastState(requestNum, requesterThreadId);
+        broadcastState.processPhysical(nodeData.getPhysicalId());
     }
 }

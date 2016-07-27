@@ -58,9 +58,8 @@ final public class MessageGroupBarrierWaiting extends Message {
                 if (physicalId == group.getGroupMasterNode()) {
                     MessageGroupBarrierGo messageGroupBarrierGo = new MessageGroupBarrierGo(groupId, barrierRound);
 
-                    int groupMasterId = group.getGroupMasterNode();
                     SocketChannel groupMasterSocket = InternalPCJ.getNodeData()
-                            .getSocketChannelByPhysicalId().get(groupMasterId);
+                            .getSocketChannelByPhysicalId().get(physicalId);
 
                     InternalPCJ.getNetworker().send(groupMasterSocket, messageGroupBarrierGo);
                 } else {

@@ -5,12 +5,12 @@ package org.pcj.internal;
 
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import org.pcj.PcjFuture;
-import org.pcj.Shared;
 import org.pcj.internal.futures.BarrierState;
+import org.pcj.internal.futures.BroadcastState;
 import org.pcj.internal.message.MessageGroupBarrierGo;
 import org.pcj.internal.message.MessageGroupBarrierWaiting;
 
@@ -34,6 +34,7 @@ public class InternalCommonGroup {
     private final Bitmask localBitmask;
 //    private final ConcurrentMap<Integer, Bitmask> physicalBitmaskMap;
     private final ConcurrentMap<Integer, BarrierState> barrierStateMap;
+    private final ConcurrentMap<List<Integer>, BroadcastState> broadcastStateMap;
 //    final private MessageGroupBarrierWaiting groupBarrierWaitingMessage;
 //    final private ConcurrentMap<Integer, BitMask> joinBitmaskMap;
 //    final private AtomicInteger nodeNum = new AtomicInteger(0);
@@ -67,6 +68,8 @@ public class InternalCommonGroup {
         this.localBitmask = g.localBitmask;
         this.barrierStateMap = g.barrierStateMap;
 
+        this.broadcastStateMap = g.broadcastStateMap;
+
 //        this.groupBarrierWaitingMessage = g.groupBarrierWaitingMessage;
 //        this.joinBitmaskMap = g.joinBitmaskMap;
 //
@@ -89,6 +92,7 @@ public class InternalCommonGroup {
 //        physicalBitmaskMap = new ConcurrentHashMap<>();
         localBitmask = new Bitmask();
         barrierStateMap = new ConcurrentHashMap<>();
+        broadcastStateMap = new ConcurrentHashMap<>();
 
 //        groupBarrierWaitingMessage = new MessageGroupBarrierWaiting(groupId, InternalPCJ.getNodeData().getPhysicalId());
 //        this.joinBitmaskMap = new ConcurrentHashMap<>();
@@ -178,16 +182,12 @@ public class InternalCommonGroup {
         }
     }
 
-    protected PcjFuture<Void> asyncBarrier() {
-        throw new IllegalStateException("This method has to be overriden!");
-    }
-
     final protected BarrierState barrier(int threadId, int barrierRound) {
         BarrierState barrierState = getBarrierState(barrierRound);
 
         synchronized (barrierState) {
             barrierState.setLocal(threadId);
-           
+
             if (barrierState.isLocalSet() && barrierState.isPhysicalSet()) {
                 int physicalId = InternalPCJ.getNodeData().getPhysicalId();
                 if (physicalId == this.getGroupMasterNode()) {
@@ -214,10 +214,6 @@ public class InternalCommonGroup {
         return barrierState;
     }
 
-//    final public Bitmask getPhysicalBitmask(int round) {
-//        return physicalBitmaskMap
-//                .computeIfAbsent(round, k -> new Bitmask(physicalIds.size()));
-//    }
     final public BarrierState getBarrierState(int barrierRound) {
         return barrierStateMap.computeIfAbsent(barrierRound,
                 round -> new BarrierState(round, localBitmask, getChildrenNodes()));
@@ -227,8 +223,15 @@ public class InternalCommonGroup {
         return barrierStateMap.remove(barrierRound);
     }
 
-    protected <T> PcjFuture<T> asyncGet(int threadId, Enum<? extends Shared> variable, int... indices) {
-        throw new IllegalStateException("This method has to be overriden!");
+    final public BroadcastState getBroadcastState(int requestNum, int requesterThreadId) {
+        List key = Arrays.asList(requestNum, requesterThreadId);
+        return broadcastStateMap.computeIfAbsent(key,
+                k -> new BroadcastState(this.groupId, requestNum, requesterThreadId, getChildrenNodes()));
+    }
+
+    final public BroadcastState removeBroadcastState(int requestNum, int requesterThreadId) {
+        List key = Arrays.asList(requestNum, requesterThreadId);
+        return broadcastStateMap.remove(key);
     }
 
 //    /**
@@ -317,7 +320,6 @@ public class InternalCommonGroup {
 //        return physicalSync.isLocalSet();
 //    }
 //
-
 //    /**
 //     * Gets global node id from group node id
 //     *

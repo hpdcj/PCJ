@@ -89,7 +89,7 @@ public class EasyTest extends InternalStorage implements StartPoint {
             System.out.println("Broadcasting array");
             PCJ.broadcast(SharedEnum.b, new double[]{1.0});
         }
-        Thread.sleep(1000);
+//        PCJ.barrier();
         System.out.println(PCJ.myId() + " -> " + Arrays.toString((double[]) PCJ.getLocal(SharedEnum.b)));
     }
 }

@@ -13,6 +13,7 @@ import org.pcj.Group;
 import org.pcj.PcjFuture;
 import org.pcj.PcjRuntimeException;
 import org.pcj.Shared;
+import org.pcj.internal.futures.BroadcastState;
 import org.pcj.internal.futures.GetVariable;
 import org.pcj.internal.futures.PutVariable;
 import org.pcj.internal.message.MessageValueBroadcastRequest;
@@ -33,7 +34,6 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     private final AtomicInteger putVariableCounter;
     private final ConcurrentMap<Integer, PutVariable> putVariableMap;
     private final AtomicInteger broadcastCounter;
-    private final ConcurrentMap<Integer, Void> broadcastMap;
 
     public InternalGroup(int threadId, InternalCommonGroup internalGroup) {
         super(internalGroup);
@@ -49,7 +49,6 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         putVariableMap = new ConcurrentHashMap<>();
 
         broadcastCounter = new AtomicInteger(0);
-        broadcastMap = new ConcurrentHashMap<>();
     }
 
     @Override
@@ -113,33 +112,16 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     @Override
     public <T> PcjFuture<Void> asyncBroadcast(Shared variable, T newValue) {
         int requestNum = broadcastCounter.incrementAndGet();
-//        BroadcastVariable broadcastVariable = new BroadcastVariable();
-//        broadcastMap.put(requestNum, broadcastVariable);
+        BroadcastState broadcastState = this.getBroadcastState(requestNum, myThreadId);
 
         int physicalMasterId = super.getGroupMasterNode();
         SocketChannel masterSocket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalMasterId);
 
         MessageValueBroadcastRequest message
-                = new MessageValueBroadcastRequest(requestNum, super.getGroupId(), myThreadId,
+                = new MessageValueBroadcastRequest(super.getGroupId(), requestNum, myThreadId,
                         variable.parent(), variable.name(), newValue);
         InternalPCJ.getNetworker().send(masterSocket, message);
 
-//        return broadcastVariable;
-return new PcjFuture<Void>() {
-            @Override
-            public Void get() throws PcjRuntimeException {
-return null;
-            }
-
-            @Override
-            public Void get(long timeout, TimeUnit unit) throws TimeoutException, PcjRuntimeException {
-                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-            }
-
-            @Override
-            public boolean isDone() {
-                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-            }
-        };
+        return broadcastState;
     }
 }

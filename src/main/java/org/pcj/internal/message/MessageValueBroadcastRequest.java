@@ -15,6 +15,7 @@ import org.pcj.internal.InternalStorage;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.PcjThread;
 import org.pcj.internal.LargeByteArray;
+import org.pcj.internal.futures.BroadcastState;
 import org.pcj.internal.network.LargeByteArrayInputStream;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
@@ -27,8 +28,8 @@ import org.pcj.internal.network.MessageDataOutputStream;
 final public class MessageValueBroadcastRequest extends Message {
 
     private static final int BYTES_CHUNK_SIZE = Configuration.CHUNK_SIZE;
-    private int requestNum;
     private int groupId;
+    private int requestNum;
     private int requesterThreadId;
     private String storageName;
     private String name;
@@ -38,12 +39,11 @@ final public class MessageValueBroadcastRequest extends Message {
         super(MessageType.VALUE_BROADCAST_REQUEST);
     }
 
-    public MessageValueBroadcastRequest(int requestNum, int groupId, int requesterThreadId,
-            String storageName, String name, Object newValue) {
+    public MessageValueBroadcastRequest(int groupId, int requestNum, int requesterThreadId, String storageName, String name, Object newValue) {
         this();
 
-        this.requestNum = requestNum;
         this.groupId = groupId;
+        this.requestNum = requestNum;
         this.requesterThreadId = requesterThreadId;
         this.storageName = storageName;
         this.name = name;
@@ -52,8 +52,8 @@ final public class MessageValueBroadcastRequest extends Message {
 
     @Override
     public void write(MessageDataOutputStream out) throws IOException {
-        out.writeInt(requestNum);
         out.writeInt(groupId);
+        out.writeInt(requestNum);
         out.writeInt(requesterThreadId);
         out.writeString(storageName);
         out.writeString(name);
@@ -62,9 +62,10 @@ final public class MessageValueBroadcastRequest extends Message {
 
     @Override
     public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
-        requestNum = in.readInt();
         groupId = in.readInt();
+        requestNum = in.readInt();
         requesterThreadId = in.readInt();
+
         storageName = in.readString();
         name = in.readString();
 
@@ -97,22 +98,9 @@ final public class MessageValueBroadcastRequest extends Message {
                 LOGGER.log(Level.SEVERE, "ClassCastException...", ex);
             }
         }
-        //        NodeData nodeData = InternalPCJ.getNodeData();
-        //        int globalThreadId = nodeData.getGroupById(groupId).getGlobalThreadId(threadId);
-        //        PcjThread pcjThread = nodeData.getPcjThreads().get(globalThreadId);
-        //        InternalStorage storage = (InternalStorage) pcjThread.getThreadData().getStorage();
-        //
-        //        MessageValuePutResponse messageValuePutResponse = new MessageValuePutResponse(
-        //                requestNum, groupId, requesterThreadId);
-        //        try {
-        //            newValue = in.readObject();
-        //            storage.put0(storageName, name, newValue, indices);
-        //        } catch (Exception ex) {
-        //            messageValuePutResponse.setException(ex);
-        //        }
-        //
-        //        InternalPCJ.getNetworker().send(sender, messageValuePutResponse);
 
+        BroadcastState broadcastState = group.getBroadcastState(requestNum, requesterThreadId);
+        broadcastState.processPhysical(nodeData.getPhysicalId());
     }
 
     private LargeByteArray readTillEnd(MessageDataInputStream in) throws IOException {
