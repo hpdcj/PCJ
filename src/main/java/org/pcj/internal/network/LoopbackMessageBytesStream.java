@@ -145,7 +145,7 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
                 } else if (byteBuffer.hasRemaining() == false) {
                     queue.poll();
                 } else {
-                    return byteBuffer.get();
+                    return ((int) byteBuffer.get()) & 0xFF;
                 }
             }
         }

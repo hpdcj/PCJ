@@ -29,13 +29,13 @@ public class LargeByteArrayInputStream extends InputStream {
     @Override
     public int read() {
         if (index < bytes.length) {
-            return bytes[index++];
+            return ((int)bytes[index++])&0xFF;
         }
         while (iterator.hasNext()) {
             bytes = iterator.next();
             index = 0;
             if (index < bytes.length) {
-                return bytes[index++];
+                return ((int)bytes[index++])&0xFF;
             }
         }
         return -1;

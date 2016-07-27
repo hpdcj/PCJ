@@ -109,15 +109,17 @@ final public class MessageValueBroadcastRequest extends Message {
         byte[] bytes = new byte[BYTES_CHUNK_SIZE];
         int b;
         int index = 0;
+        long l = 0;
         while ((b = in.read()) != -1) {
             bytes[index++] = (byte) b;
+            ++l;
             if (index == bytes.length) {
-                bytes = new byte[BYTES_CHUNK_SIZE];
                 largeByteArray.addBytes(bytes);
+
+                bytes = new byte[BYTES_CHUNK_SIZE];
                 index = 0;
             }
         }
-
         if (index > 0) {
             byte[] dest = new byte[index];
             System.arraycopy(bytes, 0, dest, 0, index);

@@ -10,13 +10,12 @@ import org.pcj.NodesDescription;
 import org.pcj.PCJ;
 import org.pcj.Shared;
 import org.pcj.StartPoint;
-import org.pcj.internal.InternalStorage;
 
 /**
  *
  * @author faramir
  */
-public class EasyTest extends InternalStorage implements StartPoint {
+public class EasyTest implements StartPoint {
 
     enum SharedEnum implements Shared {
         a(double.class),
@@ -44,9 +43,10 @@ public class EasyTest extends InternalStorage implements StartPoint {
 
         NodesDescription nodesDescription = new NodesDescription(new String[]{
             "localhost:8091",
-            "localhost:8002",
-            "localhost:8003",
-            "localhost:8004", //            "localhost:8005",
+//            "localhost:8002",//
+        //            "localhost:8003",
+        //            "localhost:8004",
+        //            "localhost:8005", //
         //            "localhost:8006",
         //            "localhost:8007",
         //            "localhost:8008",
@@ -85,11 +85,43 @@ public class EasyTest extends InternalStorage implements StartPoint {
             }
             PCJ.barrier();
         }
-        if (PCJ.myId() == 0) {
-            System.out.println("Broadcasting array");
-            PCJ.broadcast(SharedEnum.b, new double[]{1.0});
-        }
+//        int n = 4351;
+        int n = 8192;
+//        int n = 4096;
+
+//        if (PCJ.myId() == 1) {
+//            double[] b = new double[n];
+//            for (int i = 0; i < n; i++) {
+//                b[i] = (double) i + 1;
+//            }
+//
+//            PCJ.putLocal(SharedEnum.b, b);
+//        }
 //        PCJ.barrier();
-        System.out.println(PCJ.myId() + " -> " + Arrays.toString((double[]) PCJ.getLocal(SharedEnum.b)));
+//        if (PCJ.myId() == 0) {
+//            PCJ.get(1, SharedEnum.b);
+//        }
+
+        double[] b = new double[n];
+        for (int i = 0; i < n; i++) {
+            b[i] = (double) i + 1;
+        }
+        PCJ.monitor(SharedEnum.b);
+
+        PCJ.barrier();
+
+        int ntimes = 1;
+
+        double time = System.nanoTime();
+
+        for (int i = 0; i < ntimes; i++) {
+            if (PCJ.myId() == 0) {
+                PCJ.broadcast(SharedEnum.b, b);
+            }
+            PCJ.waitFor(SharedEnum.b);
+            PCJ.barrier();
+        }
+        PCJ.barrier();
+//        System.out.println(PCJ.myId() + " -> " + Arrays.toString((double[]) PCJ.getLocal(SharedEnum.b)));
     }
 }

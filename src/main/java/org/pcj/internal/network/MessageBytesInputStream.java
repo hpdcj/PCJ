@@ -108,12 +108,6 @@ public class MessageBytesInputStream {
 
         @Override
         public int read() {
-//            byte[] bytes = new byte[1];
-//            if (read(bytes, 0, bytes.length) == -1) {
-//                return -1;
-//            }
-//            return bytes[0];
-
             while (true) {
                 ByteBuffer byteBuffer = queue.peek();
                 if (byteBuffer == null) {
@@ -125,7 +119,7 @@ public class MessageBytesInputStream {
                 } else if (byteBuffer.hasRemaining() == false) {
                     queue.poll();
                 } else {
-                    return byteBuffer.get();
+                    return ((int) byteBuffer.get()) & 0xFF;
                 }
             }
         }

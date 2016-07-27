@@ -6,6 +6,25 @@
 package org.pcj;
 
 /**
+ * Sample code for Shared enums.
+ * <pre>
+ * {@code
+ * public enum SharedEnum implements Shared {
+ *     variableName(double[].class);
+ *
+ *     private final Class&lt;?&gt; type;
+ *
+ *     private SharedEnum(Class&lt;?&gt; type) {
+ *         this.type = type;
+ *     }
+ *
+ *     @Override
+ *     public Class<?> type() {
+ *         return type;
+ *     }
+ * }
+ * }
+ * </pre>
  *
  * @author faramir
  */

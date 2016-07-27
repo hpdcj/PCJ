@@ -73,12 +73,12 @@ class MessageValueGetResponse extends Message {
 
         boolean exceptionOccurs = in.readBoolean();
         try {
-            if (exceptionOccurs) {
-                exception = (Exception) in.readObject();
-                getVariable.setException(exception);
-            } else {
+            if (!exceptionOccurs) {
                 variableValue = in.readObject();
                 getVariable.setVariableValue(variableValue);
+            } else {
+                exception = (Exception) in.readObject();
+                getVariable.setException(exception);
             }
         } catch (Exception ex) {
             getVariable.setException(new PcjRuntimeException(ex));
