@@ -20,14 +20,14 @@ public class GetVariable<T> extends InternalFuture<T> implements PcjFuture<T> {
     private Exception exception;
 
     @SuppressWarnings("unchecked")
-    public void setVariableValue(Object variableValue) {
+    public void signalDone(Object variableValue) {
         this.variableValue = (T) variableValue;
-        super.signalAll();
+        super.signalDone();
     }
 
-    public void setException(Exception exception) {
+    public void signalException(Exception exception) {
         this.exception = exception;
-        super.signalAll();
+        super.signalDone();
     }
 
     @Override

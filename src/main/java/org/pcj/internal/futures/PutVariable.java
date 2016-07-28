@@ -18,14 +18,14 @@ public class PutVariable extends InternalFuture<Void> implements PcjFuture<Void>
 
     private Exception exception;
 
-    public void setException(Exception exception) {
+    public void signalException(Exception exception) {
         this.exception = exception;
-        super.signalAll();
+        super.signalDone();
     }
 
     @Override
-    public void signalAll() {
-        super.signalAll();
+    public void signalDone() {
+        super.signalDone();
     }
 
     @Override

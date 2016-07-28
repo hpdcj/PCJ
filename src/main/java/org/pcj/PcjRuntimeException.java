@@ -29,5 +29,4 @@ public class PcjRuntimeException extends RuntimeException {
             boolean enableSuppression, boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
     }
-
 }

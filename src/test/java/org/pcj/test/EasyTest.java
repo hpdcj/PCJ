@@ -43,7 +43,7 @@ public class EasyTest implements StartPoint {
 
         NodesDescription nodesDescription = new NodesDescription(new String[]{
             "localhost:8091",
-//            "localhost:8002",//
+            "localhost:8002",//
         //            "localhost:8003",
         //            "localhost:8004",
         //            "localhost:8005", //
@@ -101,7 +101,6 @@ public class EasyTest implements StartPoint {
 //        if (PCJ.myId() == 0) {
 //            PCJ.get(1, SharedEnum.b);
 //        }
-
         double[] b = new double[n];
         for (int i = 0; i < n; i++) {
             b[i] = (double) i + 1;
@@ -110,15 +109,17 @@ public class EasyTest implements StartPoint {
 
         PCJ.barrier();
 
-        int ntimes = 1;
-
-        double time = System.nanoTime();
+        int ntimes = 100;
 
         for (int i = 0; i < ntimes; i++) {
             if (PCJ.myId() == 0) {
-                PCJ.broadcast(SharedEnum.b, b);
+                try {
+                    PCJ.broadcast(SharedEnum.b, new int[0]);
+                } catch (Exception ex) {
+                    System.out.println(ex.getMessage());
+                }
             }
-            PCJ.waitFor(SharedEnum.b);
+//            PCJ.waitFor(SharedEnum.b);
             PCJ.barrier();
         }
         PCJ.barrier();

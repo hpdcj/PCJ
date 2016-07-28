@@ -65,7 +65,7 @@ final public class MessageValueBroadcastBytes extends Message {
         requestNum = in.readInt();
         groupId = in.readInt();
         requesterThreadId = in.readInt();
-        
+
         storageName = in.readString();
         name = in.readString();
         clonedData = in.readLargeByteArray();
@@ -82,6 +82,8 @@ final public class MessageValueBroadcastBytes extends Message {
         children.stream().map(nodeData.getSocketChannelByPhysicalId()::get)
                 .forEach(socket -> InternalPCJ.getNetworker().send(socket, message));
 
+        BroadcastState broadcastState = group.getBroadcastState(requestNum, requesterThreadId);
+
         int[] threadsId = group.getLocalThreadsId();
         for (int i = 0; i < threadsId.length; ++i) {
             int threadId = threadsId[i];
@@ -93,12 +95,11 @@ final public class MessageValueBroadcastBytes extends Message {
                 Object newValue = new ObjectInputStream(new LargeByteArrayInputStream(clonedData)).readObject();
 
                 storage.put0(storageName, name, newValue);
-            } catch (ClassNotFoundException ex) {
-                LOGGER.log(Level.SEVERE, "ClassCastException...", ex);
+            } catch (Exception ex) {
+                broadcastState.addException(ex);
             }
         }
 
-        BroadcastState broadcastState = group.getBroadcastState(requestNum, requesterThreadId);
         broadcastState.processPhysical(nodeData.getPhysicalId());
     }
 }

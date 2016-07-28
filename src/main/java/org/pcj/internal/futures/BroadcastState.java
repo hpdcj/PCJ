@@ -7,8 +7,10 @@ package org.pcj.internal.futures;
 
 import java.nio.channels.SocketChannel;
 import java.util.List;
+import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.pcj.PcjFuture;
@@ -29,23 +31,34 @@ public class BroadcastState extends InternalFuture<Void> implements PcjFuture<Vo
     private final int requestNum;
     private final int requesterThreadId;
     private final Set<Integer> childrenSet;
-    private final Set<Exception> exceptions;
+    private final Queue<Exception> exceptions;
+
+    private Exception exception;
 
     public BroadcastState(int groupId, int requestNum, int requesterThreadId, List<Integer> childrenNodes) {
         this.groupId = groupId;
         this.requestNum = requestNum;
         this.requesterThreadId = requesterThreadId;
-        
+
         this.childrenSet = ConcurrentHashMap.newKeySet(childrenNodes.size() + 1);
         childrenSet.add(InternalPCJ.getNodeData().getPhysicalId());
         childrenNodes.forEach(childrenSet::add);
 
-        this.exceptions = ConcurrentHashMap.newKeySet();
+        this.exceptions = new ConcurrentLinkedDeque<>();
+    }
+
+    public void addException(Exception ex) {
+        exceptions.add(ex);
+    }
+
+    public void signalException(Exception exception) {
+        this.exception = exception;
+        super.signalDone();
     }
 
     @Override
-    public void signalAll() {
-        super.signalAll();
+    public void signalDone() {
+        super.signalDone();
     }
 
     @Override
@@ -60,6 +73,9 @@ public class BroadcastState extends InternalFuture<Void> implements PcjFuture<Vo
         } catch (InterruptedException ex) {
             throw new PcjRuntimeException(ex);
         }
+        if (exception != null) {
+            throw new PcjRuntimeException(exception);
+        }
         return null;
     }
 
@@ -70,36 +86,40 @@ public class BroadcastState extends InternalFuture<Void> implements PcjFuture<Vo
         } catch (InterruptedException ex) {
             throw new PcjRuntimeException(ex);
         }
+        if (exception != null) {
+            throw new PcjRuntimeException(exception);
+        }
         return null;
     }
-    
+
     public synchronized void processPhysical(int physicalId) {
-                childrenSet.remove(physicalId);
-                
-            if (childrenSet.isEmpty()) {
-                NodeData nodeData = InternalPCJ.getNodeData();
-                InternalCommonGroup group = nodeData.getGroupById(groupId);
-                
-                if (physicalId == group.getGroupMasterNode()) {
-                    int globalThreadId = group.getGlobalThreadId(requesterThreadId);
-                    int masterPhysicalId = nodeData.getPhysicalIdByThreadId().get(globalThreadId);
-                    SocketChannel requesterSocket = InternalPCJ.getNodeData()
-                            .getSocketChannelByPhysicalId().get(masterPhysicalId);
+        childrenSet.remove(physicalId);
 
-                    MessageValueBroadcastResponse messageResponse
-                            = new MessageValueBroadcastResponse(groupId, requestNum, requesterThreadId);
+        if (childrenSet.isEmpty()) {
+            NodeData nodeData = InternalPCJ.getNodeData();
+            InternalCommonGroup group = nodeData.getGroupById(groupId);
 
-                    InternalPCJ.getNetworker().send(requesterSocket, messageResponse);
-                } else {
-                    int parentId = group.getParentNode();
-                    SocketChannel parentSocket = InternalPCJ.getNodeData()
-                            .getSocketChannelByPhysicalId().get(parentId);
+            if (physicalId == group.getGroupMasterNode()) {
+                int globalThreadId = group.getGlobalThreadId(requesterThreadId);
+                int masterPhysicalId = nodeData.getPhysicalIdByThreadId().get(globalThreadId);
+                SocketChannel requesterSocket = InternalPCJ.getNodeData()
+                        .getSocketChannelByPhysicalId().get(masterPhysicalId);
 
-                    MessageValueBroadcastInform messageInform
-                            = new MessageValueBroadcastInform(groupId, requestNum, requesterThreadId, nodeData.getPhysicalId());
+                MessageValueBroadcastResponse messageResponse
+                        = new MessageValueBroadcastResponse(groupId, requestNum, requesterThreadId, exceptions);
 
-                    InternalPCJ.getNetworker().send(parentSocket, messageInform);
-                }
+                InternalPCJ.getNetworker().send(requesterSocket, messageResponse);
+            } else {
+                int parentId = group.getParentNode();
+                SocketChannel parentSocket = InternalPCJ.getNodeData()
+                        .getSocketChannelByPhysicalId().get(parentId);
+
+                MessageValueBroadcastInform messageInform
+                        = new MessageValueBroadcastInform(groupId, requestNum, requesterThreadId,
+                                nodeData.getPhysicalId(), exceptions);
+
+                InternalPCJ.getNetworker().send(parentSocket, messageInform);
             }
+        }
     }
 }

@@ -7,7 +7,6 @@ package org.pcj.internal.message;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
-import org.pcj.PcjRuntimeException;
 import org.pcj.internal.InternalGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
@@ -71,12 +70,12 @@ class MessageValuePutResponse extends Message {
         try {
             if (exceptionOccurs) {
                 exception = (Exception) in.readObject();
-                putVariable.setException(exception);
+                putVariable.signalException(exception);
             } else {
-                putVariable.signalAll();
+                putVariable.signalDone();
             }
         } catch (Exception ex) {
-            putVariable.setException(new PcjRuntimeException(ex));
+            putVariable.signalException(ex);
         }
     }
 

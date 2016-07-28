@@ -54,6 +54,6 @@ final public class MessageGroupBarrierGo extends Message {
                 .forEach(socket -> InternalPCJ.getNetworker().send(socket, this));
 
         BarrierState barrier = group.removeBarrierState(round);
-        barrier.signalAll();
+        barrier.signalDone();
     }
 }

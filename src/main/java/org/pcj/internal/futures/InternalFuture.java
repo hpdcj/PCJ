@@ -28,7 +28,7 @@ public class InternalFuture<T> {
         }
     }
 
-    protected void signalAll() {
+    protected void signalDone() {
         synchronized (lock) {
             signaled = true;
             lock.notifyAll();

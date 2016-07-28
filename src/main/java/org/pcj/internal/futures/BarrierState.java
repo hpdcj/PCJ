@@ -49,8 +49,8 @@ public class BarrierState extends InternalFuture<Void> implements PcjFuture<Void
     }
 
     @Override
-    public void signalAll() {
-        super.signalAll();
+    public void signalDone() {
+        super.signalDone();
     }
 
     @Override
