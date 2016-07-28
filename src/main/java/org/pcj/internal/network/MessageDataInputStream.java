@@ -3,7 +3,6 @@
  */
 package org.pcj.internal.network;
 
-import org.pcj.internal.LargeByteArray;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -166,24 +165,5 @@ public class MessageDataInputStream extends InputStream {
             objectInputStream = new ObjectInputStream(input);
         }
         return (Serializable) objectInputStream.readObject();
-    }
-
-    public LargeByteArray readLargeByteArray() throws IOException {
-        LargeByteArray clonedData = new LargeByteArray();
-        
-        long length = readLong();
-        
-        byte[] bytes;
-        for (long left = length; left > 0; left -= bytes.length) {
-            int len = (int) Math.min((long) Integer.MAX_VALUE, left);
-            bytes = new byte[len];
-            int offset = 0;
-            while (offset < len) {
-                offset += input.read(bytes, offset, len - offset);
-            }
-            clonedData.addBytes(bytes);
-        }
-        
-        return clonedData;
     }
 }

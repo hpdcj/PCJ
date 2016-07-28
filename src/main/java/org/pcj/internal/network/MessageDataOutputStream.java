@@ -5,7 +5,6 @@
  */
 package org.pcj.internal.network;
 
-import org.pcj.internal.LargeByteArray;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
@@ -156,17 +155,5 @@ public class MessageDataOutputStream extends OutputStream {
             objectOutputStream = new ObjectOutputStream(output);
         }
         objectOutputStream.writeObject(object);
-    }
-
-    public void writeLargeByteArray(LargeByteArray clonedData) throws IOException {
-        long length = clonedData.getLength();
-        
-        writeLong(length);
-        
-        long written = 0;
-        for (byte[] bytesArray : clonedData.getBytesList()) {
-            int len = (int) Math.min(bytesArray.length, length - written);
-            write(bytesArray, 0, len);
-        }
     }
 }

@@ -56,6 +56,7 @@ final public class MessageValueBroadcastInform extends Message {
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
         requestNum = in.readInt();

@@ -7,16 +7,13 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.nio.channels.SocketChannel;
 import java.util.List;
-import java.util.logging.Level;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.InternalStorage;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.PcjThread;
-import static org.pcj.internal.message.Message.LOGGER;
-import org.pcj.internal.LargeByteArray;
 import org.pcj.internal.futures.BroadcastState;
-import org.pcj.internal.network.LargeByteArrayInputStream;
+import org.pcj.internal.network.CloneInputStream;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
@@ -32,14 +29,14 @@ final public class MessageValueBroadcastBytes extends Message {
     private int requesterThreadId;
     private String storageName;
     private String name;
-    private LargeByteArray clonedData;
+    private CloneInputStream clonedData;
 
     public MessageValueBroadcastBytes() {
         super(MessageType.VALUE_BROADCAST_BYTES);
     }
 
     public MessageValueBroadcastBytes(int requestNum, int groupId, int requesterThreadId,
-            String storageName, String name, LargeByteArray clonedData) {
+            String storageName, String name, CloneInputStream clonedData) {
         this();
 
         this.requestNum = requestNum;
@@ -47,6 +44,7 @@ final public class MessageValueBroadcastBytes extends Message {
         this.requesterThreadId = requesterThreadId;
         this.storageName = storageName;
         this.name = name;
+        
         this.clonedData = clonedData;
     }
 
@@ -57,7 +55,8 @@ final public class MessageValueBroadcastBytes extends Message {
         out.writeInt(requesterThreadId);
         out.writeString(storageName);
         out.writeString(name);
-        out.writeLargeByteArray(clonedData);
+
+        clonedData.writeInto(out);
     }
 
     @Override
@@ -68,7 +67,9 @@ final public class MessageValueBroadcastBytes extends Message {
 
         storageName = in.readString();
         name = in.readString();
-        clonedData = in.readLargeByteArray();
+        
+        clonedData = new CloneInputStream();
+        clonedData.clone(in);
 
         NodeData nodeData = InternalPCJ.getNodeData();
         InternalCommonGroup group = nodeData.getGroupById(groupId);
@@ -92,7 +93,8 @@ final public class MessageValueBroadcastBytes extends Message {
                 PcjThread pcjThread = nodeData.getPcjThreads().get(globalThreadId);
                 InternalStorage storage = (InternalStorage) pcjThread.getThreadData().getStorage();
 
-                Object newValue = new ObjectInputStream(new LargeByteArrayInputStream(clonedData)).readObject();
+                clonedData.reset();
+                Object newValue = new ObjectInputStream(clonedData).readObject();
 
                 storage.put0(storageName, name, newValue);
             } catch (Exception ex) {

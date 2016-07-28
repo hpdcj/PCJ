@@ -119,7 +119,7 @@ public class MessageBytesInputStream {
                 } else if (byteBuffer.hasRemaining() == false) {
                     queue.poll();
                 } else {
-                    return ((int) byteBuffer.get()) & 0xFF;
+                    return byteBuffer.get() & 0xFF;
                 }
             }
         }

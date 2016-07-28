@@ -85,7 +85,7 @@ public class EasyTest implements StartPoint {
             }
             PCJ.barrier();
         }
-//        int n = 4351;
+
         int n = 8192;
 //        int n = 4096;
 
@@ -114,7 +114,7 @@ public class EasyTest implements StartPoint {
         for (int i = 0; i < ntimes; i++) {
             if (PCJ.myId() == 0) {
                 try {
-                    PCJ.broadcast(SharedEnum.b, new int[0]);
+                    PCJ.broadcast(SharedEnum.b, b);
                 } catch (Exception ex) {
                     System.out.println(ex.getMessage());
                 }

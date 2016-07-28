@@ -7,16 +7,13 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.nio.channels.SocketChannel;
 import java.util.List;
-import java.util.logging.Level;
-import org.pcj.internal.Configuration;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.InternalStorage;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.PcjThread;
-import org.pcj.internal.LargeByteArray;
+import org.pcj.internal.network.CloneInputStream;
 import org.pcj.internal.futures.BroadcastState;
-import org.pcj.internal.network.LargeByteArrayInputStream;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
@@ -27,7 +24,6 @@ import org.pcj.internal.network.MessageDataOutputStream;
  */
 final public class MessageValueBroadcastRequest extends Message {
     
-    private static final int BYTES_CHUNK_SIZE = Configuration.CHUNK_SIZE;
     private int groupId;
     private int requestNum;
     private int requesterThreadId;
@@ -69,7 +65,8 @@ final public class MessageValueBroadcastRequest extends Message {
         storageName = in.readString();
         name = in.readString();
         
-        LargeByteArray clonedData = readTillEnd(in);
+        CloneInputStream clonedData = new CloneInputStream();
+        clonedData.clone(in);
         
         NodeData nodeData = InternalPCJ.getNodeData();
         InternalCommonGroup group = nodeData.getGroupById(groupId);
@@ -93,7 +90,8 @@ final public class MessageValueBroadcastRequest extends Message {
                 PcjThread pcjThread = nodeData.getPcjThreads().get(globalThreadId);
                 InternalStorage storage = (InternalStorage) pcjThread.getThreadData().getStorage();
                 
-                newValue = new ObjectInputStream(new LargeByteArrayInputStream(clonedData)).readObject();
+                clonedData.reset();
+                newValue = new ObjectInputStream(clonedData).readObject();
                 
                 storage.put0(storageName, name, newValue);
             } catch (Exception ex) {
@@ -104,30 +102,6 @@ final public class MessageValueBroadcastRequest extends Message {
         broadcastState.processPhysical(nodeData.getPhysicalId());
     }
     
-    private LargeByteArray readTillEnd(MessageDataInputStream in) throws IOException {
-        LargeByteArray largeByteArray = new LargeByteArray();
-        
-        byte[] bytes = new byte[BYTES_CHUNK_SIZE];
-        int b;
-        int index = 0;
-        long l = 0;
-        while ((b = in.read()) != -1) {
-            bytes[index++] = (byte) b;
-            ++l;
-            if (index == bytes.length) {
-                largeByteArray.addBytes(bytes);
-                
-                bytes = new byte[BYTES_CHUNK_SIZE];
-                index = 0;
-            }
-        }
-        if (index > 0) {
-            byte[] dest = new byte[index];
-            System.arraycopy(bytes, 0, dest, 0, index);
-            largeByteArray.addBytes(dest);
-        }
-        
-        return largeByteArray;
-    }
+   
     
 }
