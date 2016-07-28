@@ -68,9 +68,8 @@ final public class MessageValueBroadcastBytes extends Message {
         storageName = in.readString();
         name = in.readString();
         
-        clonedData = new CloneInputStream();
-        clonedData.clone(in);
-
+        clonedData = CloneInputStream.readFrom(in);
+        
         NodeData nodeData = InternalPCJ.getNodeData();
         InternalCommonGroup group = nodeData.getGroupById(groupId);
 

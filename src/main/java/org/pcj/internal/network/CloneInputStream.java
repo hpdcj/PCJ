@@ -20,131 +20,98 @@ import org.pcj.internal.Configuration;
 public class CloneInputStream extends InputStream {
 
     private static final int BYTES_CHUNK_SIZE = Configuration.CHUNK_SIZE;
-    private static final ByteArray EMPTY = new ByteArray(0);
-    private final List<ByteArray> bytesList;
-    private Iterator<ByteArray> iterator;
-    private ByteArray currentByteArray;
+    private static final byte[] EMPTY = new byte[0];
+
+    private final List<byte[]> bytesList;
+    private Iterator<byte[]> iterator;
+    private byte[] currentByteArray;
+    private int currentIndex;
     private long length;
 
-    public CloneInputStream() {
+    private CloneInputStream() {
         bytesList = new ArrayList<>();
         length = 0;
     }
 
-    public void clone(InputStream in) throws IOException {
-        ByteArray bytes = new ByteArray(BYTES_CHUNK_SIZE);
-        int b;
-        while ((b = in.read()) != -1) {
-            bytes.put((byte) b);
-            length++;
-            if (bytes.hasRemaining() == false) {
-                bytesList.add(bytes);
+    public static CloneInputStream clone(InputStream in) throws IOException {
+        CloneInputStream cloneInputStream = new CloneInputStream();
 
-                bytes = new ByteArray(BYTES_CHUNK_SIZE);
+        byte[] bytes = new byte[BYTES_CHUNK_SIZE];
+        int b;
+        int index = 0;
+        while ((b = in.read()) != -1) {
+            bytes[index++] = (byte) b;
+            if (index == bytes.length) {
+                cloneInputStream.addByteArray(bytes);
+
+                bytes = new byte[BYTES_CHUNK_SIZE];
+                index = 0;
             }
         }
 
-        if (bytes.isEmpty() == false) {
-            bytes.truncate();
-            bytesList.add(bytes);
+        if (index > 0) {
+            byte[] dest = new byte[index];
+            System.arraycopy(bytes, 0, dest, 0, index);
+            cloneInputStream.addByteArray(dest);
         }
 
-        reset();
+        return cloneInputStream;
+    }
+
+    private void addByteArray(byte[] byteArray) {
+        bytesList.add(byteArray);
+        length += byteArray.length;
     }
 
     @Override
     public void reset() {
         iterator = bytesList.iterator();
         currentByteArray = EMPTY;
+        currentIndex = 0;
     }
 
     @Override
     public int read() {
-        while (currentByteArray.hasRemaining() == false) {
+        while (currentIndex == currentByteArray.length) {
             if (iterator.hasNext()) {
                 currentByteArray = iterator.next();
-                currentByteArray.reset();
+                currentIndex = 0;
             } else {
                 return -1;
             }
         }
-        return currentByteArray.get() & 0xFF;
+        return currentByteArray[currentIndex++] & 0xFF;
     }
-//
-//    public static CloneInputStream readFrom(MessageDataInputStream in) throws IOException {
-//        CloneInputStream cloneInputStream= new CloneInputStream();
-//         long length = in.readLong();
-//        
-//        byte[] bytes;
-//        for (long left = length; left > 0; left -= bytes.length) {
-//            int len = (int) Math.min((long) Integer.MAX_VALUE, left);
-//            bytes = new byte[len];
-//            int offset = 0;
-//            while (offset < len) {
-//                offset += input.read(bytes, offset, len - offset);
-//            }
-//            clonedData.addBytes(bytes);
-//        }
-//    }
-    
+
+    public long getLength() {
+        return length;
+    }
+
+    public static CloneInputStream readFrom(MessageDataInputStream in) throws IOException {
+        CloneInputStream cloneInputStream = new CloneInputStream();
+        long length = in.readLong();
+
+        byte[] bytes;
+        for (long left = length; left > 0; left -= bytes.length) {
+            int len = (int) Math.min((long) Integer.MAX_VALUE, left);
+            bytes = new byte[len];
+            int offset = 0;
+            while (offset < len) {
+                offset += in.read(bytes, offset, len - offset);
+            }
+            cloneInputStream.addByteArray(bytes);
+        }
+
+        return cloneInputStream;
+    }
+
     public void writeInto(MessageDataOutputStream out) throws IOException {
-//        out.writeLong(length);
+        out.writeLong(length);
 
         long written = 0;
-        for (ByteArray byteArray : bytesList) {
-            byte[] bytesArray = byteArray.getBytes();
+        for (byte[] bytesArray : bytesList) {
             int len = (int) Math.min(bytesArray.length, length - written);
             out.write(bytesArray, 0, len);
-        }
-    }
-
-    private static class ByteArray {
-
-        private byte[] bytes;
-        private int index;
-
-        public ByteArray(byte[] bytes) {
-            this.bytes = bytes;
-            index = 0;
-        }
-
-        public ByteArray(int length) {
-            bytes = new byte[length];
-            index = 0;
-        }
-
-        public boolean hasRemaining() {
-            return index < bytes.length;
-        }
-
-        public boolean isEmpty() {
-            return index == 0;
-        }
-
-        public byte get() {
-            return bytes[index++];
-        }
-
-        public void put(byte b) {
-            bytes[index++] = b;
-        }
-
-        public void reset() {
-            index = 0;
-        }
-
-        public int getLength() {
-            return index;
-        }
-
-        private void truncate() {
-            byte[] dest = new byte[index];
-            System.arraycopy(bytes, 0, dest, 0, index);
-            bytes = dest;
-        }
-
-        public byte[] getBytes() {
-            return bytes;
         }
     }
 }

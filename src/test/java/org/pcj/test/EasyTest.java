@@ -35,8 +35,8 @@ public class EasyTest implements StartPoint {
     }
 
     public static void main(String[] args) throws InterruptedException {
-//        Level level = Level.INFO;
-        Level level = Level.FINEST;
+        Level level = Level.INFO;
+//        Level level = Level.FINEST;
         Logger logger = Logger.getLogger("");
         Arrays.stream(logger.getHandlers()).forEach(handler -> handler.setLevel(level));
         logger.setLevel(level);
@@ -86,7 +86,7 @@ public class EasyTest implements StartPoint {
             PCJ.barrier();
         }
 
-        int n = 8192;
+        int n = 4*8*8192;
 //        int n = 4096;
 
 //        if (PCJ.myId() == 1) {

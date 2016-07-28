@@ -115,9 +115,13 @@ public abstract class InternalPCJ {
             long nanoTime = System.nanoTime();
             /* Starting execution */
             if (isCurrentJvmNode0) {
-                LOGGER.log(Level.INFO, "Starting {0} with {1,number,#} {1,choice,1#thread|1<threads}...",
+                LOGGER.log(Level.INFO, "Starting {0} with {1,number,#}"
+                        + " {1,choice,1#thread|1<threads}"
+                        + " (on {2,number,#} {2,choice,1#node|1<nodes})...",
                         new Object[]{startPointClass.getName(),
-                            nodeData.getGroupById(InternalCommonGroup.GLOBAL_GROUP_ID).threadCount()});
+                            nodeData.getGroupById(InternalCommonGroup.GLOBAL_GROUP_ID).threadCount(),
+                            nodeData.getTotalNodeCount(),
+                        });
             }
 
 
@@ -137,11 +141,14 @@ public abstract class InternalPCJ {
                 long m = (timer / 60) % 60;
                 long s = (timer % 60);
 
-                LOGGER.log(Level.INFO, "Completed {0} with {1,number,#} {1,choice,1#thread|1<threads}"
-                        + " after {2,number,#}h {3,number,#}m {4,number,#}s.",
+                LOGGER.log(Level.INFO, "Completed {0}"
+                        + " with {1,number,#} {1,choice,1#thread|1<threads}"
+                        + " (on {2,number,#} {2,choice,1#node|1<nodes})"
+                        + " after {3,number,#}h {4,number,#}m {5,number,#}s.",
                         new Object[]{
                             startPointClass.getName(),
                             nodeData.getGroupById(InternalCommonGroup.GLOBAL_GROUP_ID).threadCount(),
+                            nodeData.getTotalNodeCount(),
                             h, m, s
                         });
             }

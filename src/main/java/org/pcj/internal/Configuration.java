@@ -62,7 +62,7 @@ final public class Configuration {
         try {
             return Integer.parseInt(System.getProperty(name, String.valueOf(defaultValue)));
         } catch (NumberFormatException ex) {
-            ex.printStackTrace(System.err);
+            LOGGER.log(Level.CONFIG, "Unable to parse to int: " + name, ex);
         }
         return defaultValue;
     }
@@ -71,7 +71,7 @@ final public class Configuration {
         try {
             return Short.parseShort(System.getProperty(name, String.valueOf(defaultValue)));
         } catch (NumberFormatException ex) {
-            ex.printStackTrace(System.err);
+            LOGGER.log(Level.CONFIG, "Unable to parse to short: " + name, ex);
         }
         return defaultValue;
     }
