@@ -41,7 +41,7 @@ abstract public class Message implements Serializable {
 
     @Override
     public String toString() {
-        return "Message{Type:" + type + "}";
+        return type.toString();
     }
 
     public abstract void write(MessageDataOutputStream out) throws IOException;

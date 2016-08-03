@@ -8,7 +8,6 @@ import java.net.InetAddress;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -19,7 +18,6 @@ import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.Networker;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.NodeInfo;
-import org.pcj.internal.network.LoopbackSocketChannel;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
@@ -78,13 +76,13 @@ final public class MessageHelloInform extends Message {
         nodeData.setTotalNodeCount(nodeInfoByPhysicalId.size());
 
         List<Integer> keys = new ArrayList<>(nodeInfoByPhysicalId.keySet());
-        Collections.sort(keys);
+        keys.sort(Integer::compare);
         for (int currentPhysicalId : keys) {
             NodeInfo nodeInfo = nodeInfoByPhysicalId.get(currentPhysicalId);
             Arrays.stream(nodeInfo.getThreadIds())
                     .forEach(threadId -> {
-                        nodeData.getPhysicalIdByThreadId().put(threadId, currentPhysicalId);
-                        globalGroup.addThread(currentPhysicalId, threadId, threadId);
+                        nodeData.setPhysicalId(threadId, currentPhysicalId);
+                        globalGroup.addThread(threadId, threadId);
                     });
 
             if (0 < currentPhysicalId && currentPhysicalId < physicalId) {
@@ -95,7 +93,7 @@ final public class MessageHelloInform extends Message {
             }
         }
 
-        nodeData.getSocketChannelByPhysicalId().put(physicalId, LoopbackSocketChannel.getInstance());
+        nodeData.getSocketChannelByPhysicalId().put(physicalId, InternalPCJ.getLoopbackSocketChannel());
 
         if (nodeData.getSocketChannelByPhysicalId().size() == nodeData.getTotalNodeCount()) {
             InternalPCJ.getNetworker().send(InternalPCJ.getNodeData().getNode0Socket(),

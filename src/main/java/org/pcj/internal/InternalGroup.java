@@ -68,7 +68,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         getVariableMap.put(requestNum, getVariable);
 
         int globalThreadId = super.getGlobalThreadId(threadId);
-        int physicalId = InternalPCJ.getNodeData().getPhysicalIdByThreadId().get(globalThreadId);
+        int physicalId = InternalPCJ.getNodeData().getPhysicalId(globalThreadId);
         SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalId);
 
         MessageValueGetRequest message
@@ -92,7 +92,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         putVariableMap.put(requestNum, putVariable);
 
         int globalThreadId = super.getGlobalThreadId(threadId);
-        int physicalId = InternalPCJ.getNodeData().getPhysicalIdByThreadId().get(globalThreadId);
+        int physicalId = InternalPCJ.getNodeData().getPhysicalId(globalThreadId);
         SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalId);
 
         MessageValuePutRequest message

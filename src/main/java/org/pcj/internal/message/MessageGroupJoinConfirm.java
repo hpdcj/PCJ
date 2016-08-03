@@ -7,6 +7,9 @@ package org.pcj.internal.message;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
+import org.pcj.internal.InternalCommonGroup;
+import org.pcj.internal.InternalPCJ;
+import org.pcj.internal.futures.GroupJoinState;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
@@ -14,36 +17,45 @@ import org.pcj.internal.network.MessageDataOutputStream;
  *
  * @author faramir
  */
-public class MessageGroupJoinAcknowledge extends Message {
+public class MessageGroupJoinConfirm extends Message {
 
     private int requestNum;
-    private String name;
     private int groupId;
     private int physicalId;
+    private int globalThreadId;
 
-    public MessageGroupJoinAcknowledge() {
-        super(MessageType.GROUP_JOIN_ACKNOWLEDGE);
+    public MessageGroupJoinConfirm() {
+        super(MessageType.GROUP_JOIN_CONFIRM);
     }
 
-    public MessageGroupJoinAcknowledge(int requestNum, String name, int groupId, int physicalId) {
+    public MessageGroupJoinConfirm(int requestNum, int groupId, int globalThreadId, int physicalId) {
         this();
 
         this.requestNum = requestNum;
-        this.name = name;
         this.groupId = groupId;
+        this.globalThreadId = globalThreadId;
         this.physicalId = physicalId;
     }
 
     @Override
     public void write(MessageDataOutputStream out) throws IOException {
         out.writeInt(requestNum);
-        out.writeString(name);
         out.writeInt(groupId);
+        out.writeInt(globalThreadId);
         out.writeInt(physicalId);
     }
 
     @Override
     public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
+        requestNum = in.readInt();
+        groupId = in.readInt();
+        globalThreadId = in.readInt();
+        physicalId = in.readInt();
+
+        InternalCommonGroup commonGroup = InternalPCJ.getNodeData().getGroupById(groupId);
+
+        GroupJoinState groupJoinState = commonGroup.getGroupJoinState(requestNum, globalThreadId);
+        groupJoinState.processPhysical(physicalId);
     }
 
 }

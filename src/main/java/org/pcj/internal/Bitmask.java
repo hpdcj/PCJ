@@ -68,6 +68,12 @@ final public class Bitmask {
         ensureLength(length);
     }
 
+    synchronized public void enlarge(int length) {
+        if (this.length < length) {
+            ensureLength(length);
+        }
+    }
+
     /**
      *
      * @param position place to set (0..length-1)

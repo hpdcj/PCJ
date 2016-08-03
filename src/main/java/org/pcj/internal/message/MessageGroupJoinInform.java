@@ -7,6 +7,15 @@ package org.pcj.internal.message;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import org.pcj.internal.InternalCommonGroup;
+import org.pcj.internal.InternalPCJ;
+import org.pcj.internal.NodeData;
+import org.pcj.internal.futures.GroupJoinState;
+import static org.pcj.internal.message.Message.LOGGER;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
@@ -17,36 +26,67 @@ import org.pcj.internal.network.MessageDataOutputStream;
 public class MessageGroupJoinInform extends Message {
 
     private int requestNum;
-    private String name;
+    private String groupName;
     private int groupId;
     private int globalThreadId;
-    private int groupThreadId;
+    private Map<Integer, Integer> threadsMapping;
 
     public MessageGroupJoinInform() {
         super(MessageType.GROUP_JOIN_INFORM);
     }
 
-    public MessageGroupJoinInform(int requestNum, String name, int groupId, int globalThreadId, int groupThreadId) {
+    public MessageGroupJoinInform(int requestNum, int groupId, int globalThreadId,
+            Map<Integer, Integer> threadsMapping) {
         this();
 
         this.requestNum = requestNum;
-        this.name = name;
         this.groupId = groupId;
         this.globalThreadId = globalThreadId;
-        this.groupThreadId = groupThreadId;
+        this.threadsMapping = threadsMapping;
     }
 
     @Override
     public void write(MessageDataOutputStream out) throws IOException {
         out.writeInt(requestNum);
-        out.writeString(name);
         out.writeInt(groupId);
         out.writeInt(globalThreadId);
-        out.writeInt(groupThreadId);
+        out.writeObject(threadsMapping);
     }
 
     @Override
     public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
-    }
+        requestNum = in.readInt();
+        groupId = in.readInt();
+        globalThreadId = in.readInt();
 
+        try {
+            Object obj = in.readObject();
+            if (obj instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<Integer, Integer> map = (Map<Integer, Integer>) obj;
+                threadsMapping = map;
+            }
+        } catch (ClassNotFoundException ex) {
+            LOGGER.log(Level.SEVERE, "Unable to read threadsMapping", ex);
+            throw new RuntimeException(ex);
+        }
+
+        NodeData nodeData = InternalPCJ.getNodeData();
+        InternalCommonGroup commonGroup = nodeData.getGroupById(groupId);
+
+        List<Integer> keys = new ArrayList<>(threadsMapping.keySet());
+        keys.sort(Integer::compare);
+        for (int groupThreadId : keys) {
+            int globalId = threadsMapping.get(groupThreadId);
+
+            commonGroup.addThread(globalId, groupThreadId);
+        }
+
+        commonGroup.getChildrenNodes().stream()
+                .map(nodeData.getSocketChannelByPhysicalId()::get)
+                .forEach(socket -> InternalPCJ.getNetworker().send(socket, this));
+
+        GroupJoinState groupJoinState = commonGroup.getGroupJoinState(requestNum, globalThreadId);
+        groupJoinState.processPhysical(nodeData.getPhysicalId());
+    }
 }

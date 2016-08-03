@@ -15,6 +15,8 @@ public enum MessageType {
 
     /**
      * @see MessageHello
+     *//**
+     * @see MessageHello
      */
     HELLO((byte) 1) {
         @Override
@@ -124,10 +126,10 @@ public enum MessageType {
             return new MessageGroupJoinInform();
         }
     },
-    GROUP_JOIN_ACKNOWLEDGE((byte) 17) {
+    GROUP_JOIN_CONFIRM((byte) 17) {
         @Override
-        public MessageGroupJoinAcknowledge create() {
-            return new MessageGroupJoinAcknowledge();
+        public MessageGroupJoinConfirm create() {
+            return new MessageGroupJoinConfirm();
         }
     },
     VALUE_GET_REQUEST((byte) 20) {

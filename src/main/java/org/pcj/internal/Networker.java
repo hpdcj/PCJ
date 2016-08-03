@@ -114,7 +114,8 @@ final public class Networker {
                     try {
                         message.execute(socket, loopbackMessageBytesStream.getMessageData());
                     } catch (Throwable t) {
-                        LOGGER.log(Level.SEVERE, "Exception while processing message.", t);
+                        LOGGER.log(Level.SEVERE, "Exception while locally processing message " + message
+                                + " by node(" + InternalPCJ.getNodeData().getPhysicalId() + ").", t);
                     }
                 });
             } else {
@@ -135,7 +136,8 @@ final public class Networker {
             try {
                 message.execute(socket, messageBytes.getMessageData());
             } catch (Throwable t) {
-                LOGGER.log(Level.SEVERE, "Exception while processing message.", t);
+                LOGGER.log(Level.SEVERE, "Exception while processing message " + message
+                        + " by node(" + InternalPCJ.getNodeData().getPhysicalId() + ").", t);
             }
         });
     }

@@ -48,9 +48,9 @@ final public class MessageGroupBarrierGo extends Message {
         NodeData nodeData = InternalPCJ.getNodeData();
 
         InternalCommonGroup group = nodeData.getGroupById(groupId);
-        List<Integer> children = group.getChildrenNodes();
 
-        children.stream().map(nodeData.getSocketChannelByPhysicalId()::get)
+        group.getChildrenNodes().stream()
+                .map(nodeData.getSocketChannelByPhysicalId()::get)
                 .forEach(socket -> InternalPCJ.getNetworker().send(socket, this));
 
         BarrierState barrier = group.removeBarrierState(barrierRound);

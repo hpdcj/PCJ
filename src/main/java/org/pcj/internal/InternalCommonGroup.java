@@ -4,14 +4,18 @@
 package org.pcj.internal;
 
 import java.nio.channels.SocketChannel;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.internal.futures.BarrierState;
 import org.pcj.internal.futures.BroadcastState;
+import org.pcj.internal.futures.GroupJoinState;
 import org.pcj.internal.message.MessageGroupBarrierGo;
 import org.pcj.internal.message.MessageGroupBarrierWaiting;
 
@@ -29,13 +33,14 @@ public class InternalCommonGroup {
     private final ConcurrentMap<Integer, Integer> threadsMapping; // groupThreadId, globalThreadId
     private final int groupId;
     private final String groupName;
-    private final List<Integer> localIds;
-    private final List<Integer> physicalIds;
+    private final CopyOnWriteArrayList<Integer> localIds;
+    private final CopyOnWriteArrayList<Integer> physicalIds;
 //    final private Bitmask localBarrierBitmask;
     private final Bitmask localBitmask;
 //    private final ConcurrentMap<Integer, Bitmask> physicalBitmaskMap;
     private final ConcurrentMap<Integer, BarrierState> barrierStateMap;
     private final ConcurrentMap<List<Integer>, BroadcastState> broadcastStateMap;
+    private final ConcurrentMap<List<Integer>, GroupJoinState> groupJoinStateMap;
 //    final private MessageGroupBarrierWaiting groupBarrierWaitingMessage;
 //    final private ConcurrentMap<Integer, BitMask> joinBitmaskMap;
     final private AtomicInteger threadsCounter;
@@ -70,6 +75,7 @@ public class InternalCommonGroup {
         this.barrierStateMap = g.barrierStateMap;
 
         this.broadcastStateMap = g.broadcastStateMap;
+        this.groupJoinStateMap = g.groupJoinStateMap;
 
 //        this.groupBarrierWaitingMessage = g.groupBarrierWaitingMessage;
 //        this.joinBitmaskMap = g.joinBitmaskMap;
@@ -96,6 +102,7 @@ public class InternalCommonGroup {
         localBitmask = new Bitmask();
         barrierStateMap = new ConcurrentHashMap<>();
         broadcastStateMap = new ConcurrentHashMap<>();
+        groupJoinStateMap = new ConcurrentHashMap<>();
 
 //        groupBarrierWaitingMessage = new MessageGroupBarrierWaiting(groupId, InternalPCJ.getNodeData().getPhysicalId());
 //        this.joinBitmaskMap = new ConcurrentHashMap<>();
@@ -103,8 +110,8 @@ public class InternalCommonGroup {
 //        syncMessage = new MessageSyncWait();
 //        syncMessage.setGroupId(groupId);
 //
-        localIds = new ArrayList<>();
-        physicalIds = new ArrayList<>();
+        localIds = new CopyOnWriteArrayList<>();
+        physicalIds = new CopyOnWriteArrayList<>();
 
         threadsCounter = new AtomicInteger(0);
 
@@ -147,54 +154,76 @@ public class InternalCommonGroup {
         return localIds.stream().mapToInt(Integer::intValue).toArray();
     }
 
-    final public int getGlobalThreadId(int groupThreadId) {
+    final public int getGlobalThreadId(int groupThreadId) throws NoSuchElementException {
         Integer globalThreadId = threadsMapping.get(groupThreadId);
         if (globalThreadId == null) {
-            throw new IllegalArgumentException("Invail group threadId: " + groupThreadId);
+            throw new NoSuchElementException("Group threadId not found: " + groupThreadId);
         }
         return globalThreadId;
     }
 
-    final public void addThread(int physicalId, int groupThreadId, int globalThreadId) {
-        int currentPhysicalId = InternalPCJ.getNodeData().getPhysicalId();
-
-        if (threadsMapping.put(groupThreadId, globalThreadId) != null) {
-            return;
-        }
-        
-        synchronized (physicalIds) {
-            if (physicalIds.contains(physicalId) == false) {
-                physicalIds.add(physicalId);
-
-                int index = physicalIds.size() - 1;
-                if (index > 0) {
-                    if (physicalId == currentPhysicalId) {
-                        physicalTree.setParentNode((index - 1) / 2);
-                    }
-                    if (physicalIds.get((index - 1) / 2) == currentPhysicalId) {
-                        physicalTree.getChildrenNodes().add(physicalId);
-                    }
+    final public int getGroupThreadId(int globalThreadId) throws NoSuchElementException {
+        if (threadsMapping.containsValue(globalThreadId)) {
+            for (Map.Entry<Integer, Integer> entry : threadsMapping.entrySet()) {
+                if (entry.getValue() == globalThreadId) {
+                    return entry.getKey();
                 }
             }
         }
+        throw new NoSuchElementException("Global threadId not found: " + globalThreadId);
+    }
 
-        if (physicalId == currentPhysicalId) {
-            synchronized (localIds) {
-                localIds.add(groupThreadId);
-                if (groupThreadId + 1 > localBitmask.getSize()) {
-                    localBitmask.setSize(groupThreadId + 1);
+    final public int addNewThread(int globalThreadId) {
+        int physicalId = InternalPCJ.getNodeData().getPhysicalId(globalThreadId);
+        int groupThreadId;
+        do {
+            groupThreadId = threadsCounter.getAndIncrement();
+        } while (threadsMapping.putIfAbsent(groupThreadId, globalThreadId) != null);
+
+        updateCommunicationTree(physicalId);
+        updateLocalBitmask(physicalId, groupThreadId);
+
+        return groupThreadId;
+    }
+
+    final public void addThread(int globalThreadId, int groupThreadId) {
+        int physicalId = InternalPCJ.getNodeData().getPhysicalId(globalThreadId);
+        if (threadsMapping.putIfAbsent(groupThreadId, globalThreadId) != null) {
+            return;
+        }
+
+        updateCommunicationTree(physicalId);
+        updateLocalBitmask(physicalId, groupThreadId);
+
+    }
+
+    private void updateCommunicationTree(int physicalId) {
+        int currentPhysicalId = InternalPCJ.getNodeData().getPhysicalId();
+
+        if (physicalIds.addIfAbsent(physicalId)) {
+            int index = physicalIds.indexOf(physicalId);
+            if (index > 0) {
+                if (physicalId == currentPhysicalId) {
+                    physicalTree.setParentNode(physicalIds.get((index - 1) / 2));
                 }
-                localBitmask.set(groupThreadId);
+                if (physicalIds.get((index - 1) / 2) == currentPhysicalId) {
+                    physicalTree.getChildrenNodes().add(physicalId);
+                }
             }
         }
     }
 
-    final public int getNextGroupThreadId() {
-        int groupThreadId = threadsCounter.getAndIncrement();
-        while (threadsMapping.containsKey(groupThreadId)) {
-            groupThreadId = threadsCounter.getAndIncrement();
+    private void updateLocalBitmask(int physicalId, int groupThreadId) {
+        int currentPhysicalId = InternalPCJ.getNodeData().getPhysicalId();
+        if (physicalId == currentPhysicalId) {
+            localIds.add(groupThreadId);
+            localBitmask.enlarge(groupThreadId + 1);
+            localBitmask.set(groupThreadId);
         }
-        return groupThreadId;
+    }
+
+    public Map<Integer, Integer> getThreadsMapping() {
+        return Collections.unmodifiableMap(threadsMapping);
     }
 
     final protected BarrierState barrier(int threadId, int barrierRound) {
@@ -249,6 +278,15 @@ public class InternalCommonGroup {
         return broadcastStateMap.remove(key);
     }
 
+    public GroupJoinState getGroupJoinState(int requestNum, int threadId) {
+        return groupJoinStateMap.computeIfAbsent(Arrays.asList(requestNum, threadId),
+                key -> new GroupJoinState(groupId, requestNum, threadId, getChildrenNodes()));
+    }
+
+    public GroupJoinState removeGroupJoinState(int requestNum, int threadId) {
+        return groupJoinStateMap.remove(Arrays.asList(requestNum, threadId));
+    }
+
     /**
      * Class for representing part of communication tree.
      *
@@ -262,7 +300,7 @@ public class InternalCommonGroup {
 
         public CommunicationTree(int rootNode) {
             this.rootNode = rootNode;
-            childrenNodes = new ArrayList<>();
+            childrenNodes = new CopyOnWriteArrayList<>();
         }
 
         public int getRootNode() {
@@ -281,5 +319,4 @@ public class InternalCommonGroup {
             return childrenNodes;
         }
     }
-
 }

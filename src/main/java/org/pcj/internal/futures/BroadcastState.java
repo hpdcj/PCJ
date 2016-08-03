@@ -6,10 +6,10 @@
 package org.pcj.internal.futures;
 
 import java.nio.channels.SocketChannel;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -18,6 +18,7 @@ import org.pcj.PcjRuntimeException;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
+import org.pcj.internal.message.Message;
 import org.pcj.internal.message.MessageValueBroadcastInform;
 import org.pcj.internal.message.MessageValueBroadcastResponse;
 
@@ -40,7 +41,7 @@ public class BroadcastState extends InternalFuture<Void> implements PcjFuture<Vo
         this.requestNum = requestNum;
         this.requesterThreadId = requesterThreadId;
 
-        this.childrenSet = ConcurrentHashMap.newKeySet(childrenNodes.size() + 1);
+        this.childrenSet = new HashSet<>(childrenNodes.size() + 1, 1.0f);
         childrenSet.add(InternalPCJ.getNodeData().getPhysicalId());
         childrenNodes.forEach(childrenSet::add);
 
@@ -97,29 +98,26 @@ public class BroadcastState extends InternalFuture<Void> implements PcjFuture<Vo
 
         if (childrenSet.isEmpty()) {
             NodeData nodeData = InternalPCJ.getNodeData();
-            InternalCommonGroup group = nodeData.getGroupById(groupId);
+            InternalCommonGroup commonGroup = nodeData.getGroupById(groupId);
 
-            if (physicalId == group.getGroupMasterNode()) {
-                int globalThreadId = group.getGlobalThreadId(requesterThreadId);
-                int masterPhysicalId = nodeData.getPhysicalIdByThreadId().get(globalThreadId);
-                SocketChannel requesterSocket = InternalPCJ.getNodeData()
-                        .getSocketChannelByPhysicalId().get(masterPhysicalId);
+            SocketChannel socket;
+            Message message;
 
-                MessageValueBroadcastResponse messageResponse
-                        = new MessageValueBroadcastResponse(groupId, requestNum, requesterThreadId, exceptions);
+            if (nodeData.getPhysicalId() == commonGroup.getGroupMasterNode()) {
+                int globalThreadId = commonGroup.getGlobalThreadId(requesterThreadId);
+                int requesterPhysicalId = nodeData.getPhysicalId(globalThreadId);
+                socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(requesterPhysicalId);
 
-                InternalPCJ.getNetworker().send(requesterSocket, messageResponse);
+                message = new MessageValueBroadcastResponse(groupId, requestNum, requesterThreadId, exceptions);
             } else {
-                int parentId = group.getParentNode();
-                SocketChannel parentSocket = InternalPCJ.getNodeData()
-                        .getSocketChannelByPhysicalId().get(parentId);
+                int parentId = commonGroup.getParentNode();
+                socket = nodeData.getSocketChannelByPhysicalId().get(parentId);
 
-                MessageValueBroadcastInform messageInform
-                        = new MessageValueBroadcastInform(requestNum, groupId, requesterThreadId,
-                                nodeData.getPhysicalId(), exceptions);
-
-                InternalPCJ.getNetworker().send(parentSocket, messageInform);
+                message = new MessageValueBroadcastInform(groupId, requestNum, requesterThreadId,
+                        nodeData.getPhysicalId(), exceptions);
             }
+            
+            InternalPCJ.getNetworker().send(socket, message);
         }
     }
 }

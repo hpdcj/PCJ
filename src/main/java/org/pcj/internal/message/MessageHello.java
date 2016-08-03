@@ -6,10 +6,11 @@ package org.pcj.internal.message;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
+import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.NodeInfo;
@@ -66,26 +67,30 @@ final public class MessageHello extends Message {
 
         nodeData.getSocketChannelByPhysicalId().put(currentPhysicalId, sender);
         node0Data.getNodeInfoByPhysicalId().put(currentPhysicalId, currentNodeInfo);
-        ConcurrentMap<Integer, Integer> physicalIdByThreadId = nodeData.getPhysicalIdByThreadId();
-
-        Arrays.stream(threadIds).forEach(
-                threadId -> physicalIdByThreadId.put(threadId, currentPhysicalId));
 
         int currentThreadCount = node0Data.getConnectedThreadCount().addAndGet(threadIds.length);
+
         if (currentThreadCount == node0Data.getAllNodesThreadCount()) {
             LOGGER.finest("Received HELLO from all nodes. Ordering physicalIds.");
             int connectedNodeCount = node0Data.getConnectedNodeCount().get();
 
-            node0Data.getFinishedBitmask().setSize(connectedNodeCount);
-            node0Data.getHelloBitmask().setSize(connectedNodeCount);
+            node0Data.getFinishedBitmask().enlarge(connectedNodeCount);
+            node0Data.getHelloBitmask().enlarge(connectedNodeCount);
 
             Map<Integer, Integer> physicalIdMapping = new HashMap<>(connectedNodeCount);
 
             int nextPhysicalId = 0;
+
+            Map<Integer, Integer> physicalIdByThreadId = node0Data.getNodeInfoByPhysicalId()
+                    .entrySet().stream()
+                    .flatMap(entry -> Arrays.stream(entry.getValue().getThreadIds())
+                            .mapToObj(threadId -> new AbstractMap.SimpleEntry<Integer, Integer>(threadId, entry.getKey())))
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
             // threadId -> physicalId
-            for (int threadId : nodeData.getPhysicalIdByThreadId().keySet().stream()
+            for (int threadId : physicalIdByThreadId.keySet().stream()
                     .mapToInt(Integer::intValue).sorted().toArray()) {
-                int oldPhysicalId = nodeData.getPhysicalIdByThreadId().remove(threadId);
+                int oldPhysicalId = physicalIdByThreadId.remove(threadId);
 
                 /* if that physicalId isn't mapped... */
                 if (physicalIdMapping.containsKey(oldPhysicalId) == false) {
@@ -106,7 +111,7 @@ final public class MessageHello extends Message {
                 }
 
                 int newPhysicalId = physicalIdMapping.get(oldPhysicalId);
-                nodeData.getPhysicalIdByThreadId().put(threadId, newPhysicalId);
+                nodeData.setPhysicalId(threadId, newPhysicalId);
             }
 
             nodeData.getSocketChannelByPhysicalId().entrySet().stream()

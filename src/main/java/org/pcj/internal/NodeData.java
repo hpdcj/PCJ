@@ -7,7 +7,7 @@ import java.nio.channels.SocketChannel;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.pcj.internal.futures.GroupJoinState;
+import org.pcj.internal.futures.GroupQuery;
 import org.pcj.internal.futures.WaitObject;
 
 /**
@@ -18,14 +18,13 @@ final public class NodeData {
 
     private final SocketChannel node0Socket;
     private final ConcurrentMap<Integer, InternalCommonGroup> groupById;
-    private final ConcurrentMap<String, InternalCommonGroup> groupByName;
     private final ConcurrentMap<Integer, SocketChannel> socketChannelByPhysicalId; // physicalId -> socket
     private final ConcurrentMap<Integer, Integer> physicalIdByThreadId; // threadId -> physicalId
     private final ConcurrentMap<Integer, PcjThread> pcjThreads;
     private final Node0Data node0Data;
     private final WaitObject globalWaitObject;
     private final AtomicInteger groupJoinCounter;
-    private final ConcurrentMap<Integer, GroupJoinState> groupJoinStateMap;
+    private final ConcurrentMap<Integer, GroupQuery> groupQueryMap;
     private int physicalId;
     private int totalNodeCount;
 
@@ -93,18 +92,21 @@ final public class NodeData {
         public int getGroupMaster(int groupId, int physicalId) {
             return groupsMaster.computeIfAbsent(groupId, key -> physicalId);
         }
+
+        public ConcurrentMap<Integer, Integer> getPhysicalIdByThreadId() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
     }
 
     public NodeData(SocketChannel node0Socket, boolean isCurrentJvmNode0) {
         this.node0Socket = node0Socket;
         this.groupById = new ConcurrentHashMap<>();
-        this.groupByName = new ConcurrentHashMap<>();
         this.socketChannelByPhysicalId = new ConcurrentHashMap<>();
         this.physicalIdByThreadId = new ConcurrentHashMap<>();
         this.pcjThreads = new ConcurrentHashMap<>();
         this.globalWaitObject = new WaitObject();
         this.groupJoinCounter = new AtomicInteger(0);
-        this.groupJoinStateMap = new ConcurrentHashMap<>();
+        this.groupQueryMap = new ConcurrentHashMap<>();
 
         if (isCurrentJvmNode0) {
             node0Data = new Node0Data();
@@ -127,7 +129,6 @@ final public class NodeData {
             return group;
         }
 
-        groupByName.put(newGroup.getGroupName(), newGroup);
         return newGroup;
     }
 
@@ -136,15 +137,21 @@ final public class NodeData {
     }
 
     public InternalCommonGroup getGroupByName(String name) {
-        return groupByName.get(name);
+        return groupById.values().stream()
+                .filter(groups -> name.equals(groups.getGroupName()))
+                .findFirst().orElse(null);
     }
 
     public ConcurrentMap<Integer, SocketChannel> getSocketChannelByPhysicalId() {
         return socketChannelByPhysicalId;
     }
 
-    public ConcurrentMap<Integer, Integer> getPhysicalIdByThreadId() {
-        return physicalIdByThreadId;
+    public void setPhysicalId(int globalThreadId, int physicalId) {
+        physicalIdByThreadId.put(globalThreadId, physicalId);
+    }
+
+    public int getPhysicalId(int globalThreadId) {
+        return physicalIdByThreadId.get(globalThreadId);
     }
 
     public ConcurrentMap<Integer, PcjThread> getPcjThreads() {
@@ -175,7 +182,12 @@ final public class NodeData {
         return groupJoinCounter;
     }
 
-    public GroupJoinState getGroupJoinState(int requestNum) {
-        return groupJoinStateMap.computeIfAbsent(requestNum, key -> new GroupJoinState());
+    public GroupQuery getGroupQuery(int requestNum) {
+        return groupQueryMap.computeIfAbsent(requestNum, key -> new GroupQuery());
     }
+
+    public GroupQuery removeGroupQuery(int requestNum) {
+        return groupQueryMap.remove(requestNum);
+    }
+
 }

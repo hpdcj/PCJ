@@ -7,9 +7,12 @@ package org.pcj.internal.message;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
+import java.util.List;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
+import org.pcj.internal.futures.GroupJoinState;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
@@ -57,17 +60,25 @@ public class MessageGroupJoinRequest extends Message {
         this.globalThreadId = in.readInt();
 
         NodeData nodeData = InternalPCJ.getNodeData();
-        InternalCommonGroup commonGroup = InternalPCJ.getNodeData().getGroupById(groupId);
+        InternalCommonGroup commonGroup = nodeData.getGroupById(groupId);
         if (commonGroup == null) {
             commonGroup = new InternalCommonGroup(nodeData.getPhysicalId(),
                     groupId, groupName);
             commonGroup = nodeData.addGroup(commonGroup);
         }
-        int groupThreadId = commonGroup.getNextGroupThreadId();
-        commonGroup.addThread(physicalId, groupThreadId, globalThreadId);
-        
-        // ....
-        // get threadMappings and broadcast to everyone
-        //
+
+        int groupThreadId = commonGroup.addNewThread(globalThreadId);
+
+        GroupJoinState groupJoinState = commonGroup.getGroupJoinState(requestNum, globalThreadId);
+        groupJoinState.setGroupThreadId(groupThreadId);
+
+        MessageGroupJoinInform message
+                = new MessageGroupJoinInform(requestNum, groupId, globalThreadId,
+                        commonGroup.getThreadsMapping());
+        commonGroup.getChildrenNodes().stream()
+                .map(nodeData.getSocketChannelByPhysicalId()::get)
+                .forEach(socket -> InternalPCJ.getNetworker().send(socket, message));
+
+        groupJoinState.processPhysical(nodeData.getPhysicalId());
     }
 }

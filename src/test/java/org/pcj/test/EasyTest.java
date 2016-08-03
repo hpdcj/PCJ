@@ -6,6 +6,7 @@ package org.pcj.test;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.pcj.Group;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
 import org.pcj.Shared;
@@ -44,13 +45,13 @@ public class EasyTest implements StartPoint {
         NodesDescription nodesDescription = new NodesDescription(new String[]{
             "localhost:8091",
             "localhost:8002",//
-        //            "localhost:8003",
-        //            "localhost:8004",
-        //            "localhost:8005", //
-        //            "localhost:8006",
-        //            "localhost:8007",
-        //            "localhost:8008",
-        //            "localhost:8009", // run.jvmargs=-Xmx64m
+            "localhost:8003",
+            "localhost:8004",
+            "localhost:8005", //
+            "localhost:8006",
+            "localhost:8007",
+            "localhost:8008",
+            "localhost:8009", // run.jvmargs=-Xmx64m
         //            "localhost:8010",//
         //            "localhost:8011",
         //            "localhost:8011",
@@ -75,12 +76,21 @@ public class EasyTest implements StartPoint {
 
     @Override
     public void main() throws Throwable {
-        PCJ.join("test");
-//        for (int i = 0; i < 100; ++i) {
-//            Thread.sleep((long) (Math.random() * 100));
-//            PCJ.join("test" + i);
-//        }
+//        Thread.sleep(PCJ.myId() * 500);
+        Group g = PCJ.join("test");
+        System.out.println("globalId: "+PCJ.myId() + " groupId:" + g.myId());
+        PCJ.barrier();
 
+        for (int i = 0; i < 10; ++i) {
+            System.out.println(PCJ.myId() + "> joining to test" + i);
+            Thread.sleep((long) (Math.random() * 100));
+            PCJ.join("test" + i);
+        }
+
+        PCJ.barrier();
+        System.out.println(PCJ.myId()+"> DONE");
+        
+        
 //        Level level = Level.FINEST;
 //        Logger logger = Logger.getLogger("");
 //        Arrays.stream(logger.getHandlers()).forEach(handler -> handler.setLevel(level));
