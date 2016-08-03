@@ -35,23 +35,22 @@ final public class MessageValueBroadcastBytes extends Message {
         super(MessageType.VALUE_BROADCAST_BYTES);
     }
 
-    public MessageValueBroadcastBytes(int requestNum, int groupId, int requesterThreadId,
-            String storageName, String name, CloneInputStream clonedData) {
+    public MessageValueBroadcastBytes(int groupId, int requestNum, int requesterThreadId, String storageName, String name, CloneInputStream clonedData) {
         this();
 
-        this.requestNum = requestNum;
         this.groupId = groupId;
+        this.requestNum = requestNum;
         this.requesterThreadId = requesterThreadId;
         this.storageName = storageName;
         this.name = name;
-        
+
         this.clonedData = clonedData;
     }
 
     @Override
     public void write(MessageDataOutputStream out) throws IOException {
-        out.writeInt(requestNum);
         out.writeInt(groupId);
+        out.writeInt(requestNum);
         out.writeInt(requesterThreadId);
         out.writeString(storageName);
         out.writeString(name);
@@ -61,22 +60,22 @@ final public class MessageValueBroadcastBytes extends Message {
 
     @Override
     public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
-        requestNum = in.readInt();
         groupId = in.readInt();
+        requestNum = in.readInt();
         requesterThreadId = in.readInt();
 
         storageName = in.readString();
         name = in.readString();
-        
+
         clonedData = CloneInputStream.readFrom(in);
-        
+
         NodeData nodeData = InternalPCJ.getNodeData();
         InternalCommonGroup group = nodeData.getGroupById(groupId);
 
         List<Integer> children = group.getChildrenNodes();
 
         MessageValueBroadcastBytes message
-                = new MessageValueBroadcastBytes(requestNum, groupId, requesterThreadId,
+                = new MessageValueBroadcastBytes(groupId, requestNum, requesterThreadId,
                         storageName, name, clonedData);
 
         children.stream().map(nodeData.getSocketChannelByPhysicalId()::get)

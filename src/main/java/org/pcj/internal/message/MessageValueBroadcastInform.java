@@ -30,8 +30,7 @@ final public class MessageValueBroadcastInform extends Message {
         super(MessageType.VALUE_BROADCAST_INFORM);
     }
 
-    public MessageValueBroadcastInform(int requestNum, int groupId, int requesterThreadId,
-            int physicalId, Queue<Exception> exceptions) {
+    public MessageValueBroadcastInform(int groupId, int requestNum, int requesterThreadId, int physicalId, Queue<Exception> exceptions) {
         this();
 
         this.groupId = groupId;
@@ -59,8 +58,8 @@ final public class MessageValueBroadcastInform extends Message {
     @SuppressWarnings("unchecked")
     @Override
     public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
-        requestNum = in.readInt();
         groupId = in.readInt();
+        requestNum = in.readInt();
         requesterThreadId = in.readInt();
         physicalId = in.readInt();
 

@@ -73,7 +73,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
 
         MessageValueGetRequest message
                 = new MessageValueGetRequest(
-                        requestNum, super.getGroupId(), myThreadId, threadId,
+                        super.getGroupId(), requestNum, myThreadId, threadId,
                         variable.parent(), variable.name(), indices);
 
         InternalPCJ.getNetworker().send(socket, message);
@@ -97,7 +97,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
 
         MessageValuePutRequest message
                 = new MessageValuePutRequest(
-                        requestNum, super.getGroupId(), myThreadId, threadId,
+                        super.getGroupId(), requestNum, myThreadId, threadId,
                         variable.parent(), variable.name(), indices, newValue);
 
         InternalPCJ.getNetworker().send(socket, message);

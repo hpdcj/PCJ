@@ -44,7 +44,7 @@ final public class MessageHelloBonjour extends Message {
         nodeData.getSocketChannelByPhysicalId().put(physicalId, sender);
 
         if (nodeData.getSocketChannelByPhysicalId().size() == nodeData.getTotalNodeCount()) {
-            InternalPCJ.getNetworker().send(InternalPCJ.getNode0Socket(),
+            InternalPCJ.getNetworker().send(InternalPCJ.getNodeData().getNode0Socket(),
                     new MessageHelloCompleted(nodeData.getPhysicalId()));
         }
     }

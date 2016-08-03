@@ -6,7 +6,10 @@ package org.pcj.internal.message;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Level;
@@ -74,9 +77,10 @@ final public class MessageHelloInform extends Message {
 
         nodeData.setTotalNodeCount(nodeInfoByPhysicalId.size());
 
-        for (Map.Entry<Integer, NodeInfo> entry : nodeInfoByPhysicalId.entrySet()) {
-            Integer currentPhysicalId = entry.getKey();
-            NodeInfo nodeInfo = entry.getValue();
+        List<Integer> keys = new ArrayList<>(nodeInfoByPhysicalId.keySet());
+        Collections.sort(keys);
+        for (int currentPhysicalId : keys) {
+            NodeInfo nodeInfo = nodeInfoByPhysicalId.get(currentPhysicalId);
             Arrays.stream(nodeInfo.getThreadIds())
                     .forEach(threadId -> {
                         nodeData.getPhysicalIdByThreadId().put(threadId, currentPhysicalId);
@@ -94,7 +98,7 @@ final public class MessageHelloInform extends Message {
         nodeData.getSocketChannelByPhysicalId().put(physicalId, LoopbackSocketChannel.getInstance());
 
         if (nodeData.getSocketChannelByPhysicalId().size() == nodeData.getTotalNodeCount()) {
-            InternalPCJ.getNetworker().send(InternalPCJ.getNode0Socket(),
+            InternalPCJ.getNetworker().send(InternalPCJ.getNodeData().getNode0Socket(),
                     new MessageHelloCompleted(nodeData.getPhysicalId()));
         }
     }

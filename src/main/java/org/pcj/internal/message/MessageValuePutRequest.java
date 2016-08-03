@@ -5,9 +5,6 @@ package org.pcj.internal.message;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.pcj.PcjRuntimeException;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.InternalStorage;
 import org.pcj.internal.NodeData;
@@ -35,12 +32,11 @@ final public class MessageValuePutRequest extends Message {
         super(MessageType.VALUE_PUT_REQUEST);
     }
 
-    public MessageValuePutRequest(int requestNum, int groupId, int requesterThreadId, int threadId,
-            String storageName, String name, int[] indices, Object newValue) {
+    public MessageValuePutRequest(int groupId, int requestNum, int requesterThreadId, int threadId, String storageName, String name, int[] indices, Object newValue) {
         this();
 
-        this.requestNum = requestNum;
         this.groupId = groupId;
+        this.requestNum = requestNum;
         this.requesterThreadId = requesterThreadId;
         this.threadId = threadId;
         this.storageName = storageName;
@@ -51,8 +47,8 @@ final public class MessageValuePutRequest extends Message {
 
     @Override
     public void write(MessageDataOutputStream out) throws IOException {
-        out.writeInt(requestNum);
         out.writeInt(groupId);
+        out.writeInt(requestNum);
         out.writeInt(requesterThreadId);
         out.writeInt(threadId);
         out.writeString(storageName);
@@ -63,8 +59,8 @@ final public class MessageValuePutRequest extends Message {
 
     @Override
     public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
-        requestNum = in.readInt();
         groupId = in.readInt();
+        requestNum = in.readInt();
         requesterThreadId = in.readInt();
         threadId = in.readInt();
         storageName = in.readString();
@@ -77,7 +73,7 @@ final public class MessageValuePutRequest extends Message {
         InternalStorage storage = (InternalStorage) pcjThread.getThreadData().getStorage();
 
         MessageValuePutResponse messageValuePutResponse = new MessageValuePutResponse(
-                requestNum, groupId, requesterThreadId);
+                groupId, requestNum, requesterThreadId);
         try {
             newValue = in.readObject();
             storage.put0(storageName, name, newValue, indices);

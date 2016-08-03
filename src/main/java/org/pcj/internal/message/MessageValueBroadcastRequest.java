@@ -73,8 +73,7 @@ final public class MessageValueBroadcastRequest extends Message {
         List<Integer> children = group.getChildrenNodes();
         
         MessageValueBroadcastBytes message
-                = new MessageValueBroadcastBytes(requestNum,
-                        groupId, requesterThreadId, storageName, name, clonedData);
+                = new MessageValueBroadcastBytes(                        groupId, requestNum, requesterThreadId, storageName, name, clonedData);
         
         children.stream().map(nodeData.getSocketChannelByPhysicalId()::get)
                 .forEach(socket -> InternalPCJ.getNetworker().send(socket, message));

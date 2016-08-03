@@ -26,26 +26,27 @@ final public class MessageGroupBarrierWaiting extends Message {
         super(MessageType.GROUP_BARRIER_WAITING);
     }
 
-    public MessageGroupBarrierWaiting(int groupId, int physicalId, int barrierRound) {
+    public MessageGroupBarrierWaiting(int groupId, int barrierRound, int physicalId) {
         this();
 
-        this.physicalId = physicalId;
         this.groupId = groupId;
         this.barrierRound = barrierRound;
+        this.physicalId = physicalId;
     }
 
     @Override
     public void write(MessageDataOutputStream out) throws IOException {
-        out.writeInt(physicalId);
         out.writeInt(groupId);
         out.writeInt(barrierRound);
+        out.writeInt(physicalId);
+
     }
 
     @Override
     public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
-        physicalId = in.readInt();
         groupId = in.readInt();
         barrierRound = in.readInt();
+        physicalId = in.readInt();
 
         InternalCommonGroup group = InternalPCJ.getNodeData().getGroupById(groupId);
 
@@ -68,7 +69,7 @@ final public class MessageGroupBarrierWaiting extends Message {
                             .getSocketChannelByPhysicalId().get(parentId);
 
                     MessageGroupBarrierWaiting message = new MessageGroupBarrierWaiting(
-                            groupId, InternalPCJ.getNodeData().getPhysicalId(), barrierRound);
+                            groupId, barrierRound, InternalPCJ.getNodeData().getPhysicalId());
 
                     InternalPCJ.getNetworker().send(parentSocket, message);
                 }

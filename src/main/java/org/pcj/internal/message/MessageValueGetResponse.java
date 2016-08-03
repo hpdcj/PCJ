@@ -21,8 +21,8 @@ import org.pcj.internal.network.MessageDataOutputStream;
  */
 class MessageValueGetResponse extends Message {
 
-    private int requestNum;
     private int groupId;
+    private int requestNum;
     private int requesterThreadId;
     private Object variableValue;
     private Exception exception;
@@ -31,10 +31,11 @@ class MessageValueGetResponse extends Message {
         super(MessageType.VALUE_GET_RESPONSE);
     }
 
-    public MessageValueGetResponse(int requestNum, int groupId, int requesterThreadId, Object variableValue) {
+    public MessageValueGetResponse(int groupId, int requestNum, int requesterThreadId, Object variableValue) {
         this();
-        this.requestNum = requestNum;
+
         this.groupId = groupId;
+        this.requestNum = requestNum;
         this.requesterThreadId = requesterThreadId;
         this.variableValue = variableValue;
     }
@@ -45,8 +46,8 @@ class MessageValueGetResponse extends Message {
 
     @Override
     public void write(MessageDataOutputStream out) throws IOException {
-        out.writeInt(requestNum);
         out.writeInt(groupId);
+        out.writeInt(requestNum);
         out.writeInt(requesterThreadId);
         out.writeBoolean(exception != null);
         if (exception == null) {
@@ -58,15 +59,15 @@ class MessageValueGetResponse extends Message {
 
     @Override
     public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
-        requestNum = in.readInt();
         groupId = in.readInt();
+        requestNum = in.readInt();
         requesterThreadId = in.readInt();
 
         NodeData nodeData = InternalPCJ.getNodeData();
         int globalThreadId = nodeData.getGroupById(groupId).getGlobalThreadId(requesterThreadId);
 
         PcjThread pcjThread = nodeData.getPcjThreads().get(globalThreadId);
-        InternalGroup group = pcjThread.getThreadData().getGroupById(groupId);
+        InternalGroup group = (InternalGroup) pcjThread.getThreadData().getGroupById(groupId);
 
         GetVariable getVariable = group.getGetVariableMap().remove(requestNum);
 

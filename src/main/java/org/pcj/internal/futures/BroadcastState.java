@@ -115,7 +115,7 @@ public class BroadcastState extends InternalFuture<Void> implements PcjFuture<Vo
                         .getSocketChannelByPhysicalId().get(parentId);
 
                 MessageValueBroadcastInform messageInform
-                        = new MessageValueBroadcastInform(groupId, requestNum, requesterThreadId,
+                        = new MessageValueBroadcastInform(requestNum, groupId, requesterThreadId,
                                 nodeData.getPhysicalId(), exceptions);
 
                 InternalPCJ.getNetworker().send(parentSocket, messageInform);

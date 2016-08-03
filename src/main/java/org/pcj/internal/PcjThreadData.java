@@ -5,6 +5,7 @@ package org.pcj.internal;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.pcj.Group;
 
 /**
  * This class represents internal data for PCJ Thread.
@@ -15,8 +16,8 @@ final public class PcjThreadData {
 
     final private InternalStorage storage;
     final private InternalGroup globalGroup;
-    final private ConcurrentMap<Integer, InternalGroup> groupById;
-    final private ConcurrentMap<String, InternalGroup> groupByName;
+    final private ConcurrentMap<Integer, Group> groupById;
+    final private ConcurrentMap<String, Group> groupByName;
 //
 
     PcjThreadData(InternalGroup globalGroup) {
@@ -57,7 +58,7 @@ final public class PcjThreadData {
      *
      * @return
      */
-    InternalCommonGroup getGlobalGroup() {
+    Group getGlobalGroup() {
         return globalGroup;
     }
 
@@ -65,10 +66,14 @@ final public class PcjThreadData {
         return storage;
     }
 
-    public InternalGroup getGroupById(int groupId) {
+    public Group getGroupById(int groupId) {
         return groupById.get(groupId);
     }
-//
+
+    public Group getGroupByName(String name) {
+        return groupByName.get(name);
+    }
+    
 //    /**
 //     * Stores ThreadGroup but because of ClassLoader says that holds InternalCommonGroup
 //     *

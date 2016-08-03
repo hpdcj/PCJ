@@ -94,6 +94,42 @@ public enum MessageType {
             return new MessageGroupBarrierGo();
         }
     },
+    GROUP_JOIN_QUERY((byte) 12) {
+        @Override
+        public MessageGroupJoinQuery create() {
+            return new MessageGroupJoinQuery();
+        }
+    },
+    GROUP_JOIN_ANSWER((byte) 13) {
+        @Override
+        public MessageGroupJoinAnswer create() {
+            return new MessageGroupJoinAnswer();
+        }
+    },
+    GROUP_JOIN_REQUEST((byte) 14) {
+        @Override
+        public MessageGroupJoinRequest create() {
+            return new MessageGroupJoinRequest();
+        }
+    },
+    GROUP_JOIN_RESPONSE((byte) 15) {
+        @Override
+        public MessageGroupJoinResponse create() {
+            return new MessageGroupJoinResponse();
+        }
+    },
+    GROUP_JOIN_INFORM((byte) 16) {
+        @Override
+        public MessageGroupJoinInform create() {
+            return new MessageGroupJoinInform();
+        }
+    },
+    GROUP_JOIN_ACKNOWLEDGE((byte) 17) {
+        @Override
+        public MessageGroupJoinAcknowledge create() {
+            return new MessageGroupJoinAcknowledge();
+        }
+    },
     VALUE_GET_REQUEST((byte) 20) {
         @Override
         public MessageValueGetRequest create() {

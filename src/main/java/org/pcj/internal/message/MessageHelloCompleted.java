@@ -50,7 +50,7 @@ final public class MessageHelloCompleted extends Message {
                 MessageHelloGo messageHelloGo = new MessageHelloGo();
 
                 // broadcasting:
-                InternalPCJ.getNetworker().send(InternalPCJ.getNode0Socket(), messageHelloGo);
+                InternalPCJ.getNetworker().send(InternalPCJ.getNodeData().getNode0Socket(), messageHelloGo);
             }
         }
     }

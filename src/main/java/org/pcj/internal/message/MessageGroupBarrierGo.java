@@ -21,29 +21,29 @@ import org.pcj.internal.network.MessageDataOutputStream;
 final public class MessageGroupBarrierGo extends Message {
 
     private int groupId;
-    private int round;
+    private int barrierRound;
 
     public MessageGroupBarrierGo() {
         super(MessageType.GROUP_BARRIER_GO);
     }
 
-    public MessageGroupBarrierGo(int groupId, int round) {
+    public MessageGroupBarrierGo(int groupId, int barrierRound) {
         this();
 
         this.groupId = groupId;
-        this.round = round;
+        this.barrierRound = barrierRound;
     }
 
     @Override
     public void write(MessageDataOutputStream out) throws IOException {
         out.writeInt(groupId);
-        out.writeInt(round);
+        out.writeInt(barrierRound);
     }
 
     @Override
     public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
         groupId = in.readInt();
-        round = in.readInt();
+        barrierRound = in.readInt();
 
         NodeData nodeData = InternalPCJ.getNodeData();
 
@@ -53,7 +53,7 @@ final public class MessageGroupBarrierGo extends Message {
         children.stream().map(nodeData.getSocketChannelByPhysicalId()::get)
                 .forEach(socket -> InternalPCJ.getNetworker().send(socket, this));
 
-        BarrierState barrier = group.removeBarrierState(round);
+        BarrierState barrier = group.removeBarrierState(barrierRound);
         barrier.signalDone();
     }
 }

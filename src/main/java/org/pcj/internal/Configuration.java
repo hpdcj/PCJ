@@ -22,11 +22,11 @@ final public class Configuration {
      */
     final public static int BACKLOG_COUNT;
     /**
-     * pcj.retry.count (int) default: 9
+     * pcj.retry.count (int) default: 19
      */
     final public static int RETRY_COUNT;
     /**
-     * pcj.retry.delay (int) default: 6
+     * pcj.retry.delay (int) default: 3
      */
     final public static int RETRY_DELAY;
     /**
@@ -44,8 +44,8 @@ final public class Configuration {
 
     static {
         BACKLOG_COUNT = getPropertyInt("pcj.backlog", 4096);
-        RETRY_COUNT = getPropertyInt("pcj.retry.count", 9);
-        RETRY_DELAY = getPropertyInt("pcj.retry.delay", 6);
+        RETRY_COUNT = getPropertyInt("pcj.retry.count", 19);
+        RETRY_DELAY = getPropertyInt("pcj.retry.delay", 3);
         DEFAULT_PORT = getPropertyInt("pcj.port", 8091);
         CHUNK_SIZE = getPropertyShort("pcj.chunksize", (short) (1408));
         INIT_MAXTIME = getPropertyInt("pcj.init.maxtime", Math.max((RETRY_COUNT + 1) * RETRY_DELAY, 60));

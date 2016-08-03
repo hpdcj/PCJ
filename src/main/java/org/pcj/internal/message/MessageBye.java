@@ -50,7 +50,7 @@ final public class MessageBye extends Message {
                 MessageByeCompleted messageByeCompleted = new MessageByeCompleted();
 
                 // broadcasting:
-                InternalPCJ.getNetworker().send(InternalPCJ.getNode0Socket(), messageByeCompleted);
+                InternalPCJ.getNetworker().send(InternalPCJ.getNodeData().getNode0Socket(), messageByeCompleted);
             }
         }
     }

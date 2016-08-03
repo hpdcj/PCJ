@@ -30,10 +30,10 @@ class MessageValuePutResponse extends Message {
         super(MessageType.VALUE_PUT_RESPONSE);
     }
 
-    public MessageValuePutResponse(int requestNum, int groupId, int requesterThreadId) {
+    public MessageValuePutResponse(int groupId, int requestNum, int requesterThreadId) {
         this();
-        this.requestNum = requestNum;
         this.groupId = groupId;
+        this.requestNum = requestNum;
         this.requesterThreadId = requesterThreadId;
     }
 
@@ -43,8 +43,8 @@ class MessageValuePutResponse extends Message {
 
     @Override
     public void write(MessageDataOutputStream out) throws IOException {
-        out.writeInt(requestNum);
         out.writeInt(groupId);
+        out.writeInt(requestNum);
         out.writeInt(requesterThreadId);
         out.writeBoolean(exception != null);
         if (exception != null) {
@@ -54,15 +54,15 @@ class MessageValuePutResponse extends Message {
 
     @Override
     public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
-        requestNum = in.readInt();
         groupId = in.readInt();
+        requestNum = in.readInt();
         requesterThreadId = in.readInt();
 
         NodeData nodeData = InternalPCJ.getNodeData();
         int globalThreadId = nodeData.getGroupById(groupId).getGlobalThreadId(requesterThreadId);
 
         PcjThread pcjThread = nodeData.getPcjThreads().get(globalThreadId);
-        InternalGroup group = pcjThread.getThreadData().getGroupById(groupId);
+        InternalGroup group = (InternalGroup) pcjThread.getThreadData().getGroupById(groupId);
 
         PutVariable putVariable = group.getPutVariableMap().remove(requestNum);
 

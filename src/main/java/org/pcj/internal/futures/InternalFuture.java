@@ -12,7 +12,7 @@ import java.util.concurrent.TimeoutException;
  *
  * @author faramir
  */
-public class InternalFuture<T> {
+public abstract class InternalFuture<T> {
 
     private final Object lock;
     private boolean signaled;

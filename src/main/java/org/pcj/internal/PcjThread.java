@@ -4,6 +4,7 @@
 package org.pcj.internal;
 
 import java.util.List;
+import org.pcj.Group;
 import org.pcj.PCJ;
 import org.pcj.Shared;
 import org.pcj.StartPoint;
@@ -96,7 +97,7 @@ public class PcjThread extends Thread {
         return tg.getThreadData().getStorage();
     }
 
-    public static InternalCommonGroup getThreadGlobalGroup() {
+    public static Group getThreadGlobalGroup() {
         PcjThreadGroup tg = getPcjThreadGroupForCurrentThread();
         if (tg == null) {
             throw new IllegalStateException("Current thread is not part of PcjThread.");
@@ -112,7 +113,11 @@ public class PcjThread extends Thread {
 //        return threadGroup.data.getGroupsByName();
 //    }
 //
-//    public InternalCommonGroup getGroup(String name) {
-//        return threadGroup.data.getGroupsByName().get(name);
-//    }
+    public static Group getGroupByName(String name) {
+        PcjThreadGroup tg = getPcjThreadGroupForCurrentThread();
+        if (tg == null) {
+            throw new IllegalStateException("Current thread is not part of PcjThread.");
+        }
+        return tg.getThreadData().getGroupByName(name);
+    }
 }

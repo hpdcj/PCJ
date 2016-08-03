@@ -99,7 +99,7 @@ final public class PCJ extends InternalPCJ {
     public static PcjFuture<Void> asyncBarrier() {
         return ((InternalGroup) PcjThread.getThreadGlobalGroup()).asyncBarrier();
     }
-
+    
     public static void barrier() {
         PCJ.asyncBarrier().get();
     }
@@ -153,54 +153,16 @@ final public class PCJ extends InternalPCJ {
         PCJ.<T>asyncBroadcast(variable, newValue).get();
     }
 
-//    /**
-//     * Broadcast the value to all threads and inserts it into InternalStorage
-//     *
-//     * @param variable name of variable
-//     * @param newValue new value of variable
-//     *
-//     * @throws ClassCastException when the value cannot be cast to the type of variable in InternalStorage
-//     */
-//    public static PcjFuture<Void> broadcast(String variable, Object newValue) throws ClassCastException, PcjRuntimeException {
-//        if (PcjThread.threadStorage().isAssignable(variable, newValue) == false) {
-//            throw new ClassCastException("Cannot cast " + newValue.getClass().getCanonicalName()
-//                    + " to the type of variable '" + variable + "'");
-//        }
-//        return ((InternalGroup) PcjThread.getThreadGlobalGroup()).broadcast(variable, newValue);
-//    }
-//    
-//    public static PcjFuture<R> asyncAt(int threadId, Function<R,T> lambda) throws PcjRuntimeException {
-//    }
-//
-//    /**
-//     * Returns the global group
-//     *
-//     * @return the global group
-//     */
-//    public static InternalGroup getGlobalGroup() {
-//        return ((InternalGroup) PcjThread.getThreadGlobalGroup());
-//    }
-//
-//    /**
-//     * Returns group by name
-//     *
-//     * @param name name of the group
-//     *
-//     * @return group by name
-//     */
-//    public static InternalGroup getGroup(String name) {
-//        return (InternalGroup) PcjThread.threadGroup(name);
-//    }
-//
-//    /**
-//     * Joins the current thread to the group
-//     *
-//     * @param name name of the group
-//     *
-//     * @return group to which thread joined
-//     */
-//    public static InternalGroup join(String name) {
-//        int myThreadId = ((InternalGroup) PcjThread.getThreadGlobalGroup()).myId();
-//        return (InternalGroup) InternalPCJ.join(myThreadId, name);
+    public static Group join(String name) {
+        int myThreadId = ((InternalGroup) PcjThread.getThreadGlobalGroup()).myId();
+        return (Group) InternalPCJ.join(myThreadId, name);
+    }
+
+    public static PcjFuture<Void> asyncBarrier(int peerThreadId) {
+        throw new UnsupportedOperationException("not implemented yet.");
+    }
+
+//    public static <T, R> PcjFuture<R> asyncAt(int threadId, Function<R, T> lambda) throws PcjRuntimeException {
+//        throw new UnsupportedOperationException("Not implemented yet.");
 //    }
 }

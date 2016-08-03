@@ -23,11 +23,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import org.pcj.Group;
 import org.pcj.NodesDescription;
+import org.pcj.PcjRuntimeException;
 import org.pcj.Shared;
 import org.pcj.StartPoint;
+import org.pcj.internal.futures.GroupJoinState;
 import org.pcj.internal.futures.WaitObject;
 import org.pcj.internal.message.MessageBye;
+import org.pcj.internal.message.MessageGroupJoinQuery;
+import org.pcj.internal.message.MessageGroupJoinRequest;
 import org.pcj.internal.message.MessageHello;
 import org.pcj.internal.network.LoopbackSocketChannel;
 
@@ -41,7 +46,6 @@ public abstract class InternalPCJ {
     private static final Logger LOGGER = Logger.getLogger(InternalPCJ.class.getName());
     private static final String PCJ_VERSION;
     private static final String PCJ_BUILD_DATE;
-    private static SocketChannel node0Socket;
     private static Networker networker;
     private static NodeData nodeData;
 
@@ -97,10 +101,10 @@ public abstract class InternalPCJ {
             ScheduledFuture<?> exitTimer = sheduleExitTimer(Thread.currentThread());
 
             /* connecting to node0 */
-            connectToNode0(isCurrentJvmNode0, node0);
+            SocketChannel node0Socket = connectToNode0(isCurrentJvmNode0, node0);
 
             /* Prepare initial data */
-            nodeData = new NodeData(isCurrentJvmNode0);
+            nodeData = new NodeData(node0Socket, isCurrentJvmNode0);
             nodeData.getSocketChannelByPhysicalId().put(0, node0Socket);
 
             if (isCurrentJvmNode0) {
@@ -120,8 +124,7 @@ public abstract class InternalPCJ {
                         + " (on {2,number,#} {2,choice,1#node|1<nodes})...",
                         new Object[]{startPointClass.getName(),
                             nodeData.getGroupById(InternalCommonGroup.GLOBAL_GROUP_ID).threadCount(),
-                            nodeData.getTotalNodeCount(),
-                        });
+                            nodeData.getTotalNodeCount(),});
             }
 
 
@@ -257,11 +260,9 @@ public abstract class InternalPCJ {
         throw new IllegalStateException("Unreachable code.");
     }
 
-    private static void connectToNode0(boolean isCurrentJvmNode0, NodeInfo node0) throws RuntimeException {
+    private static SocketChannel connectToNode0(boolean isCurrentJvmNode0, NodeInfo node0) throws RuntimeException {
         if (isCurrentJvmNode0 == true) {
-            node0Socket = LoopbackSocketChannel.getInstance();
-
-            return;
+            return LoopbackSocketChannel.getInstance();
         } else {
             try {
                 LOGGER.fine("Waiting 300-500ms before attempting to connect to node0 to ensure binding completion.");
@@ -277,14 +278,14 @@ public abstract class InternalPCJ {
                     }
 
                     InetAddress inetAddressNode0 = InetAddress.getByName(node0.getHostname());
-                    node0Socket = networker.connectTo(inetAddressNode0, node0.getPort());
+                    SocketChannel node0Socket = networker.connectTo(inetAddressNode0, node0.getPort());
 
                     if (LOGGER.isLoggable(Level.FINER)) {
                         LOGGER.log(Level.FINER, "Connected to node0 ({0}:{1,number,#}): {2}",
                                 new Object[]{node0.getHostname(), node0.getPort(), Objects.toString(node0Socket)});
                     }
 
-                    return;
+                    return node0Socket;
                 } catch (IOException ex) {
                     if (attempt < Configuration.RETRY_COUNT) {
                         LOGGER.log(Level.WARNING,
@@ -318,7 +319,7 @@ public abstract class InternalPCJ {
         WaitObject sync = nodeData.getGlobalWaitObject();
         sync.lock();
         try {
-            networker.send(node0Socket, messageHello);
+            networker.send(nodeData.getNode0Socket(), messageHello);
 
             /* waiting for HELLO_GO */
             sync.await();
@@ -335,7 +336,7 @@ public abstract class InternalPCJ {
         WaitObject finishedObject = nodeData.getGlobalWaitObject();
         finishedObject.lock();
         try {
-            networker.send(node0Socket, messageBye);
+            networker.send(nodeData.getNode0Socket(), messageBye);
 
             /* waiting for BYE_COMPLETED */
             finishedObject.await();
@@ -354,56 +355,63 @@ public abstract class InternalPCJ {
         return nodeData;
     }
 
-    public static SocketChannel getNode0Socket() {
-        return node0Socket;
-    }
+    protected static Group join(int myThreadId, String groupName) {
+        Group group = PcjThread.getGroupByName(groupName);
+        if (group != null) {
+            return group;
+        }
 
-//    protected static int getPhysicalNodeId() {
-//        return nodeData.physicalId;
-//    }
-//    protected static InternalCommonGroup join(int myNodeId, String groupName) {
-//        InternalCommonGroup group = PcjThread.threadGroup(groupName);
-//        if (group != null) {
-//            return group;
-//        }
-//
-//        synchronized (pcjNodeData.internalGroupsById) {
-//            group = pcjNodeData.internalGroupsByName.get(groupName);
-//        }
-//        MessageGroupJoinQuery msgQuery = new MessageGroupJoinQuery();
-//        msgQuery.setGroupName(groupName);
-//
-//        try {
-//            int masterPhysicalId;
-//            int groupId;
-//            if (group == null) {
-//                Object[] objs = networker.sendWait(node0Socket, msgQuery);
-//                masterPhysicalId = (int) objs[0];
-//                groupId = (int) objs[1];
-//            } else {
-//                masterPhysicalId = group.getPhysicalMaster();
-//                groupId = group.getGroupId();
-//            }
-//
-//            MessageGroupJoinRequest msgJoin = new MessageGroupJoinRequest();
-//            msgJoin.setGroupId(groupId);
-//            msgJoin.setGlobaNodelId(myNodeId);
-//            msgJoin.setGroupName(groupName);
-//            group = networker.sendWait(pcjNodeData.physicalNodes.get(masterPhysicalId), msgJoin);
-//
-//            BitMask mask = group.getJoinBitmask(group.myId());
-//            synchronized (mask) {
-//                while (mask.isSet() == false) {
-//                    try {
-//                        mask.wait();
-//                    } catch (InterruptedException ex) {
-//                        throw new RuntimeException(ex);
-//                    }
-//                }
-//            }
-//            return group;
-//        } catch (IOException ex) {
-//            throw new RuntimeException(ex);
-//        }
-//    }
+        InternalCommonGroup commonGroup = nodeData.getGroupByName(groupName);
+
+        int requestNum = nodeData.getGroupJoinCounter().incrementAndGet();
+        GroupJoinState groupJoinState = nodeData.getGroupJoinState(requestNum);
+        WaitObject waitObject = groupJoinState.getWaitObject();
+
+        int physicalId = InternalPCJ.getNodeData().getPhysicalId();
+
+        if (commonGroup == null) {
+            MessageGroupJoinQuery message
+                    = new MessageGroupJoinQuery(requestNum, physicalId, groupName);
+
+            waitObject.lock();
+            try {
+                networker.send(nodeData.getNode0Socket(), message);
+
+                waitObject.await();
+            } catch (InterruptedException ex) {
+                throw new PcjRuntimeException(ex);
+            } finally {
+                waitObject.unlock();
+            }
+
+            commonGroup = new InternalCommonGroup(groupJoinState.getGroupMasterId(), groupJoinState.getGroupId(), groupName);
+            commonGroup = nodeData.addGroup(commonGroup);
+        }
+
+        MessageGroupJoinRequest message = new MessageGroupJoinRequest(requestNum, groupName, commonGroup.getGroupId(), physicalId, myThreadId);
+
+        SocketChannel masterSocketChannel = nodeData.getSocketChannelByPhysicalId().get(commonGroup.getGroupMasterNode());
+
+        waitObject.lock();
+        try {
+            networker.send(masterSocketChannel, message);
+
+            waitObject.await();
+        } catch (InterruptedException ex) {
+            throw new PcjRuntimeException(ex);
+        } finally {
+            waitObject.unlock();
+        }
+
+        // joining thread asks groupMaster to join
+        // ... groupMaster assigns new id if myThreadId is not here
+        // ... groupMaster sends whole mapping groupThreadId -> globalThreadId to new node
+        // ... new node sends everyone its groupThreadId and globalThreadId
+        // ... ... everyone fixes its 
+        // ... ... everyone inform about completion to groupMaster
+        // ... groupMaster sends GROUP_JOIN_COMPLETED to node with joining thread
+        // joining thread continue execution
+//        throw new UnsupportedOperationException("Not implemented yet.");
+        return null;
+    }
 }
