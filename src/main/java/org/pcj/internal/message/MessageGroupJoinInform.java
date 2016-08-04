@@ -26,7 +26,6 @@ import org.pcj.internal.network.MessageDataOutputStream;
 public class MessageGroupJoinInform extends Message {
 
     private int requestNum;
-    private String groupName;
     private int groupId;
     private int globalThreadId;
     private Map<Integer, Integer> threadsMapping;

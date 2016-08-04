@@ -87,14 +87,15 @@ public class EasyTest implements StartPoint {
             g.asyncBarrier().get();
         }
 
-//        for (int i = 0; i < 500; ++i) {
-//            System.out.println(PCJ.myId() + "> joining to test" + i);
-//            Thread.sleep((long) (Math.random() * 100));
-//            PCJ.join("test" + i);
-//        }
+        for (int i = 0; i < 100; ++i) {
+            System.out.println(PCJ.myId() + "> joining to test" + i);
+            Thread.sleep((long) (Math.random() * 100));
+            PCJ.join("test" + i);
+        }
 
-//        PCJ.barrier();
-//        System.out.println(PCJ.myId() + "> DONE");
+        PCJ.barrier();
+        System.out.println(PCJ.myId() + "> DONE");
+        
 //        Level level = Level.FINEST;
 //        Logger logger = Logger.getLogger("");
 //        Arrays.stream(logger.getHandlers()).forEach(handler -> handler.setLevel(level));
