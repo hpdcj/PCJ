@@ -116,7 +116,7 @@ public class BroadcastState extends InternalFuture<Void> implements PcjFuture<Vo
                 message = new MessageValueBroadcastInform(groupId, requestNum, requesterThreadId,
                         nodeData.getPhysicalId(), exceptions);
             }
-            
+
             InternalPCJ.getNetworker().send(socket, message);
         }
     }

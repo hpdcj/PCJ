@@ -25,7 +25,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.pcj.Group;
 import org.pcj.NodesDescription;
-import org.pcj.PcjRuntimeException;
 import org.pcj.Shared;
 import org.pcj.StartPoint;
 import org.pcj.internal.futures.GroupJoinState;
@@ -49,12 +48,6 @@ public abstract class InternalPCJ {
     private static final String PCJ_BUILD_DATE;
     private static Networker networker;
     private static NodeData nodeData;
-
-    /* Suppress default constructor for noninstantiability. 
-     * Have to be protected to allow inheritance */
-    protected InternalPCJ() {
-        throw new AssertionError();
-    }
 
     static {
         Package p = InternalPCJ.class.getPackage();
@@ -412,5 +405,11 @@ public abstract class InternalPCJ {
         } finally {
             waitObject.unlock();
         }
+    }
+
+    /* Suppress default constructor for noninstantiability.
+     * Have to be protected to allow inheritance */
+    protected InternalPCJ() {
+        throw new AssertionError();
     }
 }

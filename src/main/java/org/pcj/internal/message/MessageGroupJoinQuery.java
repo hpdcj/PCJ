@@ -48,10 +48,10 @@ public class MessageGroupJoinQuery extends Message {
         groupName = in.readString();
 
         Node0Data node0Data = InternalPCJ.getNodeData().getNode0Data();
-        
+
         int groupId = node0Data.getGroupId(groupName);
         int masterPhysicalId = node0Data.getGroupMaster(groupId, requesterPhysialId);
-        
+
         MessageGroupJoinAnswer message = new MessageGroupJoinAnswer(requestNum, groupName, groupId, masterPhysicalId);
         InternalPCJ.getNetworker().send(sender, message);
     }

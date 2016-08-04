@@ -77,20 +77,24 @@ public class EasyTest implements StartPoint {
     @Override
     public void main() throws Throwable {
 //        Thread.sleep(PCJ.myId() * 500);
-        Group g = PCJ.join("test");
-        System.out.println("globalId: "+PCJ.myId() + " groupId:" + g.myId());
+        Group g = PCJ.join("group" + (PCJ.myId() % 2));
         PCJ.barrier();
-
-        for (int i = 0; i < 500; ++i) {
-            System.out.println(PCJ.myId() + "> joining to test" + i);
-            Thread.sleep((long) (Math.random() * 100));
-            PCJ.join("test" + i);
+        
+        for (int i = 0; i < g.threadCount(); ++i) {
+            if (g.myId() == i) {
+                System.out.println(g.getGroupName() + ">>> global: " + PCJ.myId() + " group:" + g.myId() + "/" + g.threadCount());
+            }
+            g.asyncBarrier().get();
         }
 
-        PCJ.barrier();
-        System.out.println(PCJ.myId()+"> DONE");
-        
-        
+//        for (int i = 0; i < 500; ++i) {
+//            System.out.println(PCJ.myId() + "> joining to test" + i);
+//            Thread.sleep((long) (Math.random() * 100));
+//            PCJ.join("test" + i);
+//        }
+
+//        PCJ.barrier();
+//        System.out.println(PCJ.myId() + "> DONE");
 //        Level level = Level.FINEST;
 //        Logger logger = Logger.getLogger("");
 //        Arrays.stream(logger.getHandlers()).forEach(handler -> handler.setLevel(level));

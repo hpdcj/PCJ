@@ -73,7 +73,7 @@ final public class PcjThreadData {
     public Group getGroupByName(String name) {
         return groupByName.get(name);
     }
-    
+
 //    /**
 //     * Stores ThreadGroup but because of ClassLoader says that holds InternalCommonGroup
 //     *
@@ -91,5 +91,4 @@ final public class PcjThreadData {
 //    Map<String, InternalCommonGroup> getGroupsByName() {
 //        return groupsByName;
 //    }
-
 }

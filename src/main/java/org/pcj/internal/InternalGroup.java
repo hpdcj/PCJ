@@ -6,12 +6,9 @@ package org.pcj.internal;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.Group;
 import org.pcj.PcjFuture;
-import org.pcj.PcjRuntimeException;
 import org.pcj.Shared;
 import org.pcj.internal.futures.BroadcastState;
 import org.pcj.internal.futures.GetVariable;
@@ -55,7 +52,17 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     public int myId() {
         return myThreadId;
     }
+    
+    @Override
+    public int threadCount() {
+        return super.threadCount();
+    }
 
+    @Override
+    public String getGroupName() {
+        return super.getGroupName();
+    }
+    
     @Override
     public PcjFuture<Void> asyncBarrier() {
         return super.barrier(myThreadId, barrierRoundCounter.incrementAndGet());

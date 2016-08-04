@@ -51,29 +51,6 @@ final public class MessageGroupBarrierWaiting extends Message {
         InternalCommonGroup group = InternalPCJ.getNodeData().getGroupById(groupId);
 
         BarrierState barrierState = group.getBarrierState(barrierRound);
-
-        synchronized (barrierState) {
-            barrierState.setPhysical(physicalId);
-
-            if (barrierState.isLocalSet() && barrierState.isPhysicalSet()) {
-                if (physicalId == group.getGroupMasterNode()) {
-                    MessageGroupBarrierGo messageGroupBarrierGo = new MessageGroupBarrierGo(groupId, barrierRound);
-
-                    SocketChannel groupMasterSocket = InternalPCJ.getNodeData()
-                            .getSocketChannelByPhysicalId().get(physicalId);
-
-                    InternalPCJ.getNetworker().send(groupMasterSocket, messageGroupBarrierGo);
-                } else {
-                    int parentId = group.getParentNode();
-                    SocketChannel parentSocket = InternalPCJ.getNodeData()
-                            .getSocketChannelByPhysicalId().get(parentId);
-
-                    MessageGroupBarrierWaiting message = new MessageGroupBarrierWaiting(
-                            groupId, barrierRound, InternalPCJ.getNodeData().getPhysicalId());
-
-                    InternalPCJ.getNetworker().send(parentSocket, message);
-                }
-            }
-        }
+        barrierState.processPhysical(physicalId);
     }
 }

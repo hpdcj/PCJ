@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.internal.futures.BarrierState;
 import org.pcj.internal.futures.BroadcastState;
 import org.pcj.internal.futures.GroupJoinState;
+import org.pcj.internal.message.Message;
 import org.pcj.internal.message.MessageGroupBarrierGo;
 import org.pcj.internal.message.MessageGroupBarrierWaiting;
 
@@ -126,7 +127,7 @@ public class InternalCommonGroup {
         return groupId;
     }
 
-    final protected String getGroupName() {
+    protected String getGroupName() {
         return groupName;
     }
 
@@ -146,7 +147,7 @@ public class InternalCommonGroup {
         throw new IllegalStateException("This method has to be overriden!");
     }
 
-    final public int threadCount() {
+    public int threadCount() {
         return threadsMapping.size();
     }
 
@@ -228,39 +229,14 @@ public class InternalCommonGroup {
 
     final protected BarrierState barrier(int threadId, int barrierRound) {
         BarrierState barrierState = getBarrierState(barrierRound);
-
-        synchronized (barrierState) {
-            barrierState.setLocal(threadId);
-
-            if (barrierState.isLocalSet() && barrierState.isPhysicalSet()) {
-                int physicalId = InternalPCJ.getNodeData().getPhysicalId();
-                if (physicalId == this.getGroupMasterNode()) {
-                    MessageGroupBarrierGo messageGroupBarrierGo = new MessageGroupBarrierGo(groupId, barrierRound);
-
-                    int groupMasterId = this.getGroupMasterNode();
-                    SocketChannel groupMasterSocket = InternalPCJ.getNodeData()
-                            .getSocketChannelByPhysicalId().get(groupMasterId);
-
-                    InternalPCJ.getNetworker().send(groupMasterSocket, messageGroupBarrierGo);
-                } else {
-                    int parentId = this.getParentNode();
-                    SocketChannel parentSocket = InternalPCJ.getNodeData()
-                            .getSocketChannelByPhysicalId().get(parentId);
-
-                    MessageGroupBarrierWaiting message = new MessageGroupBarrierWaiting(
-                            groupId, barrierRound, physicalId);
-
-                    InternalPCJ.getNetworker().send(parentSocket, message);
-                }
-            }
-        }
+        barrierState.processLocal(threadId);
 
         return barrierState;
     }
 
     final public BarrierState getBarrierState(int barrierRound) {
         return barrierStateMap.computeIfAbsent(barrierRound,
-                round -> new BarrierState(round, localBitmask, getChildrenNodes()));
+                round -> new BarrierState(groupId, round, localBitmask, getChildrenNodes()));
     }
 
     final public BarrierState removeBarrierState(int barrierRound) {

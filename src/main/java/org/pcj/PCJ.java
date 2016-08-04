@@ -99,7 +99,7 @@ final public class PCJ extends InternalPCJ {
     public static PcjFuture<Void> asyncBarrier() {
         return ((InternalGroup) PcjThread.getThreadGlobalGroup()).asyncBarrier();
     }
-    
+
     public static void barrier() {
         PCJ.asyncBarrier().get();
     }

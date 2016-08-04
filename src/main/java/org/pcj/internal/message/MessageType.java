@@ -15,7 +15,8 @@ public enum MessageType {
 
     /**
      * @see MessageHello
-     *//**
+     */
+    /**
      * @see MessageHello
      */
     HELLO((byte) 1) {
