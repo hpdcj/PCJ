@@ -69,12 +69,13 @@ public class MessageGroupJoinRequest extends Message {
 
         int groupThreadId = commonGroup.addNewThread(globalThreadId);
 
-        GroupJoinState groupJoinState = commonGroup.getGroupJoinState(requestNum, globalThreadId);
+        GroupJoinState groupJoinState = commonGroup.getGroupJoinState(requestNum, globalThreadId, commonGroup.getChildrenNodes());
         groupJoinState.setGroupThreadId(groupThreadId);
 
         MessageGroupJoinInform message
                 = new MessageGroupJoinInform(requestNum, groupId, globalThreadId,
                         commonGroup.getThreadsMapping());
+
         commonGroup.getChildrenNodes().stream()
                 .map(nodeData.getSocketChannelByPhysicalId()::get)
                 .forEach(socket -> InternalPCJ.getNetworker().send(socket, message));

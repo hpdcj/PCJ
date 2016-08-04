@@ -54,10 +54,10 @@ public class GroupJoinState {
         this.groupThreadId = groupThreadId;
     }
 
-    public synchronized void processPhysical(int physicalId) {
+    public synchronized boolean processPhysical(int physicalId) {
 //        System.out.println("grpId:" + groupId + " req:" + requestNum + " thrdId: " + globalThreadId + " " + childrenSet + " contains " + physicalId + "?");
         if (childrenSet.contains(physicalId) == false) {
-            return;
+            return false;
         }
 
         childrenSet.remove(physicalId);
@@ -83,6 +83,8 @@ public class GroupJoinState {
             }
 
             InternalPCJ.getNetworker().send(socket, message);
+            return true;
         }
+        return false;
     }
 }

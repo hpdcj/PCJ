@@ -391,7 +391,7 @@ public abstract class InternalPCJ {
             }
         }
 
-        GroupJoinState groupJoinState = commonGroup.getGroupJoinState(requestNum, globalThreadId);
+        GroupJoinState groupJoinState = commonGroup.getGroupJoinState(requestNum, globalThreadId, commonGroup.getChildrenNodes());
 
         MessageGroupJoinRequest message
                 = new MessageGroupJoinRequest(requestNum, groupName, commonGroup.getGroupId(),

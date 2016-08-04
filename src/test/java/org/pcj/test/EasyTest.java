@@ -81,7 +81,7 @@ public class EasyTest implements StartPoint {
         System.out.println("globalId: "+PCJ.myId() + " groupId:" + g.myId());
         PCJ.barrier();
 
-        for (int i = 0; i < 10; ++i) {
+        for (int i = 0; i < 500; ++i) {
             System.out.println(PCJ.myId() + "> joining to test" + i);
             Thread.sleep((long) (Math.random() * 100));
             PCJ.join("test" + i);

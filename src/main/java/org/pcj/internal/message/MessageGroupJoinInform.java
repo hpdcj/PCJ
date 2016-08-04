@@ -82,11 +82,12 @@ public class MessageGroupJoinInform extends Message {
             commonGroup.addThread(globalId, groupThreadId);
         }
 
+        GroupJoinState groupJoinState = commonGroup.getGroupJoinState(requestNum, globalThreadId, commonGroup.getChildrenNodes());
+
         commonGroup.getChildrenNodes().stream()
                 .map(nodeData.getSocketChannelByPhysicalId()::get)
                 .forEach(socket -> InternalPCJ.getNetworker().send(socket, this));
 
-        GroupJoinState groupJoinState = commonGroup.getGroupJoinState(requestNum, globalThreadId);
         groupJoinState.processPhysical(nodeData.getPhysicalId());
     }
 }

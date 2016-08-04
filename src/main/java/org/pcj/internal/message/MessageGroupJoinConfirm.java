@@ -54,7 +54,7 @@ public class MessageGroupJoinConfirm extends Message {
 
         InternalCommonGroup commonGroup = InternalPCJ.getNodeData().getGroupById(groupId);
 
-        GroupJoinState groupJoinState = commonGroup.getGroupJoinState(requestNum, globalThreadId);
+        GroupJoinState groupJoinState = commonGroup.getGroupJoinState(requestNum, globalThreadId, commonGroup.getChildrenNodes());
         groupJoinState.processPhysical(physicalId);
     }
 
