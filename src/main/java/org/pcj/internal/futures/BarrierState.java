@@ -5,7 +5,6 @@
  */
 package org.pcj.internal.futures;
 
-import java.io.UncheckedIOException;
 import java.nio.channels.SocketChannel;
 import java.util.List;
 import java.util.Set;

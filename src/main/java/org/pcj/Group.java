@@ -14,9 +14,9 @@ public interface Group {
     int myId();
 
     int threadCount();
-    
+
     String getGroupName();
-    
+
     PcjFuture<Void> asyncBarrier();
 
     <T> PcjFuture<T> asyncGet(int threadId, Shared variable, int... indices);

@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.pcj.internal.DeployPCJ;
-import org.pcj.internal.InternalGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.InternalStorage;
 import org.pcj.internal.PcjThread;

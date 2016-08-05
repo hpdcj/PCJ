@@ -11,7 +11,6 @@ import org.pcj.NodesDescription;
 import org.pcj.PCJ;
 import org.pcj.Shared;
 import org.pcj.StartPoint;
-import org.pcj.internal.InternalCommonGroup;
 
 /**
  *

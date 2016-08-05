@@ -5,8 +5,8 @@ package org.pcj.test;
  */
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.Scanner;
 import java.util.Locale;
+import java.util.Scanner;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
 import org.pcj.Shared;

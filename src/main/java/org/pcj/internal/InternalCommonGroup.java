@@ -3,7 +3,6 @@
  */
 package org.pcj.internal;
 
-import java.nio.channels.SocketChannel;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -16,9 +15,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.internal.futures.BarrierState;
 import org.pcj.internal.futures.BroadcastState;
 import org.pcj.internal.futures.GroupJoinState;
-import org.pcj.internal.message.Message;
-import org.pcj.internal.message.MessageGroupBarrierGo;
-import org.pcj.internal.message.MessageGroupBarrierWaiting;
 
 /**
  * Internal (with common ClassLoader) representation of Group. It contains
@@ -218,7 +214,7 @@ public class InternalCommonGroup {
 
     private void updateLocalBitmask(int physicalId, int groupThreadId) {
         int currentPhysicalId = InternalPCJ.getNodeData().getPhysicalId();
-        
+
         synchronized (localIds) {
             if (physicalId == currentPhysicalId) {
                 localIds.add(groupThreadId);

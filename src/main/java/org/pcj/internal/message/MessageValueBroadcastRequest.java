@@ -12,8 +12,8 @@ import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.InternalStorage;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.PcjThread;
-import org.pcj.internal.network.CloneInputStream;
 import org.pcj.internal.futures.BroadcastState;
+import org.pcj.internal.network.CloneInputStream;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 

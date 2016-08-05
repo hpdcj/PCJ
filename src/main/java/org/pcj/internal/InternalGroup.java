@@ -52,7 +52,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     public int myId() {
         return myThreadId;
     }
-    
+
     @Override
     public PcjFuture<Void> asyncBarrier() {
         return super.barrier(myThreadId, barrierRoundCounter.incrementAndGet());
