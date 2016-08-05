@@ -87,6 +87,11 @@ public class MessageGroupJoinInform extends Message {
                 .map(nodeData.getSocketChannelByPhysicalId()::get)
                 .forEach(socket -> InternalPCJ.getNetworker().send(socket, this));
 
-        groupJoinState.processPhysical(nodeData.getPhysicalId());
+        if (groupJoinState.processPhysical(nodeData.getPhysicalId())) {
+            int requesterPhysicalId = nodeData.getPhysicalId(globalThreadId);
+            if (requesterPhysicalId != nodeData.getPhysicalId()) {
+                commonGroup.removeGroupJoinState(requestNum, globalThreadId);
+            }
+        }
     }
 }

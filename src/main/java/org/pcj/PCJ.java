@@ -62,20 +62,24 @@ final public class PCJ extends InternalPCJ {
         DeployPCJ.deploy(startPoint, nodesDescription, Arrays.asList(storages));
     }
 
-    public static int myId() {
-        return ((InternalGroup) PcjThread.getThreadGlobalGroup()).myId();
-    }
-
-    public static int threadCount() {
-        return ((InternalGroup) PcjThread.getThreadGlobalGroup()).threadCount();
-    }
-
     public static int getNodeId() {
         return InternalPCJ.getNodeData().getPhysicalId();
     }
 
     public static int getNodeCount() {
         return InternalPCJ.getNodeData().getTotalNodeCount();
+    }
+
+    public static int myId() {
+        return getGlobalGroup().myId();
+    }
+
+    public static int threadCount() {
+        return getGlobalGroup().threadCount();
+    }
+
+    public static Group getGlobalGroup() {
+        return PcjThread.getThreadGlobalGroup();
     }
 
     public static void createShared(Shared variable) {
@@ -97,7 +101,7 @@ final public class PCJ extends InternalPCJ {
     }
 
     public static PcjFuture<Void> asyncBarrier() {
-        return ((InternalGroup) PcjThread.getThreadGlobalGroup()).asyncBarrier();
+        return getGlobalGroup().asyncBarrier();
     }
 
     public static void barrier() {
@@ -130,7 +134,7 @@ final public class PCJ extends InternalPCJ {
     }
 
     public static <T> PcjFuture<T> asyncGet(int threadId, Shared variable, int... indices) {
-        return ((InternalGroup) PcjThread.getThreadGlobalGroup()).asyncGet(threadId, variable, indices);
+        return getGlobalGroup().asyncGet(threadId, variable, indices);
     }
 
     public static <T> T get(int threadId, Shared variable, int... indices) throws PcjRuntimeException {
@@ -138,7 +142,7 @@ final public class PCJ extends InternalPCJ {
     }
 
     public static <T> PcjFuture<Void> asyncPut(int threadId, Shared variable, T newValue, int... indices) {
-        return ((InternalGroup) PcjThread.getThreadGlobalGroup()).asyncPut(threadId, variable, newValue, indices);
+        return getGlobalGroup().asyncPut(threadId, variable, newValue, indices);
     }
 
     public static <T> void put(int threadId, Shared variable, T newValue, int... indices) {
@@ -146,7 +150,7 @@ final public class PCJ extends InternalPCJ {
     }
 
     public static <T> PcjFuture<Void> asyncBroadcast(Shared variable, T newValue) {
-        return ((InternalGroup) PcjThread.getThreadGlobalGroup()).asyncBroadcast(variable, newValue);
+        return getGlobalGroup().asyncBroadcast(variable, newValue);
     }
 
     public static <T> void broadcast(Shared variable, T newValue) {
@@ -154,7 +158,7 @@ final public class PCJ extends InternalPCJ {
     }
 
     public static Group join(String name) {
-        int myThreadId = ((InternalGroup) PcjThread.getThreadGlobalGroup()).myId();
+        int myThreadId = getGlobalGroup().myId();
         return (Group) InternalPCJ.join(myThreadId, name);
     }
 

@@ -97,10 +97,11 @@ final public class MessageValueBroadcastRequest extends Message {
             }
         }
 
-        int requesterPhysicalId = nodeData.getPhysicalId(group.getGlobalThreadId(requesterThreadId));
-        boolean informed = broadcastState.processPhysical(nodeData.getPhysicalId());
-        if (informed && nodeData.getPhysicalId() != requesterPhysicalId) {
-            group.removeBroadcastState(requestNum, requesterThreadId);
+        if (broadcastState.processPhysical(nodeData.getPhysicalId())) {
+            int requesterPhysicalId = nodeData.getPhysicalId(group.getGlobalThreadId(requesterThreadId));
+            if (nodeData.getPhysicalId() != requesterPhysicalId) {
+                group.removeBroadcastState(requestNum, requesterThreadId);
+            }
         }
     }
 

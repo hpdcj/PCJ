@@ -97,9 +97,9 @@ public class EasyTest implements StartPoint {
             System.out.println(PCJ.myId() + "> joining to test" + i);
             Thread.sleep((long) (Math.random() * 100));
             PCJ.join("test" + i);
-//            if (i % 20 == 0) {
-//                PCJ.barrier();
-//            }
+            if (i % 20 == 0) {
+                PCJ.barrier();
+            }
         }
         PCJ.barrier();
 //        System.out.println(PCJ.myId() + "> DONE");
