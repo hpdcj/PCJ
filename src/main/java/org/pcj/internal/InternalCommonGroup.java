@@ -127,7 +127,7 @@ public class InternalCommonGroup {
         return groupId;
     }
 
-    protected String getGroupName() {
+    final public String getGroupName() {
         return groupName;
     }
 
@@ -147,7 +147,7 @@ public class InternalCommonGroup {
         throw new IllegalStateException("This method has to be overriden!");
     }
 
-    public int threadCount() {
+    final public int threadCount() {
         return threadsMapping.size();
     }
 
@@ -199,16 +199,18 @@ public class InternalCommonGroup {
     }
 
     private void updateCommunicationTree(int physicalId) {
-        int currentPhysicalId = InternalPCJ.getNodeData().getPhysicalId();
+        synchronized (physicalIds) {
+            if (physicalIds.addIfAbsent(physicalId)) {
+                int currentPhysicalId = InternalPCJ.getNodeData().getPhysicalId();
 
-        if (physicalIds.addIfAbsent(physicalId)) {
-            int index = physicalIds.indexOf(physicalId);
-            if (index > 0) {
-                if (physicalId == currentPhysicalId) {
-                    physicalTree.setParentNode(physicalIds.get((index - 1) / 2));
-                }
-                if (physicalIds.get((index - 1) / 2) == currentPhysicalId) {
-                    physicalTree.getChildrenNodes().add(physicalId);
+                int index = physicalIds.indexOf(physicalId);
+                if (index > 0) {
+                    if (physicalId == currentPhysicalId) {
+                        physicalTree.setParentNode(physicalIds.get((index - 1) / 2));
+                    }
+                    if (physicalIds.get((index - 1) / 2) == currentPhysicalId) {
+                        physicalTree.getChildrenNodes().add(physicalId);
+                    }
                 }
             }
         }
@@ -216,10 +218,13 @@ public class InternalCommonGroup {
 
     private void updateLocalBitmask(int physicalId, int groupThreadId) {
         int currentPhysicalId = InternalPCJ.getNodeData().getPhysicalId();
-        if (physicalId == currentPhysicalId) {
-            localIds.add(groupThreadId);
-            localBitmask.enlarge(groupThreadId + 1);
-            localBitmask.set(groupThreadId);
+        
+        synchronized (localIds) {
+            if (physicalId == currentPhysicalId) {
+                localIds.add(groupThreadId);
+                localBitmask.enlarge(groupThreadId + 1);
+                localBitmask.set(groupThreadId);
+            }
         }
     }
 
@@ -276,6 +281,7 @@ public class InternalCommonGroup {
 
         public CommunicationTree(int rootNode) {
             this.rootNode = rootNode;
+            this.parentNode = -1;
             childrenNodes = new CopyOnWriteArrayList<>();
         }
 

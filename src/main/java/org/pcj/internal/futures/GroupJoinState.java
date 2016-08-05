@@ -76,6 +76,9 @@ public class GroupJoinState {
                 message = new MessageGroupJoinResponse(requestNum, groupId, globalThreadId, groupThreadId);
             } else {
                 int parentId = commonGroup.getParentNode();
+                if (parentId == -1) {
+                    return true;
+                }
                 socket = nodeData.getSocketChannelByPhysicalId().get(parentId);
 
                 message = new MessageGroupJoinConfirm(requestNum, groupId, globalThreadId,

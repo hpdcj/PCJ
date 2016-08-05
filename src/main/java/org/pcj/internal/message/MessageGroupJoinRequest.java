@@ -7,8 +7,6 @@ package org.pcj.internal.message;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayList;
-import java.util.List;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
@@ -69,12 +67,12 @@ public class MessageGroupJoinRequest extends Message {
 
         int groupThreadId = commonGroup.addNewThread(globalThreadId);
 
-        GroupJoinState groupJoinState = commonGroup.getGroupJoinState(requestNum, globalThreadId, commonGroup.getChildrenNodes());
-        groupJoinState.setGroupThreadId(groupThreadId);
-
         MessageGroupJoinInform message
                 = new MessageGroupJoinInform(requestNum, groupId, globalThreadId,
                         commonGroup.getThreadsMapping());
+
+        GroupJoinState groupJoinState = commonGroup.getGroupJoinState(requestNum, globalThreadId, commonGroup.getChildrenNodes());
+        groupJoinState.setGroupThreadId(groupThreadId);
 
         commonGroup.getChildrenNodes().stream()
                 .map(nodeData.getSocketChannelByPhysicalId()::get)

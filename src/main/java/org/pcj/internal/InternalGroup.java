@@ -54,16 +54,6 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     }
     
     @Override
-    public int threadCount() {
-        return super.threadCount();
-    }
-
-    @Override
-    public String getGroupName() {
-        return super.getGroupName();
-    }
-    
-    @Override
     public PcjFuture<Void> asyncBarrier() {
         return super.barrier(myThreadId, barrierRoundCounter.incrementAndGet());
     }

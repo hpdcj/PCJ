@@ -11,6 +11,7 @@ import org.pcj.NodesDescription;
 import org.pcj.PCJ;
 import org.pcj.Shared;
 import org.pcj.StartPoint;
+import org.pcj.internal.InternalCommonGroup;
 
 /**
  *
@@ -44,31 +45,34 @@ public class EasyTest implements StartPoint {
 
         NodesDescription nodesDescription = new NodesDescription(new String[]{
             "localhost:8091",
-            "localhost:8002",//
+            "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091",
+            "localhost:8002",
+            "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002",
             "localhost:8003",
+            "localhost:8003", "localhost:8003", "localhost:8003", "localhost:8003", "localhost:8003", "localhost:8003", "localhost:8003", "localhost:8003", "localhost:8003",
             "localhost:8004",
-            "localhost:8005", //
+            "localhost:8004", "localhost:8004", "localhost:8004", "localhost:8004", "localhost:8004", "localhost:8004", "localhost:8004", "localhost:8004", "localhost:8004",
+            "localhost:8005",
+            "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005",
             "localhost:8006",
-            "localhost:8007",
+            "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006",
+            "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007",
             "localhost:8008",
-            "localhost:8009", // run.jvmargs=-Xmx64m
-        //            "localhost:8010",//
+            "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008",
+            "localhost:8009",
+            "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", //
+        // run.jvmargs=-Xmx64m
+        //            "localhost:8010",
         //            "localhost:8011",
         //            "localhost:8011",
-        //            "localhost:8011",//
         //            "localhost:8012",
-        //            "localhost:8012",//
-        //            "localhost:8013",//
+        //            "localhost:8013",
         //            "localhost:8014",
-        //            "localhost:8014",//
-        //            "localhost:8015",//
+        //            "localhost:8015",
         //            "localhost:8016",
-        //            "localhost:8016",
-        //            "localhost:8016",//
-        //            "localhost:8017",//
+        //            "localhost:8017",
         //            "localhost:8018",
-        //            "localhost:8018",//
-        //            "localhost:8019",//
+        //            "localhost:8019",
         });
 
         PCJ.deploy(EasyTest.class, nodesDescription, SharedEnum.class);
@@ -76,26 +80,30 @@ public class EasyTest implements StartPoint {
 
     @Override
     public void main() throws Throwable {
-//        Thread.sleep(PCJ.myId() * 500);
-        Group g = PCJ.join("group" + (PCJ.myId() % 2));
+//        Thread.sleep((PCJ.getNodeCount()- PCJ.getNodeId()) * 50);
+
+        Group g = PCJ.join("group" + (PCJ.myId() % 1));
         PCJ.barrier();
-        
+
         for (int i = 0; i < g.threadCount(); ++i) {
             if (g.myId() == i) {
                 System.out.println(g.getGroupName() + ">>> global: " + PCJ.myId() + " group:" + g.myId() + "/" + g.threadCount());
             }
             g.asyncBarrier().get();
         }
+        PCJ.barrier();
 
-        for (int i = 0; i < 100; ++i) {
+        for (int i = 1; i <= 100; ++i) {
             System.out.println(PCJ.myId() + "> joining to test" + i);
             Thread.sleep((long) (Math.random() * 100));
             PCJ.join("test" + i);
+//            if (i % 20 == 0) {
+//                PCJ.barrier();
+//            }
         }
-
         PCJ.barrier();
-        System.out.println(PCJ.myId() + "> DONE");
-        
+//        System.out.println(PCJ.myId() + "> DONE");
+
 //        Level level = Level.FINEST;
 //        Logger logger = Logger.getLogger("");
 //        Arrays.stream(logger.getHandlers()).forEach(handler -> handler.setLevel(level));
