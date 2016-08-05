@@ -77,7 +77,11 @@ final public class MessageValueBroadcastInform extends Message {
             broadcastState.addException(ex);
         }
 
-        broadcastState.processPhysical(physicalId);
+        int requesterPhysicalId = nodeData.getPhysicalId(group.getGlobalThreadId(requesterThreadId));
+        boolean informed = broadcastState.processPhysical(physicalId);
 
+        if (informed && nodeData.getPhysicalId() != requesterPhysicalId) {
+            group.removeBroadcastState(requestNum, requesterThreadId);
+        }
     }
 }

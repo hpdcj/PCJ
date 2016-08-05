@@ -93,7 +93,7 @@ public class BroadcastState extends InternalFuture<Void> implements PcjFuture<Vo
         return null;
     }
 
-    public synchronized void processPhysical(int physicalId) {
+    public synchronized boolean processPhysical(int physicalId) {
         childrenSet.remove(physicalId);
 
         if (childrenSet.isEmpty()) {
@@ -118,6 +118,10 @@ public class BroadcastState extends InternalFuture<Void> implements PcjFuture<Vo
             }
 
             InternalPCJ.getNetworker().send(socket, message);
+
+            return true;
         }
+
+        return false;
     }
 }
