@@ -8,7 +8,7 @@ package org.pcj.internal.message;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import org.pcj.internal.InternalPCJ;
-import org.pcj.internal.futures.GroupQuery;
+import org.pcj.internal.futures.GroupJoinQuery;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
@@ -51,7 +51,7 @@ public class MessageGroupJoinAnswer extends Message {
         this.groupId = in.readInt();
         this.masterPhysicalId = in.readInt();
 
-        GroupQuery groupQuery = InternalPCJ.getNodeData().removeGroupQuery(requestNum);
+        GroupJoinQuery groupQuery = InternalPCJ.getNodeData().removeGroupJoinQuery(requestNum);
         groupQuery.setGroupId(groupId);
         groupQuery.setGroupMasterId(masterPhysicalId);
 

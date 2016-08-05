@@ -64,7 +64,7 @@ class MessageValuePutResponse extends Message {
         PcjThread pcjThread = nodeData.getPcjThreads().get(globalThreadId);
         InternalGroup group = (InternalGroup) pcjThread.getThreadData().getGroupById(groupId);
 
-        PutVariable putVariable = group.getPutVariableMap().remove(requestNum);
+        PutVariable putVariable = group.removePutVariable(requestNum);
 
         boolean exceptionOccurs = in.readBoolean();
         try {

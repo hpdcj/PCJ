@@ -25,7 +25,7 @@ import org.pcj.internal.message.MessageGroupBarrierWaiting;
  *
  * @author faramir
  */
-public class BarrierState extends InternalFuture<Void> implements PcjFuture<Void> {
+public class GroupBarrierState extends InternalFuture<Void> implements PcjFuture<Void> {
 
     private final int groupId;
     private final int barrierRound;
@@ -33,7 +33,7 @@ public class BarrierState extends InternalFuture<Void> implements PcjFuture<Void
     private final Bitmask localBarrierBitmask;
     private final Bitmask localBarrierMaskBitmask;
 
-    public BarrierState(int groupId, int barrierRound, Bitmask localBitmask, List<Integer> childrenNodes) {
+    public GroupBarrierState(int groupId, int barrierRound, Bitmask localBitmask, List<Integer> childrenNodes) {
         this.groupId = groupId;
         this.barrierRound = barrierRound;
         this.childrenSet = ConcurrentHashMap.newKeySet(childrenNodes.size());

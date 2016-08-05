@@ -86,13 +86,10 @@ final public class PCJ extends InternalPCJ {
     }
 
     public static void createShared(Class<? extends Enum<? extends Shared>> sharedEnum) {
-        if (sharedEnum.isEnum() == false) {
-            throw new IllegalArgumentException("Argument is not enum");
+        if (sharedEnum.isEnum() == false || Shared.class.isAssignableFrom(sharedEnum) == false) {
+            throw new IllegalArgumentException("Argument is not shared enum");
         }
-//        if (element instanceof Shared == false){
-        if (Shared.class.isAssignableFrom(sharedEnum) == false) {
-            throw new IllegalArgumentException("Argument is not shared");
-        }
+
         InternalStorage storage = PcjThread.getThreadStorage();
         Arrays.stream(sharedEnum.getEnumConstants())
                 .map(e -> (Shared) e)
@@ -105,6 +102,14 @@ final public class PCJ extends InternalPCJ {
 
     public static void barrier() {
         PCJ.asyncBarrier().get();
+    }
+
+    public static PcjFuture<Void> asyncBarrier(int threadId) {
+        return getGlobalGroup().asyncBarrier(threadId);
+    }
+
+    public static void barrier(int threadId) {
+        PCJ.asyncBarrier(threadId).get();
     }
 
     public static void monitor(Shared variable) {
@@ -159,10 +164,6 @@ final public class PCJ extends InternalPCJ {
     public static Group join(String name) {
         int myThreadId = getGlobalGroup().myId();
         return (Group) InternalPCJ.join(myThreadId, name);
-    }
-
-    public static PcjFuture<Void> asyncBarrier(int peerThreadId) {
-        throw new UnsupportedOperationException("not implemented yet.");
     }
 
 //    public static <T, R> PcjFuture<R> asyncAt(int threadId, Function<R, T> lambda) throws PcjRuntimeException {

@@ -12,7 +12,9 @@ import org.pcj.PcjFuture;
 import org.pcj.Shared;
 import org.pcj.internal.futures.BroadcastState;
 import org.pcj.internal.futures.GetVariable;
+import org.pcj.internal.futures.PeerBarrierState;
 import org.pcj.internal.futures.PutVariable;
+import org.pcj.internal.message.MessagePeerBarrier;
 import org.pcj.internal.message.MessageValueBroadcastRequest;
 import org.pcj.internal.message.MessageValueGetRequest;
 import org.pcj.internal.message.MessageValuePutRequest;
@@ -31,6 +33,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     private final AtomicInteger putVariableCounter;
     private final ConcurrentMap<Integer, PutVariable> putVariableMap;
     private final AtomicInteger broadcastCounter;
+    private final ConcurrentMap<Integer, PeerBarrierState> peerBarrierStateMap;
 
     public InternalGroup(int threadId, InternalCommonGroup internalGroup) {
         super(internalGroup);
@@ -46,6 +49,8 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         putVariableMap = new ConcurrentHashMap<>();
 
         broadcastCounter = new AtomicInteger(0);
+
+        peerBarrierStateMap = new ConcurrentHashMap<>();
     }
 
     @Override
@@ -56,6 +61,24 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     @Override
     public PcjFuture<Void> asyncBarrier() {
         return super.barrier(myThreadId, barrierRoundCounter.incrementAndGet());
+    }
+
+    @Override
+    public PcjFuture<Void> asyncBarrier(int threadId) {
+        PeerBarrierState peerBarrierState = getPeerBarrierState(threadId);
+
+        int globalThreadId = super.getGlobalThreadId(threadId);
+        int physicalId = InternalPCJ.getNodeData().getPhysicalId(globalThreadId);
+        SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalId);
+
+        MessagePeerBarrier message = new MessagePeerBarrier(super.getGroupId(), myThreadId, threadId);
+        InternalPCJ.getNetworker().send(socket, message);
+
+        return peerBarrierState.mineBarrier();
+    }
+
+    public PeerBarrierState getPeerBarrierState(int threadId) {
+        return peerBarrierStateMap.computeIfAbsent(threadId, key -> new PeerBarrierState());
     }
 
     @Override
@@ -78,8 +101,8 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         return getVariable;
     }
 
-    public ConcurrentMap<Integer, GetVariable> getGetVariableMap() {
-        return getVariableMap;
+    public GetVariable removeGetVariable(int requestNum) {
+        return getVariableMap.get(requestNum);
     }
 
     @Override
@@ -102,8 +125,8 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         return putVariable;
     }
 
-    public ConcurrentMap<Integer, PutVariable> getPutVariableMap() {
-        return putVariableMap;
+    public PutVariable removePutVariable(int requestNum) {
+        return putVariableMap.remove(requestNum);
     }
 
     @Override

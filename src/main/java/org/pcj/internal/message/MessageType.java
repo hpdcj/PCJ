@@ -97,356 +97,96 @@ public enum MessageType {
             return new MessageGroupBarrierGo();
         }
     },
-    GROUP_JOIN_QUERY((byte) 12) {
+    PEER_BARRIER((byte) 12) {
+        @Override
+        public MessagePeerBarrier create() {
+            return new MessagePeerBarrier();
+        }
+    },
+    GROUP_JOIN_QUERY((byte) 20) {
         @Override
         public MessageGroupJoinQuery create() {
             return new MessageGroupJoinQuery();
         }
     },
-    GROUP_JOIN_ANSWER((byte) 13) {
+    GROUP_JOIN_ANSWER((byte) 21) {
         @Override
         public MessageGroupJoinAnswer create() {
             return new MessageGroupJoinAnswer();
         }
     },
-    GROUP_JOIN_REQUEST((byte) 14) {
+    GROUP_JOIN_REQUEST((byte) 22) {
         @Override
         public MessageGroupJoinRequest create() {
             return new MessageGroupJoinRequest();
         }
     },
-    GROUP_JOIN_RESPONSE((byte) 15) {
-        @Override
-        public MessageGroupJoinResponse create() {
-            return new MessageGroupJoinResponse();
-        }
-    },
-    GROUP_JOIN_INFORM((byte) 16) {
+    GROUP_JOIN_INFORM((byte) 23) {
         @Override
         public MessageGroupJoinInform create() {
             return new MessageGroupJoinInform();
         }
     },
-    GROUP_JOIN_CONFIRM((byte) 17) {
+    GROUP_JOIN_CONFIRM((byte) 24) {
         @Override
         public MessageGroupJoinConfirm create() {
             return new MessageGroupJoinConfirm();
         }
     },
-    VALUE_GET_REQUEST((byte) 20) {
+    GROUP_JOIN_RESPONSE((byte) 25) {
+        @Override
+        public MessageGroupJoinResponse create() {
+            return new MessageGroupJoinResponse();
+        }
+    },
+    VALUE_GET_REQUEST((byte) 30) {
         @Override
         public MessageValueGetRequest create() {
             return new MessageValueGetRequest();
         }
     },
-    VALUE_GET_RESPONSE((byte) 21) {
+    VALUE_GET_RESPONSE((byte) 31) {
         @Override
         public MessageValueGetResponse create() {
             return new MessageValueGetResponse();
         }
     },
-    VALUE_PUT_REQUEST((byte) 22) {
+    VALUE_PUT_REQUEST((byte) 32) {
         @Override
         public MessageValuePutRequest create() {
             return new MessageValuePutRequest();
         }
     },
-    VALUE_PUT_RESPONSE((byte) 23) {
+    VALUE_PUT_RESPONSE((byte) 33) {
         @Override
         public MessageValuePutResponse create() {
             return new MessageValuePutResponse();
         }
     },
-    VALUE_BROADCAST_REQUEST((byte) 24) {
+    VALUE_BROADCAST_REQUEST((byte) 34) {
         @Override
         public MessageValueBroadcastRequest create() {
             return new MessageValueBroadcastRequest();
         }
     },
-    VALUE_BROADCAST_BYTES((byte) 25) {
+    VALUE_BROADCAST_BYTES((byte) 35) {
         @Override
         public MessageValueBroadcastBytes create() {
             return new MessageValueBroadcastBytes();
         }
     },
-    VALUE_BROADCAST_INFORM((byte) 26) {
+    VALUE_BROADCAST_INFORM((byte) 36) {
         @Override
         public MessageValueBroadcastInform create() {
             return new MessageValueBroadcastInform();
         }
     },
-    VALUE_BROADCAST_RESPONSE((byte) 27) {
+    VALUE_BROADCAST_RESPONSE((byte) 37) {
         @Override
         public MessageValueBroadcastResponse create() {
             return new MessageValueBroadcastResponse();
         }
     },
-    //    /**
-    //     * after sending SYNC_WAIT Server collects it on specified group. When all
-    //     * nodes in group sent that message, Server sends SYNC_GO
-    //     *
-    //     * @param obj[0] groupId (<tt>int</tt>)
-    //     *
-    //     * @see MessageType#SYNC_GO
-    //     */
-    //    SYNC_WAIT(20) {
-    //                @Override
-    //                MessageSyncWait createMessage() {
-    //                    return new MessageSyncWait();
-    //                }
-    //            },
-    //    /**
-    //     * message to all nodes (implicity broadcast) to continue calculations
-    //     *
-    //     * @param obj[0] groupId (<tt>int</tt>)
-    //     *
-    //     * @see MessageType#SYNC_WAIT
-    //     */
-    //    SYNC_GO(21) {
-    //                @Override
-    //                MessageSyncGo createMessage() {
-    //                    return new MessageSyncGo();
-    //                }
-    //            },
-    //    /**
-    //     * <b>Currently not used!</b>
-    //     *
-    // after sending THREADS_SYNC_WAIT Server collects it on globalNodeIds. When
-    //     * all nodes from that `array` sent that message, Server sends
-    //     * THREADS_SYNC_GO
-    //     *
-    //     * @param obj[0] global threads ids (<tt>int[]</tt>)
-    //     *
-    //     * @see MessageType#THREADS_SYNC_GO
-    //     */
-    //    @Deprecated
-    //    THREADS_SYNC_WAIT(22) {
-    //                @Override
-    //                MessageThreadsSyncWait createMessage() {
-    //                    return new MessageThreadsSyncWait();
-    //                }
-    //            },
-    //    /**
-    //     * <b>Currently not used!</b>
-    //     *
-    //     * message to all nodes (implicity broadcast) to continue calculations
-    //     *
-    //     * @param obj[0] global threads ids (<tt>int[]</tt>)
-    //     *
-    //     * @see MessageType#THREADS_SYNC_WAIT
-    //     */
-    //    @Deprecated
-    //    THREADS_SYNC_GO(23) {
-    //                @Override
-    //                MessageThreadsSyncGo createMessage() {
-    //                    return new MessageThreadsSyncGo();
-    //                }
-    //            },
-    //    /**
-    //     * message to thread about waiting in calculations, when received when
-    //     * waiting - continue calculations
-    //     *
-    //     * @param obj[0] global thread id of thread that sends message
-    //     * (<tt>int</tt>)
-    //     * @param obj[1] global thread id of thread that receives message
-    //     * (<tt>int</tt>)
-    //     */
-    //    THREAD_PAIR_SYNC(24) {
-    //                @Override
-    //                MessageThreadPairSync createMessage() {
-    //                    return new MessageThreadPairSync();
-    //                }
-    //            },
-    //    /**
-    //     * Question about groupId and master physicalId of group
-    //     *
-    //     * @param obj[0] groupName (<tt>String</tt>)
-    //     *
-    //     * @see MessageType#GROUP_JOIN_ANSWER
-    //     */
-    //    GROUP_JOIN_QUERY(30) {
-    //                @Override
-    //                MessageGroupJoinQuery createMessage() {
-    //                    return new MessageGroupJoinQuery();
-    //                }
-    //            },
-    //    /**
-    //     * Answer from Server with groupId and master global physicalId
-    //     *
-    //     * @param obj[0] groupName (<tt>String</tt>)
-    //     * @param obj[1] groupId (<tt>int</tt>)
-    //     * @param obj[2] master physicalId (<tt>int</tt>)
-    //     */
-    //    GROUP_JOIN_ANSWER(31) {
-    //                @Override
-    //                MessageGroupJoinAnswer createMessage() {
-    //                    return new MessageGroupJoinAnswer();
-    //                }
-    //            },
-    //    /**
-    //     * message from thread to the group master with request to join into the
-    //     * desired group
-    //     *
-    //     * @param obj[0] groupId (<tt>int</tt>)
-    //     * @param obj[1] global threadId (<tt>int</tt>)
-    //     *
-    //     * @see MessageType#GROUP_JOIN_RESPONSE
-    //     * @see MessageType#GROUP_JOIN_INFORM
-    //     */
-    //    GROUP_JOIN_REQUEST(32) {
-    //                @Override
-    //                MessageGroupJoinRequest createMessage() {
-    //                    return new MessageGroupJoinRequest();
-    //                }
-    //            },
-    //    /**
-    //     * message from group master to the node with groupThreadId
-    //     *
-    //     * @param obj[0] groupId (<tt>int</tt>)
-    //     * @param obj[1] global threadId (<tt>int</tt>)
-    //     * @param obj[2] group threadId (<tt>int</tt>)
-    //     * @param obj[3] parent physicalId (<tt>int</tt>)
-    //     *
-    //     * @see MessageType#GROUP_JOIN_REQUEST
-    //     */
-    //    GROUP_JOIN_RESPONSE(33) {
-    //                @Override
-    //                MessageGroupJoinResponse createMessage() {
-    //                    return new MessageGroupJoinResponse();
-    //                }
-    //            },
-    //    /**
-    //     * message to all nodes in group (using BROADCAST) with information about
-    //     * new thread in group
-    //     *
-    //     * @param obj[0] groupId (<tt>int</tt>)
-    //     * @param obj[1] new-thread global threadId (<tt>int</tt>)
-    //     * @param obj[2] new-thread group threadId (<tt>int</tt>)
-    //     * @param obj[3] new-thread parent physicalId (<tt>int</tt>)
-    //     *
-    //     * @see MessageType#GROUP_JOIN_BONJOUR
-    //     */
-    //    GROUP_JOIN_INFORM(34) {
-    //                @Override
-    //                MessageGroupJoinInform createMessage() {
-    //                    return new MessageGroupJoinInform();
-    //                }
-    //            },
-    //    /**
-    //     * message from all nodes in group to new-thread
-    //     *
-    //     * @param obj[0] groupId (<tt>int</tt>)
-    //     * @param obj[1] new-thread group threadId (<tt>int</tt>)
-    //     * @param obj[2] old-thread global threadIds (<tt>int[]</tt>)
-    //     * @param obj[3] old-thread group threadIds (<tt>int[]</tt>)
-    //     *
-    //     * @see MessageType#GROUP_JOIN_INFORM
-    //     */
-    //    GROUP_JOIN_BONJOUR(35) {
-    //                @Override
-    //                MessageGroupJoinBonjour createMessage() {
-    //                    return new MessageGroupJoinBonjour();
-    //                }
-    //            },
-    //    /**
-    //     * message from one thread to another asking about Storage value
-    //     *
-    //     * @param obj[0] globalThreadId of sender thread (<tt>int</tt>)
-    //     * @param obj[1] globalThreadId of receiver thread (<tt>int</tt>)
-    //     * @param obj[2] indexes (<tt>int[]</tt>)
-    //     * @param obj[3] variableName (<tt>String</tt>)
-    //     *
-    //     * @see MessageType#VALUE_ASYNC_GET_RESPONSE
-    //     */
-    //    VALUE_ASYNC_GET_REQUEST(45) {
-    //                @Override
-    //                MessageValueAsyncGetRequest createMessage() {
-    //                    return new MessageValueAsyncGetRequest();
-    //                }
-    //            },
-    //    /**
-    //     * message from one thread to another thread with variable value (response).
-    //     * information about which variable is returned is stored in replyTo field
-    //     *
-    //     * @param obj[0] globalThreadId of receiving thread (<tt>int</tt>)
-    //     * @param obj[1] variableValue (<tt>byte[]</tt> - serialized object data)
-    //     *
-    //     * @see MessageType#VALUE_ASYNC_GET_REQUEST
-    //     */
-    //    VALUE_ASYNC_GET_RESPONSE(43) {
-    //                @Override
-    //                MessageValueAsyncGetResponse createMessage() {
-    //                    return new MessageValueAsyncGetResponse();
-    //                }
-    //            },
-    //    /**
-    //     * message from one thread to another thread with variable value to put
-    //     *
-    //     * @param obj[0] globalThreadId of remote thread (<tt>int</tt>)
-    //     * @param obj[1] variableName (<tt>String</tt>)
-    //     * @param obj[2] indexes (<tt>int[]</tt>)
-    //     * @param obj[3] variableValue (<tt>byte[]</tt> - serialized object data)
-    //     *
-    //     * @see MessageType#VALUE_GET_REQUEST
-    //     * @see MessageType#VALUE_BROADCAST
-    //     */
-    //    VALUE_PUT(52) {
-    //                @Override
-    //                MessageValuePut createMessage() {
-    //                    return new MessageValuePut();
-    //                }
-    //            },
-    //    /**
-    //     * message from one thread to all threads (broadcast) with variable value to
-    //     * put
-    //     *
-    //     * @param obj[0] groupId (<tt>int</tt>)
-    //     * @param obj[1] variableName (<tt>String</tt>)
-    //     * @param obj[2] variableValue (<tt>byte[]</tt> - serialized object data)
-    //     *
-    //     * @see MessageType#VALUE_PUT
-    //     */
-    //    VALUE_BROADCAST(51) {
-    //                @Override
-    //                MessageValueBroadcast createMessage() {
-    //                    return new MessageValueBroadcast();
-    //                }
-    //            },
-    //    /**
-    //     * message from one thread to other thread asking to perform CAS
-    //     * (Compare-And-Set) operation. This operation is atomic. It checks if
-    //     * stored value is equal to expected value, and if so, change value to new
-    //     * value. It returns (previously) stored value.
-    //     *
-    //     * @param obj[0] globalThreadId of sender thread (<tt>int</tt>)
-    //     * @param obj[1] globalThreadId of receiver thread (<tt>int</tt>)
-    //     * @param obj[2] variableName (<tt>String</tt>)
-    //     * @param obj[3] indexes (<tt>int[]</tt>)
-    //     * @param obj[4] expectedValue (<tt>byte[]</tt> - serialized object data)
-    //     * @param obj[5] newValue (<tt>byte[]</tt> - serialized object data)
-    //     *
-    //     * @see MessageType#VALUE_COMPARE_AND_SET_RESPONSE
-    //     */
-    //    VALUE_COMPARE_AND_SET_REQUEST(60) {
-    //                @Override
-    //                MessageValueCompareAndSetRequest createMessage() {
-    //                    return new MessageValueCompareAndSetRequest();
-    //                }
-    //            },
-    //    /**
-    //     * response of the CAS (Compare-And-Set) operation
-    //     *
-    //     * @param obj[0] globalThreadId of receiving thread (<tt>int</tt>)
-    //     * @param obj[1] variableValue (<tt>byte[]</tt> - serialized object data)
-    //     *
-    //     * @see MessageType#VALUE_COMPARE_AND_SET_REQUEST
-    //     */
-    //    VALUE_COMPARE_AND_SET_RESPONSE(62) {
-    //                @Override
-    //                MessageValueCompareAndSetResponse createMessage() {
-    //                    return new MessageValueCompareAndSetResponse();
-    //                }
-    //            };
     /**
      * @see MessageUnknown
      */

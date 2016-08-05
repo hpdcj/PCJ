@@ -28,7 +28,7 @@ import org.pcj.NodesDescription;
 import org.pcj.Shared;
 import org.pcj.StartPoint;
 import org.pcj.internal.futures.GroupJoinState;
-import org.pcj.internal.futures.GroupQuery;
+import org.pcj.internal.futures.GroupJoinQuery;
 import org.pcj.internal.futures.WaitObject;
 import org.pcj.internal.message.MessageBye;
 import org.pcj.internal.message.MessageGroupJoinQuery;
@@ -366,7 +366,7 @@ public abstract class InternalPCJ {
             MessageGroupJoinQuery message
                     = new MessageGroupJoinQuery(requestNum, nodeData.getPhysicalId(), groupName);
 
-            GroupQuery groupQuery = nodeData.getGroupQuery(requestNum);
+            GroupJoinQuery groupQuery = nodeData.getGroupJoinQuery(requestNum);
             WaitObject waitObject = groupQuery.getWaitObject();
 
             waitObject.lock();

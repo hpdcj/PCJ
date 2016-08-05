@@ -44,22 +44,23 @@ public class EasyTest implements StartPoint {
 
         NodesDescription nodesDescription = new NodesDescription(new String[]{
             "localhost:8091",
-            "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091",
+//            "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091",
             "localhost:8002",
-            "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002",
+//            "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002",
             "localhost:8003",
-            "localhost:8003", "localhost:8003", "localhost:8003", "localhost:8003", "localhost:8003", "localhost:8003", "localhost:8003", "localhost:8003", "localhost:8003",
+//            "localhost:8003", "localhost:8003", "localhost:8003", "localhost:8003", "localhost:8003", "localhost:8003", "localhost:8003", "localhost:8003", "localhost:8003",
             "localhost:8004",
-            "localhost:8004", "localhost:8004", "localhost:8004", "localhost:8004", "localhost:8004", "localhost:8004", "localhost:8004", "localhost:8004", "localhost:8004",
+//            "localhost:8004", "localhost:8004", "localhost:8004", "localhost:8004", "localhost:8004", "localhost:8004", "localhost:8004", "localhost:8004", "localhost:8004",
             "localhost:8005",
-            "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005",
+//            "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005",
             "localhost:8006",
-            "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006",
-            "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007",
+//            "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006",
+            "localhost:8007", 
+//            "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007",
             "localhost:8008",
-            "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008",
+//            "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008",
             "localhost:8009",
-            "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", //
+//            "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", //
         // run.jvmargs=-Xmx64m
         //            "localhost:8010",
         //            "localhost:8011",
@@ -102,55 +103,55 @@ public class EasyTest implements StartPoint {
         }
         PCJ.barrier();
 //        System.out.println(PCJ.myId() + "> DONE");
-
-//        Level level = Level.FINEST;
-//        Logger logger = Logger.getLogger("");
-//        Arrays.stream(logger.getHandlers()).forEach(handler -> handler.setLevel(level));
-//        logger.setLevel(level);
-//        for (int i = 0; i < PCJ.threadCount(); ++i) {
-//            if (PCJ.myId() == i) {
-//                System.out.println("Starting as " + PCJ.myId());
-//            }
-//            PCJ.barrier();
-//        }
 //
-//        int n = 4*8*8192;
-////        int n = 4096;
-//
-////        if (PCJ.myId() == 1) {
-////            double[] b = new double[n];
-////            for (int i = 0; i < n; i++) {
-////                b[i] = (double) i + 1;
+////        Level level = Level.FINEST;
+////        Logger logger = Logger.getLogger("");
+////        Arrays.stream(logger.getHandlers()).forEach(handler -> handler.setLevel(level));
+////        logger.setLevel(level);
+////        for (int i = 0; i < PCJ.threadCount(); ++i) {
+////            if (PCJ.myId() == i) {
+////                System.out.println("Starting as " + PCJ.myId());
 ////            }
+////            PCJ.barrier();
+////        }
 ////
-////            PCJ.putLocal(SharedEnum.b, b);
+////        int n = 4*8*8192;
+//////        int n = 4096;
+////
+//////        if (PCJ.myId() == 1) {
+//////            double[] b = new double[n];
+//////            for (int i = 0; i < n; i++) {
+//////                b[i] = (double) i + 1;
+//////            }
+//////
+//////            PCJ.putLocal(SharedEnum.b, b);
+//////        }
+//////        PCJ.barrier();
+//////        if (PCJ.myId() == 0) {
+//////            PCJ.get(1, SharedEnum.b);
+//////        }
+////        double[] b = new double[n];
+////        for (int i = 0; i < n; i++) {
+////            b[i] = (double) i + 1;
+////        }
+////        PCJ.monitor(SharedEnum.b);
+////
+////        PCJ.barrier();
+////
+////        int ntimes = 100;
+////
+////        for (int i = 0; i < ntimes; i++) {
+////            if (PCJ.myId() == 0) {
+////                try {
+////                    PCJ.broadcast(SharedEnum.b, b);
+////                } catch (Exception ex) {
+////                    System.out.println(ex.getMessage());
+////                }
+////            }
+//////            PCJ.waitFor(SharedEnum.b);
+////            PCJ.barrier();
 ////        }
 ////        PCJ.barrier();
-////        if (PCJ.myId() == 0) {
-////            PCJ.get(1, SharedEnum.b);
-////        }
-//        double[] b = new double[n];
-//        for (int i = 0; i < n; i++) {
-//            b[i] = (double) i + 1;
-//        }
-//        PCJ.monitor(SharedEnum.b);
-//
-//        PCJ.barrier();
-//
-//        int ntimes = 100;
-//
-//        for (int i = 0; i < ntimes; i++) {
-//            if (PCJ.myId() == 0) {
-//                try {
-//                    PCJ.broadcast(SharedEnum.b, b);
-//                } catch (Exception ex) {
-//                    System.out.println(ex.getMessage());
-//                }
-//            }
-////            PCJ.waitFor(SharedEnum.b);
-//            PCJ.barrier();
-//        }
-//        PCJ.barrier();
-//        System.out.println(PCJ.myId() + " -> " + Arrays.toString((double[]) PCJ.getLocal(SharedEnum.b)));
+////        System.out.println(PCJ.myId() + " -> " + Arrays.toString((double[]) PCJ.getLocal(SharedEnum.b)));
     }
 }

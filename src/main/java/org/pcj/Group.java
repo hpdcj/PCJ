@@ -19,6 +19,8 @@ public interface Group {
 
     PcjFuture<Void> asyncBarrier();
 
+    PcjFuture<Void> asyncBarrier(int threadId);
+
     <T> PcjFuture<T> asyncGet(int threadId, Shared variable, int... indices);
 
     <T> PcjFuture<Void> asyncPut(int threadId, Shared variable, T newValue, int... indices);

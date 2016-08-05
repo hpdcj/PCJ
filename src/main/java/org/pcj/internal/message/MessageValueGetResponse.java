@@ -69,7 +69,7 @@ class MessageValueGetResponse extends Message {
         PcjThread pcjThread = nodeData.getPcjThreads().get(globalThreadId);
         InternalGroup group = (InternalGroup) pcjThread.getThreadData().getGroupById(groupId);
 
-        GetVariable getVariable = group.getGetVariableMap().remove(requestNum);
+        GetVariable getVariable = group.removeGetVariable(requestNum);
 
         boolean exceptionOccurs = in.readBoolean();
         try {

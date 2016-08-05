@@ -8,7 +8,7 @@ import java.nio.channels.SocketChannel;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
-import org.pcj.internal.futures.BarrierState;
+import org.pcj.internal.futures.GroupBarrierState;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
@@ -52,7 +52,7 @@ final public class MessageGroupBarrierGo extends Message {
                 .map(nodeData.getSocketChannelByPhysicalId()::get)
                 .forEach(socket -> InternalPCJ.getNetworker().send(socket, this));
 
-        BarrierState barrier = group.removeBarrierState(barrierRound);
+        GroupBarrierState barrier = group.removeBarrierState(barrierRound);
         barrier.signalDone();
     }
 }

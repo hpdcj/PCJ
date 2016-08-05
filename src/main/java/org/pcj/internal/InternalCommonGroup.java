@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.pcj.internal.futures.BarrierState;
+import org.pcj.internal.futures.GroupBarrierState;
 import org.pcj.internal.futures.BroadcastState;
 import org.pcj.internal.futures.GroupJoinState;
 
@@ -35,7 +35,7 @@ public class InternalCommonGroup {
 //    final private Bitmask localBarrierBitmask;
     private final Bitmask localBitmask;
 //    private final ConcurrentMap<Integer, Bitmask> physicalBitmaskMap;
-    private final ConcurrentMap<Integer, BarrierState> barrierStateMap;
+    private final ConcurrentMap<Integer, GroupBarrierState> barrierStateMap;
     private final ConcurrentMap<List<Integer>, BroadcastState> broadcastStateMap;
     private final ConcurrentMap<List<Integer>, GroupJoinState> groupJoinStateMap;
 //    final private MessageGroupBarrierWaiting groupBarrierWaitingMessage;
@@ -228,19 +228,19 @@ public class InternalCommonGroup {
         return Collections.unmodifiableMap(threadsMapping);
     }
 
-    final protected BarrierState barrier(int threadId, int barrierRound) {
-        BarrierState barrierState = getBarrierState(barrierRound);
+    final protected GroupBarrierState barrier(int threadId, int barrierRound) {
+        GroupBarrierState barrierState = getBarrierState(barrierRound);
         barrierState.processLocal(threadId);
 
         return barrierState;
     }
 
-    final public BarrierState getBarrierState(int barrierRound) {
+    final public GroupBarrierState getBarrierState(int barrierRound) {
         return barrierStateMap.computeIfAbsent(barrierRound,
-                round -> new BarrierState(groupId, round, localBitmask, getChildrenNodes()));
+                round -> new GroupBarrierState(groupId, round, localBitmask, getChildrenNodes()));
     }
 
-    final public BarrierState removeBarrierState(int barrierRound) {
+    final public GroupBarrierState removeBarrierState(int barrierRound) {
         return barrierStateMap.remove(barrierRound);
     }
 

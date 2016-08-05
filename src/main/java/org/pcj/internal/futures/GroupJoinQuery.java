@@ -9,13 +9,13 @@ package org.pcj.internal.futures;
  *
  * @author faramir
  */
-public class GroupQuery {
+public class GroupJoinQuery {
 
     private final WaitObject waitObject;
     private int groupId;
     private int groupMasterId;
 
-    public GroupQuery() {
+    public GroupJoinQuery() {
         waitObject = new WaitObject();
     }
 

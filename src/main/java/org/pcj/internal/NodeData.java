@@ -7,7 +7,7 @@ import java.nio.channels.SocketChannel;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.pcj.internal.futures.GroupQuery;
+import org.pcj.internal.futures.GroupJoinQuery;
 import org.pcj.internal.futures.WaitObject;
 
 /**
@@ -24,7 +24,7 @@ final public class NodeData {
     private final Node0Data node0Data;
     private final WaitObject globalWaitObject;
     private final AtomicInteger groupJoinCounter;
-    private final ConcurrentMap<Integer, GroupQuery> groupQueryMap;
+    private final ConcurrentMap<Integer, GroupJoinQuery> groupJoinQueryMap;
     private int physicalId;
     private int totalNodeCount;
 
@@ -106,7 +106,7 @@ final public class NodeData {
         this.pcjThreads = new ConcurrentHashMap<>();
         this.globalWaitObject = new WaitObject();
         this.groupJoinCounter = new AtomicInteger(0);
-        this.groupQueryMap = new ConcurrentHashMap<>();
+        this.groupJoinQueryMap = new ConcurrentHashMap<>();
 
         if (isCurrentJvmNode0) {
             node0Data = new Node0Data();
@@ -182,12 +182,12 @@ final public class NodeData {
         return groupJoinCounter;
     }
 
-    public GroupQuery getGroupQuery(int requestNum) {
-        return groupQueryMap.computeIfAbsent(requestNum, key -> new GroupQuery());
+    public GroupJoinQuery getGroupJoinQuery(int requestNum) {
+        return groupJoinQueryMap.computeIfAbsent(requestNum, key -> new GroupJoinQuery());
     }
 
-    public GroupQuery removeGroupQuery(int requestNum) {
-        return groupQueryMap.remove(requestNum);
+    public GroupJoinQuery removeGroupJoinQuery(int requestNum) {
+        return groupJoinQueryMap.remove(requestNum);
     }
 
 }
