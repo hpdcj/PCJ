@@ -197,14 +197,15 @@ public class InternalCommonGroup {
     private void updateCommunicationTree(int physicalId) {
         synchronized (physicalIds) {
             if (physicalIds.addIfAbsent(physicalId)) {
-                int currentPhysicalId = InternalPCJ.getNodeData().getPhysicalId();
-
-                int index = physicalIds.indexOf(physicalId);
+                int index = physicalIds.lastIndexOf(physicalId);
                 if (index > 0) {
-                    if (physicalId == currentPhysicalId) {
-                        physicalTree.setParentNode(physicalIds.get((index - 1) / 2));
+                    int currentPhysicalId = InternalPCJ.getNodeData().getPhysicalId();
+                    int parentId = physicalIds.get((index - 1) / 2);
+
+                    if (currentPhysicalId == physicalId) {
+                        physicalTree.setParentNode(parentId);
                     }
-                    if (physicalIds.get((index - 1) / 2) == currentPhysicalId) {
+                    if (currentPhysicalId == parentId) {
                         physicalTree.getChildrenNodes().add(physicalId);
                     }
                 }

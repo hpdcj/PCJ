@@ -36,9 +36,10 @@ public class GroupJoinState {
         this.requestNum = requestNum;
         this.globalThreadId = globalThreadId;
 
-        this.childrenSet = new HashSet<>(childrenNodes.size() + 1, 1.0f);
+        this.childrenSet = new HashSet<>(childrenNodes);
+//        this.childrenSet = new HashSet<>(childrenNodes.size() + 1, 1.0f);
         childrenSet.add(InternalPCJ.getNodeData().getPhysicalId());
-        childrenNodes.forEach(childrenSet::add);
+//        childrenNodes.forEach(childrenSet::add);
 //        System.out.println("GJS: grpId:" + groupId + " req:" + requestNum + " thrdId: " + globalThreadId + " " + childrenSet);
     }
 
@@ -55,7 +56,7 @@ public class GroupJoinState {
     }
 
     public synchronized boolean processPhysical(int physicalId) {
-//        System.out.println("grpId:" + groupId + " req:" + requestNum + " thrdId: " + globalThreadId + " " + childrenSet + " contains " + physicalId + "?");
+//        System.out.println(groupId + ": " + InternalPCJ.getNodeData().getPhysicalId() + " process physical " + physicalId + " set:" + childrenSet + " glId:" + globalThreadId);
         if (childrenSet.contains(physicalId) == false) {
             return false;
         }
@@ -74,15 +75,18 @@ public class GroupJoinState {
                 socket = nodeData.getSocketChannelByPhysicalId().get(requesterPhysicalId);
 
                 message = new MessageGroupJoinResponse(requestNum, groupId, globalThreadId, groupThreadId);
+//                System.out.println(groupId + ": " + InternalPCJ.getNodeData().getPhysicalId() + " sending response to " + requesterPhysicalId + " num:" + requestNum + " glId:" + globalThreadId + " grId:" + groupThreadId);
             } else {
                 int parentId = commonGroup.getParentNode();
-                if (parentId == -1) {
-                    return true;
-                }
+//                if (parentId == -1) {
+////                    System.out.println(groupId + ": " + InternalPCJ.getNodeData().getPhysicalId() + " no parent " + " num:" + requestNum + " glId:" + globalThreadId + " grId:" + groupThreadId);
+//                    return true;
+//                }
                 socket = nodeData.getSocketChannelByPhysicalId().get(parentId);
 
                 message = new MessageGroupJoinConfirm(requestNum, groupId, globalThreadId,
                         nodeData.getPhysicalId());
+//                System.out.println(groupId + ": " + InternalPCJ.getNodeData().getPhysicalId() + " sending confirm to " + parentId + " num:" + requestNum + " glId:" + globalThreadId + " grId:" + groupThreadId);
             }
 
             InternalPCJ.getNetworker().send(socket, message);

@@ -123,13 +123,9 @@ final public class NodeData {
         return node0Socket;
     }
 
-    public InternalCommonGroup addGroup(InternalCommonGroup newGroup) {
-        InternalCommonGroup group = groupById.putIfAbsent(newGroup.getGroupId(), newGroup);
-        if (group != null) {
-            return group;
-        }
-
-        return newGroup;
+    public InternalCommonGroup createGroup(int groupMaster, int groupId, String groupName) {
+        return groupById.computeIfAbsent(groupId,
+                key -> new InternalCommonGroup(groupMaster, groupId, groupName));
     }
 
     public InternalCommonGroup getGroupById(int id) {

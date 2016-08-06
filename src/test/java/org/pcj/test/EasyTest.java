@@ -44,23 +44,23 @@ public class EasyTest implements StartPoint {
 
         NodesDescription nodesDescription = new NodesDescription(new String[]{
             "localhost:8091",
-//            "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091",
+            "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091",
             "localhost:8002",
-//            "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002",
+            "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002",
             "localhost:8003",
-//            "localhost:8003", "localhost:8003", "localhost:8003", "localhost:8003", "localhost:8003", "localhost:8003", "localhost:8003", "localhost:8003", "localhost:8003",
+            "localhost:8003", "localhost:8003", "localhost:8003", "localhost:8003", "localhost:8003", "localhost:8003", "localhost:8003", "localhost:8003", "localhost:8003",
             "localhost:8004",
-//            "localhost:8004", "localhost:8004", "localhost:8004", "localhost:8004", "localhost:8004", "localhost:8004", "localhost:8004", "localhost:8004", "localhost:8004",
+            "localhost:8004", "localhost:8004", "localhost:8004", "localhost:8004", "localhost:8004", "localhost:8004", "localhost:8004", "localhost:8004", "localhost:8004",
             "localhost:8005",
-//            "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005",
+            "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005",
             "localhost:8006",
-//            "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006",
+            "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006",
             "localhost:8007", 
-//            "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007",
+            "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007",
             "localhost:8008",
-//            "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008",
+            "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008",
             "localhost:8009",
-//            "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", //
+            "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", //
         // run.jvmargs=-Xmx64m
         //            "localhost:8010",
         //            "localhost:8011",

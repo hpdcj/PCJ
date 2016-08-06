@@ -5,30 +5,31 @@ import java.io.IOException;
 import java.util.LinkedHashSet;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.stream.IntStream;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
 import org.pcj.StartPoint;
 
 public class PcjMicroBenchmarkBarrier implements StartPoint {
-
+    
     @Override
     public void main() {
         int number_of_tests = 10;
         int ntimes = 10000;
-
+        
         PCJ.barrier();
-
+        
         double tmin = Double.MAX_VALUE;
         for (int k = 0; k < number_of_tests; k++) {
             long rTime = System.nanoTime();
-
+            
             for (int i = 0; i < ntimes; i++) {
                 PCJ.barrier();
             }
-
+            
             rTime = System.nanoTime() - rTime;
             double dtime = (rTime / (double) ntimes) * 1e-9;
-
+            
             if (tmin > dtime) {
                 tmin = dtime;
             }
@@ -36,16 +37,16 @@ public class PcjMicroBenchmarkBarrier implements StartPoint {
 //            System.out.println(PCJ.threadCount() + " " + t);
             PCJ.barrier();
         }
-
+        
         if (PCJ.myId() == 0) {
             System.out.format("Barrier\t%5d\ttime\t%12.7f\n",
                     PCJ.threadCount(), tmin);
         }
     }
-
+    
     public static void main(String[] args) {
         int[] threads = {1, 2, 4, 8, 12, 24, 48};
-
+        
         String nodesFile = "nodes.txt";
         if (args.length > 0) {
             nodesFile = args[0];
@@ -58,11 +59,13 @@ public class PcjMicroBenchmarkBarrier implements StartPoint {
             }
         } catch (IOException ex) {
             System.err.println(nodesFile + ": file not found");
-            System.exit(1);
+            IntStream.range(0, 9)
+                    .mapToObj(i -> "localhost:" + (9000 + i))
+                    .forEach(nodesSet::add);
         }
-
+        
         String[] nodesUniq = nodesSet.toArray(new String[0]);
-
+        
         int nn = nodesUniq.length;
 //        for (int nn = nodesUniq.length; nn > 0; nn = nn / 2) {
         for (int nt : threads) {
@@ -74,9 +77,9 @@ public class PcjMicroBenchmarkBarrier implements StartPoint {
                     nodes[ii] = nodesUniq[i];
                 }
             }
-
-            PCJ.start(PcjMicroBenchmarkBarrier.class, new NodesDescription(nodes));
-//                PCJ.deploy(PcjMicroBenchmarkBarrier.class, new NodesDescription(nodes));
+            
+//            PCJ.start(PcjMicroBenchmarkBarrier.class, new NodesDescription(nodes));
+                PCJ.deploy(PcjMicroBenchmarkBarrier.class, new NodesDescription(nodes));
         }
 //        }
     }

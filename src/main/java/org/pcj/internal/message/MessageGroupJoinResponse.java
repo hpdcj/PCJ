@@ -52,6 +52,8 @@ public class MessageGroupJoinResponse extends Message {
         globalThreadId = in.readInt();
         groupThreadId = in.readInt();
 
+//        System.out.println(groupId + ": " + InternalPCJ.getNodeData().getPhysicalId() + " received response:" + requestNum + " glId:" + globalThreadId + " grId:" + groupThreadId);
+
         InternalCommonGroup commonGroup = InternalPCJ.getNodeData().getGroupById(groupId);
 
         GroupJoinState groupJoinState = commonGroup.removeGroupJoinState(requestNum, globalThreadId);

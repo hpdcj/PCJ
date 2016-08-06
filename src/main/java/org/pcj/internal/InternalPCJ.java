@@ -55,6 +55,12 @@ public abstract class InternalPCJ {
         PCJ_BUILD_DATE = p.getImplementationTitle() == null ? "UNKNOWN" : p.getImplementationTitle();
     }
 
+    /* Suppress default constructor for noninstantiability.
+     * Have to be protected to allow inheritance */
+    protected InternalPCJ() {
+        throw new AssertionError();
+    }
+
     protected static void start(Class<? extends StartPoint> startPoint,
             NodesDescription nodesFile,
             List<Class<? extends Enum<? extends Shared>>> storages) {
@@ -375,8 +381,7 @@ public abstract class InternalPCJ {
 
                 waitObject.await();
 
-                commonGroup = new InternalCommonGroup(groupQuery.getGroupMasterId(), groupQuery.getGroupId(), groupName);
-                commonGroup = nodeData.addGroup(commonGroup);
+                commonGroup = nodeData.createGroup(groupQuery.getGroupMasterId(), groupQuery.getGroupId(), groupName);
             } catch (InterruptedException ex) {
                 throw new RuntimeException(ex);
             } finally {
@@ -405,11 +410,5 @@ public abstract class InternalPCJ {
         } finally {
             waitObject.unlock();
         }
-    }
-
-    /* Suppress default constructor for noninstantiability.
-     * Have to be protected to allow inheritance */
-    protected InternalPCJ() {
-        throw new AssertionError();
     }
 }

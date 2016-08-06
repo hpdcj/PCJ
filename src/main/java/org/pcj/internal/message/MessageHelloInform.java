@@ -70,8 +70,7 @@ final public class MessageHelloInform extends Message {
         nodeData.setPhysicalId(physicalId);
 
         Networker networker = InternalPCJ.getNetworker();
-        InternalCommonGroup globalGroup = new InternalCommonGroup(0, InternalCommonGroup.GLOBAL_GROUP_ID, InternalCommonGroup.GLOBAL_GROUP_NAME);
-        nodeData.addGroup(globalGroup);
+        InternalCommonGroup globalGroup = nodeData.createGroup(0, InternalCommonGroup.GLOBAL_GROUP_ID, InternalCommonGroup.GLOBAL_GROUP_NAME);
 
         nodeData.setTotalNodeCount(nodeInfoByPhysicalId.size());
 
