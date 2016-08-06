@@ -1,5 +1,10 @@
-/*
- * This file is the internal part of the PCJ Library
+/* 
+ * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+ * All rights reserved.
+ *
+ * Licensed under New BSD License (3-clause license).
+ *
+ * See the file "LICENSE" for the full license governing this code.
  */
 package org.pcj.internal;
 
@@ -27,8 +32,8 @@ import org.pcj.Group;
 import org.pcj.NodesDescription;
 import org.pcj.Shared;
 import org.pcj.StartPoint;
-import org.pcj.internal.futures.GroupJoinState;
 import org.pcj.internal.futures.GroupJoinQuery;
+import org.pcj.internal.futures.GroupJoinState;
 import org.pcj.internal.futures.WaitObject;
 import org.pcj.internal.message.MessageBye;
 import org.pcj.internal.message.MessageGroupJoinQuery;

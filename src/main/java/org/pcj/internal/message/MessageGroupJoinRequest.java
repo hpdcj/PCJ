@@ -1,7 +1,10 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/* 
+ * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+ * All rights reserved.
+ *
+ * Licensed under New BSD License (3-clause license).
+ *
+ * See the file "LICENSE" for the full license governing this code.
  */
 package org.pcj.internal.message;
 
@@ -21,7 +24,7 @@ import org.pcj.internal.network.MessageDataOutputStream;
 
 /**
  *
- * @author faramir
+ * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 public class MessageGroupJoinRequest extends Message {
 
@@ -85,7 +88,6 @@ public class MessageGroupJoinRequest extends Message {
                 .boxed().collect(Collectors.toList());
 //        System.out.println("rtm:"+threadsMapping+" cg:"+commonGroup.getChildrenNodes()+ " cn:"+childrenNodes);
 
-
         MessageGroupJoinInform message
                 = new MessageGroupJoinInform(requestNum, groupId, globalThreadId,
                         threadsMapping);
@@ -94,7 +96,7 @@ public class MessageGroupJoinRequest extends Message {
         groupJoinState.setGroupThreadId(groupThreadId);
 
         childrenNodes.stream()
-//                .peek(el -> System.out.println(groupId + ": " + InternalPCJ.getNodeData().getPhysicalId() + " sending inform to " + el + " num:" + requestNum + ", name:" + groupName + " glId:" + globalThreadId + " tm:" + threadsMapping))
+                //                .peek(el -> System.out.println(groupId + ": " + InternalPCJ.getNodeData().getPhysicalId() + " sending inform to " + el + " num:" + requestNum + ", name:" + groupName + " glId:" + globalThreadId + " tm:" + threadsMapping))
                 .map(nodeData.getSocketChannelByPhysicalId()::get)
                 .forEach(socket -> InternalPCJ.getNetworker().send(socket, message));
 

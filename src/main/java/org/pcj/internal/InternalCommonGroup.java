@@ -1,5 +1,10 @@
-/*
- * This file is the internal part of the PCJ Library
+/* 
+ * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+ * All rights reserved.
+ *
+ * Licensed under New BSD License (3-clause license).
+ *
+ * See the file "LICENSE" for the full license governing this code.
  */
 package org.pcj.internal;
 
@@ -12,8 +17,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.pcj.internal.futures.GroupBarrierState;
 import org.pcj.internal.futures.BroadcastState;
+import org.pcj.internal.futures.GroupBarrierState;
 import org.pcj.internal.futures.GroupJoinState;
 
 /**

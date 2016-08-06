@@ -1,5 +1,10 @@
-/*
- * This file is the part of the PCJ Library
+/* 
+ * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+ * All rights reserved.
+ *
+ * Licensed under New BSD License (3-clause license).
+ *
+ * See the file "LICENSE" for the full license governing this code.
  */
 package org.pcj.internal;
 
@@ -68,7 +73,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         if (myThreadId == threadId) {
             throw new IllegalArgumentException("Given PCJ Thread Id should be different from current PCJ Thread Id.");
         }
-        
+
         PeerBarrierState peerBarrierState = getPeerBarrierState(threadId);
 
         int globalThreadId = super.getGlobalThreadId(threadId);

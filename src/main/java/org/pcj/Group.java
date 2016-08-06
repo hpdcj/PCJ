@@ -1,13 +1,17 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/* 
+ * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+ * All rights reserved.
+ *
+ * Licensed under New BSD License (3-clause license).
+ *
+ * See the file "LICENSE" for the full license governing this code.
  */
 package org.pcj;
 
 /**
+ * Class that represents group of PCJ Threads.
  *
- * @author faramir
+ * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 public interface Group {
 
