@@ -4,11 +4,16 @@
 package org.pcj;
 
 /**
- * External interface with starting point declaration.
+ * Start point declaration.
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 public interface StartPoint {
 
+    /**
+     * Main method.
+     *
+     * @throws Throwable
+     */
     public void main() throws Throwable;
 }

@@ -11,19 +11,85 @@ package org.pcj;
  */
 public interface Group {
 
+    /**
+     * Gets identifier of current PCJ Thread in the group. Identifiers are consecutive numbers that
+     * start with 0.
+     *
+     * @return current PCJ Thread identifier
+     */
     int myId();
 
+    /**
+     * Gets total number of PCJ Thread in the group.
+     *
+     * @return total number of PCJ Thread in the group
+     */
     int threadCount();
 
+    /**
+     * Gets group name. Global group name is empty string {@code ""}.
+     *
+     * @return name of the group
+     */
     String getGroupName();
 
+    /**
+     * Starts asynchronos barrier. After starting barrier the PcjFuture is returned.
+     *
+     * PCJ Thread can continue to work and can check returned PcjFuture if every thread done this
+     * barrier using {@link PcjFuture#isDone()} method. PcjFuture returns null when completed.
+     *
+     * @return PcjFuture to check barrier state
+     */
     PcjFuture<Void> asyncBarrier();
 
+    /**
+     * Starts asynchronous barrier with one peer PCJ Thread. Given threadId should be different from
+     * current PCJ Thread id, otherwise the exception is thrown.
+     *
+     * PCJ Thread can continue to work and can check returned PcjFuture if every thread done this
+     * barrier using {@link PcjFuture#isDone()} method. PcjFuture returns null when completed.
+     *
+     * @param threadId current group PCJ Thread
+     *
+     * @return PcjFuture to check barrier state
+     */
     PcjFuture<Void> asyncBarrier(int threadId);
 
+    /**
+     * Asynchronous get operation. Gets value of shared variable from PCJ Thread from the group.
+     *
+     * @param <T>      type of value
+     * @param threadId peer PCJ Thread
+     * @param variable variable name
+     * @param indices  (optional) indices for array variable
+     *
+     * @return PcjFuture that will contain shared variable value
+     */
     <T> PcjFuture<T> asyncGet(int threadId, Shared variable, int... indices);
 
+    /**
+     * Asynchronous put operation. Puts value into shared variable to PCJ Thread from the group.
+     *
+     * @param <T>      type of value
+     * @param threadId peer PCJ Thread
+     * @param variable variable name
+     * @param newValue new variable value
+     * @param indices  (optional) indices for array variable
+     *
+     * @return PcjFuture to check completion of put operation
+     */
     <T> PcjFuture<Void> asyncPut(int threadId, Shared variable, T newValue, int... indices);
 
+    /**
+     * Asynchronous broadcast operation. Broadcasts value into shared variable of all PCJ Threads
+     * from the group.
+     *
+     * @param <T>      type of value
+     * @param variable variable name
+     * @param newValue new variable value
+     *
+     * @return PcjFuture to check completion of put operation
+     */
     <T> PcjFuture<Void> asyncBroadcast(Shared variable, T newValue);
 }

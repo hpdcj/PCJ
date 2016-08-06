@@ -65,6 +65,10 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
 
     @Override
     public PcjFuture<Void> asyncBarrier(int threadId) {
+        if (myThreadId == threadId) {
+            throw new IllegalArgumentException("Given PCJ Thread Id should be different from current PCJ Thread Id.");
+        }
+        
         PeerBarrierState peerBarrierState = getPeerBarrierState(threadId);
 
         int globalThreadId = super.getGlobalThreadId(threadId);

@@ -25,7 +25,7 @@ public class PcjExamplePiMC implements StartPoint {
 
     @Override
     public void main() {
-        PCJ.createShared(SharedEnum.class);
+        PCJ.registerShared(SharedEnum.class);
 
         Random random = new Random();
         long nAll = 512_000_000;

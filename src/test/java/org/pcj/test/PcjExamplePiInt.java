@@ -29,7 +29,7 @@ public class PcjExamplePiInt implements StartPoint {
     }
 
     {
-        Arrays.stream(SharedEnum.values()).forEach(PCJ::createShared);
+        Arrays.stream(SharedEnum.values()).forEach(PCJ::registerShared);
     }
 
     @SuppressWarnings("method")

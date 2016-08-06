@@ -4,7 +4,8 @@
 package org.pcj;
 
 /**
- *
+ * Class that wraps exceptions.
+ * 
  * @author Marek Nowicki
  */
 public class PcjRuntimeException extends RuntimeException {

@@ -6,7 +6,12 @@
 package org.pcj;
 
 /**
- * Sample code for Shared enums.
+ * Class for naming shared variables. Contains information about variable name, its type and storage
+ * associated with the variable.
+ *
+ * The easiest way of using the shared variable is to modyfy Enum as described in the sample code
+ * below.
+ *
  * <pre>
  * {@code
  * public enum SharedEnum implements Shared {
@@ -30,10 +35,33 @@ package org.pcj;
  */
 public interface Shared {
 
+    /**
+     * Name of shared variable.
+     *
+     * The name have to be not null.
+     *
+     * @return string name that represents the name
+     */
     String name();
 
+    /**
+     * Type of shared variable.
+     *
+     * The type have to be not null.
+     *
+     * @return associated class type
+     */
     Class<?> type();
 
+    /**
+     * Storage associated with shared variable.
+     *
+     * The storage name have to be not null.
+     *
+     * Contains default implementation that returns class name.
+     *
+     * @return string name that represents storage
+     */
     @SuppressWarnings("unchecked")
     default String parent() {
         if (this instanceof Enum) {

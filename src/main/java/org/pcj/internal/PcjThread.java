@@ -76,7 +76,7 @@ public class PcjThread extends Thread {
     @Override
     public void run() {
         try {
-            storages.forEach(PCJ::createShared);
+            storages.forEach(PCJ::registerShared);
             StartPoint startPoint = startPointClass.newInstance();
 
             startPoint.main();

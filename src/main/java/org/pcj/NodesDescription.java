@@ -15,8 +15,7 @@ import org.pcj.internal.Configuration;
 import org.pcj.internal.NodeInfo;
 
 /**
- * File representing list of available nodes (eg. from
- * sheduling system).
+ * File representing list of available nodes (eg. from sheduling system).
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
@@ -25,10 +24,24 @@ public class NodesDescription {
     private NodeInfo node0;
     private Map<String, NodeInfo> nodesMap;
 
+    /**
+     * Create new nodes description using file.
+     *
+     * @param nodeFile name of file
+     *
+     * @throws IOException I/O error
+     */
     public NodesDescription(String nodeFile) throws IOException {
         this(new File(nodeFile));
     }
 
+    /**
+     * Create new nodes description using file.
+     *
+     * @param nodeFile file
+     *
+     * @throws IOException I/O error
+     */
     public NodesDescription(File nodeFile) throws IOException {
         String[] nodes;
         try (BufferedReader br = new BufferedReader(new FileReader(nodeFile))) {
@@ -40,6 +53,11 @@ public class NodesDescription {
         parseArray(nodes);
     }
 
+    /**
+     * Creates new nodes description using nodes from the String array.
+     *
+     * @param nodes String nodes array
+     */
     public NodesDescription(String[] nodes) {
         parseArray(nodes);
     }
@@ -93,18 +111,38 @@ public class NodesDescription {
         return new NodeInfo(hostname, port);
     }
 
+    /**
+     * Returns information about node0.
+     *
+     * @return node0
+     */
     public NodeInfo getNode0() {
         return node0;
     }
 
+    /**
+     * Returns information about current node (current JVM).
+     *
+     * @return current node
+     */
     public NodeInfo getCurrentJvm() {
         return nodesMap.get("");
     }
 
+    /**
+     * Returns informatino about all nodes.
+     *
+     * @return all nodes
+     */
     public Collection<NodeInfo> getAllNodes() {
         return Collections.unmodifiableCollection(nodesMap.values());
     }
 
+    /**
+     * Returns all thread count in the nodes description.
+     *
+     * @return thread count
+     */
     public int getAllNodesThreadCount() {
         return nodesMap.values().stream()
                 .mapToInt(nodeInfo -> nodeInfo.getThreadIds().length)

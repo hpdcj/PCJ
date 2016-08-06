@@ -62,7 +62,7 @@ public class InternalStorage {
         storageMap = new ConcurrentHashMap<>();
     }
 
-    public void createShared(Shared variable)
+    public void registerShared(Shared variable)
             throws NullPointerException, IllegalArgumentException, IllegalStateException {
         if (variable instanceof Shared == false) {
             throw new IllegalArgumentException("Not shared type: " + variable);
@@ -276,15 +276,15 @@ public class InternalStorage {
      *
      * @param variable name of Shared variable
      */
-    final public void monitor(Shared variable) {
+    final public int monitor(Shared variable) {
         if (variable == null) {
             throw new NullPointerException("Variable name cannot be null");
         }
 
-        monitor0(variable.parent(), variable.name());
+        return monitor0(variable.parent(), variable.name());
     }
 
-    final public void monitor0(String storageName, String name) {
+    final public int monitor0(String storageName, String name) {
         ConcurrentMap<String, StorageField> storage = getStorage(storageName);
 
         StorageField field = storage.get(name);
@@ -292,7 +292,7 @@ public class InternalStorage {
             throw new IllegalArgumentException("Variable not found: " + name);
         }
 
-        field.getModificationCount().set(0);
+        return field.getModificationCount().getAndSet(0);
     }
 
     /**

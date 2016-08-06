@@ -15,7 +15,7 @@ public class PcjMicroBenchmarkBarrier implements StartPoint {
     @Override
     public void main() {
         int number_of_tests = 10;
-        int ntimes = 10000;
+        int ntimes = 1000;
         
         PCJ.barrier();
         
@@ -59,7 +59,7 @@ public class PcjMicroBenchmarkBarrier implements StartPoint {
             }
         } catch (IOException ex) {
             System.err.println(nodesFile + ": file not found");
-            IntStream.range(0, 9)
+            IntStream.range(0, 30)
                     .mapToObj(i -> "localhost:" + (9000 + i))
                     .forEach(nodesSet::add);
         }
