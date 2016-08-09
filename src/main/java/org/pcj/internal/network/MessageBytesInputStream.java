@@ -24,15 +24,14 @@ import org.pcj.internal.message.MessageType;
 public class MessageBytesInputStream {
 
     private static final int HEADER_SIZE = Short.BYTES;
+    private static final short LAST_CHUNK_BIT = (short) (1 << (Short.SIZE - 1));
     private final ByteBuffer header;
-    private final MessageInputStream messageInputStream;
-    private final MessageDataInputStream messageDataInputStream;
+    private MessageInputStream messageInputStream;
     private ByteBuffer currentByteBuffer;
 
     public MessageBytesInputStream() {
         this.header = ByteBuffer.allocateDirect(HEADER_SIZE);
-        this.messageInputStream = new MessageInputStream();
-        this.messageDataInputStream = new MessageDataInputStream(messageInputStream);
+        reset();
     }
 
     public void offerNextBytes(ByteBuffer byteBuffer) {
@@ -42,19 +41,19 @@ public class MessageBytesInputStream {
                     header.put(byteBuffer.get());
                 }
                 if (header.hasRemaining() == false) {
-                    short length = header.getShort(0);
-                    int size = length & 0x7FFF;
+                    short lengthWithMarker = header.getShort(0);
+                    int length = lengthWithMarker & 0x7FFF;
 
                     header.clear();
 
-                    if ((length & 0x8000) != 0) {
+                    if ((lengthWithMarker & LAST_CHUNK_BIT) != 0) {
                         messageInputStream.close();
-                        if (size == 0) {
+                        if (length == 0) {
                             return;
                         }
                     }
 
-                    currentByteBuffer = ByteBuffer.allocate(size);
+                    currentByteBuffer = ByteBuffer.allocate(length);
                 }
             } else {
                 while (currentByteBuffer.hasRemaining() && byteBuffer.hasRemaining()) {
@@ -73,24 +72,17 @@ public class MessageBytesInputStream {
         }
     }
 
-    public Message readMessage() {
-        try {
-            byte messageType = messageDataInputStream.readByte();
-
-            Message message = MessageType.valueOf(messageType).create();
-
-            return message;
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
-    }
-
     public boolean isClosed() {
         return messageInputStream.isClosed() && currentByteBuffer == null;
     }
 
-    public MessageDataInputStream getMessageData() {
-        return messageDataInputStream;
+    public MessageDataInputStream getMessageDataInputStream() {
+        return new MessageDataInputStream(messageInputStream);
+    }
+
+    final public void reset() {
+        currentByteBuffer = null;
+        messageInputStream = new MessageInputStream();
     }
 
     private static class MessageInputStream extends InputStream {

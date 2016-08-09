@@ -44,7 +44,7 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
         message.write(messageDataOutputStream);
     }
 
-    public MessageDataInputStream getMessageData() {
+    public MessageDataInputStream getMessageDataInputStream() {
         return messageDataInputStream;
     }
 

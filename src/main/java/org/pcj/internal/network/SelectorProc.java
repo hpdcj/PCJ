@@ -289,8 +289,7 @@ public class SelectorProc implements Runnable {
             messageBytes.offerNextBytes(readBuffer);
             if (messageBytes.isClosed()) {
                 InternalPCJ.getNetworker().processMessageBytes(socket, messageBytes);
-                messageBytes = new MessageBytesInputStream();
-                readMap.put(socket, messageBytes);
+                messageBytes.reset();
             }
         }
 

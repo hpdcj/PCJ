@@ -9,6 +9,7 @@
 package org.pcj.internal;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
@@ -19,9 +20,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.pcj.internal.message.Message;
+import org.pcj.internal.message.MessageType;
 import org.pcj.internal.network.LoopbackMessageBytesStream;
 import org.pcj.internal.network.LoopbackSocketChannel;
 import org.pcj.internal.network.MessageBytesInputStream;
+import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.SelectorProc;
 
 /**
@@ -115,14 +118,8 @@ final public class Networker {
                 if (LOGGER.isLoggable(Level.FINEST)) {
                     LOGGER.log(Level.FINEST, "Locally processing message {0}", message.getType());
                 }
-                workers.submit(() -> {
-                    try {
-                        message.execute(socket, loopbackMessageBytesStream.getMessageData());
-                    } catch (Throwable t) {
-                        LOGGER.log(Level.SEVERE, "Exception while locally processing message " + message
-                                + " by node(" + InternalPCJ.getNodeData().getPhysicalId() + ").", t);
-                    }
-                });
+                
+                submitToWorker(socket, message, loopbackMessageBytesStream.getMessageDataInputStream());
             } else {
                 if (LOGGER.isLoggable(Level.FINEST)) {
                     LOGGER.log(Level.FINEST, "Sending message {0} to {1}", new Object[]{message.getType(), socket});
@@ -135,13 +132,26 @@ final public class Networker {
     }
 
     public void processMessageBytes(SocketChannel socket, MessageBytesInputStream messageBytes) {
-        Message message = messageBytes.readMessage();
+        MessageDataInputStream messageDataInputStream = messageBytes.getMessageDataInputStream();
+        Message message;
+        try {
+            byte messageType = messageDataInputStream.readByte();
+            message = MessageType.valueOf(messageType).create();
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+        
         if (LOGGER.isLoggable(Level.FINEST)) {
             LOGGER.log(Level.FINEST, "Received message {0} from {1}", new Object[]{message.getType(), socket});
         }
+        
+        submitToWorker(socket, message, messageDataInputStream);
+    }
+
+    private void submitToWorker(SocketChannel socket, Message message, MessageDataInputStream messageDataInputStream) {
         workers.submit(() -> {
             try {
-                message.execute(socket, messageBytes.getMessageData());
+                message.execute(socket, messageDataInputStream);
             } catch (Throwable t) {
                 LOGGER.log(Level.SEVERE, "Exception while processing message " + message
                         + " by node(" + InternalPCJ.getNodeData().getPhysicalId() + ").", t);
