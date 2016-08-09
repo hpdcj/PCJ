@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
-import org.pcj.internal.NodeData;
 import org.pcj.internal.futures.GroupJoinState;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
@@ -56,18 +55,12 @@ public class MessageGroupJoinConfirm extends Message {
         globalThreadId = in.readInt();
         physicalId = in.readInt();
 
-//        System.out.println(groupId + ": " + InternalPCJ.getNodeData().getPhysicalId() + " received confirm num:" + requestNum + " glId:" + globalThreadId + " phId:" + physicalId);
-        NodeData nodeData = InternalPCJ.getNodeData();
-
-        InternalCommonGroup commonGroup = nodeData.getGroupById(groupId);
+        InternalCommonGroup commonGroup = InternalPCJ.getNodeData().getGroupById(groupId);
 
         GroupJoinState groupJoinState = commonGroup.getGroupJoinState(requestNum, globalThreadId, commonGroup.getChildrenNodes());
 
         if (groupJoinState.processPhysical(physicalId)) {
-            int requesterPhysicalId = nodeData.getPhysicalId(globalThreadId);
-            if (requesterPhysicalId != nodeData.getPhysicalId()) {
-                commonGroup.removeGroupJoinState(requestNum, globalThreadId);
-            }
+            commonGroup.removeGroupJoinState(requestNum, globalThreadId);
         }
     }
 

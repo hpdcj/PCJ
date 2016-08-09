@@ -17,6 +17,7 @@ public class GroupJoinQuery {
     private final WaitObject waitObject;
     private int groupId;
     private int groupMasterId;
+    private int groupThreadId;
 
     public GroupJoinQuery() {
         waitObject = new WaitObject();
@@ -40,5 +41,13 @@ public class GroupJoinQuery {
 
     public void setGroupMasterId(int groupMasterId) {
         this.groupMasterId = groupMasterId;
+    }
+
+    public int getGroupThreadId() {
+        return groupThreadId;
+    }
+
+    public void setGroupThreadId(int groupThreadId) {
+        this.groupThreadId = groupThreadId;
     }
 }

@@ -80,7 +80,9 @@ public class SelectorProc implements Runnable {
     }
 
     private void initializeSocketChannel(SocketChannel socketChannel) throws IOException {
-        LOGGER.log(Level.FINEST, "Initializing socketChannel: {0}", socketChannel);
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.log(Level.FINEST, "Initializing socketChannel: {0}", socketChannel);
+        }
 
         socketChannel.configureBlocking(false);
         socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, true);
@@ -130,25 +132,13 @@ public class SelectorProc implements Runnable {
         return socket;
     }
 
-    private ByteBuffer clone(ByteBuffer original) {
-        ByteBuffer clone = ByteBuffer.allocate(original.remaining());
-        ByteBuffer readOnly = original.asReadOnlyBuffer();
-        clone.put(readOnly);
-
-        clone.flip();
-
-        return clone;
-    }
-
-    public void writeMessage(SocketChannel socket, Message message) {
+    public void writeMessage(SocketChannel socket, Message message) throws IOException {
         Queue<MessageBytesOutputStream> queue = writeMap.get(socket);
 
         try (MessageBytesOutputStream objectBytes = new MessageBytesOutputStream(message)) {
             queue.add(objectBytes);
-            changeInterestOps(socket, SelectionKey.OP_WRITE);
+            changeInterestOps(socket, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
             objectBytes.writeMessage();
-        } catch (IOException ex) {
-            LOGGER.log(Level.SEVERE, null, ex);
         }
     }
 
@@ -233,7 +223,7 @@ public class SelectorProc implements Runnable {
 
                 }
             } catch (Exception ex) {
-                LOGGER.log(Level.SEVERE, null, ex);
+                LOGGER.log(Level.SEVERE, "Exception in SelectorProc.", ex);
             }
         }
     }
@@ -249,22 +239,27 @@ public class SelectorProc implements Runnable {
             socket.notifyAll();
         }
 
-        LOGGER.log(Level.FINER, "Accepted: {0}", socket);
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.log(Level.FINER, "Accepted: {0}", socket);
+        }
     }
 
     private void opConnect(SocketChannel socket) throws IOException, ClosedChannelException {
         try {
             if (socket.finishConnect() == true) {
                 socket.register(selector, SelectionKey.OP_READ);
-
-                LOGGER.log(Level.FINER, "Connected: {0}", socket);
+                if (LOGGER.isLoggable(Level.FINER)) {
+                    LOGGER.log(Level.FINER, "Connected: {0}", socket);
+                }
 
                 synchronized (socket) {
                     socket.notifyAll();
                 }
             }
         } catch (IOException ex) {
-            LOGGER.log(Level.FINER, "Connection failed: {0}", ex.getLocalizedMessage());
+            if (LOGGER.isLoggable(Level.FINER)) {
+                LOGGER.log(Level.FINER, "Connection failed: {0}", ex.getLocalizedMessage());
+            }
 
             synchronized (socket) {
                 socket.notifyAll();
@@ -281,7 +276,9 @@ public class SelectorProc implements Runnable {
                 return false;
             }
         } catch (IOException ex) {
-            LOGGER.log(Level.FINER, "Connection closed: {0} with exception {1}", new Object[]{socket, ex});
+            if (LOGGER.isLoggable(Level.FINER)) {
+                LOGGER.log(Level.FINER, "Connection closed: {0} with exception {1}", new Object[]{socket, ex});
+            }
             return false;
         }
 
@@ -324,5 +321,4 @@ public class SelectorProc implements Runnable {
 
         return false;
     }
-
 }

@@ -54,7 +54,7 @@ public class MessageGroupJoinAnswer extends Message {
         this.groupId = in.readInt();
         this.masterPhysicalId = in.readInt();
 
-        GroupJoinQuery groupQuery = InternalPCJ.getNodeData().removeGroupJoinQuery(requestNum);
+        GroupJoinQuery groupQuery = InternalPCJ.getNodeData().getGroupJoinQuery(requestNum);
         groupQuery.setGroupId(groupId);
         groupQuery.setGroupMasterId(masterPhysicalId);
 

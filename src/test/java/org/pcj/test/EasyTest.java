@@ -60,24 +60,33 @@ public class EasyTest implements StartPoint {
             "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005", "localhost:8005",
             "localhost:8006",
             "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006", "localhost:8006",
-            "localhost:8007", 
-            "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007",
+            "localhost:8007",
+            "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007", "localhost:8007",
             "localhost:8008",
             "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008",
             "localhost:8009",
             "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", //
-        // run.jvmargs=-Xmx64m
-        //            "localhost:8010",
-        //            "localhost:8011",
-        //            "localhost:8011",
-        //            "localhost:8012",
-        //            "localhost:8013",
-        //            "localhost:8014",
-        //            "localhost:8015",
-        //            "localhost:8016",
-        //            "localhost:8017",
-        //            "localhost:8018",
-        //            "localhost:8019",
+            // run.jvmargs=-Xmx64m
+            "localhost:8010",
+            "localhost:8010", "localhost:8010", "localhost:8010", "localhost:8010", "localhost:8010", "localhost:8010", "localhost:8010", "localhost:8010", "localhost:8010",
+            "localhost:8011",
+            "localhost:8011", "localhost:8011", "localhost:8011", "localhost:8011", "localhost:8011", "localhost:8011", "localhost:8011", "localhost:8011", "localhost:8011",
+            "localhost:8012",
+            "localhost:8012", "localhost:8012", "localhost:8012", "localhost:8012", "localhost:8012", "localhost:8012", "localhost:8012", "localhost:8012", "localhost:8012",
+            "localhost:8013",
+            "localhost:8013", "localhost:8013", "localhost:8013", "localhost:8013", "localhost:8013", "localhost:8013", "localhost:8013", "localhost:8013", "localhost:8013",
+            "localhost:8014",
+            "localhost:8014", "localhost:8014", "localhost:8014", "localhost:8014", "localhost:8014", "localhost:8014", "localhost:8014", "localhost:8014", "localhost:8014",
+            "localhost:8015",
+            "localhost:8015", "localhost:8015", "localhost:8015", "localhost:8015", "localhost:8015", "localhost:8015", "localhost:8015", "localhost:8015", "localhost:8015",
+            "localhost:8016",
+            "localhost:8016", "localhost:8016", "localhost:8016", "localhost:8016", "localhost:8016", "localhost:8016", "localhost:8016", "localhost:8016", "localhost:8016",
+            "localhost:8017",
+            "localhost:8017", "localhost:8017", "localhost:8017", "localhost:8017", "localhost:8017", "localhost:8017", "localhost:8017", "localhost:8017", "localhost:8017",
+            "localhost:8018",
+            "localhost:8018", "localhost:8018", "localhost:8018", "localhost:8018", "localhost:8018", "localhost:8018", "localhost:8018", "localhost:8018", "localhost:8018",
+            "localhost:8019",
+            "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019",
         });
 
         PCJ.deploy(EasyTest.class, nodesDescription, SharedEnum.class);
@@ -87,7 +96,7 @@ public class EasyTest implements StartPoint {
     public void main() throws Throwable {
 //        Thread.sleep((PCJ.getNodeCount()- PCJ.getNodeId()) * 50);
 
-        Group g = PCJ.join("group" + (PCJ.myId() % 1));
+        Group g = PCJ.join("group" + (PCJ.myId() % 2));
         PCJ.barrier();
 
         for (int i = 0; i < g.threadCount(); ++i) {
@@ -98,12 +107,13 @@ public class EasyTest implements StartPoint {
         }
         PCJ.barrier();
 
-        for (int i = 1; i <= 100; ++i) {
-            System.out.println(PCJ.myId() + "> joining to test" + i);
+        for (int i = 1; i <= 500; ++i) {
             Thread.sleep((long) (Math.random() * 100));
+            System.out.println(PCJ.myId() + "> joining to test" + i);
             PCJ.join("test" + i);
+            System.out.println(PCJ.myId() + "> joined to test" + i);
 //            if (i % 20 == 0) {
-                PCJ.barrier();
+            PCJ.barrier();
 //            }
         }
         PCJ.barrier();

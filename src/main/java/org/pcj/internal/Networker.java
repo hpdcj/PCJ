@@ -9,7 +9,6 @@
 package org.pcj.internal;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
@@ -44,7 +43,8 @@ final public class Networker {
     private boolean shuttingDown = false;
 
     protected Networker() {
-        this.workers = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(),
+        this.workers = Executors.newFixedThreadPool(
+                Runtime.getRuntime().availableProcessors(),
                 new ThreadFactory() {
             private final AtomicInteger counter = new AtomicInteger(0);
 
@@ -105,7 +105,7 @@ final public class Networker {
         workers.shutdownNow();
     }
 
-    public void send(SocketChannel socket, Message message) throws UncheckedIOException {
+    public void send(SocketChannel socket, Message message) {
         try {
             if (socket instanceof LoopbackSocketChannel) {
                 LoopbackMessageBytesStream loopbackMessageBytesStream = new LoopbackMessageBytesStream(message);
@@ -124,7 +124,9 @@ final public class Networker {
                     }
                 });
             } else {
-                LOGGER.log(Level.FINEST, "Sending message {0} to {1}", new Object[]{message.getType(), socket});
+                if (LOGGER.isLoggable(Level.FINEST)) {
+                    LOGGER.log(Level.FINEST, "Sending message {0} to {1}", new Object[]{message.getType(), socket});
+                }
                 selectorProc.writeMessage(socket, message);
             }
         } catch (Throwable t) {

@@ -67,8 +67,7 @@ final public class MessageHelloInform extends Message {
                 nodeInfoByPhysicalId = map;
             }
         } catch (ClassNotFoundException ex) {
-            LOGGER.log(Level.SEVERE, "Unable to read nodeInfoByPhysicalId", ex);
-            throw new RuntimeException(ex);
+            throw new RuntimeException("Unable to read nodeInfoByPhysicalId", ex);
         }
 
         NodeData nodeData = InternalPCJ.getNodeData();

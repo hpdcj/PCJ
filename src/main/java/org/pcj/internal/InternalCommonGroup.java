@@ -8,6 +8,7 @@
  */
 package org.pcj.internal;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -33,10 +34,11 @@ public class InternalCommonGroup {
     public static final String GLOBAL_GROUP_NAME = "";
 
     private final ConcurrentMap<Integer, Integer> threadsMapping; // groupThreadId, globalThreadId
+    private final Object joinGroupSynchronizer;
     private final int groupId;
     private final String groupName;
-    private final CopyOnWriteArrayList<Integer> localIds;
-    private final CopyOnWriteArrayList<Integer> physicalIds;
+    private final List<Integer> localIds;
+    private final List<Integer> physicalIds;
 //    final private Bitmask localBarrierBitmask;
     private final Bitmask localBitmask;
 //    private final ConcurrentMap<Integer, Bitmask> physicalBitmaskMap;
@@ -88,6 +90,7 @@ public class InternalCommonGroup {
         this.physicalIds = g.physicalIds;
 
         this.threadsCounter = g.threadsCounter;
+        this.joinGroupSynchronizer = g.joinGroupSynchronizer;
 //
 //        this.localSync = g.localSync;
 //        this.localSyncMask = g.localSyncMask;
@@ -112,16 +115,22 @@ public class InternalCommonGroup {
 //        syncMessage = new MessageSyncWait();
 //        syncMessage.setGroupId(groupId);
 //
-        localIds = new CopyOnWriteArrayList<>();
+        localIds = new ArrayList<>();
         physicalIds = new CopyOnWriteArrayList<>();
+        physicalIds.add(groupMaster);
 
         threadsCounter = new AtomicInteger(0);
+        joinGroupSynchronizer = new Object();
 
 //        localSync = new BitMask();
 //        localSyncMask = new BitMask();
 //
 //        waitObject = new WaitObject();
 //
+    }
+
+    public List<Integer> getPhysicalIds() {
+        return Collections.unmodifiableList(physicalIds); // DO USUNIECIA
     }
 
     final protected int getGroupId() {
@@ -176,44 +185,49 @@ public class InternalCommonGroup {
     }
 
     final public int addNewThread(int globalThreadId) {
-        int physicalId = InternalPCJ.getNodeData().getPhysicalId(globalThreadId);
         int groupThreadId;
-        do {
-            groupThreadId = threadsCounter.getAndIncrement();
-        } while (threadsMapping.putIfAbsent(groupThreadId, globalThreadId) != null);
+        int physicalId = InternalPCJ.getNodeData().getPhysicalId(globalThreadId);
+        synchronized (joinGroupSynchronizer) {
+            do {
+                groupThreadId = threadsCounter.getAndIncrement();
+            } while (threadsMapping.putIfAbsent(groupThreadId, globalThreadId) != null);
 
-        updateCommunicationTree(physicalId);
-        updateLocalBitmask(physicalId, groupThreadId);
+            updateCommunicationTree(physicalId);
+            updateLocalBitmask(physicalId, groupThreadId);
+        }
 
         return groupThreadId;
     }
 
     final public void addThread(int globalThreadId, int groupThreadId) {
         int physicalId = InternalPCJ.getNodeData().getPhysicalId(globalThreadId);
-        if (threadsMapping.putIfAbsent(groupThreadId, globalThreadId) != null) {
-            return;
-        }
+        synchronized (joinGroupSynchronizer) {
+            if (threadsMapping.putIfAbsent(groupThreadId, globalThreadId) != null) {
+                return;
+            }
 
-        updateCommunicationTree(physicalId);
-        updateLocalBitmask(physicalId, groupThreadId);
+            updateCommunicationTree(physicalId);
+            updateLocalBitmask(physicalId, groupThreadId);
+        }
 
     }
 
     private void updateCommunicationTree(int physicalId) {
-        synchronized (physicalIds) {
-            if (physicalIds.addIfAbsent(physicalId)) {
-                int index = physicalIds.lastIndexOf(physicalId);
-                if (index > 0) {
-                    int currentPhysicalId = InternalPCJ.getNodeData().getPhysicalId();
-                    int parentId = physicalIds.get((index - 1) / 2);
+        if (physicalIds.contains(physicalId)) {
+            return;
+        }
+        
+        physicalIds.add(physicalId);
+        int index = physicalIds.lastIndexOf(physicalId);
+        if (index > 0) {
+            int currentPhysicalId = InternalPCJ.getNodeData().getPhysicalId();
+            int parentId = physicalIds.get((index - 1) / 2);
 
-                    if (currentPhysicalId == physicalId) {
-                        physicalTree.setParentNode(parentId);
-                    }
-                    if (currentPhysicalId == parentId) {
-                        physicalTree.getChildrenNodes().add(physicalId);
-                    }
-                }
+            if (currentPhysicalId == physicalId) {
+                physicalTree.setParentNode(parentId);
+            }
+            if (currentPhysicalId == parentId) {
+                physicalTree.getChildrenNodes().add(physicalId);
             }
         }
     }
@@ -221,12 +235,10 @@ public class InternalCommonGroup {
     private void updateLocalBitmask(int physicalId, int groupThreadId) {
         int currentPhysicalId = InternalPCJ.getNodeData().getPhysicalId();
 
-        synchronized (localIds) {
-            if (physicalId == currentPhysicalId) {
-                localIds.add(groupThreadId);
-                localBitmask.enlarge(groupThreadId + 1);
-                localBitmask.set(groupThreadId);
-            }
+        if (physicalId == currentPhysicalId) {
+            localIds.add(groupThreadId);
+            localBitmask.enlarge(groupThreadId + 1);
+            localBitmask.set(groupThreadId);
         }
     }
 

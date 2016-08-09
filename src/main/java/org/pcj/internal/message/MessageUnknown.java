@@ -8,7 +8,9 @@
  */
 package org.pcj.internal.message;
 
+import java.io.IOException;
 import java.nio.channels.SocketChannel;
+import java.util.logging.Level;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
@@ -30,7 +32,16 @@ final public class MessageUnknown extends Message {
     }
 
     @Override
-    public void execute(SocketChannel sender, MessageDataInputStream in) {
+    public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
         LOGGER.severe("Unknown message received!");
+        if (LOGGER.isLoggable(Level.FINEST)) {
+            StringBuilder sb = new StringBuilder("Unknown message bytes: [");
+            int b;
+            while ((b = in.read()) != -1) {
+                sb.append(String.format("%02x,", b));
+            }
+            sb.append("]");
+            LOGGER.finest(sb.toString());
+        }
     }
 }

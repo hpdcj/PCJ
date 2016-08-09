@@ -48,6 +48,10 @@ public class MessageBytesInputStream {
                         messageInputStream.close();
                     }
 
+//                    int size = length & 0x7FFF;
+//                    if (size > 0) {
+//                        currentByteBuffer = ByteBuffer.allocate(size);
+//                    }
                     currentByteBuffer = ByteBuffer.allocate(length & 0x7FFF);
                     header.clear();
                 }

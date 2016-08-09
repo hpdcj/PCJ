@@ -52,5 +52,4 @@ abstract public class Message implements Serializable {
     public abstract void write(MessageDataOutputStream out) throws IOException;
 
     public abstract void execute(SocketChannel sender, MessageDataInputStream in) throws IOException;
-
 }

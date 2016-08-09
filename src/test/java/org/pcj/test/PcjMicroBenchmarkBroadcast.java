@@ -67,8 +67,8 @@ public class PcjMicroBenchmarkBroadcast implements StartPoint {
                 if (PCJ.myId() == 0) {
                     PCJ.broadcast(SharedEnum.a, b);
                 }
-                PCJ.waitFor(SharedEnum.a);
-                PCJ.barrier();
+//                PCJ.waitFor(SharedEnum.a);
+//                PCJ.barrier();
             }
 
             time = System.nanoTime() - time;
@@ -96,7 +96,8 @@ public class PcjMicroBenchmarkBroadcast implements StartPoint {
         }
 
         //        int[] threads = {1, 4, 16};
-        int[] threads = {1, 2, 4, 8, 12};
+        int[] threads = {10};
+        // run.jvmargs=-Xmx64m
 
         String[] nodesUniq = new String[1024];
 
@@ -108,8 +109,8 @@ public class PcjMicroBenchmarkBroadcast implements StartPoint {
                 n_nodes++;
             }
         } else {
-            for (int i = 0; i < 5; ++i) {
-                nodesUniq[n_nodes] = "localhost:910" + i;
+            for (int i = 0; i < 19; ++i) {
+                nodesUniq[n_nodes] = "localhost:" + (9100 + i);
                 n_nodes++;
             }
         }

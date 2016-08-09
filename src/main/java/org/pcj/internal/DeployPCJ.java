@@ -60,7 +60,7 @@ final public class DeployPCJ {
         processes = new ArrayList<>();
     }
 
-    public static void main(String[] args) throws ClassNotFoundException, IOException {
+    public static void main(String[] args) throws IOException, ClassNotFoundException {
         String startPointStr = args[0];
         int localPort = Integer.parseInt(args[1]);
         String node0Str = args[2];

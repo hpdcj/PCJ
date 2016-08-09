@@ -33,7 +33,6 @@ import org.pcj.NodesDescription;
 import org.pcj.Shared;
 import org.pcj.StartPoint;
 import org.pcj.internal.futures.GroupJoinQuery;
-import org.pcj.internal.futures.GroupJoinState;
 import org.pcj.internal.futures.WaitObject;
 import org.pcj.internal.message.MessageBye;
 import org.pcj.internal.message.MessageGroupJoinQuery;
@@ -373,12 +372,12 @@ public abstract class InternalPCJ {
 
         InternalCommonGroup commonGroup = nodeData.getGroupByName(groupName);
 
+        GroupJoinQuery groupJoinQuery = nodeData.getGroupJoinQuery(requestNum);
+        WaitObject waitObject = groupJoinQuery.getWaitObject();
+
         if (commonGroup == null) {
             MessageGroupJoinQuery message
                     = new MessageGroupJoinQuery(requestNum, nodeData.getPhysicalId(), groupName);
-
-            GroupJoinQuery groupQuery = nodeData.getGroupJoinQuery(requestNum);
-            WaitObject waitObject = groupQuery.getWaitObject();
 
             waitObject.lock();
             try {
@@ -386,7 +385,8 @@ public abstract class InternalPCJ {
 
                 waitObject.await();
 
-                commonGroup = nodeData.createGroup(groupQuery.getGroupMasterId(), groupQuery.getGroupId(), groupName);
+                commonGroup = nodeData.createGroup(
+                        groupJoinQuery.getGroupMasterId(), groupJoinQuery.getGroupId(), groupName);
             } catch (InterruptedException ex) {
                 throw new RuntimeException(ex);
             } finally {
@@ -394,22 +394,19 @@ public abstract class InternalPCJ {
             }
         }
 
-        GroupJoinState groupJoinState = commonGroup.getGroupJoinState(requestNum, globalThreadId, commonGroup.getChildrenNodes());
-
         MessageGroupJoinRequest message
                 = new MessageGroupJoinRequest(requestNum, groupName, commonGroup.getGroupId(),
                         nodeData.getPhysicalId(), globalThreadId);
 
         SocketChannel masterSocketChannel = nodeData.getSocketChannelByPhysicalId().get(commonGroup.getGroupMasterNode());
 
-        WaitObject waitObject = groupJoinState.getWaitObject();
         waitObject.lock();
         try {
             networker.send(masterSocketChannel, message);
 
             waitObject.await();
 
-            return new InternalGroup(groupJoinState.getGroupThreadId(), commonGroup);
+            return new InternalGroup(groupJoinQuery.getGroupThreadId(), commonGroup);
         } catch (InterruptedException ex) {
             throw new RuntimeException(ex);
         } finally {

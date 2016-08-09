@@ -10,9 +10,8 @@ package org.pcj.internal.message;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
-import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
-import org.pcj.internal.futures.GroupJoinState;
+import org.pcj.internal.futures.GroupJoinQuery;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
@@ -55,13 +54,9 @@ public class MessageGroupJoinResponse extends Message {
         globalThreadId = in.readInt();
         groupThreadId = in.readInt();
 
-//        System.out.println(groupId + ": " + InternalPCJ.getNodeData().getPhysicalId() + " received response:" + requestNum + " glId:" + globalThreadId + " grId:" + groupThreadId);
-        InternalCommonGroup commonGroup = InternalPCJ.getNodeData().getGroupById(groupId);
+        GroupJoinQuery groupJoinQuery = InternalPCJ.getNodeData().removeGroupJoinQuery(requestNum);
+        groupJoinQuery.setGroupThreadId(groupThreadId);
 
-        GroupJoinState groupJoinState = commonGroup.removeGroupJoinState(requestNum, globalThreadId);
-        groupJoinState.setGroupThreadId(groupThreadId);
-
-        groupJoinState.getWaitObject().signalAll();
+        groupJoinQuery.getWaitObject().signalAll();
     }
-
 }
