@@ -43,17 +43,18 @@ public class MessageBytesInputStream {
                 }
                 if (header.hasRemaining() == false) {
                     short length = header.getShort(0);
+                    int size = length & 0x7FFF;
+
+                    header.clear();
 
                     if ((length & 0x8000) != 0) {
                         messageInputStream.close();
+                        if (size == 0) {
+                            return;
+                        }
                     }
 
-//                    int size = length & 0x7FFF;
-//                    if (size > 0) {
-//                        currentByteBuffer = ByteBuffer.allocate(size);
-//                    }
-                    currentByteBuffer = ByteBuffer.allocate(length & 0x7FFF);
-                    header.clear();
+                    currentByteBuffer = ByteBuffer.allocate(size);
                 }
             } else {
                 while (currentByteBuffer.hasRemaining() && byteBuffer.hasRemaining()) {
