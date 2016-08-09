@@ -190,5 +190,4 @@ final public class NodeData {
     public GroupJoinQuery removeGroupJoinQuery(int requestNum) {
         return groupJoinQueryMap.remove(requestNum);
     }
-
 }

@@ -39,61 +39,32 @@ public class InternalCommonGroup {
     private final String groupName;
     private final List<Integer> localIds;
     private final List<Integer> physicalIds;
-//    final private Bitmask localBarrierBitmask;
     private final Bitmask localBitmask;
-//    private final ConcurrentMap<Integer, Bitmask> physicalBitmaskMap;
     private final ConcurrentMap<Integer, GroupBarrierState> barrierStateMap;
     private final ConcurrentMap<List<Integer>, BroadcastState> broadcastStateMap;
     private final ConcurrentMap<List<Integer>, GroupJoinState> groupJoinStateMap;
-//    final private MessageGroupBarrierWaiting groupBarrierWaitingMessage;
-//    final private ConcurrentMap<Integer, BitMask> joinBitmaskMap;
     final private AtomicInteger threadsCounter;
-//    /**
-//     * list of local node group ids
-//     */
-//    final private ArrayList<Integer> localIds;
-//    /**
-//     * list of remote computers ids in this group (for broadcast)
-//     */
-//    final private List<Integer> physicalIds;
-//    /**
-//     * sync
-//     */
-//    final private BitMask localSync;
-//    final private BitMask localSyncMask;
-//    final private BitMask physicalSync;
-//    /**
-//     * Physical Parent, Left, Right
-//     */
+
+    
     final private CommunicationTree physicalTree;
 
-    //private final InternalCommonGroup g;
     public InternalCommonGroup(InternalCommonGroup g) {
         this.groupId = g.groupId;
         this.groupName = g.groupName;
         this.physicalTree = g.physicalTree;
 
         this.threadsMapping = g.threadsMapping;
-//        this.physicalBitmaskMap = g.physicalBitmaskMap;
         this.localBitmask = g.localBitmask;
         this.barrierStateMap = g.barrierStateMap;
 
         this.broadcastStateMap = g.broadcastStateMap;
         this.groupJoinStateMap = g.groupJoinStateMap;
 
-//        this.groupBarrierWaitingMessage = g.groupBarrierWaitingMessage;
-//        this.joinBitmaskMap = g.joinBitmaskMap;
-//
-//        this.syncMessage = g.syncMessage;
-//
         this.localIds = g.localIds;
         this.physicalIds = g.physicalIds;
 
         this.threadsCounter = g.threadsCounter;
         this.joinGroupSynchronizer = g.joinGroupSynchronizer;
-//
-//        this.localSync = g.localSync;
-//        this.localSyncMask = g.localSyncMask;
     }
 
     public InternalCommonGroup(int groupMaster, int groupId, String groupName) {
@@ -103,30 +74,17 @@ public class InternalCommonGroup {
 
         threadsMapping = new ConcurrentHashMap<>();
 
-//        physicalBitmaskMap = new ConcurrentHashMap<>();
         localBitmask = new Bitmask();
         barrierStateMap = new ConcurrentHashMap<>();
         broadcastStateMap = new ConcurrentHashMap<>();
         groupJoinStateMap = new ConcurrentHashMap<>();
 
-//        groupBarrierWaitingMessage = new MessageGroupBarrierWaiting(groupId, InternalPCJ.getNodeData().getPhysicalId());
-//        this.joinBitmaskMap = new ConcurrentHashMap<>();
-//
-//        syncMessage = new MessageSyncWait();
-//        syncMessage.setGroupId(groupId);
-//
         localIds = new ArrayList<>();
         physicalIds = new CopyOnWriteArrayList<>();
         physicalIds.add(groupMaster);
 
         threadsCounter = new AtomicInteger(0);
         joinGroupSynchronizer = new Object();
-
-//        localSync = new BitMask();
-//        localSyncMask = new BitMask();
-//
-//        waitObject = new WaitObject();
-//
     }
 
     public List<Integer> getPhysicalIds() {
@@ -216,7 +174,7 @@ public class InternalCommonGroup {
         if (physicalIds.contains(physicalId)) {
             return;
         }
-        
+
         physicalIds.add(physicalId);
         int index = physicalIds.lastIndexOf(physicalId);
         if (index > 0) {

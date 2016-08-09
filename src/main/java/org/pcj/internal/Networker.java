@@ -118,7 +118,7 @@ final public class Networker {
                 if (LOGGER.isLoggable(Level.FINEST)) {
                     LOGGER.log(Level.FINEST, "Locally processing message {0}", message.getType());
                 }
-                
+
                 submitToWorker(socket, message, loopbackMessageBytesStream.getMessageDataInputStream());
             } else {
                 if (LOGGER.isLoggable(Level.FINEST)) {
@@ -140,11 +140,11 @@ final public class Networker {
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
-        
+
         if (LOGGER.isLoggable(Level.FINEST)) {
             LOGGER.log(Level.FINEST, "Received message {0} from {1}", new Object[]{message.getType(), socket});
         }
-        
+
         submitToWorker(socket, message, messageDataInputStream);
     }
 

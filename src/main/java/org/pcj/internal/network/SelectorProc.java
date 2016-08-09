@@ -305,7 +305,6 @@ public class SelectorProc implements Runnable {
             if (byteBuffer != null) {
                 if (socket.isOpen()) {
                     socket.write(byteBuffer);
-
                     return true;
                 } else {
                     return false;

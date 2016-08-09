@@ -8,14 +8,10 @@
  */
 package org.pcj.internal.network;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.Queue;
-import org.pcj.internal.message.Message;
-import org.pcj.internal.message.MessageType;
 
 /**
  *

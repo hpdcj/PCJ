@@ -31,12 +31,6 @@ import org.pcj.StartPoint;
  */
 final public class DeployPCJ {
 
-//    static {
-//        Level level = Level.FINEST;
-//        Logger logger = Logger.getLogger("");
-//        Arrays.stream(logger.getHandlers()).forEach(handler -> handler.setLevel(level));
-//        logger.setLevel(level);
-//    }
     private static final Logger LOGGER = Logger.getLogger(DeployPCJ.class.getName());
     private final Class<? extends StartPoint> startPoint;
     private final List<Class<? extends Enum<? extends Shared>>> storages;
@@ -113,7 +107,6 @@ final public class DeployPCJ {
     private List<String> makeJvmParams(NodeInfo node) {
         String separator = System.getProperty("file.separator");
         String path = System.getProperty("java.home") + separator + "bin" + separator + "java";
-//        String path = "java";
 
         String classpath = System.getProperty("java.class.path");
 

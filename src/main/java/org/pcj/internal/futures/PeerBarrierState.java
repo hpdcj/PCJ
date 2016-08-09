@@ -82,6 +82,5 @@ public class PeerBarrierState {
             }
             return null;
         }
-
     }
 }

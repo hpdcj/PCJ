@@ -110,14 +110,6 @@ public class PcjThread extends Thread {
         return tg.getThreadData().getGlobalGroup();
     }
 
-//    public InternalStorage getThreadStorage() {
-//        return threadGroup.data.getThreadStorage();
-//    }
-//
-//    public Map<String, InternalCommonGroup> getGroups() {
-//        return threadGroup.data.getGroupsByName();
-//    }
-//
     public static Group getGroupByName(String name) {
         PcjThreadGroup tg = getPcjThreadGroupForCurrentThread();
         if (tg == null) {
