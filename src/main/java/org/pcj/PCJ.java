@@ -158,7 +158,7 @@ final public class PCJ extends InternalPCJ {
     /**
      * Synchronous barrier.
      *
-     * Wrapper for {@link asyncBarrier()}. It is the equivalent to call:
+     * Wrapper for {@link PCJ#asyncBarrier()}. It is the equivalent to call:
      *
      * {@code PCJ.asyncBarrier().get();}
      */
@@ -184,7 +184,7 @@ final public class PCJ extends InternalPCJ {
     /**
      * Synchronous barrier with one peer PCJ Thread.
      *
-     * Wrapper for (@link asyncBarrier(int)}. It is the equivalent to call:
+     * Wrapper for (@link  PCJ#asyncBarrier(int)}. It is the equivalent to call:
      *
      * {@code PCJ.asyncBarrier(threadId).get();}
      *
@@ -201,8 +201,8 @@ final public class PCJ extends InternalPCJ {
      *
      * @return modification count before clearing
      */
-    public static void monitor(Shared variable) {
-        PcjThread.getThreadStorage().monitor(variable);
+    public static int monitor(Shared variable) {
+        return PcjThread.getThreadStorage().monitor(variable);
     }
 
     /**

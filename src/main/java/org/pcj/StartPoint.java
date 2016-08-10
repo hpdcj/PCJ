@@ -18,7 +18,7 @@ public interface StartPoint {
     /**
      * Main method.
      *
-     * @throws Throwable
+     * @throws Throwable any possible exception or error
      */
     public void main() throws Throwable;
 }

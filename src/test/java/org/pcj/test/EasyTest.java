@@ -37,7 +37,6 @@ public class EasyTest implements StartPoint {
         public Class<?> type() {
             return clazz;
         }
-
     }
 
     public static void main(String[] args) throws InterruptedException {

@@ -41,6 +41,7 @@ task info {
 task javadoc(overwrite:true, type: Javadoc) {
     failOnError = false
     source = sourceSets.main.allJava
+    exclude "org/pcj/internal/**"
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) { 

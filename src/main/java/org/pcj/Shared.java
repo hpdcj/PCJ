@@ -20,13 +20,13 @@ package org.pcj;
  * public enum SharedEnum implements Shared {
  *     variableName(double[].class);
  *
- *     private final Class&lt;?&gt; type;
+ *     private final Class<?> type;
  *
- *     private SharedEnum(Class&lt;?&gt; type) {
+ *     private SharedEnum(Class<?> type) {
  *         this.type = type;
  *     }
  *
- *     @Override
+ *     \@Override
  *     public Class<?> type() {
  *         return type;
  *     }
