@@ -56,12 +56,24 @@ public class PcjThread extends Thread {
         }
     }
 
+    @Override
+    public void run() {
+        try {
+            storages.forEach(PCJ::registerShared);
+            StartPoint startPoint = startPointClass.newInstance();
+
+            startPoint.main();
+        } catch (Throwable t) {
+            this.throwable = t;
+        }
+    }
+
     public int getThreadId() {
         return threadId;
     }
 
-    public PcjThreadData getThreadData() {
-        return pcjThreadGroup.getThreadData();
+    public Throwable getThrowable() {
+        return throwable;
     }
 
     private static PcjThreadGroup getPcjThreadGroupForCurrentThread() {
@@ -78,43 +90,15 @@ public class PcjThread extends Thread {
         return null;
     }
 
-    @Override
-    public void run() {
-        try {
-            storages.forEach(PCJ::registerShared);
-            StartPoint startPoint = startPointClass.newInstance();
-
-            startPoint.main();
-        } catch (Throwable t) {
-            this.throwable = t;
-        }
-    }
-
-    public Throwable getThrowable() {
-        return throwable;
-    }
-
-    public static InternalStorage getThreadStorage() {
+    public static PcjThreadData getCurrentThreadData() {
         PcjThreadGroup tg = getPcjThreadGroupForCurrentThread();
         if (tg == null) {
             throw new IllegalStateException("Current thread is not part of PcjThread.");
         }
-        return tg.getThreadData().getStorage();
+        return tg.getThreadData();
     }
 
-    public static Group getThreadGlobalGroup() {
-        PcjThreadGroup tg = getPcjThreadGroupForCurrentThread();
-        if (tg == null) {
-            throw new IllegalStateException("Current thread is not part of PcjThread.");
-        }
-        return tg.getThreadData().getGlobalGroup();
-    }
-
-    public static Group getGroupByName(String name) {
-        PcjThreadGroup tg = getPcjThreadGroupForCurrentThread();
-        if (tg == null) {
-            throw new IllegalStateException("Current thread is not part of PcjThread.");
-        }
-        return tg.getThreadData().getGroupByName(name);
+    public PcjThreadData getThreadData() {
+        return pcjThreadGroup.getThreadData();
     }
 }

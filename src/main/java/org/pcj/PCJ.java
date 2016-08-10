@@ -115,7 +115,7 @@ final public class PCJ extends InternalPCJ {
      * @return global group
      */
     public static Group getGlobalGroup() {
-        return PcjThread.getThreadGlobalGroup();
+        return PcjThread.getCurrentThreadData().getGlobalGroup();
     }
 
     /**
@@ -124,7 +124,7 @@ final public class PCJ extends InternalPCJ {
      * @param variable variable to register
      */
     public static void registerShared(Shared variable) {
-        PcjThread.getThreadStorage().registerShared(variable);
+        PcjThread.getCurrentThreadData().getStorage().registerShared(variable);
     }
 
     /**
@@ -137,7 +137,7 @@ final public class PCJ extends InternalPCJ {
             throw new IllegalArgumentException("Argument is not shared enum class");
         }
 
-        InternalStorage storage = PcjThread.getThreadStorage();
+        InternalStorage storage = PcjThread.getCurrentThreadData().getStorage();
         Arrays.stream(sharedEnum.getEnumConstants())
                 .map(e -> (Shared) e)
                 .forEach(storage::registerShared);
@@ -184,7 +184,7 @@ final public class PCJ extends InternalPCJ {
     /**
      * Synchronous barrier with one peer PCJ Thread.
      *
-     * Wrapper for (@link  PCJ#asyncBarrier(int)}. It is the equivalent to call:
+     * Wrapper for (@link PCJ#asyncBarrier(int)}. It is the equivalent to call:
      *
      * {@code PCJ.asyncBarrier(threadId).get();}
      *
@@ -202,7 +202,7 @@ final public class PCJ extends InternalPCJ {
      * @return modification count before clearing
      */
     public static int monitor(Shared variable) {
-        return PcjThread.getThreadStorage().monitor(variable);
+        return PcjThread.getCurrentThreadData().getStorage().monitor(variable);
     }
 
     /**
@@ -226,7 +226,7 @@ final public class PCJ extends InternalPCJ {
      * @return remaining modification count
      */
     public static int waitFor(Shared variable, int count) {
-        return PcjThread.getThreadStorage().waitFor(variable, count);
+        return PcjThread.getCurrentThreadData().getStorage().waitFor(variable, count);
     }
 
     /**
@@ -244,7 +244,7 @@ final public class PCJ extends InternalPCJ {
      */
     public static int waitFor(Shared variable, int count,
             long timeout, TimeUnit unit) throws TimeoutException {
-        return PcjThread.getThreadStorage().waitFor(variable, count, timeout, unit);
+        return PcjThread.getCurrentThreadData().getStorage().waitFor(variable, count, timeout, unit);
     }
 
     /**
@@ -257,7 +257,7 @@ final public class PCJ extends InternalPCJ {
      * @return value (reference)
      */
     public static <T> T getLocal(Shared variable, int... indices) {
-        return PcjThread.getThreadStorage().get(variable, indices);
+        return PcjThread.getCurrentThreadData().getStorage().get(variable, indices);
     }
 
     /**
@@ -271,7 +271,7 @@ final public class PCJ extends InternalPCJ {
      * @throws ClassCastException when unable to put because of wrong type
      */
     public static <T> void putLocal(Shared variable, T newValue, int... indices) throws ClassCastException {
-        PcjThread.getThreadStorage().put(variable, newValue, indices);
+        PcjThread.getCurrentThreadData().getStorage().put(variable, newValue, indices);
     }
 
     /**

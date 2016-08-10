@@ -363,8 +363,9 @@ public abstract class InternalPCJ {
         return LoopbackSocketChannel.getInstance();
     }
 
-    protected static Group join(int globalThreadId, String groupName) {
-        Group group = PcjThread.getGroupByName(groupName);
+    protected static InternalGroup join(int globalThreadId, String groupName) {
+        PcjThreadData currentThreadData = PcjThread.getCurrentThreadData();
+        InternalGroup group = currentThreadData.getGroupByName(groupName);
         if (group != null) {
             return group;
         }
@@ -406,7 +407,11 @@ public abstract class InternalPCJ {
 
             waitObject.await();
 
-            return new InternalGroup(groupJoinQuery.getGroupThreadId(), commonGroup);
+            InternalGroup threadGroup = new InternalGroup(groupJoinQuery.getGroupThreadId(), commonGroup);
+
+            currentThreadData.addGroup(threadGroup);
+
+            return threadGroup;
         } catch (InterruptedException ex) {
             throw new RuntimeException(ex);
         } finally {
