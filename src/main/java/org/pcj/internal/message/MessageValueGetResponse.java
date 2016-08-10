@@ -86,7 +86,5 @@ class MessageValueGetResponse extends Message {
         } catch (Exception ex) {
             getVariable.signalException(ex);
         }
-
     }
-
 }

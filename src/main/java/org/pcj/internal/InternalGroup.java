@@ -111,7 +111,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     }
 
     public GetVariable removeGetVariable(int requestNum) {
-        return getVariableMap.get(requestNum);
+        return getVariableMap.remove(requestNum);
     }
 
     @Override

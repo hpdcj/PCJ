@@ -227,8 +227,7 @@ public class InternalCommonGroup {
     }
 
     final public BroadcastState removeBroadcastState(int requestNum, int requesterThreadId) {
-        List<Integer> key = Arrays.asList(requestNum, requesterThreadId);
-        return broadcastStateMap.remove(key);
+        return broadcastStateMap.remove(Arrays.asList(requestNum, requesterThreadId));
     }
 
     public GroupJoinState getGroupJoinState(int requestNum, int threadId, List<Integer> childrenNodes) {

@@ -35,6 +35,9 @@ public class MessageDataInputStream extends InputStream {
 
     @Override
     public void close() throws IOException {
+        if (objectInputStream != null) {
+            objectInputStream.close();
+        }
         input.close();
     }
 

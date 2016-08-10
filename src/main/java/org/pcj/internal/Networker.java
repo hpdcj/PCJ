@@ -152,6 +152,7 @@ final public class Networker {
         workers.submit(() -> {
             try {
                 message.execute(socket, messageDataInputStream);
+                messageDataInputStream.close();
             } catch (Throwable t) {
                 LOGGER.log(Level.SEVERE, "Exception while processing message " + message
                         + " by node(" + InternalPCJ.getNodeData().getPhysicalId() + ").", t);
