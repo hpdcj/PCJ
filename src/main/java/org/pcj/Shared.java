@@ -8,6 +8,8 @@
  */
 package org.pcj;
 
+import java.io.Serializable;
+
 /**
  * Class for naming shared variables. Contains information about variable name, its type and storage
  * associated with the variable.
@@ -54,7 +56,9 @@ public interface Shared {
      *
      * @return associated class type
      */
-    Class<?> type();
+    default Class<?> type() {
+        return Serializable.class;
+    }
 
     /**
      * Storage associated with shared variable.
