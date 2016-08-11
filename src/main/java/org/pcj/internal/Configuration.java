@@ -39,9 +39,9 @@ final public class Configuration {
      */
     final public static int DEFAULT_PORT;
     /**
-     * pcj.chunksize (short) default: 1408
+     * pcj.chunksize (int) default: 1408
      */
-    final public static short CHUNK_SIZE;
+    final public static int CHUNK_SIZE;
     /**
      * pcj.init.maxtime (int) default: max(60, (pcj.retry.count+1) * pcj.retry.delay)
      */
@@ -52,7 +52,7 @@ final public class Configuration {
         RETRY_COUNT = getPropertyInt("pcj.retry.count", 19);
         RETRY_DELAY = getPropertyInt("pcj.retry.delay", 3);
         DEFAULT_PORT = getPropertyInt("pcj.port", 8091);
-        CHUNK_SIZE = getPropertyShort("pcj.chunksize", (short) (1408));
+        CHUNK_SIZE = getPropertyInt("pcj.chunksize", 1024 * 1024);
         INIT_MAXTIME = getPropertyInt("pcj.init.maxtime", Math.max((RETRY_COUNT + 1) * RETRY_DELAY, 60));
 
         LOGGER.log(Level.CONFIG, "BACKLOG_COUNT: {0,number,#}", BACKLOG_COUNT);
@@ -68,15 +68,6 @@ final public class Configuration {
             return Integer.parseInt(System.getProperty(name, String.valueOf(defaultValue)));
         } catch (NumberFormatException ex) {
             LOGGER.log(Level.CONFIG, "Unable to parse to int: " + name, ex);
-        }
-        return defaultValue;
-    }
-
-    private static short getPropertyShort(String name, short defaultValue) {
-        try {
-            return Short.parseShort(System.getProperty(name, String.valueOf(defaultValue)));
-        } catch (NumberFormatException ex) {
-            LOGGER.log(Level.CONFIG, "Unable to parse to short: " + name, ex);
         }
         return defaultValue;
     }

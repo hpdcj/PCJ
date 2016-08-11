@@ -30,7 +30,7 @@ public class MessageBytesOutputStream implements AutoCloseable {
         this(message, Configuration.CHUNK_SIZE);
     }
 
-    public MessageBytesOutputStream(Message message, short chunkSize) {
+    public MessageBytesOutputStream(Message message, int chunkSize) {
         this.message = message;
 
         this.messageOutputStream = new MessageOutputStream(chunkSize);
@@ -72,13 +72,13 @@ public class MessageBytesOutputStream implements AutoCloseable {
 
     private static class MessageOutputStream extends OutputStream {
 
-        private static final int HEADER_SIZE = Short.BYTES;
-        private static final short LAST_CHUNK_BIT = (short) (1 << (Short.SIZE - 1));
-        private final short chunkSize;
+        private static final int HEADER_SIZE = Integer.BYTES;
+        private static final int LAST_CHUNK_BIT = (int) (1 << (Integer.SIZE - 1));
+        private final int chunkSize;
         private final Queue<ByteBuffer> queue;
         volatile private ByteBuffer currentByteBuffer;
 
-        public MessageOutputStream(short chunkSize) {
+        public MessageOutputStream(int chunkSize) {
             this.chunkSize = chunkSize;
             this.queue = new ConcurrentLinkedQueue<>();
 
@@ -91,11 +91,11 @@ public class MessageBytesOutputStream implements AutoCloseable {
         }
 
         private void flush(boolean closed) {
-            short length = (short) (currentByteBuffer.position() - HEADER_SIZE);
+            int length = (currentByteBuffer.position() - HEADER_SIZE);
             if (closed) {
-                length = (short) (length | LAST_CHUNK_BIT);
+                length = (length | LAST_CHUNK_BIT);
             }
-            currentByteBuffer.putShort(0, (short) length);
+            currentByteBuffer.putInt(0, length);
             currentByteBuffer.flip();
             queue.offer(currentByteBuffer);
         }

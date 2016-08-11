@@ -8,6 +8,7 @@
  */
 package org.pcj.internal.network;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -99,7 +100,11 @@ public class CloneInputStream extends InputStream {
             bytes = new byte[len];
             int offset = 0;
             while (offset < len) {
-                offset += in.read(bytes, offset, len - offset);
+                int bytesRead = in.read(bytes, offset, len - offset);
+                if (bytesRead < 0) {
+                    throw new EOFException("Unexpectedly reached end of stream.");
+                }
+                offset += bytesRead;
             }
             cloneInputStream.addByteArray(bytes);
         }

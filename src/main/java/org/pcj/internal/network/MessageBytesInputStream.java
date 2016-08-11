@@ -19,8 +19,8 @@ import java.util.Queue;
  */
 public class MessageBytesInputStream {
 
-    private static final int HEADER_SIZE = Short.BYTES;
-    private static final short LAST_CHUNK_BIT = (short) (1 << (Short.SIZE - 1));
+    private static final int HEADER_SIZE = Integer.BYTES;
+    private static final int LAST_CHUNK_BIT = (int) (1 << (Integer.SIZE - 1));
     private final ByteBuffer header;
     private MessageInputStream messageInputStream;
     private ByteBuffer currentByteBuffer;
@@ -37,8 +37,8 @@ public class MessageBytesInputStream {
                     header.put(byteBuffer.get());
                 }
                 if (header.hasRemaining() == false) {
-                    short lengthWithMarker = header.getShort(0);
-                    int length = lengthWithMarker & 0x7FFF;
+                    int lengthWithMarker = header.getInt(0);
+                    int length = lengthWithMarker & ~LAST_CHUNK_BIT;
 
                     header.clear();
 

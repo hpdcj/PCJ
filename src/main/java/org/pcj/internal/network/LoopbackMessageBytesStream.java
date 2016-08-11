@@ -32,7 +32,7 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
         this(message, Configuration.CHUNK_SIZE);
     }
 
-    public LoopbackMessageBytesStream(Message message, short chunkSize) {
+    public LoopbackMessageBytesStream(Message message, int chunkSize) {
         this.message = message;
 
         this.queue = new ConcurrentLinkedQueue<>();
@@ -56,12 +56,12 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
 
     private static class LoopbackOutputStream extends OutputStream {
 
-        private final short chunkSize;
+        private final int chunkSize;
         private final Queue<ByteBuffer> queue;
         volatile private boolean closed;
         private ByteBuffer currentByteBuffer;
 
-        public LoopbackOutputStream(Queue<ByteBuffer> queue, short chunkSize) {
+        public LoopbackOutputStream(Queue<ByteBuffer> queue, int chunkSize) {
             this.chunkSize = chunkSize;
             this.queue = queue;
             this.closed = false;
