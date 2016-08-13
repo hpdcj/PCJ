@@ -8,38 +8,29 @@
  */
 package org.pcj.test;
 
-import java.util.Arrays;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
 import org.pcj.PcjFuture;
-import org.pcj.Shared;
 import org.pcj.StartPoint;
+import org.pcj.Storage;
+import org.pcj.test.PcjExamplePiInt.SharedEnum;
 
 /**
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
+@Storage(SharedEnum.class)
 public class PcjExamplePiInt implements StartPoint {
 
-    private enum SharedEnum implements Shared {
-        sum(double.class);
-
-        private final Class<?> clazz;
-
-        private SharedEnum(Class<?> clazz) {
-            this.clazz = clazz;
-        }
-
-        @Override
-        public Class<?> type() {
-            return clazz;
-        }
+    enum SharedEnum {
+        sum
     }
 
-    {
-        Arrays.stream(SharedEnum.values()).forEach(PCJ::registerShared);
-    }
+    double sum;
 
+//    {
+//        Arrays.stream(SharedEnum.values()).forEach(PCJ::registerShared);
+//    }
     @SuppressWarnings("method")
     private double f(double x) {
         return (4.0 / (1.0 + x * x));
@@ -56,7 +47,7 @@ public class PcjExamplePiInt implements StartPoint {
         time = System.currentTimeMillis() - time;
         if (PCJ.myId() == 0) {
             double err = pi - Math.PI;
-            System.out.format("time %d\tsum, err = %7.5f, %10e\n", time, pi, err);
+            System.out.format("time %d\tsum = %7.5f, err = %10e\n", time, pi, err);
         }
     }
 
@@ -65,15 +56,14 @@ public class PcjExamplePiInt implements StartPoint {
         double w;
 
         w = 1.0 / (double) N;
-        double sum = 0.0;
         for (int i = PCJ.myId() + 1; i <= N; i += PCJ.threadCount()) {
             sum = sum + f(((double) i - 0.5) * w);
         }
         sum = sum * w;
-        PCJ.putLocal(SharedEnum.sum, sum);
 
-        PCJ.barrier();
+        PcjFuture<Void> barrier = PCJ.asyncBarrier();
         if (PCJ.myId() == 0) {
+            barrier.get();
             PcjFuture[] data = new PcjFuture[PCJ.threadCount()];
             for (int i = 1; i < PCJ.threadCount(); ++i) {
                 data[i] = PCJ.asyncGet(i, SharedEnum.sum);

@@ -10,14 +10,19 @@ package org.pcj.internal;
 
 import java.io.Serializable;
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import org.pcj.PcjRuntimeException;
-import org.pcj.Shared;
+import org.pcj.Storage;
 
 /**
  * External class with methods do handle shared variables.
@@ -28,23 +33,20 @@ public class InternalStorage {
 
     private class StorageField {
 
-        private final Class<?> type;
+        private final Field field;
         private final AtomicInteger modificationCount;
-        private Object value;
+        private final Object storageObject;
 
-        public StorageField(Class<?> type) {
-            this.type = type;
+        public StorageField(Field field, Object storageObject) {
+            this.field = field;
             this.modificationCount = new AtomicInteger(0);
+            this.storageObject = storageObject;
 
-            if (type.isPrimitive()) {
-                this.value = PrimitiveTypes.defaultValue(type);
-            } else {
-                this.value = null;
-            }
+            field.setAccessible(true);
         }
 
         public Class<?> getType() {
-            return type;
+            return field.getType();
         }
 
         public AtomicInteger getModificationCount() {
@@ -52,11 +54,19 @@ public class InternalStorage {
         }
 
         public Object getValue() {
-            return value;
+            try {
+                return field.get(storageObject);
+            } catch (IllegalAccessException ex) {
+                throw new RuntimeException("Cannot get value from storage", ex);
+            }
         }
 
         public void setValue(Object value) {
-            this.value = value;
+            try {
+                field.set(storageObject, value);
+            } catch (IllegalAccessException ex) {
+                throw new RuntimeException("Cannot set value to storage", ex);
+            }
         }
 
     }
@@ -67,28 +77,54 @@ public class InternalStorage {
         storageMap = new ConcurrentHashMap<>();
     }
 
-    public void registerShared(Shared variable)
-            throws NullPointerException, IllegalArgumentException, IllegalStateException {
-        if (variable instanceof Shared == false) {
-            throw new IllegalArgumentException("Not shared type: " + variable);
+    public <T> T registerStorage(Class<? extends T> storageClass) throws NoSuchFieldException, InstantiationException, IllegalAccessException {
+        if (storageClass.isAnnotationPresent(Storage.class) == false) {
+            throw new IllegalArgumentException("Class " + storageClass.getName() + " is not annotated by @Storage annotation.");
         }
-        createShared0(((Shared) variable).parent(), ((Shared) variable).name(), ((Shared) variable).type());
+
+        Storage annotation = storageClass.getAnnotation(Storage.class);
+        Class<? extends Enum<?>> sharedEnum = annotation.value();
+        if (sharedEnum.isEnum() == false) {
+            throw new IllegalArgumentException("Annotation value is not Enum: " + sharedEnum.getTypeName());
+        }
+
+        Set<String> fieldNames = Arrays.stream(storageClass.getDeclaredFields())
+                .map(Field::getName)
+                .collect(Collectors.toCollection(HashSet::new));
+
+        Optional<String> notFoundName = Arrays.stream(sharedEnum.getEnumConstants())
+                .map(Enum::name)
+                .filter(enumName -> fieldNames.contains(enumName) == false)
+                .findFirst();
+        if (notFoundName.isPresent()) {
+            throw new NoSuchFieldException("Field '" + notFoundName.get() + "' not found in " + storageClass.getName());
+        }
+
+        T storageObject = storageClass.newInstance();
+
+        for (Enum<?> enumConstant : sharedEnum.getEnumConstants()) {
+            String parent = enumConstant.getDeclaringClass().getName();
+            String name = enumConstant.name();
+            Field field = storageClass.getDeclaredField(name);
+
+            createShared0(parent, name, field, storageObject);
+        }
+
+        return storageObject;
     }
 
-    private void createShared0(String storageName, String name, Class<?> type)
+    private void createShared0(String storageName, String name, Field field, Object storageObject)
             throws NullPointerException, IllegalArgumentException, IllegalStateException {
-        if (type == null) {
-            throw new NullPointerException("Variable type cannot be null");
-        }
+        Class<?> type = field.getType();
 
         if (type.isPrimitive() == false && Serializable.class.isAssignableFrom(type) == false) {
             throw new IllegalArgumentException("Variable type is not serializable");
         }
 
         ConcurrentMap<String, StorageField> storage = getStorage(storageName);
-        StorageField field = new StorageField(type);
+        StorageField storageField = new StorageField(field, storageObject);
 
-        if (storage.putIfAbsent(name, field) != null) {
+        if (storage.putIfAbsent(name, storageField) != null) {
             throw new IllegalStateException("Variable has already been created: " + name);
         }
     }
@@ -101,7 +137,7 @@ public class InternalStorage {
     /**
      * Returns variable from Storages
      *
-     * @param name    name of Shared variable
+     * @param name    name of shared variable
      * @param indices (optional) indices into the array
      *
      * @return value of variable[indices] or variable if indices omitted
@@ -109,12 +145,12 @@ public class InternalStorage {
      * @throws ClassCastException             there is more indices than variable dimension
      * @throws ArrayIndexOutOfBoundsException one of indices is out of bound
      */
-    final public <T> T get(Shared variable, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException {
+    final public <T> T get(Enum<?> variable, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException {
         if (variable == null) {
             throw new NullPointerException("Variable name cannot be null");
         }
 
-        return get0(variable.parent(), variable.name());
+        return get0(variable.getDeclaringClass().getName(), variable.name());
     }
 
     @SuppressWarnings("unchecked")
@@ -158,7 +194,7 @@ public class InternalStorage {
      * Puts new value of variable to InternalStorage into the array, or as variable
      * value if indices omitted
      *
-     * @param name     name of Shared variable
+     * @param name     name of shared variable
      * @param newValue new value of variable
      * @param indices  (optional) indices into the array
      *
@@ -166,12 +202,12 @@ public class InternalStorage {
      *                                        or value cannot be assigned to the variable
      * @throws ArrayIndexOutOfBoundsException one of indices is out of bound
      */
-    final public <T> void put(Shared variable, T value, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
+    final public <T> void put(Enum<?> variable, T value, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
         if (variable == null) {
             throw new NullPointerException("Variable name cannot be null");
         }
 
-        put0(variable.parent(), variable.name(), value, indices);
+        put0(variable.getDeclaringClass().getName(), variable.name(), value, indices);
     }
 
     final public <T> void put0(String storageName, String name, T value, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
@@ -183,14 +219,20 @@ public class InternalStorage {
         }
 
         Class<?> variableClass = field.getType();
-        Class<?> targetClass = getTargetClass(variableClass, indices);
+//        Class<?> targetClass = getTargetClass(variableClass, indices);
+        Class<?> targetClass;
+        if (field.getValue() == null) {
+            targetClass = getTargetClass(variableClass, indices);
+        } else {
+            targetClass = getTargetClass(field.getValue().getClass(), indices);
+        }
         Class<?> fromClass = getValueClass(value);
 
         if (isAssignableFrom(targetClass, fromClass) == false) {
             throw new ClassCastException("Cannot cast " + fromClass.getName()
-                    + " to the type of variable '" + name + "'"
-                    + (indices.length == 0 ? "" : " with indices: " + Arrays.toString(indices))
-                    + ": " + targetClass);
+                    + " to the type of variable '" + storageName + "." + name + ""
+                    + (indices.length == 0 ? "" : Arrays.toString(indices))
+                    + "': " + targetClass);
         }
 
         Object newValue = value;
@@ -279,14 +321,14 @@ public class InternalStorage {
     /**
      * Tells to monitor variable. Set the variable modification counter to zero.
      *
-     * @param variable name of Shared variable
+     * @param variable name of shared variable
      */
-    final public int monitor(Shared variable) {
+    final public int monitor(Enum<?> variable) {
         if (variable == null) {
             throw new NullPointerException("Variable name cannot be null");
         }
 
-        return monitor0(variable.parent(), variable.name());
+        return monitor0(variable.getDeclaringClass().getName(), variable.name());
     }
 
     final public int monitor0(String storageName, String name) {
@@ -305,17 +347,17 @@ public class InternalStorage {
      * variable. After modification decreases the variable modification counter by
      * <code>count</code>.
      *
-     * @param variable name of Shared variable
+     * @param variable name of shared variable
      * @param count    number of modifications. If 0 - the method exits immediately.
      *
      *
      */
-    final public int waitFor(Shared variable, int count) {
+    final public int waitFor(Enum<?> variable, int count) {
         if (variable == null) {
             throw new NullPointerException("Variable name cannot be null");
         }
 
-        return waitFor0(variable.parent(), variable.name(), count);
+        return waitFor0(variable.getDeclaringClass().getName(), variable.name(), count);
     }
 
     final public int waitFor0(String storageName, String name, int count) {
@@ -355,15 +397,15 @@ public class InternalStorage {
      * variable. After modification decreases the variable modification counter by
      * <code>count</code>.
      *
-     * @param variable name of Shared variable
+     * @param variable name of shared variable
      * @param count    number of modifications. If 0 - the method exits immediately.
      */
-    final public int waitFor(Shared variable, int count, long timeout, TimeUnit unit) throws TimeoutException {
+    final public int waitFor(Enum<?> variable, int count, long timeout, TimeUnit unit) throws TimeoutException {
         if (variable == null) {
             throw new NullPointerException("Variable name cannot be null");
         }
 
-        return waitFor0(variable.parent(), variable.name(), count, timeout, unit);
+        return waitFor0(variable.getDeclaringClass().getName(), variable.name(), count, timeout, unit);
     }
 
     final public int waitFor0(String storageName, String name, int count, long timeout, TimeUnit unit) throws TimeoutException {

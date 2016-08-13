@@ -8,11 +8,9 @@
  */
 package org.pcj.internal;
 
-import java.util.List;
-import org.pcj.Group;
 import org.pcj.PCJ;
-import org.pcj.Shared;
 import org.pcj.StartPoint;
+import org.pcj.Storage;
 
 /**
  * This class represents PCJ thread.
@@ -25,21 +23,18 @@ import org.pcj.StartPoint;
  */
 public class PcjThread extends Thread {
 
-    final private Class<? extends StartPoint> startPointClass;
-    private final List<Class<? extends Enum<? extends Shared>>> storages;
-    final private PcjThreadGroup pcjThreadGroup;
-    final private int threadId;
+    private final Class<? extends StartPoint> startPointClass;
+    private final PcjThreadGroup pcjThreadGroup;
+    private final int threadId;
     private Throwable throwable;
 
-    PcjThread(int threadId, Class<? extends StartPoint> startPoint, PcjThreadData threadData,
-            List<Class<? extends Enum<? extends Shared>>> storages) {
+    PcjThread(int threadId, Class<? extends StartPoint> startPoint, PcjThreadData threadData) {
         super(new PcjThreadGroup("PcjThreadGroup-" + threadId, threadData), "PcjThread-" + threadId);
 
         this.threadId = threadId;
         this.pcjThreadGroup = (PcjThreadGroup) this.getThreadGroup();
 
         this.startPointClass = startPoint;
-        this.storages = storages;
     }
 
     private static class PcjThreadGroup extends ThreadGroup {
@@ -59,8 +54,13 @@ public class PcjThread extends Thread {
     @Override
     public void run() {
         try {
-            storages.forEach(PCJ::registerShared);
-            StartPoint startPoint = startPointClass.newInstance();
+//            storages.forEach(PCJ::registerShared);
+            StartPoint startPoint;
+            if (startPointClass.isAnnotationPresent(Storage.class)) {
+                startPoint = PCJ.registerStorage(startPointClass);
+            } else {
+                startPoint = startPointClass.newInstance();
+            }
 
             startPoint.main();
         } catch (Throwable t) {

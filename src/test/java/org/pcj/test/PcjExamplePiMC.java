@@ -12,34 +12,25 @@ import java.util.Random;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
 import org.pcj.PcjFuture;
-import org.pcj.Shared;
 import org.pcj.StartPoint;
+import org.pcj.Storage;
+import org.pcj.test.PcjExamplePiMC.SharedEnum;
 
+@Storage(SharedEnum.class)
 public class PcjExamplePiMC implements StartPoint {
 
-    static enum SharedEnum implements Shared {
-        circleCount(long.class);
-        Class<?> clazz;
-
-        private SharedEnum(Class<?> clazz) {
-            this.clazz = clazz;
-        }
-
-        @Override
-        public Class<?> type() {
-            return clazz;
-        }
+    enum SharedEnum {
+        circleCount
     }
+    
+    long circleCount;
 
     @Override
     public void main() {
-        PCJ.registerShared(SharedEnum.class);
-
         Random random = new Random();
         long nAll = 512_000_000;
         long n = nAll / PCJ.threadCount();
 
-        long circleCount = 0;
         double time = System.nanoTime();
 // Calculate  
         for (long i = 0; i < n; ++i) {
@@ -49,7 +40,6 @@ public class PcjExamplePiMC implements StartPoint {
                 circleCount++;
             }
         }
-        PCJ.putLocal(SharedEnum.circleCount, circleCount);
         PCJ.barrier();
 // Gather results 
         long c = 0;

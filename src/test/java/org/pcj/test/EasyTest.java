@@ -14,30 +14,23 @@ import java.util.logging.Logger;
 import org.pcj.Group;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
-import org.pcj.Shared;
 import org.pcj.StartPoint;
+import org.pcj.Storage;
+import org.pcj.test.EasyTest.SharedEnum;
 
 /**
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
+@Storage(SharedEnum.class)
 public class EasyTest implements StartPoint {
 
-    enum SharedEnum implements Shared {
-        a(double.class),
-        b(double[].class),
-        c(Double.class);
-        private final Class<?> clazz;
-
-        private SharedEnum(Class<?> clazz) {
-            this.clazz = clazz;
-        }
-
-        @Override
-        public Class<?> type() {
-            return clazz;
-        }
+    enum SharedEnum {
+        a, b, c;
     }
+    private double a;
+    private double[] b;
+    private Double c;
 
     public static void main(String[] args) throws InterruptedException {
         Level level = Level.INFO;
@@ -65,30 +58,30 @@ public class EasyTest implements StartPoint {
             "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008", "localhost:8008",
             "localhost:8009",
             "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", "localhost:8009", //
-            // run.jvmargs=-Xmx64m
-            "localhost:8010",
-            "localhost:8010", "localhost:8010", "localhost:8010", "localhost:8010", "localhost:8010", "localhost:8010", "localhost:8010", "localhost:8010", "localhost:8010",
-            "localhost:8011",
-            "localhost:8011", "localhost:8011", "localhost:8011", "localhost:8011", "localhost:8011", "localhost:8011", "localhost:8011", "localhost:8011", "localhost:8011",
-            "localhost:8012",
-            "localhost:8012", "localhost:8012", "localhost:8012", "localhost:8012", "localhost:8012", "localhost:8012", "localhost:8012", "localhost:8012", "localhost:8012",
-            "localhost:8013",
-            "localhost:8013", "localhost:8013", "localhost:8013", "localhost:8013", "localhost:8013", "localhost:8013", "localhost:8013", "localhost:8013", "localhost:8013",
-            "localhost:8014",
-            "localhost:8014", "localhost:8014", "localhost:8014", "localhost:8014", "localhost:8014", "localhost:8014", "localhost:8014", "localhost:8014", "localhost:8014",
-            "localhost:8015",
-            "localhost:8015", "localhost:8015", "localhost:8015", "localhost:8015", "localhost:8015", "localhost:8015", "localhost:8015", "localhost:8015", "localhost:8015",
-            "localhost:8016",
-            "localhost:8016", "localhost:8016", "localhost:8016", "localhost:8016", "localhost:8016", "localhost:8016", "localhost:8016", "localhost:8016", "localhost:8016",
-            "localhost:8017",
-            "localhost:8017", "localhost:8017", "localhost:8017", "localhost:8017", "localhost:8017", "localhost:8017", "localhost:8017", "localhost:8017", "localhost:8017",
-            "localhost:8018",
-            "localhost:8018", "localhost:8018", "localhost:8018", "localhost:8018", "localhost:8018", "localhost:8018", "localhost:8018", "localhost:8018", "localhost:8018",
-            "localhost:8019",
-            "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019",
+        //            // run.jvmargs=-Xmx64m
+        //            "localhost:8010",
+        //            "localhost:8010", "localhost:8010", "localhost:8010", "localhost:8010", "localhost:8010", "localhost:8010", "localhost:8010", "localhost:8010", "localhost:8010",
+        //            "localhost:8011",
+        //            "localhost:8011", "localhost:8011", "localhost:8011", "localhost:8011", "localhost:8011", "localhost:8011", "localhost:8011", "localhost:8011", "localhost:8011",
+        //            "localhost:8012",
+        //            "localhost:8012", "localhost:8012", "localhost:8012", "localhost:8012", "localhost:8012", "localhost:8012", "localhost:8012", "localhost:8012", "localhost:8012",
+        //            "localhost:8013",
+        //            "localhost:8013", "localhost:8013", "localhost:8013", "localhost:8013", "localhost:8013", "localhost:8013", "localhost:8013", "localhost:8013", "localhost:8013",
+        //            "localhost:8014",
+        //            "localhost:8014", "localhost:8014", "localhost:8014", "localhost:8014", "localhost:8014", "localhost:8014", "localhost:8014", "localhost:8014", "localhost:8014",
+        //            "localhost:8015",
+        //            "localhost:8015", "localhost:8015", "localhost:8015", "localhost:8015", "localhost:8015", "localhost:8015", "localhost:8015", "localhost:8015", "localhost:8015",
+        //            "localhost:8016",
+        //            "localhost:8016", "localhost:8016", "localhost:8016", "localhost:8016", "localhost:8016", "localhost:8016", "localhost:8016", "localhost:8016", "localhost:8016",
+        //            "localhost:8017",
+        //            "localhost:8017", "localhost:8017", "localhost:8017", "localhost:8017", "localhost:8017", "localhost:8017", "localhost:8017", "localhost:8017", "localhost:8017",
+        //            "localhost:8018",
+        //            "localhost:8018", "localhost:8018", "localhost:8018", "localhost:8018", "localhost:8018", "localhost:8018", "localhost:8018", "localhost:8018", "localhost:8018",
+        //            "localhost:8019",
+        //            "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019",
         });
 
-        PCJ.deploy(EasyTest.class, nodesDescription, SharedEnum.class);
+        PCJ.deploy(EasyTest.class, nodesDescription);
     }
 
     @Override

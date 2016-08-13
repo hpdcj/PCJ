@@ -13,29 +13,21 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
-import org.pcj.Shared;
 import org.pcj.StartPoint;
+import org.pcj.Storage;
+import org.pcj.test.SizesTest.SharedEnum;
 
 /**
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
+@Storage(SharedEnum.class)
 public class SizesTest implements StartPoint {
 
-    enum SharedEnum implements Shared {
-        b(byte[].class);
-        private final Class<?> clazz;
-
-        private SharedEnum(Class<?> clazz) {
-            this.clazz = clazz;
-        }
-
-        @Override
-        public Class<?> type() {
-            return clazz;
-        }
-
+    enum SharedEnum {
+        b
     }
+    byte[] b;
 
     public static void main(String[] args) throws InterruptedException {
         Level level = Level.INFO;
@@ -48,7 +40,7 @@ public class SizesTest implements StartPoint {
             "localhost:8091",
             "localhost:8002",});
 
-        PCJ.deploy(SizesTest.class, nodesDescription, SharedEnum.class);
+        PCJ.deploy(SizesTest.class, nodesDescription);
     }
 
     @Override

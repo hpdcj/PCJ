@@ -19,7 +19,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 import org.pcj.NodesDescription;
-import org.pcj.Shared;
 import org.pcj.StartPoint;
 
 /**
@@ -33,7 +32,6 @@ final public class DeployPCJ {
 
     private static final Logger LOGGER = Logger.getLogger(DeployPCJ.class.getName());
     private final Class<? extends StartPoint> startPoint;
-    private final List<Class<? extends Enum<? extends Shared>>> storages;
     private final NodeInfo node0;
     private final NodeInfo currentJvm;
     private final Collection<NodeInfo> allNodes;
@@ -41,10 +39,8 @@ final public class DeployPCJ {
     private final int allNodesThreadCount;
 
     private DeployPCJ(Class<? extends StartPoint> startPoint,
-            NodesDescription nodesDescription,
-            List<Class<? extends Enum<? extends Shared>>> storages) {
+            NodesDescription nodesDescription) {
         this.startPoint = startPoint;
-        this.storages = storages;
 
         this.node0 = nodesDescription.getNode0();
         this.currentJvm = nodesDescription.getCurrentJvm();
@@ -71,26 +67,15 @@ final public class DeployPCJ {
         String[] threadIds = threadIdsStr.substring(1, threadIdsStr.length() - 1).split(", ");
         Stream.of(threadIds).mapToInt(Integer::parseInt).forEach(id -> currentJvm.addThreadId(id));
 
-        List<Class<? extends Enum<? extends Shared>>> storages = new ArrayList<>();
-        for (int i = 6; i < args.length; ++i) {
-            Class<?> clazz = Class.forName(args[i]);
-            if (clazz.isEnum() && Shared.class.isAssignableFrom(clazz)) {
-                @SuppressWarnings("unchecked")
-                Class<? extends Enum<? extends Shared>> enumClass = (Class<Enum<? extends Shared>>) clazz;
-                storages.add(enumClass);
-            }
-        }
-
         LOGGER.log(Level.FINE, "Invoking InternalPCJ.start({0}, {1}, {2}, {3})",
                 new Object[]{startPoint, node0, currentJvm, allNodesThreadCount});
 
-        InternalPCJ.start(startPoint, node0, currentJvm, allNodesThreadCount, storages);
+        InternalPCJ.start(startPoint, node0, currentJvm, allNodesThreadCount);
     }
 
     public static void deploy(Class<? extends StartPoint> startPoint,
-            NodesDescription nodesDescription,
-            List<Class<? extends Enum<? extends Shared>>> storages) {
-        DeployPCJ deploy = new DeployPCJ(startPoint, nodesDescription, storages);
+            NodesDescription nodesDescription) {
+        DeployPCJ deploy = new DeployPCJ(startPoint, nodesDescription);
         try {
             deploy.startDeploying();
 
@@ -101,7 +86,7 @@ final public class DeployPCJ {
     }
 
     private void runPCJ(NodeInfo currentJvm) {
-        InternalPCJ.start(startPoint, node0, currentJvm, allNodesThreadCount, storages);
+        InternalPCJ.start(startPoint, node0, currentJvm, allNodesThreadCount);
     }
 
     private List<String> makeJvmParams(NodeInfo node) {
@@ -132,9 +117,6 @@ final public class DeployPCJ {
                 Long.toString(allNodesThreadCount), // args[4]
                 Arrays.toString(node.getThreadIds()) // args[5]
         ));
-        for (Class<? extends Enum<? extends Shared>> storage : storages) {
-            params.add(storage.getName());
-        }
         return params;
     }
 

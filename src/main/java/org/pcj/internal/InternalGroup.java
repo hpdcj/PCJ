@@ -14,7 +14,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.Group;
 import org.pcj.PcjFuture;
-import org.pcj.Shared;
 import org.pcj.internal.futures.BroadcastState;
 import org.pcj.internal.futures.GetVariable;
 import org.pcj.internal.futures.PeerBarrierState;
@@ -91,7 +90,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     }
 
     @Override
-    public <T> PcjFuture<T> asyncGet(int threadId, Shared variable, int... indices) {
+    public <T> PcjFuture<T> asyncGet(int threadId, Enum<?> variable, int... indices) {
         int requestNum = getVariableCounter.incrementAndGet();
         GetVariable<T> getVariable = new GetVariable<>();
         getVariableMap.put(requestNum, getVariable);
@@ -103,7 +102,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         MessageValueGetRequest message
                 = new MessageValueGetRequest(
                         super.getGroupId(), requestNum, myThreadId, threadId,
-                        variable.parent(), variable.name(), indices);
+                        variable.getDeclaringClass().getName(), variable.name(), indices);
 
         InternalPCJ.getNetworker().send(socket, message);
 
@@ -115,7 +114,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     }
 
     @Override
-    public <T> PcjFuture<Void> asyncPut(int threadId, Shared variable, T newValue, int... indices) {
+    public <T> PcjFuture<Void> asyncPut(int threadId, Enum<?> variable, T newValue, int... indices) {
         int requestNum = putVariableCounter.incrementAndGet();
         PutVariable putVariable = new PutVariable();
         putVariableMap.put(requestNum, putVariable);
@@ -127,7 +126,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         MessageValuePutRequest message
                 = new MessageValuePutRequest(
                         super.getGroupId(), requestNum, myThreadId, threadId,
-                        variable.parent(), variable.name(), indices, newValue);
+                        variable.getDeclaringClass().getName(), variable.name(), indices, newValue);
 
         InternalPCJ.getNetworker().send(socket, message);
 
@@ -139,7 +138,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     }
 
     @Override
-    public <T> PcjFuture<Void> asyncBroadcast(Shared variable, T newValue) {
+    public <T> PcjFuture<Void> asyncBroadcast(Enum<?> variable, T newValue) {
         int requestNum = broadcastCounter.incrementAndGet();
         BroadcastState broadcastState = this.getBroadcastState(requestNum, myThreadId);
 
@@ -148,7 +147,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
 
         MessageValueBroadcastRequest message
                 = new MessageValueBroadcastRequest(super.getGroupId(), requestNum, myThreadId,
-                        variable.parent(), variable.name(), newValue);
+                        variable.getDeclaringClass().getName(), variable.name(), newValue);
         InternalPCJ.getNetworker().send(masterSocket, message);
 
         return broadcastState;

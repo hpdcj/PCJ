@@ -18,7 +18,6 @@ import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
@@ -28,9 +27,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import org.pcj.Group;
 import org.pcj.NodesDescription;
-import org.pcj.Shared;
 import org.pcj.StartPoint;
 import org.pcj.internal.futures.GroupJoinQuery;
 import org.pcj.internal.futures.WaitObject;
@@ -66,17 +63,15 @@ public abstract class InternalPCJ {
     }
 
     protected static void start(Class<? extends StartPoint> startPoint,
-            NodesDescription nodesFile,
-            List<Class<? extends Enum<? extends Shared>>> storages) {
+            NodesDescription nodesFile) {
         NodeInfo node0 = nodesFile.getNode0();
         NodeInfo currentJvm = nodesFile.getCurrentJvm();
         int allNodesThreadCount = nodesFile.getAllNodesThreadCount();
-        start(startPoint, node0, currentJvm, allNodesThreadCount, storages);
+        start(startPoint, node0, currentJvm, allNodesThreadCount);
     }
 
     protected static void start(Class<? extends StartPoint> startPointClass,
-            NodeInfo node0, NodeInfo currentJvm, int allNodesThreadCount,
-            List<Class<? extends Enum<? extends Shared>>> storages) {
+            NodeInfo node0, NodeInfo currentJvm, int allNodesThreadCount) {
 
         if (currentJvm == null) {
             throw new IllegalArgumentException("There is no entry for PCJ threads for current JVM");
@@ -133,7 +128,7 @@ public abstract class InternalPCJ {
 
 
             /* Preparing PcjThreads*/
-            Set<PcjThread> pcjThreads = preparePcjThreads(startPointClass, currentJvm.getThreadIds(), storages);
+            Set<PcjThread> pcjThreads = preparePcjThreads(startPointClass, currentJvm.getThreadIds());
             pcjThreads.forEach(pcjThread -> nodeData.getPcjThreads().put(pcjThread.getThreadId(), pcjThread));
 
             /* Starting PcjThreads*/
@@ -200,15 +195,14 @@ public abstract class InternalPCJ {
         }
     }
 
-    private static Set<PcjThread> preparePcjThreads(Class<? extends StartPoint> startPointClass, int[] threadIds,
-            List<Class<? extends Enum<? extends Shared>>> storages) {
+    private static Set<PcjThread> preparePcjThreads(Class<? extends StartPoint> startPointClass, int[] threadIds) {
         InternalCommonGroup globalGroup = nodeData.getGroupById(InternalCommonGroup.GLOBAL_GROUP_ID);
         Set<PcjThread> pcjThreads = new HashSet<>();
 
         for (int threadId : threadIds) {
             InternalGroup threadGlobalGroup = new InternalGroup(threadId, globalGroup);
             PcjThreadData pcjThreadData = new PcjThreadData(threadGlobalGroup);
-            PcjThread pcjThread = new PcjThread(threadId, startPointClass, pcjThreadData, storages);
+            PcjThread pcjThread = new PcjThread(threadId, startPointClass, pcjThreadData);
 
             pcjThreads.add(pcjThread);
         }

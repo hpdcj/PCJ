@@ -17,29 +17,20 @@ import java.util.Locale;
 import java.util.Scanner;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
-import org.pcj.Shared;
 import org.pcj.StartPoint;
+import org.pcj.Storage;
+import org.pcj.test.PcjMicroBenchmarkPingPong.StorageEnum;
 
+@Storage(StorageEnum.class)
 public class PcjMicroBenchmarkPingPong implements StartPoint {
 
-    static enum StorageEnum implements Shared {
-
-        a(double[].class);
-        private Class<?> type;
-
-        private StorageEnum(Class<?> type) {
-            this.type = type;
-        }
-
-        @Override
-        public Class<?> type() {
-            return type;
-        }
+    static enum StorageEnum {
+        a
     }
+    double[] a;
 
     @Override
     public void main() {
-        PCJ.registerShared(StorageEnum.class);
         int[] transmit = {1, 10, 100, 1024, 2048, 4096, 8192, 16384,
             32768, 65536, 131072, 262144, 524288, 1048576, 2097152,
             4194304, 8388608, 16777216,};
@@ -48,7 +39,6 @@ public class PcjMicroBenchmarkPingPong implements StartPoint {
 
         final int ntimes = 100;
         final int number_of_tests = 5;
-        double[] a;
         double[] b;
 
         for (int j = 0; j < transmit.length; j++) {
@@ -60,7 +50,6 @@ public class PcjMicroBenchmarkPingPong implements StartPoint {
             PCJ.barrier();
 
             a = new double[n];
-            PCJ.putLocal(StorageEnum.a, a);
             b = new double[n];
 
             PCJ.barrier();

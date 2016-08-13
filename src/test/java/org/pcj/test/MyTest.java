@@ -13,32 +13,23 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
-import org.pcj.Shared;
 import org.pcj.StartPoint;
+import org.pcj.Storage;
 import org.pcj.internal.InternalStorage;
+import org.pcj.test.MyTest.SharedEnum;
 
 /**
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
+@Storage(SharedEnum.class)
 public class MyTest extends InternalStorage implements StartPoint {
 
-    enum SharedEnum implements Shared {
-        a(double.class),
-        b(double.class),
-        c(Double.class);
-        private final Class<?> clazz;
-
-        private SharedEnum(Class<?> clazz) {
-            this.clazz = clazz;
-        }
-
-        @Override
-        public Class<?> type() {
-            return clazz;
-        }
-
+    enum SharedEnum {
+        a, b, c;
     }
+    double a, b;
+    Double c;
 
     public static void main(String[] args) throws InterruptedException {
 //        Level level = Level.INFO;
@@ -73,7 +64,7 @@ public class MyTest extends InternalStorage implements StartPoint {
         });
 
 //        PCJ.start(EasyTest.class, EasyTest.class,
-        PCJ.deploy(MyTest.class, nodesDescription, SharedEnum.class);
+        PCJ.deploy(MyTest.class, nodesDescription);
     }
 
     @Override
@@ -90,9 +81,9 @@ public class MyTest extends InternalStorage implements StartPoint {
             PCJ.barrier();
         }
 
-        PCJ.putLocal(SharedEnum.a, PCJ.myId());
-        PCJ.putLocal(SharedEnum.b, 'b');
-        PCJ.putLocal(SharedEnum.c, 2);
+        a = PCJ.myId();
+        b = 'b';
+        c = 2.0;
         PCJ.barrier();
         if (PCJ.myId() == 0) {
             System.out.println("a@1 = " + PCJ.asyncGet(1, SharedEnum.a).get());
@@ -102,10 +93,10 @@ public class MyTest extends InternalStorage implements StartPoint {
 
         PCJ.barrier();
 
-        System.out.println(PCJ.myId() + "a=" + PCJ.getLocal(SharedEnum.a) + " " + PCJ.getLocal(SharedEnum.a).getClass());
-        System.out.println(PCJ.myId() + "b=" + PCJ.getLocal(SharedEnum.b) + " " + PCJ.getLocal(SharedEnum.b).getClass());
-        System.out.println(PCJ.myId() + "c=" + PCJ.getLocal(SharedEnum.c));
-        PCJ.putLocal(SharedEnum.c, null);
-        System.out.println(PCJ.myId() + "c=" + PCJ.getLocal(SharedEnum.c));
+        System.out.println(PCJ.myId() + "a=" + a);
+        System.out.println(PCJ.myId() + "b=" + b);
+        System.out.println(PCJ.myId() + "c=" + c);
+        c = null;
+        System.out.println(PCJ.myId() + "c=" + c);
     }
 }

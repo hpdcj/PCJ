@@ -17,25 +17,17 @@ import java.util.Locale;
 import java.util.Scanner;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
-import org.pcj.Shared;
 import org.pcj.StartPoint;
+import org.pcj.Storage;
+import org.pcj.test.PcjMicroBenchmarkBroadcast.SharedEnum;
 
+@Storage(SharedEnum.class)
 public class PcjMicroBenchmarkBroadcast implements StartPoint {
 
-    enum SharedEnum implements Shared {
-        a(double[].class);
-
-        private final Class<?> type;
-
-        private SharedEnum(Class<?> type) {
-            this.type = type;
-        }
-
-        @Override
-        public Class<?> type() {
-            return type;
-        }
+    enum SharedEnum {
+        a
     }
+    double[] a;
 
     @Override
     public void main() {
@@ -75,7 +67,7 @@ public class PcjMicroBenchmarkBroadcast implements StartPoint {
             time = (time / (double) ntimes) * 1e-9;
             PCJ.barrier();
 
-            System.out.println(PCJ.threadCount() + " " + time + " " + ((double[]) PCJ.getLocal(SharedEnum.a))[n - 1]);
+            System.out.println(PCJ.threadCount() + " " + time + " " + a[n - 1]);
             if (PCJ.myId() == 0) {
                 System.out.format(Locale.FRANCE, "%5d size %10f time %f7 %n",
                         PCJ.threadCount(), (double) n / 128, time);
@@ -109,7 +101,7 @@ public class PcjMicroBenchmarkBroadcast implements StartPoint {
                 n_nodes++;
             }
         } else {
-            for (int i = 0; i < 19; ++i) {
+            for (int i = 0; i < 4; ++i) {
                 nodesUniq[n_nodes] = "localhost:" + (9100 + i);
                 n_nodes++;
             }
@@ -131,7 +123,7 @@ public class PcjMicroBenchmarkBroadcast implements StartPoint {
                 }
 
                 PCJ.deploy(PcjMicroBenchmarkBroadcast.class,
-                        new NodesDescription(nodes), SharedEnum.class);
+                        new NodesDescription(nodes));
             }
         }
     }

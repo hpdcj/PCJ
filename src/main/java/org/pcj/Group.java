@@ -70,7 +70,7 @@ public interface Group {
      *
      * @return PcjFuture that will contain shared variable value
      */
-    <T> PcjFuture<T> asyncGet(int threadId, Shared variable, int... indices);
+    <T> PcjFuture<T> asyncGet(int threadId, Enum<?> variable, int... indices);
 
     /**
      * Asynchronous put operation. Puts value into shared variable to PCJ Thread from the group.
@@ -83,7 +83,7 @@ public interface Group {
      *
      * @return PcjFuture to check completion of put operation
      */
-    <T> PcjFuture<Void> asyncPut(int threadId, Shared variable, T newValue, int... indices);
+    <T> PcjFuture<Void> asyncPut(int threadId, Enum<?> variable, T newValue, int... indices);
 
     /**
      * Asynchronous broadcast operation. Broadcasts value into shared variable of all PCJ Threads
@@ -95,5 +95,5 @@ public interface Group {
      *
      * @return PcjFuture to check completion of put operation
      */
-    <T> PcjFuture<Void> asyncBroadcast(Shared variable, T newValue);
+    <T> PcjFuture<Void> asyncBroadcast(Enum<?> variable, T newValue);
 }

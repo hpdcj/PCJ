@@ -8,12 +8,10 @@
  */
 package org.pcj;
 
-import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.pcj.internal.DeployPCJ;
 import org.pcj.internal.InternalPCJ;
-import org.pcj.internal.InternalStorage;
 import org.pcj.internal.PcjThread;
 
 /**
@@ -37,13 +35,12 @@ final public class PCJ extends InternalPCJ {
      *
      * @param startPoint       start point class
      * @param nodesDescription description of used nodes (and threads)
-     * @param storages         (optional) Shared Enum classes to register shared variables
+     * @param storages         (optional) Enum<?> Enum classes to register shared variables
      */
-    @SafeVarargs
     public static void start(Class<? extends StartPoint> startPoint,
-            NodesDescription nodesDescription,
-            Class<? extends Enum<? extends Shared>>... storages) {
-        InternalPCJ.start(startPoint, nodesDescription, Arrays.asList(storages));
+            NodesDescription nodesDescription
+    ) {
+        InternalPCJ.start(startPoint, nodesDescription);
     }
 
     /**
@@ -59,13 +56,12 @@ final public class PCJ extends InternalPCJ {
      *
      * @param startPoint       start point class
      * @param nodesDescription description of used nodes (and threads)
-     * @param storages         (optional) Shared Enum classes to register shared variables
+     * @param storages         (optional) Enum<?> Enum classes to register shared variables
      */
-    @SafeVarargs
     public static void deploy(Class<? extends StartPoint> startPoint,
-            NodesDescription nodesDescription,
-            Class<? extends Enum<? extends Shared>>... storages) {
-        DeployPCJ.deploy(startPoint, nodesDescription, Arrays.asList(storages));
+            NodesDescription nodesDescription
+    ) {
+        DeployPCJ.deploy(startPoint, nodesDescription);
     }
 
     /**
@@ -119,28 +115,13 @@ final public class PCJ extends InternalPCJ {
     }
 
     /**
-     * Register shared variable for current PCJ Thread.
+     * Register storage.
      *
-     * @param variable variable to register
+     * @param sharedEnum Enum<?> Enum class
      */
-    public static void registerShared(Shared variable) {
-        PcjThread.getCurrentThreadData().getStorage().registerShared(variable);
-    }
-
-    /**
-     * Register all enum constants representing shared variables for current PCJ Thread.
-     *
-     * @param sharedEnum Shared Enum class
-     */
-    public static void registerShared(Class<? extends Enum<? extends Shared>> sharedEnum) {
-        if (sharedEnum.isEnum() == false || Shared.class.isAssignableFrom(sharedEnum) == false) {
-            throw new IllegalArgumentException("Argument is not shared enum class");
-        }
-
-        InternalStorage storage = PcjThread.getCurrentThreadData().getStorage();
-        Arrays.stream(sharedEnum.getEnumConstants())
-                .map(e -> (Shared) e)
-                .forEach(storage::registerShared);
+    public static <T> T registerStorage(Class<? extends T> storageClass)
+            throws InstantiationException, IllegalAccessException, NoSuchFieldException {
+        return PcjThread.getCurrentThreadData().getStorage().registerStorage(storageClass);
     }
 
     /**
@@ -201,7 +182,7 @@ final public class PCJ extends InternalPCJ {
      *
      * @return modification count before clearing
      */
-    public static int monitor(Shared variable) {
+    public static int monitor(Enum<?> variable) {
         return PcjThread.getCurrentThreadData().getStorage().monitor(variable);
     }
 
@@ -212,7 +193,7 @@ final public class PCJ extends InternalPCJ {
      *
      * @return remaining modification count
      */
-    public static int waitFor(Shared variable) {
+    public static int waitFor(Enum<?> variable) {
         return waitFor(variable, 1);
     }
 
@@ -225,7 +206,7 @@ final public class PCJ extends InternalPCJ {
      *
      * @return remaining modification count
      */
-    public static int waitFor(Shared variable, int count) {
+    public static int waitFor(Enum<?> variable, int count) {
         return PcjThread.getCurrentThreadData().getStorage().waitFor(variable, count);
     }
 
@@ -242,7 +223,7 @@ final public class PCJ extends InternalPCJ {
      *
      * @throws TimeoutException when not so much modifications occurs till timeout
      */
-    public static int waitFor(Shared variable, int count,
+    public static int waitFor(Enum<?> variable, int count,
             long timeout, TimeUnit unit) throws TimeoutException {
         return PcjThread.getCurrentThreadData().getStorage().waitFor(variable, count, timeout, unit);
     }
@@ -256,7 +237,7 @@ final public class PCJ extends InternalPCJ {
      *
      * @return value (reference)
      */
-    public static <T> T getLocal(Shared variable, int... indices) {
+    public static <T> T getLocal(Enum<?> variable, int... indices) {
         return PcjThread.getCurrentThreadData().getStorage().get(variable, indices);
     }
 
@@ -270,7 +251,7 @@ final public class PCJ extends InternalPCJ {
      *
      * @throws ClassCastException when unable to put because of wrong type
      */
-    public static <T> void putLocal(Shared variable, T newValue, int... indices) throws ClassCastException {
+    public static <T> void putLocal(Enum<?> variable, T newValue, int... indices) throws ClassCastException {
         PcjThread.getCurrentThreadData().getStorage().put(variable, newValue, indices);
     }
 
@@ -285,14 +266,14 @@ final public class PCJ extends InternalPCJ {
      *
      * @return PcjFuture that will contain shared variable value
      */
-    public static <T> PcjFuture<T> asyncGet(int threadId, Shared variable, int... indices) {
+    public static <T> PcjFuture<T> asyncGet(int threadId, Enum<?> variable, int... indices) {
         return getGlobalGroup().asyncGet(threadId, variable, indices);
     }
 
     /**
      * Synchronous get operation.
      *
-     * Wrapper for (@link asyncGet(int,Shared,int...)}. It is the equivalent to call:
+     * Wrapper for (@link asyncGet(int,Enum<?>,int...)}. It is the equivalent to call:
      *
      * {@code PCJ.<T>asyncGet(threadId, variable, indices).get();}
      *
@@ -305,7 +286,7 @@ final public class PCJ extends InternalPCJ {
      *
      * @throws PcjRuntimeException possible wrapped exception (eg. ArrayOutOfBoundException).
      */
-    public static <T> T get(int threadId, Shared variable, int... indices) throws PcjRuntimeException {
+    public static <T> T get(int threadId, Enum<?> variable, int... indices) throws PcjRuntimeException {
         return PCJ.<T>asyncGet(threadId, variable, indices).get();
     }
 
@@ -321,14 +302,14 @@ final public class PCJ extends InternalPCJ {
      *
      * @return PcjFuture to check completion of put operation
      */
-    public static <T> PcjFuture<Void> asyncPut(int threadId, Shared variable, T newValue, int... indices) {
+    public static <T> PcjFuture<Void> asyncPut(int threadId, Enum<?> variable, T newValue, int... indices) {
         return getGlobalGroup().asyncPut(threadId, variable, newValue, indices);
     }
 
     /**
      * Synchronous put operation.
      *
-     * Wrapper for (@link asyncPut(int,Shared,T,int...)}. It is the equivalent to call:
+     * Wrapper for (@link asyncPut(int,Enum<?>,T,int...)}. It is the equivalent to call:
      *
      * {@code PCJ.<T>asyncPut(threadId, variable, newValue, indices).get();}
      *
@@ -340,7 +321,7 @@ final public class PCJ extends InternalPCJ {
      *
      * @throws PcjRuntimeException possible wrapped exception (eg. ArrayOutOfBoundException).
      */
-    public static <T> void put(int threadId, Shared variable, T newValue, int... indices) throws PcjRuntimeException {
+    public static <T> void put(int threadId, Enum<?> variable, T newValue, int... indices) throws PcjRuntimeException {
         PCJ.<T>asyncPut(threadId, variable, newValue, indices).get();
     }
 
@@ -354,14 +335,14 @@ final public class PCJ extends InternalPCJ {
      *
      * @return PcjFuture to check completion of put operation
      */
-    public static <T> PcjFuture<Void> asyncBroadcast(Shared variable, T newValue) {
+    public static <T> PcjFuture<Void> asyncBroadcast(Enum<?> variable, T newValue) {
         return getGlobalGroup().asyncBroadcast(variable, newValue);
     }
 
     /**
      * Synchronous broadcast operation.
      *
-     * Wrapper for (@link asyncBroadcast(Shared,T)}. It is the equivalent to call:
+     * Wrapper for (@link asyncBroadcast(Enum<?>,T)}. It is the equivalent to call:
      *
      * {@code PCJ.<T>asyncBroadcast(variable, newValue).get();}
      *
@@ -369,7 +350,7 @@ final public class PCJ extends InternalPCJ {
      * @param variable
      * @param newValue
      */
-    public static <T> void broadcast(Shared variable, T newValue) {
+    public static <T> void broadcast(Enum<?> variable, T newValue) {
         PCJ.<T>asyncBroadcast(variable, newValue).get();
     }
 
