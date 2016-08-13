@@ -10,7 +10,9 @@ package org.pcj.internal;
 
 import java.io.Serializable;
 import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Optional;
@@ -20,6 +22,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.pcj.PcjRuntimeException;
 import org.pcj.Storage;
@@ -77,7 +81,16 @@ public class InternalStorage {
         storageMap = new ConcurrentHashMap<>();
     }
 
-    public <T> T registerStorage(Class<? extends T> storageClass) throws NoSuchFieldException, InstantiationException, IllegalAccessException {
+    public <T> T registerStorage(Class<? extends T> storageClass) throws InstantiationException {
+        try {
+            return registerStorage0(storageClass);
+        } catch (NoSuchFieldException | IllegalAccessException | NoSuchMethodException |
+                IllegalArgumentException | InvocationTargetException ex) {
+            throw new IllegalArgumentException("Provided class is not good Storage class.");
+        }
+    }
+
+    private <T> T registerStorage0(Class<? extends T> storageClass) throws NoSuchFieldException, InstantiationException, IllegalAccessException, NoSuchMethodException, IllegalArgumentException, InvocationTargetException {
         if (storageClass.isAnnotationPresent(Storage.class) == false) {
             throw new IllegalArgumentException("Class " + storageClass.getName() + " is not annotated by @Storage annotation.");
         }
@@ -100,7 +113,9 @@ public class InternalStorage {
             throw new NoSuchFieldException("Field '" + notFoundName.get() + "' not found in " + storageClass.getName());
         }
 
-        T storageObject = storageClass.newInstance();
+        Constructor<? extends T> storageConstructor = storageClass.getConstructor();
+        storageConstructor.setAccessible(true);
+        T storageObject = storageConstructor.newInstance();
 
         for (Enum<?> enumConstant : sharedEnum.getEnumConstants()) {
             String parent = enumConstant.getDeclaringClass().getName();
