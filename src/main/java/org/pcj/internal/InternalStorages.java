@@ -153,9 +153,7 @@ public class InternalStorages {
                 = sharedObjectsMap.computeIfAbsent(parent, key -> new ConcurrentHashMap<>());
         StorageField storageField = new StorageField(field, storageObject);
 
-        if (storage.putIfAbsent(name, storageField) != null) {
-            throw new IllegalStateException("Variable has already been created: " + name);
-        }
+        storage.putIfAbsent(name, storageField);
     }
 
     public Object getStorage(Class<? extends Enum<?>> enumClass) {

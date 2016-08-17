@@ -15,7 +15,11 @@ apply plugin: 'eclipse'
 
 ext.versionNumber = "5.0.0"
 ext.buildNumber = "SNAPSHOT"
-ext.repoId = org.ajoberstar.grgit.Grgit.open(project.file('.')).head().abbreviatedId
+try {
+    ext.repoId = org.ajoberstar.grgit.Grgit.open(project.file('.')).head().abbreviatedId;
+} catch (Exception e){
+    ext.repoId = "unknown"    
+}
 
 repositories {
     //    mavenCentral()

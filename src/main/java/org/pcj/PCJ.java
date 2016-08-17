@@ -115,19 +115,28 @@ final public class PCJ extends InternalPCJ {
     }
 
     /**
-     * Register storage.
+     * Register storage as enum' constants.
      *
-     * @param sharedEnum Enum<?> Enum class
+     * @param enumClass Enum class that represents storage shared variables
+     *
+     * @return Object associated with Storage (type of value from enum annotation)
      */
-    public static Object registerStorage(Class<? extends Enum<?>> storageClass)
+    public static Object registerStorage(Class<? extends Enum<?>> enumClass)
             throws InstantiationException, IllegalAccessException, NoSuchFieldException {
-        return PcjThread.getCurrentThreadData().getStorages().registerStorage(storageClass);
+        return PcjThread.getCurrentThreadData().getStorages().registerStorage(enumClass);
     }
 
-    public static Object getStorage(Class<? extends Enum<?>> storageClass) {
-        return PcjThread.getCurrentThreadData().getStorages().getStorage(storageClass);
+    /**
+     * Get object associated with registered storage.
+     *
+     * @param enumClass Enum class that represents storage shared variables
+     *
+     * @return Object associated with Storage (type of value from enum annotation)
+     */
+    public static Object getStorage(Class<? extends Enum<?>> enumClass) {
+        return PcjThread.getCurrentThreadData().getStorages().getStorage(enumClass);
     }
-    
+
     /**
      * Starts asynchronos barrier. After starting barrier the PcjFuture is returned.
      *
