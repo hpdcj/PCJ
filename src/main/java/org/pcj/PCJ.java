@@ -121,7 +121,8 @@ final public class PCJ extends InternalPCJ {
      */
     public static <T> T registerStorage(Class<? extends T> storageClass)
             throws InstantiationException, IllegalAccessException, NoSuchFieldException {
-        return PcjThread.getCurrentThreadData().getStorage().registerStorage(storageClass);
+        throw new UnsupportedOperationException();
+//        return PcjThread.getCurrentThreadData().getStorage().registerStorage(storageClass);
     }
 
     /**

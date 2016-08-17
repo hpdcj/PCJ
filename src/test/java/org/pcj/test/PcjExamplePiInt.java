@@ -14,29 +14,26 @@ import org.pcj.PcjFuture;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
 import org.pcj.test.PcjExamplePiInt.SharedEnum;
+import org.pcj.RegisterStorages;
 
 /**
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-@Storage(SharedEnum.class)
+@RegisterStorages({SharedEnum.class})
 public class PcjExamplePiInt implements StartPoint {
 
+    @Storage(PcjExamplePiInt.class)
     enum SharedEnum {
         sum
     }
 
     double sum;
 
-//    {
-//        Arrays.stream(SharedEnum.values()).forEach(PCJ::registerShared);
-//    }
-    @SuppressWarnings("method")
     private double f(double x) {
         return (4.0 / (1.0 + x * x));
     }
 
-    @SuppressWarnings("method")
     @Override
     public void main() throws Throwable {
         double pi = 0.0;
@@ -51,7 +48,6 @@ public class PcjExamplePiInt implements StartPoint {
         }
     }
 
-    @SuppressWarnings("method")
     private double calc(int N) {
         double w;
 
@@ -74,11 +70,10 @@ public class PcjExamplePiInt implements StartPoint {
 
             return sum;
         } else {
-            return 0;
+            return Double.NaN;
         }
     }
 
-    @SuppressWarnings("method")
     public static void main(String[] args) {
         PCJ.deploy(PcjExamplePiInt.class,
                 new NodesDescription(

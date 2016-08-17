@@ -16,26 +16,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Storage annotation is used for selecting class that can be Storage class.
+ * Annotation for class implementing StartPoint interface.
  *
- * This annotation has to annotate enum class, which constants will be names of shared variables.
- * All enum constants has to have field equivalent in class provided as annotation value.
- * Not all fields in the class has to be shared and exists in enum.
- *
- * Example of usage:
- * <pre>
- * {@code
- * public class StorageClass {
- *     \@Storage(StorageClass.class)
- *     enum Shared {
- *         t, avg
- *     }
- *
- *     int[] t;
- *     double avg;
- * }
- * }
- * </pre>
+ * It tells which storages automatically register on start up of class implementing StartPoint
+ * interface.
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
@@ -43,7 +27,7 @@ import java.lang.annotation.Target;
 @Inherited
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Storage {
+public @interface RegisterStorages {
 
-    Class<?> value();
+    Class<? extends Enum<?>>[] value();
 }

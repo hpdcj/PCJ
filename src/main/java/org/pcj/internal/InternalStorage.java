@@ -81,7 +81,7 @@ public class InternalStorage {
         storageMap = new ConcurrentHashMap<>();
     }
 
-    public <T> T registerStorage(Class<? extends T> storageClass) throws InstantiationException {
+    public Object registerStorage(Class<? extends Enum<?>> storageClass) throws InstantiationException {
         try {
             return registerStorage0(storageClass);
         } catch (NoSuchFieldException | IllegalAccessException | NoSuchMethodException |
@@ -90,37 +90,37 @@ public class InternalStorage {
         }
     }
 
-    private <T> T registerStorage0(Class<? extends T> storageClass) throws NoSuchFieldException, InstantiationException, IllegalAccessException, NoSuchMethodException, IllegalArgumentException, InvocationTargetException {
-        if (storageClass.isAnnotationPresent(Storage.class) == false) {
-            throw new IllegalArgumentException("Class " + storageClass.getName() + " is not annotated by @Storage annotation.");
+    private Object registerStorage0(Class<? extends Enum<?>> enumClass) throws NoSuchFieldException, InstantiationException, IllegalAccessException, NoSuchMethodException, IllegalArgumentException, InvocationTargetException {
+        if (enumClass.isAnnotationPresent(Storage.class) == false) {
+            throw new IllegalArgumentException("Class " + enumClass.getName() + " is not annotated by @Storage annotation.");
+        }
+        if (enumClass.isEnum() == false) {
+            throw new IllegalArgumentException("Class " + enumClass.getName() + " is not enum.");
         }
 
-        Storage annotation = storageClass.getAnnotation(Storage.class);
-        Class<? extends Enum<?>> sharedEnum = annotation.value();
-        if (sharedEnum.isEnum() == false) {
-            throw new IllegalArgumentException("Annotation value is not Enum: " + sharedEnum.getTypeName());
-        }
+        Storage annotation = enumClass.getAnnotation(Storage.class);
+        Class<?> storageClass = annotation.value();
 
         Set<String> fieldNames = Arrays.stream(storageClass.getDeclaredFields())
                 .map(Field::getName)
                 .collect(Collectors.toCollection(HashSet::new));
 
-        Optional<String> notFoundName = Arrays.stream(sharedEnum.getEnumConstants())
+        Optional<String> notFoundName = Arrays.stream(enumClass.getEnumConstants())
                 .map(Enum::name)
                 .filter(enumName -> fieldNames.contains(enumName) == false)
                 .findFirst();
         if (notFoundName.isPresent()) {
-            throw new NoSuchFieldException("Field '" + notFoundName.get() + "' not found in " + storageClass.getName());
+            throw new NoSuchFieldException("Field '" + notFoundName.get() + "' not found in " + enumClass.getName());
         }
 
-        Constructor<? extends T> storageConstructor = storageClass.getConstructor();
+        Constructor<?> storageConstructor = storageClass.getConstructor();
         storageConstructor.setAccessible(true);
-        T storageObject = storageConstructor.newInstance();
+        Object storageObject = storageConstructor.newInstance();
 
-        for (Enum<?> enumConstant : sharedEnum.getEnumConstants()) {
+        for (Enum<?> enumConstant : enumClass.getEnumConstants()) {
             String parent = enumConstant.getDeclaringClass().getName();
             String name = enumConstant.name();
-            Field field = storageClass.getDeclaredField(name);
+            Field field = enumClass.getDeclaredField(name);
 
             createShared0(parent, name, field, storageObject);
         }
