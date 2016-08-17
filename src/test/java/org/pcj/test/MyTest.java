@@ -13,18 +13,20 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
+import org.pcj.RegisterStorages;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
-import org.pcj.internal.InternalStorage;
+import org.pcj.internal.InternalStorages;
 import org.pcj.test.MyTest.SharedEnum;
 
 /**
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-@Storage(SharedEnum.class)
-public class MyTest extends InternalStorage implements StartPoint {
+@RegisterStorages(SharedEnum.class)
+public class MyTest extends InternalStorages implements StartPoint {
 
+    @Storage(MyTest.class)
     enum SharedEnum {
         a, b, c;
     }
@@ -39,8 +41,8 @@ public class MyTest extends InternalStorage implements StartPoint {
         logger.setLevel(level);
 
         NodesDescription nodesDescription = new NodesDescription(new String[]{
-            "localhost:8001",
-            "localhost:8001",
+            "localhost:8091",
+            "localhost:8091",
             "localhost:8002",
             "localhost:8003",
             "localhost:8004",
@@ -80,7 +82,6 @@ public class MyTest extends InternalStorage implements StartPoint {
             }
             PCJ.barrier();
         }
-
         a = PCJ.myId();
         b = 'b';
         c = 2.0;

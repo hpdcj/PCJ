@@ -17,13 +17,15 @@ import java.util.Locale;
 import java.util.Scanner;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
+import org.pcj.RegisterStorages;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
 import org.pcj.test.PcjMicroBenchmarkPingPong.StorageEnum;
 
-@Storage(StorageEnum.class)
+@RegisterStorages(StorageEnum.class)
 public class PcjMicroBenchmarkPingPong implements StartPoint {
 
+    @Storage(PcjMicroBenchmarkPingPong.class)
     static enum StorageEnum {
         a
     }

@@ -33,7 +33,7 @@ import org.pcj.Storage;
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public class InternalStorage {
+public class InternalStorages {
 
     private class StorageField {
 
@@ -75,27 +75,34 @@ public class InternalStorage {
 
     }
 
-    private final transient ConcurrentMap<String, ConcurrentMap<String, StorageField>> storageMap;
+    private final transient ConcurrentMap<String, String> enumToStorageMap;
+    private final transient ConcurrentMap<String, Object> storageObjectsMap;
+    private final transient ConcurrentMap<String, ConcurrentMap<String, StorageField>> sharedObjectsMap;
 
-    public InternalStorage() {
-        storageMap = new ConcurrentHashMap<>();
+    public InternalStorages() {
+        enumToStorageMap = new ConcurrentHashMap<>();
+        storageObjectsMap = new ConcurrentHashMap<>();
+        sharedObjectsMap = new ConcurrentHashMap<>();
     }
 
-    public Object registerStorage(Class<? extends Enum<?>> storageClass) throws InstantiationException {
+    public Object registerStorage(Class<? extends Enum<?>> storageClass) {
         try {
             return registerStorage0(storageClass);
         } catch (NoSuchFieldException | IllegalAccessException | NoSuchMethodException |
-                IllegalArgumentException | InvocationTargetException ex) {
-            throw new IllegalArgumentException("Provided class is not good Storage class.");
+                IllegalArgumentException | InvocationTargetException | InstantiationException ex) {
+            throw new IllegalArgumentException("Provided class is not Storage class.", ex);
         }
     }
 
     private Object registerStorage0(Class<? extends Enum<?>> enumClass) throws NoSuchFieldException, InstantiationException, IllegalAccessException, NoSuchMethodException, IllegalArgumentException, InvocationTargetException {
-        if (enumClass.isAnnotationPresent(Storage.class) == false) {
-            throw new IllegalArgumentException("Class " + enumClass.getName() + " is not annotated by @Storage annotation.");
-        }
         if (enumClass.isEnum() == false) {
-            throw new IllegalArgumentException("Class " + enumClass.getName() + " is not enum.");
+            throw new IllegalArgumentException("Class is not enum: " + enumClass.getName());
+        }
+        if (enumClass.isAnnotationPresent(Storage.class) == false) {
+            throw new IllegalArgumentException("Enum is not annotated by @Storage annotation: " + enumClass.getName());
+        }
+        if (enumToStorageMap.containsKey(enumClass.getName())) {
+            throw new IllegalArgumentException("Enum is already registered: " + enumClass.getName());
         }
 
         Storage annotation = enumClass.getAnnotation(Storage.class);
@@ -110,25 +117,31 @@ public class InternalStorage {
                 .filter(enumName -> fieldNames.contains(enumName) == false)
                 .findFirst();
         if (notFoundName.isPresent()) {
-            throw new NoSuchFieldException("Field '" + notFoundName.get() + "' not found in " + enumClass.getName());
+            throw new NoSuchFieldException("Field not found in " + storageClass.getName() + ": " + notFoundName.get());
         }
 
-        Constructor<?> storageConstructor = storageClass.getConstructor();
-        storageConstructor.setAccessible(true);
-        Object storageObject = storageConstructor.newInstance();
+        Object storageObject = storageObjectsMap.get(storageClass.getName());
+        if (storageObject == null) {
+            Constructor<?> storageConstructor = storageClass.getConstructor();
+            storageConstructor.setAccessible(true);
+            storageObject = storageConstructor.newInstance();
+        }
 
+        String parent = storageClass.getName();
         for (Enum<?> enumConstant : enumClass.getEnumConstants()) {
-            String parent = enumConstant.getDeclaringClass().getName();
             String name = enumConstant.name();
-            Field field = enumClass.getDeclaredField(name);
+            Field field = storageClass.getDeclaredField(name);
 
             createShared0(parent, name, field, storageObject);
         }
 
+        storageObjectsMap.put(parent, storageObject);
+        enumToStorageMap.put(enumClass.getName(), parent);
+
         return storageObject;
     }
 
-    private void createShared0(String storageName, String name, Field field, Object storageObject)
+    private void createShared0(String parent, String name, Field field, Object storageObject)
             throws NullPointerException, IllegalArgumentException, IllegalStateException {
         Class<?> type = field.getType();
 
@@ -136,7 +149,8 @@ public class InternalStorage {
             throw new IllegalArgumentException("Variable type is not serializable");
         }
 
-        ConcurrentMap<String, StorageField> storage = getStorage(storageName);
+        ConcurrentMap<String, StorageField> storage
+                = sharedObjectsMap.computeIfAbsent(parent, key -> new ConcurrentHashMap<>());
         StorageField storageField = new StorageField(field, storageObject);
 
         if (storage.putIfAbsent(name, storageField) != null) {
@@ -144,9 +158,27 @@ public class InternalStorage {
         }
     }
 
-    private ConcurrentMap<String, StorageField> getStorage(String storageName) {
-        ConcurrentMap<String, StorageField> storage = storageMap.computeIfAbsent(storageName, key -> new ConcurrentHashMap<>());
-        return storage;
+    public Object getStorage(Class<? extends Enum<?>> enumClass) {
+        String enumClassName = enumClass.getName();
+        if (enumToStorageMap.containsKey(enumClassName) == false) {
+            throw new IllegalArgumentException("Enum is not registered: " + enumClassName);
+        }
+        String storageName = enumToStorageMap.get(enumClassName);
+        return storageObjectsMap.get(storageName);
+    }
+
+    private String getParent(Enum<?> variable) throws NullPointerException, IllegalArgumentException {
+        if (variable == null) {
+            throw new NullPointerException("Variable name cannot be null");
+        }
+        return getParent(variable.getDeclaringClass().getName());
+    }
+
+    private String getParent(String enumClassName) throws NullPointerException, IllegalArgumentException {
+        if (enumToStorageMap.containsKey(enumClassName) == false) {
+            throw new IllegalArgumentException("Enum is not registered: " + enumClassName);
+        }
+        return enumToStorageMap.get(enumClassName);
     }
 
     /**
@@ -161,22 +193,22 @@ public class InternalStorage {
      * @throws ArrayIndexOutOfBoundsException one of indices is out of bound
      */
     final public <T> T get(Enum<?> variable, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException {
-        if (variable == null) {
-            throw new NullPointerException("Variable name cannot be null");
-        }
+        return get0(getParent(variable), variable.name(), indices);
+    }
 
-        return get0(variable.getDeclaringClass().getName(), variable.name());
+    final public <T> T get(String enumClassName, String name, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException {
+        return get0(getParent(enumClassName), name, indices);
     }
 
     @SuppressWarnings("unchecked")
-    final public <T> T get0(String storageName, String name, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException {
-        ConcurrentMap<String, StorageField> storage = getStorage(storageName);
+    private <T> T get0(String parent, String name, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException {
+        ConcurrentMap<String, StorageField> storage = sharedObjectsMap.get(parent);
 
-        StorageField field = storage.get(name);
-        if (field == null) {
+        StorageField storageField = storage.get(name);
+        if (storageField == null) {
             throw new IllegalArgumentException("Variable not found: " + name);
         }
-        Object value = field.getValue();
+        Object value = storageField.getValue();
 
         if (indices.length == 0) {
             return (T) value;
@@ -206,7 +238,7 @@ public class InternalStorage {
     }
 
     /**
-     * Puts new value of variable to InternalStorage into the array, or as variable
+     * Puts new value of variable to InternalStorages into the array, or as variable
      * value if indices omitted
      *
      * @param name     name of shared variable
@@ -218,15 +250,15 @@ public class InternalStorage {
      * @throws ArrayIndexOutOfBoundsException one of indices is out of bound
      */
     final public <T> void put(Enum<?> variable, T value, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
-        if (variable == null) {
-            throw new NullPointerException("Variable name cannot be null");
-        }
-
-        put0(variable.getDeclaringClass().getName(), variable.name(), value, indices);
+        put0(getParent(variable), variable.name(), value, indices);
     }
 
-    final public <T> void put0(String storageName, String name, T value, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
-        ConcurrentMap<String, StorageField> storage = getStorage(storageName);
+    final public <T> void put(String enumClassName, String name, T value, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
+        put0(getParent(enumClassName), name, value, indices);
+    }
+
+    private <T> void put0(String parent, String name, T value, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
+        ConcurrentMap<String, StorageField> storage = sharedObjectsMap.get(parent);
 
         StorageField field = storage.get(name);
         if (field == null) {
@@ -234,18 +266,22 @@ public class InternalStorage {
         }
 
         Class<?> variableClass = field.getType();
-//        Class<?> targetClass = getTargetClass(variableClass, indices);
         Class<?> targetClass;
-        if (field.getValue() == null) {
-            targetClass = getTargetClass(variableClass, indices);
+        if (indices.length > 0) {
+            if (field.getValue() == null) {
+                targetClass = getTargetClass(variableClass, indices);
+            } else {
+                targetClass = getTargetClass(field.getValue().getClass(), indices);
+            }
         } else {
-            targetClass = getTargetClass(field.getValue().getClass(), indices);
+            targetClass = variableClass;
         }
+
         Class<?> fromClass = getValueClass(value);
 
         if (isAssignableFrom(targetClass, fromClass) == false) {
             throw new ClassCastException("Cannot cast " + fromClass.getName()
-                    + " to the type of variable '" + storageName + "." + name + ""
+                    + " to the type of variable '" + parent + "." + name + ""
                     + (indices.length == 0 ? "" : Arrays.toString(indices))
                     + "': " + targetClass);
         }
@@ -298,7 +334,7 @@ public class InternalStorage {
     }
 
     /**
-     * Checks if value can be assigned to variable stored in InternalStorage
+     * Checks if value can be assigned to variable stored in InternalStorages
      *
      * @return true if the value can be assigned to the variable
      */
@@ -339,15 +375,11 @@ public class InternalStorage {
      * @param variable name of shared variable
      */
     final public int monitor(Enum<?> variable) {
-        if (variable == null) {
-            throw new NullPointerException("Variable name cannot be null");
-        }
-
-        return monitor0(variable.getDeclaringClass().getName(), variable.name());
+        return monitor0(getParent(variable), variable.name());
     }
 
-    final public int monitor0(String storageName, String name) {
-        ConcurrentMap<String, StorageField> storage = getStorage(storageName);
+    private int monitor0(String parent, String name) {
+        ConcurrentMap<String, StorageField> storage = sharedObjectsMap.get(parent);
 
         StorageField field = storage.get(name);
         if (field == null) {
@@ -368,18 +400,14 @@ public class InternalStorage {
      *
      */
     final public int waitFor(Enum<?> variable, int count) {
-        if (variable == null) {
-            throw new NullPointerException("Variable name cannot be null");
-        }
-
-        return waitFor0(variable.getDeclaringClass().getName(), variable.name(), count);
+        return waitFor0(getParent(variable), variable.name(), count);
     }
 
-    final public int waitFor0(String storageName, String name, int count) {
+    private int waitFor0(String parent, String name, int count) {
         if (count < 0) {
             throw new IllegalArgumentException("Value count is less than zero:" + count);
         }
-        ConcurrentMap<String, StorageField> storage = getStorage(storageName);
+        ConcurrentMap<String, StorageField> storage = sharedObjectsMap.get(parent);
 
         StorageField field = storage.get(name);
         if (field == null) {
@@ -416,19 +444,15 @@ public class InternalStorage {
      * @param count    number of modifications. If 0 - the method exits immediately.
      */
     final public int waitFor(Enum<?> variable, int count, long timeout, TimeUnit unit) throws TimeoutException {
-        if (variable == null) {
-            throw new NullPointerException("Variable name cannot be null");
-        }
-
-        return waitFor0(variable.getDeclaringClass().getName(), variable.name(), count, timeout, unit);
+        return waitFor0(getParent(variable), variable.name(), count, timeout, unit);
     }
 
-    final public int waitFor0(String storageName, String name, int count, long timeout, TimeUnit unit) throws TimeoutException {
+    private int waitFor0(String parent, String name, int count, long timeout, TimeUnit unit) throws TimeoutException {
         if (count < 0) {
             throw new IllegalArgumentException("Value count is less than zero:" + count);
         }
 
-        ConcurrentMap<String, StorageField> storage = getStorage(storageName);
+        ConcurrentMap<String, StorageField> storage = sharedObjectsMap.get(parent);
 
         StorageField field = storage.get(name);
         if (field == null) {

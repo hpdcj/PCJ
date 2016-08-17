@@ -12,17 +12,19 @@ import java.util.Random;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
 import org.pcj.PcjFuture;
+import org.pcj.RegisterStorages;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
 import org.pcj.test.PcjExamplePiMC.SharedEnum;
 
-@Storage(SharedEnum.class)
+@RegisterStorages(SharedEnum.class)
 public class PcjExamplePiMC implements StartPoint {
 
+    @Storage(PcjExamplePiMC.class)
     enum SharedEnum {
         circleCount
     }
-    
+
     long circleCount;
 
     @Override

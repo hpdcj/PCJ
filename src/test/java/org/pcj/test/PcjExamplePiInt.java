@@ -20,7 +20,7 @@ import org.pcj.RegisterStorages;
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-@RegisterStorages({SharedEnum.class})
+@RegisterStorages(SharedEnum.class)
 public class PcjExamplePiInt implements StartPoint {
 
     @Storage(PcjExamplePiInt.class)

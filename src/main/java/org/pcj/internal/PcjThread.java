@@ -9,6 +9,7 @@
 package org.pcj.internal;
 
 import org.pcj.PCJ;
+import org.pcj.RegisterStorages;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
 
@@ -55,10 +56,23 @@ public class PcjThread extends Thread {
     public void run() {
         try {
 //            storages.forEach(PCJ::registerShared);
-            StartPoint startPoint;
-            if (startPointClass.isAnnotationPresent(Storage.class)) {
-                startPoint = PCJ.registerStorage(startPointClass);
-            } else {
+            StartPoint startPoint = null;
+            if (startPointClass.isAnnotationPresent(RegisterStorages.class)) {
+                RegisterStorages registerStorages = startPointClass.getAnnotation(RegisterStorages.class);
+                for (Class<? extends Enum<?>> enumClass : registerStorages.value()) {
+                    Storage storageAnnotation = enumClass.getAnnotation(Storage.class);
+                    if (storageAnnotation == null) {
+                        throw new RuntimeException("Enum is not annotated by @Storage annotation: " + enumClass.getName());
+                    }
+
+                    Object object = PCJ.registerStorage(enumClass);
+                    if (storageAnnotation.value().equals(startPointClass)) {
+                        startPoint = (StartPoint) object;
+                    }
+                }
+
+            }
+            if (startPoint == null) {
                 startPoint = startPointClass.newInstance();
             }
 

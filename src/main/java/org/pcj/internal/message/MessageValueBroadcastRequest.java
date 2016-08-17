@@ -14,7 +14,7 @@ import java.nio.channels.SocketChannel;
 import java.util.List;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
-import org.pcj.internal.InternalStorage;
+import org.pcj.internal.InternalStorages;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.PcjThread;
 import org.pcj.internal.futures.BroadcastState;
@@ -32,7 +32,7 @@ final public class MessageValueBroadcastRequest extends Message {
     private int groupId;
     private int requestNum;
     private int requesterThreadId;
-    private String storageName;
+    private String enumClassName;
     private String name;
     private Object newValue;
 
@@ -46,7 +46,7 @@ final public class MessageValueBroadcastRequest extends Message {
         this.groupId = groupId;
         this.requestNum = requestNum;
         this.requesterThreadId = requesterThreadId;
-        this.storageName = storageName;
+        this.enumClassName = storageName;
         this.name = name;
         this.newValue = newValue;
     }
@@ -56,7 +56,7 @@ final public class MessageValueBroadcastRequest extends Message {
         out.writeInt(groupId);
         out.writeInt(requestNum);
         out.writeInt(requesterThreadId);
-        out.writeString(storageName);
+        out.writeString(enumClassName);
         out.writeString(name);
         out.writeObject(newValue);
     }
@@ -67,7 +67,7 @@ final public class MessageValueBroadcastRequest extends Message {
         requestNum = in.readInt();
         requesterThreadId = in.readInt();
 
-        storageName = in.readString();
+        enumClassName = in.readString();
         name = in.readString();
 
         CloneInputStream clonedData = CloneInputStream.clone(in);
@@ -78,7 +78,7 @@ final public class MessageValueBroadcastRequest extends Message {
         List<Integer> children = group.getChildrenNodes();
 
         MessageValueBroadcastBytes message
-                = new MessageValueBroadcastBytes(groupId, requestNum, requesterThreadId, storageName, name, clonedData);
+                = new MessageValueBroadcastBytes(groupId, requestNum, requesterThreadId, enumClassName, name, clonedData);
 
         children.stream().map(nodeData.getSocketChannelByPhysicalId()::get)
                 .forEach(socket -> InternalPCJ.getNetworker().send(socket, message));
@@ -91,12 +91,12 @@ final public class MessageValueBroadcastRequest extends Message {
             try {
                 int globalThreadId = group.getGlobalThreadId(threadId);
                 PcjThread pcjThread = nodeData.getPcjThreads().get(globalThreadId);
-                InternalStorage storage = (InternalStorage) pcjThread.getThreadData().getStorage();
+                InternalStorages storage = (InternalStorages) pcjThread.getThreadData().getStorages();
 
                 clonedData.reset();
                 newValue = new ObjectInputStream(clonedData).readObject();
 
-                storage.put0(storageName, name, newValue);
+                storage.put(enumClassName, name, newValue);
             } catch (Exception ex) {
                 broadcastState.addException(ex);
             }

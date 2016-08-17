@@ -19,14 +19,14 @@ import org.pcj.Group;
  */
 final public class PcjThreadData {
 
-    final private InternalStorage storage;
+    final private InternalStorages storages;
     final private InternalGroup globalGroup;
     final private ConcurrentMap<Integer, InternalGroup> groupById;
 
     PcjThreadData(InternalGroup globalGroup) {
         this.globalGroup = globalGroup;
 
-        this.storage = new InternalStorage();
+        this.storages = new InternalStorages();
         this.groupById = new ConcurrentHashMap<>();
 
         this.addGroup(globalGroup);
@@ -40,8 +40,8 @@ final public class PcjThreadData {
         return globalGroup;
     }
 
-    public InternalStorage getStorage() {
-        return storage;
+    public InternalStorages getStorages() {
+        return storages;
     }
 
     public InternalGroup getGroupById(int groupId) {

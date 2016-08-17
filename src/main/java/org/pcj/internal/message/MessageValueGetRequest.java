@@ -11,7 +11,7 @@ package org.pcj.internal.message;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import org.pcj.internal.InternalPCJ;
-import org.pcj.internal.InternalStorage;
+import org.pcj.internal.InternalStorages;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.PcjThread;
 import org.pcj.internal.network.MessageDataInputStream;
@@ -28,7 +28,7 @@ final public class MessageValueGetRequest extends Message {
     private int requestNum;
     private int requesterThreadId;
     private int threadId;
-    private String storageName;
+    private String enumClassName;
     private String name;
     private int[] indices;
 
@@ -43,7 +43,7 @@ final public class MessageValueGetRequest extends Message {
         this.requestNum = requestNum;
         this.requesterThreadId = requesterThreadId;
         this.threadId = threadId;
-        this.storageName = storageName;
+        this.enumClassName = storageName;
         this.name = name;
         this.indices = indices;
     }
@@ -54,7 +54,7 @@ final public class MessageValueGetRequest extends Message {
         out.writeInt(requestNum);
         out.writeInt(requesterThreadId);
         out.writeInt(threadId);
-        out.writeString(storageName);
+        out.writeString(enumClassName);
         out.writeString(name);
         out.writeIntArray(indices);
     }
@@ -65,18 +65,18 @@ final public class MessageValueGetRequest extends Message {
         requestNum = in.readInt();
         requesterThreadId = in.readInt();
         threadId = in.readInt();
-        storageName = in.readString();
+        enumClassName = in.readString();
         name = in.readString();
         indices = in.readIntArray();
 
         NodeData nodeData = InternalPCJ.getNodeData();
         int globalThreadId = nodeData.getGroupById(groupId).getGlobalThreadId(threadId);
         PcjThread pcjThread = nodeData.getPcjThreads().get(globalThreadId);
-        InternalStorage storage = (InternalStorage) pcjThread.getThreadData().getStorage();
+        InternalStorages storage = (InternalStorages) pcjThread.getThreadData().getStorages();
 
         MessageValueGetResponse messageValueGetResponse;
         try {
-            Object variableValue = storage.get0(storageName, name, indices);
+            Object variableValue = storage.get(enumClassName, name, indices);
             messageValueGetResponse = new MessageValueGetResponse(
                     groupId, requestNum, requesterThreadId, variableValue);
         } catch (Exception ex) {

@@ -11,6 +11,7 @@ package org.pcj.test;
 import java.util.Arrays;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
+import org.pcj.RegisterStorages;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
 import org.pcj.test.StorageExample.SharedEnum;
@@ -19,9 +20,10 @@ import org.pcj.test.StorageExample.SharedEnum;
  *
  * @author faramir
  */
-@Storage(SharedEnum.class)
+@RegisterStorages(SharedEnum.class)
 public class StorageExample implements StartPoint {
 
+    @Storage(StorageExample.class)
     enum SharedEnum {
         x, avg;
     }

@@ -13,6 +13,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
+import org.pcj.RegisterStorages;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
 import org.pcj.test.SizesTest.SharedEnum;
@@ -21,9 +22,10 @@ import org.pcj.test.SizesTest.SharedEnum;
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-@Storage(SharedEnum.class)
+@RegisterStorages(SharedEnum.class)
 public class SizesTest implements StartPoint {
 
+    @Storage(SizesTest.class)
     enum SharedEnum {
         b
     }

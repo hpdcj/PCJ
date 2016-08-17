@@ -119,12 +119,15 @@ final public class PCJ extends InternalPCJ {
      *
      * @param sharedEnum Enum<?> Enum class
      */
-    public static <T> T registerStorage(Class<? extends T> storageClass)
+    public static Object registerStorage(Class<? extends Enum<?>> storageClass)
             throws InstantiationException, IllegalAccessException, NoSuchFieldException {
-        throw new UnsupportedOperationException();
-//        return PcjThread.getCurrentThreadData().getStorage().registerStorage(storageClass);
+        return PcjThread.getCurrentThreadData().getStorages().registerStorage(storageClass);
     }
 
+    public static Object getStorage(Class<? extends Enum<?>> storageClass) {
+        return PcjThread.getCurrentThreadData().getStorages().getStorage(storageClass);
+    }
+    
     /**
      * Starts asynchronos barrier. After starting barrier the PcjFuture is returned.
      *
@@ -184,7 +187,7 @@ final public class PCJ extends InternalPCJ {
      * @return modification count before clearing
      */
     public static int monitor(Enum<?> variable) {
-        return PcjThread.getCurrentThreadData().getStorage().monitor(variable);
+        return PcjThread.getCurrentThreadData().getStorages().monitor(variable);
     }
 
     /**
@@ -208,7 +211,7 @@ final public class PCJ extends InternalPCJ {
      * @return remaining modification count
      */
     public static int waitFor(Enum<?> variable, int count) {
-        return PcjThread.getCurrentThreadData().getStorage().waitFor(variable, count);
+        return PcjThread.getCurrentThreadData().getStorages().waitFor(variable, count);
     }
 
     /**
@@ -226,7 +229,7 @@ final public class PCJ extends InternalPCJ {
      */
     public static int waitFor(Enum<?> variable, int count,
             long timeout, TimeUnit unit) throws TimeoutException {
-        return PcjThread.getCurrentThreadData().getStorage().waitFor(variable, count, timeout, unit);
+        return PcjThread.getCurrentThreadData().getStorages().waitFor(variable, count, timeout, unit);
     }
 
     /**
@@ -239,7 +242,7 @@ final public class PCJ extends InternalPCJ {
      * @return value (reference)
      */
     public static <T> T getLocal(Enum<?> variable, int... indices) {
-        return PcjThread.getCurrentThreadData().getStorage().get(variable, indices);
+        return PcjThread.getCurrentThreadData().getStorages().get(variable, indices);
     }
 
     /**
@@ -253,7 +256,7 @@ final public class PCJ extends InternalPCJ {
      * @throws ClassCastException when unable to put because of wrong type
      */
     public static <T> void putLocal(Enum<?> variable, T newValue, int... indices) throws ClassCastException {
-        PcjThread.getCurrentThreadData().getStorage().put(variable, newValue, indices);
+        PcjThread.getCurrentThreadData().getStorages().put(variable, newValue, indices);
     }
 
     /**
