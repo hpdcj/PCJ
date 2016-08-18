@@ -117,24 +117,24 @@ final public class PCJ extends InternalPCJ {
     /**
      * Register storage as enum' constants.
      *
-     * @param enumClass Enum class that represents storage shared variables
+     * @param sharedEnumClass Enum class that represents storage shared variables
      *
      * @return Object associated with Storage (type of value from enum annotation)
      */
-    public static Object registerStorage(Class<? extends Enum<?>> enumClass)
+    public static Object registerStorage(Class<? extends Enum<?>> sharedEnumClass)
             throws InstantiationException, IllegalAccessException, NoSuchFieldException {
-        return PcjThread.getCurrentThreadData().getStorages().registerStorage(enumClass);
+        return PcjThread.getCurrentThreadData().getStorages().registerStorage(sharedEnumClass);
     }
 
     /**
      * Get object associated with registered storage.
      *
-     * @param enumClass Enum class that represents storage shared variables
+     * @param sharedEnumClass Enum class that represents storage shared variables
      *
      * @return Object associated with Storage (type of value from enum annotation)
      */
-    public static Object getStorage(Class<? extends Enum<?>> enumClass) {
-        return PcjThread.getCurrentThreadData().getStorages().getStorage(enumClass);
+    public static Object getStorageObject(Class<? extends Enum<?>> sharedEnumClass) {
+        return PcjThread.getCurrentThreadData().getStorages().getStorage(sharedEnumClass);
     }
 
     /**

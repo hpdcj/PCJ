@@ -4,10 +4,10 @@
 package org.pcj.internal;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -15,6 +15,7 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
@@ -22,7 +23,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.MirroredTypeException;
-import javax.lang.model.type.MirroredTypesException;
+import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -53,6 +54,8 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
     private Map<Element, Map<Element, Set<Element>>> storageUsedFields;
     private TypeElement serializableType;
     private TypeElement startPointType;
+    private TypeElement registerStoragesType;
+    private TypeElement storageType;
 
     private void warning(String msg, Element e) {
         processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING, msg, e);
@@ -69,6 +72,8 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
 
         serializableType = elementUtils.getTypeElement(Serializable.class.getCanonicalName());
         startPointType = elementUtils.getTypeElement(StartPoint.class.getCanonicalName());
+        storageType = elementUtils.getTypeElement(Storage.class.getCanonicalName());
+        registerStoragesType = elementUtils.getTypeElement(RegisterStorages.class.getCanonicalName());
 
         notSerializableStorageFields = new LinkedHashSet<>();
         staticStorageFields = new LinkedHashSet<>();
@@ -125,16 +130,15 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
             return;
         }
 
-        Storage annotation = enumElement.getAnnotation(Storage.class);
-
-        TypeElement storageClassElement;
-        try {
-            Class<?> storageClass = annotation.value();
-            storageClassElement = elementUtils.getTypeElement(storageClass.getCanonicalName());
-        } catch (MirroredTypeException ex) {
-            DeclaredType classTypeMirror = (DeclaredType) ex.getTypeMirror();
-            storageClassElement = (TypeElement) classTypeMirror.asElement();
-        }
+        TypeElement storageClassElement = enumElement.getAnnotationMirrors().stream()
+                .filter(element -> element.getAnnotationType().asElement().equals(storageType))
+                .flatMap(element -> element.getElementValues().entrySet().stream())
+                .filter(element -> element.getKey().getSimpleName().contentEquals("value"))
+                .map(Map.Entry::getValue)
+                .map(element -> (DeclaredType) element.getValue())
+                .map(element -> (TypeElement) element.asElement())
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException(enumElement + ": Not annotated with storage."));
 
         Map<Element, Set<Element>> usedFields
                 = storageUsedFields.computeIfAbsent(storageClassElement, key -> new HashMap<>());
@@ -192,35 +196,24 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
             return;
         }
 
-        RegisterStorages annotation;
-        try {
-            annotation = processedElement.getAnnotation(RegisterStorages.class);
-        } catch (ClassCastException ex) {
-            return;
-        }
+        @SuppressWarnings("unchecked")
+        TypeElement[] sharedEnumClassElements = processedElement.getAnnotationMirrors().stream()
+                .filter(element -> element.getAnnotationType().asElement().equals(registerStoragesType))
+                .flatMap(element -> element.getElementValues().entrySet().stream())
+                .filter(element -> element.getKey().getSimpleName().contentEquals("value"))
+                .map(Map.Entry::getValue)
+                .flatMap(element -> ((List<? extends AnnotationValue>) element.getValue()).stream())
+                .map(element -> (DeclaredType) element.getValue())
+                .map(element -> (TypeElement) element.asElement())
+                .toArray(TypeElement[]::new);
 
-        TypeElement[] enumClassElements;
-        try {
-            Class<? extends Enum<?>>[] enumClasses = annotation.value();
-
-            enumClassElements = Arrays.stream(enumClasses)
-                    .map(Class::getCanonicalName)
-                    .map(elementUtils::getTypeElement)
-                    .toArray(TypeElement[]::new);
-        } catch (MirroredTypesException ex) {
-            enumClassElements = ex.getTypeMirrors().stream()
-                    .map(typeMirror -> (DeclaredType) typeMirror)
-                    .map(declaredType -> (TypeElement) declaredType.asElement())
-                    .toArray(TypeElement[]::new);
-        }
-
-        for (TypeElement typeElement : enumClassElements) {
+        for (TypeElement typeElement : sharedEnumClassElements) {
             if (typeElement.getKind().equals(ElementKind.ENUM) == false) {
-                error(typeElement + " has to be enum", typeElement);
+                error(typeElement + ": has to be enum", typeElement);
             }
 
             if (typeElement.getAnnotation(Storage.class) == null) {
-                error(typeElement + " has to be annotated with @Storage", typeElement);
+                error(typeElement + ": has to be annotated with @Storage", typeElement);
             }
         }
     }

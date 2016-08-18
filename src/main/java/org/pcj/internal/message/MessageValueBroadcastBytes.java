@@ -32,7 +32,7 @@ final public class MessageValueBroadcastBytes extends Message {
     private int requestNum;
     private int groupId;
     private int requesterThreadId;
-    private String enumClassName;
+    private String sharedEnumClassName;
     private String name;
     private CloneInputStream clonedData;
 
@@ -46,7 +46,7 @@ final public class MessageValueBroadcastBytes extends Message {
         this.groupId = groupId;
         this.requestNum = requestNum;
         this.requesterThreadId = requesterThreadId;
-        this.enumClassName = storageName;
+        this.sharedEnumClassName = storageName;
         this.name = name;
 
         this.clonedData = clonedData;
@@ -57,7 +57,7 @@ final public class MessageValueBroadcastBytes extends Message {
         out.writeInt(groupId);
         out.writeInt(requestNum);
         out.writeInt(requesterThreadId);
-        out.writeString(enumClassName);
+        out.writeString(sharedEnumClassName);
         out.writeString(name);
 
         clonedData.writeInto(out);
@@ -69,7 +69,7 @@ final public class MessageValueBroadcastBytes extends Message {
         requestNum = in.readInt();
         requesterThreadId = in.readInt();
 
-        enumClassName = in.readString();
+        sharedEnumClassName = in.readString();
         name = in.readString();
 
         clonedData = CloneInputStream.readFrom(in);
@@ -81,7 +81,7 @@ final public class MessageValueBroadcastBytes extends Message {
 
         MessageValueBroadcastBytes message
                 = new MessageValueBroadcastBytes(groupId, requestNum, requesterThreadId,
-                        enumClassName, name, clonedData);
+                        sharedEnumClassName, name, clonedData);
 
         children.stream().map(nodeData.getSocketChannelByPhysicalId()::get)
                 .forEach(socket -> InternalPCJ.getNetworker().send(socket, message));
@@ -99,7 +99,7 @@ final public class MessageValueBroadcastBytes extends Message {
                 clonedData.reset();
                 Object newValue = new ObjectInputStream(clonedData).readObject();
 
-                storage.put(enumClassName, name, newValue);
+                storage.put(sharedEnumClassName, name, newValue);
             } catch (Exception ex) {
                 broadcastState.addException(ex);
             }

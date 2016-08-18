@@ -28,7 +28,7 @@ final public class MessageValuePutRequest extends Message {
     private int groupId;
     private int requesterThreadId;
     private int threadId;
-    private String enumClassName;
+    private String sharedEnumClassName;
     private String name;
     private int[] indices;
     private Object newValue;
@@ -44,7 +44,7 @@ final public class MessageValuePutRequest extends Message {
         this.requestNum = requestNum;
         this.requesterThreadId = requesterThreadId;
         this.threadId = threadId;
-        this.enumClassName = storageName;
+        this.sharedEnumClassName = storageName;
         this.name = name;
         this.indices = indices;
         this.newValue = newValue;
@@ -56,7 +56,7 @@ final public class MessageValuePutRequest extends Message {
         out.writeInt(requestNum);
         out.writeInt(requesterThreadId);
         out.writeInt(threadId);
-        out.writeString(enumClassName);
+        out.writeString(sharedEnumClassName);
         out.writeString(name);
         out.writeIntArray(indices);
         out.writeObject(newValue);
@@ -68,7 +68,7 @@ final public class MessageValuePutRequest extends Message {
         requestNum = in.readInt();
         requesterThreadId = in.readInt();
         threadId = in.readInt();
-        enumClassName = in.readString();
+        sharedEnumClassName = in.readString();
         name = in.readString();
         indices = in.readIntArray();
 
@@ -81,7 +81,7 @@ final public class MessageValuePutRequest extends Message {
                 groupId, requestNum, requesterThreadId);
         try {
             newValue = in.readObject();
-            storage.put(enumClassName, name, newValue, indices);
+            storage.put(sharedEnumClassName, name, newValue, indices);
         } catch (Exception ex) {
             messageValuePutResponse.setException(ex);
         }

@@ -59,13 +59,13 @@ public class PcjThread extends Thread {
             StartPoint startPoint = null;
             if (startPointClass.isAnnotationPresent(RegisterStorages.class)) {
                 RegisterStorages registerStorages = startPointClass.getAnnotation(RegisterStorages.class);
-                for (Class<? extends Enum<?>> enumClass : registerStorages.value()) {
-                    Storage storageAnnotation = enumClass.getAnnotation(Storage.class);
+                for (Class<? extends Enum<?>> sharedEnumClass : registerStorages.value()) {
+                    Storage storageAnnotation = sharedEnumClass.getAnnotation(Storage.class);
                     if (storageAnnotation == null) {
-                        throw new RuntimeException("Enum is not annotated by @Storage annotation: " + enumClass.getName());
+                        throw new RuntimeException("Enum is not annotated by @Storage annotation: " + sharedEnumClass.getName());
                     }
 
-                    Object object = PCJ.registerStorage(enumClass);
+                    Object object = PCJ.registerStorage(sharedEnumClass);
                     if (storageAnnotation.value().equals(startPointClass)) {
                         startPoint = (StartPoint) object;
                     }

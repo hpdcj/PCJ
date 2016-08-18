@@ -32,7 +32,7 @@ final public class MessageValueBroadcastRequest extends Message {
     private int groupId;
     private int requestNum;
     private int requesterThreadId;
-    private String enumClassName;
+    private String sharedEnumClassName;
     private String name;
     private Object newValue;
 
@@ -46,7 +46,7 @@ final public class MessageValueBroadcastRequest extends Message {
         this.groupId = groupId;
         this.requestNum = requestNum;
         this.requesterThreadId = requesterThreadId;
-        this.enumClassName = storageName;
+        this.sharedEnumClassName = storageName;
         this.name = name;
         this.newValue = newValue;
     }
@@ -56,7 +56,7 @@ final public class MessageValueBroadcastRequest extends Message {
         out.writeInt(groupId);
         out.writeInt(requestNum);
         out.writeInt(requesterThreadId);
-        out.writeString(enumClassName);
+        out.writeString(sharedEnumClassName);
         out.writeString(name);
         out.writeObject(newValue);
     }
@@ -67,7 +67,7 @@ final public class MessageValueBroadcastRequest extends Message {
         requestNum = in.readInt();
         requesterThreadId = in.readInt();
 
-        enumClassName = in.readString();
+        sharedEnumClassName = in.readString();
         name = in.readString();
 
         CloneInputStream clonedData = CloneInputStream.clone(in);
@@ -78,7 +78,7 @@ final public class MessageValueBroadcastRequest extends Message {
         List<Integer> children = group.getChildrenNodes();
 
         MessageValueBroadcastBytes message
-                = new MessageValueBroadcastBytes(groupId, requestNum, requesterThreadId, enumClassName, name, clonedData);
+                = new MessageValueBroadcastBytes(groupId, requestNum, requesterThreadId, sharedEnumClassName, name, clonedData);
 
         children.stream().map(nodeData.getSocketChannelByPhysicalId()::get)
                 .forEach(socket -> InternalPCJ.getNetworker().send(socket, message));
@@ -96,7 +96,7 @@ final public class MessageValueBroadcastRequest extends Message {
                 clonedData.reset();
                 newValue = new ObjectInputStream(clonedData).readObject();
 
-                storage.put(enumClassName, name, newValue);
+                storage.put(sharedEnumClassName, name, newValue);
             } catch (Exception ex) {
                 broadcastState.addException(ex);
             }

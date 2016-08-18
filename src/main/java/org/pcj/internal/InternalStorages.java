@@ -94,25 +94,25 @@ public class InternalStorages {
         }
     }
 
-    private Object registerStorage0(Class<? extends Enum<?>> enumClass) throws NoSuchFieldException, InstantiationException, IllegalAccessException, NoSuchMethodException, IllegalArgumentException, InvocationTargetException {
-        if (enumClass.isEnum() == false) {
-            throw new IllegalArgumentException("Class is not enum: " + enumClass.getName());
+    private Object registerStorage0(Class<? extends Enum<?>> sharedEnumClass) throws NoSuchFieldException, InstantiationException, IllegalAccessException, NoSuchMethodException, IllegalArgumentException, InvocationTargetException {
+        if (sharedEnumClass.isEnum() == false) {
+            throw new IllegalArgumentException("Class is not enum: " + sharedEnumClass.getName());
         }
-        if (enumClass.isAnnotationPresent(Storage.class) == false) {
-            throw new IllegalArgumentException("Enum is not annotated by @Storage annotation: " + enumClass.getName());
+        if (sharedEnumClass.isAnnotationPresent(Storage.class) == false) {
+            throw new IllegalArgumentException("Enum is not annotated by @Storage annotation: " + sharedEnumClass.getName());
         }
-        if (enumToStorageMap.containsKey(enumClass.getName())) {
-            throw new IllegalArgumentException("Enum is already registered: " + enumClass.getName());
+        if (enumToStorageMap.containsKey(sharedEnumClass.getName())) {
+            throw new IllegalArgumentException("Enum is already registered: " + sharedEnumClass.getName());
         }
 
-        Storage annotation = enumClass.getAnnotation(Storage.class);
+        Storage annotation = sharedEnumClass.getAnnotation(Storage.class);
         Class<?> storageClass = annotation.value();
 
         Set<String> fieldNames = Arrays.stream(storageClass.getDeclaredFields())
                 .map(Field::getName)
                 .collect(Collectors.toCollection(HashSet::new));
 
-        Optional<String> notFoundName = Arrays.stream(enumClass.getEnumConstants())
+        Optional<String> notFoundName = Arrays.stream(sharedEnumClass.getEnumConstants())
                 .map(Enum::name)
                 .filter(enumName -> fieldNames.contains(enumName) == false)
                 .findFirst();
@@ -128,7 +128,7 @@ public class InternalStorages {
         }
 
         String parent = storageClass.getName();
-        for (Enum<?> enumConstant : enumClass.getEnumConstants()) {
+        for (Enum<?> enumConstant : sharedEnumClass.getEnumConstants()) {
             String name = enumConstant.name();
             Field field = storageClass.getDeclaredField(name);
 
@@ -136,7 +136,7 @@ public class InternalStorages {
         }
 
         storageObjectsMap.put(parent, storageObject);
-        enumToStorageMap.put(enumClass.getName(), parent);
+        enumToStorageMap.put(sharedEnumClass.getName(), parent);
 
         return storageObject;
     }
@@ -156,12 +156,12 @@ public class InternalStorages {
         storage.putIfAbsent(name, storageField);
     }
 
-    public Object getStorage(Class<? extends Enum<?>> enumClass) {
-        String enumClassName = enumClass.getName();
-        if (enumToStorageMap.containsKey(enumClassName) == false) {
-            throw new IllegalArgumentException("Enum is not registered: " + enumClassName);
+    public Object getStorage(Class<? extends Enum<?>> sharedEnumClass) {
+        String sharedEnumClassName = sharedEnumClass.getName();
+        if (enumToStorageMap.containsKey(sharedEnumClassName) == false) {
+            throw new IllegalArgumentException("Enum is not registered: " + sharedEnumClassName);
         }
-        String storageName = enumToStorageMap.get(enumClassName);
+        String storageName = enumToStorageMap.get(sharedEnumClassName);
         return storageObjectsMap.get(storageName);
     }
 
@@ -172,11 +172,11 @@ public class InternalStorages {
         return getParent(variable.getDeclaringClass().getName());
     }
 
-    private String getParent(String enumClassName) throws NullPointerException, IllegalArgumentException {
-        if (enumToStorageMap.containsKey(enumClassName) == false) {
-            throw new IllegalArgumentException("Enum is not registered: " + enumClassName);
+    private String getParent(String sharedEnumClassName) throws NullPointerException, IllegalArgumentException {
+        if (enumToStorageMap.containsKey(sharedEnumClassName) == false) {
+            throw new IllegalArgumentException("Enum is not registered: " + sharedEnumClassName);
         }
-        return enumToStorageMap.get(enumClassName);
+        return enumToStorageMap.get(sharedEnumClassName);
     }
 
     /**
@@ -194,8 +194,8 @@ public class InternalStorages {
         return get0(getParent(variable), variable.name(), indices);
     }
 
-    final public <T> T get(String enumClassName, String name, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException {
-        return get0(getParent(enumClassName), name, indices);
+    final public <T> T get(String sharedEnumClassName, String name, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException {
+        return get0(getParent(sharedEnumClassName), name, indices);
     }
 
     @SuppressWarnings("unchecked")
@@ -251,8 +251,8 @@ public class InternalStorages {
         put0(getParent(variable), variable.name(), value, indices);
     }
 
-    final public <T> void put(String enumClassName, String name, T value, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
-        put0(getParent(enumClassName), name, value, indices);
+    final public <T> void put(String sharedEnumClassName, String name, T value, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
+        put0(getParent(sharedEnumClassName), name, value, indices);
     }
 
     private <T> void put0(String parent, String name, T value, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {

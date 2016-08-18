@@ -28,7 +28,7 @@ final public class MessageValueGetRequest extends Message {
     private int requestNum;
     private int requesterThreadId;
     private int threadId;
-    private String enumClassName;
+    private String sharedEnumClassName;
     private String name;
     private int[] indices;
 
@@ -43,7 +43,7 @@ final public class MessageValueGetRequest extends Message {
         this.requestNum = requestNum;
         this.requesterThreadId = requesterThreadId;
         this.threadId = threadId;
-        this.enumClassName = storageName;
+        this.sharedEnumClassName = storageName;
         this.name = name;
         this.indices = indices;
     }
@@ -54,7 +54,7 @@ final public class MessageValueGetRequest extends Message {
         out.writeInt(requestNum);
         out.writeInt(requesterThreadId);
         out.writeInt(threadId);
-        out.writeString(enumClassName);
+        out.writeString(sharedEnumClassName);
         out.writeString(name);
         out.writeIntArray(indices);
     }
@@ -65,7 +65,7 @@ final public class MessageValueGetRequest extends Message {
         requestNum = in.readInt();
         requesterThreadId = in.readInt();
         threadId = in.readInt();
-        enumClassName = in.readString();
+        sharedEnumClassName = in.readString();
         name = in.readString();
         indices = in.readIntArray();
 
@@ -76,7 +76,7 @@ final public class MessageValueGetRequest extends Message {
 
         MessageValueGetResponse messageValueGetResponse;
         try {
-            Object variableValue = storage.get(enumClassName, name, indices);
+            Object variableValue = storage.get(sharedEnumClassName, name, indices);
             messageValueGetResponse = new MessageValueGetResponse(
                     groupId, requestNum, requesterThreadId, variableValue);
         } catch (Exception ex) {
