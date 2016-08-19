@@ -59,7 +59,7 @@ public class PcjMicroBenchmarkBroadcast implements StartPoint {
 
             for (int i = 0; i < ntimes; i++) {
                 if (PCJ.myId() == 0) {
-                    PCJ.broadcast(SharedEnum.a, b);
+                    PCJ.broadcast(b, SharedEnum.a);
                 }
 //                PCJ.waitFor(SharedEnum.a);
 //                PCJ.barrier();

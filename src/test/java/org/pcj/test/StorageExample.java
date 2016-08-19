@@ -38,12 +38,12 @@ public class StorageExample implements StartPoint {
 //            PCJ.putLocal(SharedEnum.x, x);
         }
         PCJ.barrier();
-        PCJ.put(0, SharedEnum.x, PCJ.myId() + 1, PCJ.myId());
+        PCJ.put(PCJ.myId() + 1, 0, SharedEnum.x, PCJ.myId());
         PCJ.barrier();
         if (PCJ.myId() == 0) {
 //            avg = Arrays.stream(PCJ.<int[]>getLocal(SharedEnum.x)).average().orElse(Double.NaN);
             avg = Arrays.stream(x).average().orElse(Double.NaN);
-            PCJ.broadcast(SharedEnum.avg, avg);
+            PCJ.broadcast(avg, SharedEnum.avg);
         }
         PCJ.waitFor(SharedEnum.avg);
 //        System.out.println(PCJ.myId() + ": avg = " + PCJ.<Double>getLocal(SharedEnum.avg));

@@ -76,24 +76,24 @@ public interface Group {
      * Asynchronous put operation. Puts value into shared variable to PCJ Thread from the group.
      *
      * @param <T>      type of value
+     * @param newValue new variable value
      * @param threadId peer PCJ Thread
      * @param variable variable name
-     * @param newValue new variable value
      * @param indices  (optional) indices for array variable
      *
-     * @return PcjFuture to check completion of put operation
+     * @return the org.pcj.PcjFuture<java.lang.Void>
      */
-    <T> PcjFuture<Void> asyncPut(int threadId, Enum<?> variable, T newValue, int... indices);
+    <T> PcjFuture<Void> asyncPut(T newValue, int threadId, Enum<?> variable, int... indices);
 
     /**
      * Asynchronous broadcast operation. Broadcasts value into shared variable of all PCJ Threads
      * from the group.
      *
      * @param <T>      type of value
-     * @param variable variable name
      * @param newValue new variable value
+     * @param variable variable name
      *
-     * @return PcjFuture to check completion of put operation
+     * @return the org.pcj.PcjFuture<java.lang.Void>
      */
-    <T> PcjFuture<Void> asyncBroadcast(Enum<?> variable, T newValue);
+    <T> PcjFuture<Void> asyncBroadcast(T newValue, Enum<?> variable);
 }

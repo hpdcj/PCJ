@@ -114,7 +114,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     }
 
     @Override
-    public <T> PcjFuture<Void> asyncPut(int threadId, Enum<?> variable, T newValue, int... indices) {
+    public <T> PcjFuture<Void> asyncPut(T newValue, int threadId, Enum<?> variable, int... indices) {
         int requestNum = putVariableCounter.incrementAndGet();
         PutVariable putVariable = new PutVariable();
         putVariableMap.put(requestNum, putVariable);
@@ -138,7 +138,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     }
 
     @Override
-    public <T> PcjFuture<Void> asyncBroadcast(Enum<?> variable, T newValue) {
+    public <T> PcjFuture<Void> asyncBroadcast(T newValue, Enum<?> variable) {
         int requestNum = broadcastCounter.incrementAndGet();
         BroadcastState broadcastState = this.getBroadcastState(requestNum, myThreadId);
 

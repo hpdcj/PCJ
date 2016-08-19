@@ -51,7 +51,7 @@ public class SizesTest implements StartPoint {
             System.out.println("n=" + n);
             byte[] bytes = new byte[n];
             if (PCJ.myId() == 0) {
-                PCJ.put(1, SharedEnum.b, bytes);
+                PCJ.put(bytes, 1, SharedEnum.b);
             }
             PCJ.barrier();
         }

@@ -103,7 +103,7 @@ public class PcjMicroBenchmarkPingPong implements StartPoint {
                 long time = System.nanoTime();
                 for (int i = 0; i < ntimes; i++) {
                     if (PCJ.myId() == 0) {
-                        PCJ.put(1, StorageEnum.a, b);
+                        PCJ.put(b, 1, StorageEnum.a);
                     } else {
                         PCJ.waitFor(StorageEnum.a);
                     }
@@ -136,7 +136,7 @@ public class PcjMicroBenchmarkPingPong implements StartPoint {
                 long time = System.nanoTime();
                 for (int i = 0; i < ntimes; i++) {
                     if (PCJ.myId() == i % 2) {
-                        PCJ.put((i + 1) % 2, StorageEnum.a, b);
+                        PCJ.put(b, (i + 1) % 2, StorageEnum.a);
                     } else {
                         PCJ.waitFor(StorageEnum.a);
                     }

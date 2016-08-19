@@ -308,15 +308,15 @@ final public class PCJ extends InternalPCJ {
      * group.
      *
      * @param <T>      type of value
+     * @param newValue new variable value
      * @param threadId peer PCJ Thread
      * @param variable variable name
-     * @param newValue new variable value
      * @param indices  (optional) indices for array variable
      *
-     * @return PcjFuture to check completion of put operation
+     * @return the org.pcj.PcjFuture<java.lang.Void>
      */
-    public static <T> PcjFuture<Void> asyncPut(int threadId, Enum<?> variable, T newValue, int... indices) {
-        return getGlobalGroup().asyncPut(threadId, variable, newValue, indices);
+    public static <T> PcjFuture<Void> asyncPut(T newValue, int threadId, Enum<?> variable, int... indices) {
+        return getGlobalGroup().asyncPut(newValue, threadId, variable, indices);
     }
 
     /**
@@ -327,15 +327,15 @@ final public class PCJ extends InternalPCJ {
      * {@code PCJ.<T>asyncPut(threadId, variable, newValue, indices).get();}
      *
      * @param <T>      type of value
+     * @param newValue new variable value
      * @param threadId peer PCJ Thread
      * @param variable variable name
-     * @param newValue new variable value
      * @param indices  (optional) indices for array variable
      *
      * @throws PcjRuntimeException possible wrapped exception (eg. ArrayOutOfBoundException).
      */
-    public static <T> void put(int threadId, Enum<?> variable, T newValue, int... indices) throws PcjRuntimeException {
-        PCJ.<T>asyncPut(threadId, variable, newValue, indices).get();
+    public static <T> void put(T newValue, int threadId, Enum<?> variable, int... indices) throws PcjRuntimeException {
+        PCJ.<T>asyncPut(newValue, threadId, variable, indices).get();
     }
 
     /**
@@ -343,13 +343,13 @@ final public class PCJ extends InternalPCJ {
      * from the global group.
      *
      * @param <T>      type of value
-     * @param variable variable name
      * @param newValue new variable value
+     * @param variable variable name
      *
-     * @return PcjFuture to check completion of put operation
+     * @return the org.pcj.PcjFuture<java.lang.Void>
      */
-    public static <T> PcjFuture<Void> asyncBroadcast(Enum<?> variable, T newValue) {
-        return getGlobalGroup().asyncBroadcast(variable, newValue);
+    public static <T> PcjFuture<Void> asyncBroadcast(T newValue, Enum<?> variable) {
+        return getGlobalGroup().asyncBroadcast(newValue, variable);
     }
 
     /**
@@ -360,11 +360,11 @@ final public class PCJ extends InternalPCJ {
      * {@code PCJ.<T>asyncBroadcast(variable, newValue).get();}
      *
      * @param <T>
-     * @param variable
      * @param newValue
+     * @param variable
      */
-    public static <T> void broadcast(Enum<?> variable, T newValue) {
-        PCJ.<T>asyncBroadcast(variable, newValue).get();
+    public static <T> void broadcast(T newValue, Enum<?> variable) {
+        PCJ.<T>asyncBroadcast(newValue, variable).get();
     }
 
     /**

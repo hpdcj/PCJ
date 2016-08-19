@@ -89,7 +89,7 @@ public class MyTest extends InternalStorages implements StartPoint {
         if (PCJ.myId() == 0) {
             System.out.println("a@1 = " + PCJ.asyncGet(1, SharedEnum.a).get());
         } else if (PCJ.myId() == 1) {
-            PCJ.asyncPut(0, SharedEnum.a, 1000).get();
+            PCJ.asyncPut(1000, 0, SharedEnum.a).get();
         }
 
         PCJ.barrier();
