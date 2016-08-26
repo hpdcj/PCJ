@@ -43,11 +43,10 @@ final public class Networker {
     private final Thread selectorProcThread;
     private final ExecutorService workers;
 
-    private boolean shuttingDown = false;
-
-    protected Networker() {
+    protected Networker(int workerCount) {
+        LOGGER.log(Level.FINE, "Networker with {0,number,#} {0,choice,1#worker|1<workers}", workerCount);
         this.workers = Executors.newFixedThreadPool(
-                Runtime.getRuntime().availableProcessors(),
+                workerCount,
                 new ThreadFactory() {
             private final AtomicInteger counter = new AtomicInteger(0);
 
@@ -84,23 +83,22 @@ final public class Networker {
                 if (socket.isConnectionPending() == false) {
                     throw new IOException("Unable to connect to " + socket.getRemoteAddress());
                 }
-                socket.wait();
+                socket.wait(100);
             }
         }
     }
 
     void shutdown() {
-        if (shuttingDown == true) {
-            return;
-        }
-        shuttingDown = true;
-
         while (true) {
             try {
+                Thread.sleep(10);
                 selectorProc.closeAllSockets();
                 break;
             } catch (IOException ex) {
                 LOGGER.log(Level.FINEST, "Exception while closing sockets: {0}", ex.getMessage());
+            } catch (InterruptedException ex) {
+                LOGGER.log(Level.FINEST, "Interrupted while shutting down. Force shutdown.");
+                break;
             }
         }
 
@@ -119,7 +117,8 @@ final public class Networker {
                     LOGGER.log(Level.FINEST, "Locally processing message {0}", message.getType());
                 }
 
-                submitToWorker(socket, message, loopbackMessageBytesStream.getMessageDataInputStream());
+//                submitToWorker(socket, message, loopbackMessageBytesStream.getMessageDataInputStream());
+                workers.submit(new WorkerTask(socket, message, loopbackMessageBytesStream.getMessageDataInputStream()));
             } else {
                 if (LOGGER.isLoggable(Level.FINEST)) {
                     LOGGER.log(Level.FINEST, "Sending message {0} to {1}", new Object[]{message.getType(), socket});
@@ -145,11 +144,35 @@ final public class Networker {
             LOGGER.log(Level.FINEST, "Received message {0} from {1}", new Object[]{message.getType(), socket});
         }
 
-        submitToWorker(socket, message, messageDataInputStream);
+//        submitToWorker(socket, message, messageDataInputStream);
+        workers.submit(new WorkerTask(socket, message, messageDataInputStream));
     }
 
-    private void submitToWorker(SocketChannel socket, Message message, MessageDataInputStream messageDataInputStream) {
-        workers.submit(() -> {
+//    private void submitToWorker(SocketChannel socket, Message message, MessageDataInputStream messageDataInputStream) {
+//        workers.submit(() -> {
+//            try {
+//                message.execute(socket, messageDataInputStream);
+//                messageDataInputStream.close();
+//            } catch (Throwable t) {
+//                LOGGER.log(Level.SEVERE, "Exception while processing message " + message
+//                        + " by node(" + InternalPCJ.getNodeData().getPhysicalId() + ").", t);
+//            }
+//        });
+//    }
+    private static class WorkerTask implements Runnable {
+
+        private final SocketChannel socket;
+        private final Message message;
+        private final MessageDataInputStream messageDataInputStream;
+
+        public WorkerTask(SocketChannel socket, Message message, MessageDataInputStream messageDataInputStream) {
+            this.socket = socket;
+            this.message = message;
+            this.messageDataInputStream = messageDataInputStream;
+        }
+
+        @Override
+        public void run() {
             try {
                 message.execute(socket, messageDataInputStream);
                 messageDataInputStream.close();
@@ -157,6 +180,6 @@ final public class Networker {
                 LOGGER.log(Level.SEVERE, "Exception while processing message " + message
                         + " by node(" + InternalPCJ.getNodeData().getPhysicalId() + ").", t);
             }
-        });
+        }
     }
 }

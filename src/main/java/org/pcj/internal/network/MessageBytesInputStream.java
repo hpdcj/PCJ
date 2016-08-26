@@ -26,7 +26,7 @@ public class MessageBytesInputStream {
     private ByteBuffer currentByteBuffer;
 
     public MessageBytesInputStream() {
-        this.header = ByteBuffer.allocateDirect(HEADER_SIZE);
+        this.header = ByteBuffer.allocate(HEADER_SIZE);
         reset();
     }
 

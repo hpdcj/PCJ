@@ -72,7 +72,6 @@ public abstract class InternalPCJ {
 
     protected static void start(Class<? extends StartPoint> startPointClass,
             NodeInfo node0, NodeInfo currentJvm, int allNodesThreadCount) {
-
         if (currentJvm == null) {
             throw new IllegalArgumentException("There is no entry for PCJ threads for current JVM");
         }
@@ -88,7 +87,7 @@ public abstract class InternalPCJ {
                     new Object[]{PCJ_VERSION, PCJ_BUILD_DATE});
         }
 
-        networker = new Networker();
+        networker = new Networker(currentJvm.getThreadIds().length + 1);
         networker.startup();
         try {
             /* Getting all interfaces */
@@ -97,7 +96,7 @@ public abstract class InternalPCJ {
             /* Binding on all interfaces */
             bindOnAllNetworkInterfaces(inetAddresses, currentJvm.getPort());
 
-            ScheduledFuture<?> exitTimer = sheduleExitTimer(Thread.currentThread());
+            ScheduledFuture<?> exitTimer = scheduleExitTimer(Thread.currentThread());
 
             /* connecting to node0 */
             SocketChannel node0Socket = connectToNode0(isCurrentJvmNode0, node0);
@@ -115,9 +114,10 @@ public abstract class InternalPCJ {
 
             exitTimer.cancel(true);
 
-            long nanoTime = System.nanoTime();
+            long nanoTime = Long.MIN_VALUE;
             /* Starting execution */
             if (isCurrentJvmNode0) {
+                nanoTime = System.nanoTime();
                 LOGGER.log(Level.INFO, "Starting {0} with {1,number,#}"
                         + " {1,choice,1#thread|1<threads}"
                         + " (on {2,number,#} {2,choice,1#node|1<nodes})...",
@@ -162,7 +162,7 @@ public abstract class InternalPCJ {
         }
     }
 
-    private static ScheduledFuture<?> sheduleExitTimer(Thread thread) {
+    private static ScheduledFuture<?> scheduleExitTimer(Thread thread) {
         ScheduledThreadPoolExecutor timer = new ScheduledThreadPoolExecutor(1);
         timer.setRemoveOnCancelPolicy(true);
         timer.setExecuteExistingDelayedTasksAfterShutdownPolicy(true);

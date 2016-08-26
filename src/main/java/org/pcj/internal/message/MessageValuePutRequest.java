@@ -71,7 +71,7 @@ final public class MessageValuePutRequest extends Message {
         sharedEnumClassName = in.readString();
         name = in.readString();
         indices = in.readIntArray();
-
+       
         NodeData nodeData = InternalPCJ.getNodeData();
         int globalThreadId = nodeData.getGroupById(groupId).getGlobalThreadId(threadId);
         PcjThread pcjThread = nodeData.getPcjThreads().get(globalThreadId);

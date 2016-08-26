@@ -8,6 +8,8 @@
  */
 package org.pcj.internal;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import org.pcj.PCJ;
 import org.pcj.RegisterStorages;
 import org.pcj.StartPoint;
@@ -55,31 +57,50 @@ public class PcjThread extends Thread {
     @Override
     public void run() {
         try {
-//            storages.forEach(PCJ::registerShared);
-            StartPoint startPoint = null;
-            if (startPointClass.isAnnotationPresent(RegisterStorages.class)) {
-                RegisterStorages registerStorages = startPointClass.getAnnotation(RegisterStorages.class);
-                for (Class<? extends Enum<?>> sharedEnumClass : registerStorages.value()) {
-                    Storage storageAnnotation = sharedEnumClass.getAnnotation(Storage.class);
-                    if (storageAnnotation == null) {
-                        throw new RuntimeException("Enum is not annotated by @Storage annotation: " + sharedEnumClass.getName());
-                    }
+            StartPoint startPoint = getStartPointObject();
 
-                    Object object = PCJ.registerStorage(sharedEnumClass);
-                    if (storageAnnotation.value().equals(startPointClass)) {
-                        startPoint = (StartPoint) object;
-                    }
-                }
-
-            }
-            if (startPoint == null) {
-                startPoint = startPointClass.newInstance();
-            }
+            /* be sure that each thread initialized startPoint and storages */
+            PCJ.barrier();
 
             startPoint.main();
         } catch (Throwable t) {
             this.throwable = t;
         }
+    }
+
+    private StartPoint getStartPointObject() throws SecurityException, RuntimeException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchFieldException, NoSuchMethodException {
+        StartPoint startPoint = initializeStorages();
+        if (startPoint == null) {
+            startPoint = initializeStartPointClass();
+        }
+        return startPoint;
+    }
+
+    private StartPoint initializeStorages() throws IllegalAccessException, NoSuchFieldException, InstantiationException, RuntimeException {
+        StartPoint startPoint = null;
+        if (startPointClass.isAnnotationPresent(RegisterStorages.class)) {
+            RegisterStorages registerStorages = startPointClass.getAnnotation(RegisterStorages.class);
+            for (Class<? extends Enum<?>> sharedEnumClass : registerStorages.value()) {
+                Storage storageAnnotation = sharedEnumClass.getAnnotation(Storage.class);
+                if (storageAnnotation == null) {
+                    throw new RuntimeException("Enum is not annotated by @Storage annotation: " + sharedEnumClass.getName());
+                }
+
+                Object object = PCJ.registerStorage(sharedEnumClass);
+                if (storageAnnotation.value().equals(startPointClass)) {
+                    startPoint = (StartPoint) object;
+                }
+            }
+        }
+        return startPoint;
+    }
+
+    private StartPoint initializeStartPointClass() throws NoSuchMethodException, InstantiationException, InvocationTargetException, IllegalAccessException, SecurityException, IllegalArgumentException {
+        StartPoint startPoint;
+        Constructor<? extends StartPoint> startPointClassConstructor = startPointClass.getConstructor();
+        startPointClassConstructor.setAccessible(true);
+        startPoint = startPointClassConstructor.newInstance();
+        return startPoint;
     }
 
     public int getThreadId() {

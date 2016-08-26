@@ -52,7 +52,7 @@ final public class Configuration {
         RETRY_COUNT = getPropertyInt("pcj.retry.count", 19);
         RETRY_DELAY = getPropertyInt("pcj.retry.delay", 3);
         DEFAULT_PORT = getPropertyInt("pcj.port", 8091);
-        CHUNK_SIZE = getPropertyInt("pcj.chunksize", 1024 * 1024);
+        CHUNK_SIZE = getPropertyInt("pcj.chunksize", 8 * 1024);
         INIT_MAXTIME = getPropertyInt("pcj.init.maxtime", Math.max((RETRY_COUNT + 1) * RETRY_DELAY, 60));
 
         LOGGER.log(Level.CONFIG, "BACKLOG_COUNT: {0,number,#}", BACKLOG_COUNT);

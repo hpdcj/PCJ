@@ -72,7 +72,6 @@ public class InternalStorages {
                 throw new RuntimeException("Cannot set value to storage", ex);
             }
         }
-
     }
 
     private final transient ConcurrentMap<String, String> enumToStorageMap;
@@ -292,7 +291,11 @@ public class InternalStorages {
         }
 
         if (indices.length == 0) {
-            field.setValue(newValue);
+            synchronized (field) {
+                field.setValue(newValue);
+                field.getModificationCount().incrementAndGet();
+                field.notifyAll();
+            }
         } else {
             Object array = getArrayElement(field.getValue(), indices, indices.length - 1);
 
@@ -304,13 +307,13 @@ public class InternalStorages {
                 throw new ArrayIndexOutOfBoundsException("Cannot put value to " + name + Arrays.toString(indices));
             }
 
-            Array.set(array, indices[indices.length - 1], newValue);
+            synchronized (field) {
+                Array.set(array, indices[indices.length - 1], newValue);
+                field.getModificationCount().incrementAndGet();
+                field.notifyAll();
+            }
         }
 
-        field.getModificationCount().getAndIncrement();
-        synchronized (field) {
-            field.notifyAll();
-        }
     }
 
     private <T> Class<?> getValueClass(T value) {
@@ -383,7 +386,6 @@ public class InternalStorages {
         if (field == null) {
             throw new IllegalArgumentException("Variable not found: " + name);
         }
-
         return field.getModificationCount().getAndSet(0);
     }
 

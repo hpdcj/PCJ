@@ -14,6 +14,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
@@ -143,6 +144,16 @@ public class SelectorProc implements Runnable {
     }
 
     public void closeAllSockets() throws IOException {
+        for (ServerSocketChannel serverSocket : serverSocketChannels) {
+            if (serverSocket.isOpen()) {
+                serverSocket.close();
+            }
+        }
+
+        if (interestChanges.isEmpty() == false) {
+            throw new IOException("There is something in selector' interest changes queue.");
+        }
+
         Set<SocketChannel> sockets = writeMap.keySet();
         for (SocketChannel socket : sockets) {
             if (socket.isConnected()) {
@@ -153,13 +164,6 @@ public class SelectorProc implements Runnable {
                 }
             }
         }
-
-        for (ServerSocketChannel serverSocket : serverSocketChannels) {
-            if (serverSocket.isOpen()) {
-                serverSocket.close();
-            }
-        }
-
     }
 
     @Override
@@ -189,38 +193,40 @@ public class SelectorProc implements Runnable {
                     if (!key.isValid()) {
                         continue;
                     }
+                    try {
+                        int readyOps = key.readyOps();
 
-                    int readyOps = key.readyOps();
+                        if ((readyOps & SelectionKey.OP_ACCEPT) != 0) {
+                            ServerSocketChannel serverSocket = (ServerSocketChannel) key.channel();
 
-                    if ((readyOps & SelectionKey.OP_ACCEPT) != 0) {
-                        ServerSocketChannel serverSocket = (ServerSocketChannel) key.channel();
-
-                        opAccept(serverSocket);
-                    }
-
-                    if ((readyOps & SelectionKey.OP_CONNECT) != 0) {
-                        SocketChannel socket = (SocketChannel) key.channel();
-
-                        opConnect(socket);
-                    }
-
-                    if ((readyOps & SelectionKey.OP_READ) != 0) {
-                        SocketChannel socket = (SocketChannel) key.channel();
-
-                        if (opRead(socket) == false) {
-                            key.cancel();
-                            socket.close();
+                            opAccept(serverSocket);
                         }
-                    }
 
-                    if ((readyOps & SelectionKey.OP_WRITE) != 0) {
-                        SocketChannel socket = (SocketChannel) key.channel();
+                        if ((readyOps & SelectionKey.OP_CONNECT) != 0) {
+                            SocketChannel socket = (SocketChannel) key.channel();
 
-                        if (opWrite(socket) == false) {
-                            key.interestOps(SelectionKey.OP_READ);
+                            opConnect(socket);
                         }
-                    }
 
+                        if ((readyOps & SelectionKey.OP_READ) != 0) {
+                            SocketChannel socket = (SocketChannel) key.channel();
+
+                            if (opRead(socket) == false) {
+                                key.cancel();
+                                socket.close();
+                            }
+                        }
+
+                        if ((readyOps & SelectionKey.OP_WRITE) != 0) {
+                            SocketChannel socket = (SocketChannel) key.channel();
+
+                            if (opWrite(socket) == false) {
+                                key.interestOps(SelectionKey.OP_READ);
+                            }
+                        }
+                    } catch (CancelledKeyException ex) {
+                        LOGGER.log(Level.FINE, "Key is cancelled", ex);
+                    }
                 }
             } catch (Exception ex) {
                 LOGGER.log(Level.SEVERE, "Exception in SelectorProc.", ex);

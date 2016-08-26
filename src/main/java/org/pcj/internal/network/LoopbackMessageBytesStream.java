@@ -112,8 +112,21 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
 
         @Override
         public void write(byte[] b, int off, int len) {
-            for (int i = 0; i < len; i++) {
-                write(b[off + i]);
+            int remaining = currentByteBuffer.remaining();
+            while (remaining < len) {
+                for (int i = 0; i < remaining; ++i) {
+                    currentByteBuffer.put(b[off + i]);
+                }
+                flush();
+                len -= remaining;
+                off += remaining;
+                remaining = currentByteBuffer.remaining();
+            }
+            for (int i = 0; i < len; ++i) {
+                currentByteBuffer.put(b[off + i]);
+            }
+            if (currentByteBuffer.hasRemaining() == false) {
+                flush();
             }
         }
     }
@@ -182,11 +195,13 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
                 } else if (byteBuffer.hasRemaining() == false) {
                     queue.poll();
                 } else {
-                    while (byteBuffer.hasRemaining()) {
-                        b[off + i] = byteBuffer.get();
-                        if (++i == len) {
-                            return len;
-                        }
+                    int remaining = byteBuffer.remaining();
+                    int l = Math.min(remaining, len - i);
+                    for (int j = 0; j < l; ++j) {
+                        b[off + i++] = byteBuffer.get();
+                    }
+                    if (i == len) {
+                        return len;
                     }
                 }
             }

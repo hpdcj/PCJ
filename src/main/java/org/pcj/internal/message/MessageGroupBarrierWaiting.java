@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
+import org.pcj.internal.NodeData;
 import org.pcj.internal.futures.GroupBarrierState;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
@@ -53,9 +54,16 @@ final public class MessageGroupBarrierWaiting extends Message {
         barrierRound = in.readInt();
         physicalId = in.readInt();
 
-        InternalCommonGroup group = InternalPCJ.getNodeData().getGroupById(groupId);
+        NodeData nodeData = InternalPCJ.getNodeData();
+
+        InternalCommonGroup group = nodeData.getGroupById(groupId);
 
         GroupBarrierState barrierState = group.getBarrierState(barrierRound);
-        barrierState.processPhysical(physicalId);
+        if (barrierState.processPhysical(physicalId)) {
+            MessageGroupBarrierGo message = new MessageGroupBarrierGo(groupId, barrierRound);
+            SocketChannel socket = nodeData.getSocketChannelByPhysicalId().get(group.getGroupMasterNode());
+
+            InternalPCJ.getNetworker().send(socket, message);
+        }
     }
 }

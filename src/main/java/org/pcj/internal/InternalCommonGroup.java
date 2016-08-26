@@ -8,6 +8,7 @@
  */
 package org.pcj.internal;
 
+import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -21,6 +22,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.internal.futures.BroadcastState;
 import org.pcj.internal.futures.GroupBarrierState;
 import org.pcj.internal.futures.GroupJoinState;
+import org.pcj.internal.message.Message;
+import org.pcj.internal.message.MessageGroupBarrierWaiting;
 
 /**
  * Internal (with common ClassLoader) representation of Group. It contains
@@ -40,12 +43,11 @@ public class InternalCommonGroup {
     private final List<Integer> localIds;
     private final List<Integer> physicalIds;
     private final Bitmask localBitmask;
+    private final Bitmask physicalBitmask;
     private final ConcurrentMap<Integer, GroupBarrierState> barrierStateMap;
     private final ConcurrentMap<List<Integer>, BroadcastState> broadcastStateMap;
     private final ConcurrentMap<List<Integer>, GroupJoinState> groupJoinStateMap;
     final private AtomicInteger threadsCounter;
-
-    
     final private CommunicationTree physicalTree;
 
     public InternalCommonGroup(InternalCommonGroup g) {
@@ -55,6 +57,7 @@ public class InternalCommonGroup {
 
         this.threadsMapping = g.threadsMapping;
         this.localBitmask = g.localBitmask;
+        this.physicalBitmask = g.physicalBitmask;
         this.barrierStateMap = g.barrierStateMap;
 
         this.broadcastStateMap = g.broadcastStateMap;
@@ -75,13 +78,14 @@ public class InternalCommonGroup {
         threadsMapping = new ConcurrentHashMap<>();
 
         localBitmask = new Bitmask();
+        physicalBitmask = new Bitmask();
         barrierStateMap = new ConcurrentHashMap<>();
         broadcastStateMap = new ConcurrentHashMap<>();
         groupJoinStateMap = new ConcurrentHashMap<>();
 
         localIds = new ArrayList<>();
         physicalIds = new CopyOnWriteArrayList<>();
-        physicalIds.add(groupMaster);
+        updateCommunicationTree(groupMaster);
 
         threadsCounter = new AtomicInteger(0);
         joinGroupSynchronizer = new Object();
@@ -188,6 +192,9 @@ public class InternalCommonGroup {
                 physicalTree.getChildrenNodes().add(physicalId);
             }
         }
+
+        physicalBitmask.enlarge(physicalId + 1);
+        physicalBitmask.set(physicalId);
     }
 
     private void updateLocalBitmask(int physicalId, int groupThreadId) {
@@ -206,14 +213,24 @@ public class InternalCommonGroup {
 
     final protected GroupBarrierState barrier(int threadId, int barrierRound) {
         GroupBarrierState barrierState = getBarrierState(barrierRound);
-        barrierState.processLocal(threadId);
+        if (barrierState.processLocal(threadId)) {
+            NodeData nodeData = InternalPCJ.getNodeData();
+
+            int physicalId = nodeData.getPhysicalId();
+
+            int masterId = this.getGroupMasterNode();
+            SocketChannel socket = nodeData.getSocketChannelByPhysicalId().get(masterId);
+            Message message = new MessageGroupBarrierWaiting(groupId, barrierRound, physicalId);
+
+            InternalPCJ.getNetworker().send(socket, message);
+        }
 
         return barrierState;
     }
 
     final public GroupBarrierState getBarrierState(int barrierRound) {
         return barrierStateMap.computeIfAbsent(barrierRound,
-                round -> new GroupBarrierState(groupId, round, localBitmask, getChildrenNodes()));
+                round -> new GroupBarrierState(groupId, round, localBitmask, physicalBitmask));
     }
 
     final public GroupBarrierState removeBarrierState(int barrierRound) {

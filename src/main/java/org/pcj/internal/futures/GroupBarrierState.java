@@ -32,15 +32,17 @@ public class GroupBarrierState extends InternalFuture<Void> implements PcjFuture
 
     private final int groupId;
     private final int barrierRound;
-    private final Set<Integer> childrenSet;
+    private final Bitmask physicalBarrierBitmask;
+    private final Bitmask physicalBarrierMaskBitmask;
     private final Bitmask localBarrierBitmask;
     private final Bitmask localBarrierMaskBitmask;
 
-    public GroupBarrierState(int groupId, int barrierRound, Bitmask localBitmask, List<Integer> childrenNodes) {
+    public GroupBarrierState(int groupId, int barrierRound, Bitmask localBitmask, Bitmask physicalBitmask) {
         this.groupId = groupId;
         this.barrierRound = barrierRound;
-        this.childrenSet = ConcurrentHashMap.newKeySet(childrenNodes.size());
-        childrenNodes.forEach(childrenSet::add);
+
+        physicalBarrierBitmask = new Bitmask(physicalBitmask.getSize());
+        physicalBarrierMaskBitmask = new Bitmask(physicalBitmask);
 
         this.localBarrierBitmask = new Bitmask(localBitmask.getSize());
         this.localBarrierMaskBitmask = new Bitmask(localBitmask);
@@ -85,45 +87,20 @@ public class GroupBarrierState extends InternalFuture<Void> implements PcjFuture
     }
 
     private void setPhysical(int physicalId) {
-        childrenSet.remove(physicalId);
+        physicalBarrierBitmask.set(physicalId);
     }
 
     private boolean isPhysicalSet() {
-        return childrenSet.isEmpty();
+        return physicalBarrierBitmask.isSet(physicalBarrierMaskBitmask);
     }
 
-    public synchronized void processPhysical(int physicalId) {
+    public synchronized boolean processPhysical(int physicalId) {
         this.setPhysical(physicalId);
-
-        process();
+        return isPhysicalSet();
     }
 
-    public synchronized void processLocal(int threadId) {
+    public synchronized boolean processLocal(int threadId) {
         this.setLocal(threadId);
-
-        process();
-    }
-
-    private synchronized void process() {
-        if (this.isLocalSet() && this.isPhysicalSet()) {
-            Message message;
-            SocketChannel socket;
-            NodeData nodeData = InternalPCJ.getNodeData();
-            InternalCommonGroup group = nodeData.getGroupById(groupId);
-
-            int physicalId = nodeData.getPhysicalId();
-            if (physicalId == group.getGroupMasterNode()) {
-                message = new MessageGroupBarrierGo(groupId, barrierRound);
-
-                socket = nodeData.getSocketChannelByPhysicalId().get(physicalId);
-            } else {
-                int parentId = group.getParentNode();
-                socket = nodeData.getSocketChannelByPhysicalId().get(parentId);
-
-                message = new MessageGroupBarrierWaiting(groupId, barrierRound, physicalId);
-            }
-
-            InternalPCJ.getNetworker().send(socket, message);
-        }
+        return isLocalSet();
     }
 }
