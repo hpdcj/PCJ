@@ -11,10 +11,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -22,19 +24,18 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.MirroredTypeException;
-import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
-import org.pcj.RegisterStorages;
+import org.pcj.RegisterStorage;
 
 /**
  * SharedProcessor is Java Annotation Processor to process
- * {@literal @}Storage and {@literal @}RegisterStorages annotations.
+ * {@literal @}Storage, {@literal @}RegisterStorage and
+ * {@literal @}RegisterStorageRepeatableContainer annotations.
  * <p>
  * It looks up for shared fields and checks for proper
  * declaration (field have to be non-final, non-static, and
@@ -42,20 +43,22 @@ import org.pcj.RegisterStorages;
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-@SupportedAnnotationTypes({"org.pcj.Storage", "org.pcj.RegisterStorages"})
+@SupportedAnnotationTypes({"org.pcj.Storage",
+    "org.pcj.RegisterStorage", "org.pcj.internal.RegisterStorageRepeatableContainer"})
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class StorageAnnotationProcessor extends javax.annotation.processing.AbstractProcessor {
 
-    private Elements elementUtils;
     private Types typeUtils;
+    private Elements elementUtils;
     private Set<Element> notSerializableStorageFields;
     private Set<Element> staticStorageFields;
     private Set<Element> finalStorageFields;
     private Map<Element, Map<Element, Set<Element>>> storageUsedFields;
     private TypeElement serializableType;
     private TypeElement startPointType;
-    private TypeElement registerStoragesType;
     private TypeElement storageType;
+    private TypeElement registerStorageType;
+    private TypeElement registerStorageRepeatableContainerType;
 
     private void warning(String msg, Element e) {
         processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING, msg, e);
@@ -66,29 +69,40 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
     }
 
     @Override
-    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        elementUtils = processingEnv.getElementUtils();
-        typeUtils = processingEnv.getTypeUtils();
+    public synchronized void init(ProcessingEnvironment processingEnv) {
+        super.init(processingEnv);
 
+        elementUtils = processingEnv.getElementUtils();
         serializableType = elementUtils.getTypeElement(Serializable.class.getCanonicalName());
         startPointType = elementUtils.getTypeElement(StartPoint.class.getCanonicalName());
         storageType = elementUtils.getTypeElement(Storage.class.getCanonicalName());
-        registerStoragesType = elementUtils.getTypeElement(RegisterStorages.class.getCanonicalName());
+        registerStorageType = elementUtils.getTypeElement(RegisterStorage.class.getCanonicalName());
+        registerStorageRepeatableContainerType = elementUtils.getTypeElement(RegisterStorageRepeatableContainer.class.getCanonicalName());
 
+        typeUtils = processingEnv.getTypeUtils();
+    }
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         notSerializableStorageFields = new LinkedHashSet<>();
         staticStorageFields = new LinkedHashSet<>();
         finalStorageFields = new LinkedHashSet<>();
         storageUsedFields = new HashMap<>();
 
-        roundEnv.getElementsAnnotatedWith(Storage.class)
+        roundEnv.getElementsAnnotatedWith(storageType)
                 .stream()
                 .map(element -> (TypeElement) element)
                 .forEach(this::processStorage);
 
-        roundEnv.getElementsAnnotatedWith(RegisterStorages.class)
+        roundEnv.getElementsAnnotatedWith(registerStorageType)
                 .stream()
                 .map(element -> (TypeElement) element)
                 .forEach(this::processRegisterStorage);
+
+        roundEnv.getElementsAnnotatedWith(registerStorageRepeatableContainerType)
+                .stream()
+                .map(element -> (TypeElement) element)
+                .forEach(this::processRegisterStorageRepeatableContainer);
 
         notSerializableStorageFields.forEach(element -> error("Not serializable variable", element));
 
@@ -126,7 +140,7 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
 
     private void processStorage(TypeElement enumElement) {
         if (enumElement.getKind().equals(ElementKind.ENUM) == false) {
-            error("Only enum can be annotated by @Storage", enumElement);
+            error("Only enums can be annotated by @Storage", enumElement);
             return;
         }
 
@@ -196,15 +210,58 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
             return;
         }
 
-        @SuppressWarnings("unchecked")
         TypeElement[] sharedEnumClassElements = processedElement.getAnnotationMirrors().stream()
-                .filter(element -> element.getAnnotationType().asElement().equals(registerStoragesType))
+                // get only @RegisterStorage
+                .filter(element -> element.getAnnotationType().asElement().equals(registerStorageType))
+                // get value of @RegisterStorage
                 .flatMap(element -> element.getElementValues().entrySet().stream())
                 .filter(element -> element.getKey().getSimpleName().contentEquals("value"))
                 .map(Map.Entry::getValue)
-                .flatMap(element -> ((List<? extends AnnotationValue>) element.getValue()).stream())
+                // get type object of value
                 .map(element -> (DeclaredType) element.getValue())
+                // get element object of value type
                 .map(element -> (TypeElement) element.asElement())
+                // collect values
+                .toArray(TypeElement[]::new);
+
+        for (TypeElement typeElement : sharedEnumClassElements) {
+            if (typeElement.getKind().equals(ElementKind.ENUM) == false) {
+                error(typeElement + ": has to be enum", typeElement);
+            }
+
+            if (typeElement.getAnnotation(Storage.class) == null) {
+                error(typeElement + ": has to be annotated with @Storage", typeElement);
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void processRegisterStorageRepeatableContainer(TypeElement processedElement) {
+        if (typeUtils.isAssignable(processedElement.asType(), startPointType.asType()) == false) {
+            error("Only classes that implements StartPoint can be annotated by @RegisterStorage", processedElement);
+            return;
+        }
+
+        TypeElement[] sharedEnumClassElements = processedElement.getAnnotationMirrors().stream()
+                // get only @RegisterStorageRepeatableContainer
+                .filter(element -> element.getAnnotationType().asElement().equals(registerStorageRepeatableContainerType))
+                // get value of @RegisterStorageRepeatableContainer
+                .flatMap(element -> element.getElementValues().entrySet().stream())
+                .filter(element -> element.getKey().getSimpleName().contentEquals("value"))
+                .map(Map.Entry::getValue)
+                // value is array: RegisterStorage[]
+                .flatMap(element -> ((List<? extends AnnotationValue>) element.getValue()).stream())
+                // treat value as annotation @RegisterStorage
+                .map(element -> (AnnotationMirror) element.getValue())
+                // get value of @RegisterStorage
+                .flatMap(element -> element.getElementValues().entrySet().stream())
+                .filter(element -> element.getKey().getSimpleName().contentEquals("value"))
+                .map(Map.Entry::getValue)
+                // get type object of value
+                .map(element -> (DeclaredType) element.getValue())
+                // get element object of value type
+                .map(element -> (TypeElement) element.asElement())
+                // collect values
                 .toArray(TypeElement[]::new);
 
         for (TypeElement typeElement : sharedEnumClassElements) {

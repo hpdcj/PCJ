@@ -11,19 +11,20 @@ package org.pcj.test;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
-import org.pcj.RegisterStorages;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
 import org.pcj.internal.InternalStorages;
 import org.pcj.test.MyTest.SharedEnum;
+import org.pcj.RegisterStorage;
 
 /**
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-@RegisterStorages(SharedEnum.class)
+@RegisterStorage(SharedEnum.class)
 public class MyTest extends InternalStorages implements StartPoint {
 
     @Storage(MyTest.class)

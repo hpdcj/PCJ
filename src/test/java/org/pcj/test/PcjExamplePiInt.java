@@ -14,13 +14,13 @@ import org.pcj.PcjFuture;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
 import org.pcj.test.PcjExamplePiInt.SharedEnum;
-import org.pcj.RegisterStorages;
+import org.pcj.RegisterStorage;
 
 /**
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-@RegisterStorages(SharedEnum.class)
+@RegisterStorage(SharedEnum.class)
 public class PcjExamplePiInt implements StartPoint {
 
     @Storage(PcjExamplePiInt.class)

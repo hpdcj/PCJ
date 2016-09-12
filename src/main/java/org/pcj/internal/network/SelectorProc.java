@@ -193,40 +193,44 @@ public class SelectorProc implements Runnable {
                     if (!key.isValid()) {
                         continue;
                     }
+                    
+                    int readyOps;
                     try {
-                        int readyOps = key.readyOps();
-
-                        if ((readyOps & SelectionKey.OP_ACCEPT) != 0) {
-                            ServerSocketChannel serverSocket = (ServerSocketChannel) key.channel();
-
-                            opAccept(serverSocket);
-                        }
-
-                        if ((readyOps & SelectionKey.OP_CONNECT) != 0) {
-                            SocketChannel socket = (SocketChannel) key.channel();
-
-                            opConnect(socket);
-                        }
-
-                        if ((readyOps & SelectionKey.OP_READ) != 0) {
-                            SocketChannel socket = (SocketChannel) key.channel();
-
-                            if (opRead(socket) == false) {
-                                key.cancel();
-                                socket.close();
-                            }
-                        }
-
-                        if ((readyOps & SelectionKey.OP_WRITE) != 0) {
-                            SocketChannel socket = (SocketChannel) key.channel();
-
-                            if (opWrite(socket) == false) {
-                                key.interestOps(SelectionKey.OP_READ);
-                            }
-                        }
+                        readyOps = key.readyOps();
                     } catch (CancelledKeyException ex) {
-                        LOGGER.log(Level.FINE, "Key is cancelled", ex);
+                        LOGGER.log(Level.FINE, "Key has been cancelled", ex);
+                        continue;
                     }
+                    
+                    if ((readyOps & SelectionKey.OP_ACCEPT) != 0) {
+                        ServerSocketChannel serverSocket = (ServerSocketChannel) key.channel();
+
+                        opAccept(serverSocket);
+                    }
+
+                    if ((readyOps & SelectionKey.OP_CONNECT) != 0) {
+                        SocketChannel socket = (SocketChannel) key.channel();
+
+                        opConnect(socket);
+                    }
+
+                    if ((readyOps & SelectionKey.OP_READ) != 0) {
+                        SocketChannel socket = (SocketChannel) key.channel();
+
+                        if (opRead(socket) == false) {
+                            key.cancel();
+                            socket.close();
+                        }
+                    }
+
+                    if ((readyOps & SelectionKey.OP_WRITE) != 0) {
+                        SocketChannel socket = (SocketChannel) key.channel();
+
+                        if (opWrite(socket) == false) {
+                            key.interestOps(SelectionKey.OP_READ);
+                        }
+                    }
+
                 }
             } catch (Exception ex) {
                 LOGGER.log(Level.SEVERE, "Exception in SelectorProc.", ex);
