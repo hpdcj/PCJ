@@ -9,20 +9,17 @@
 package org.pcj.internal.futures;
 
 import java.nio.channels.SocketChannel;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Queue;
-import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.pcj.PcjFuture;
 import org.pcj.PcjRuntimeException;
+import org.pcj.internal.Bitmask;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.message.Message;
-import org.pcj.internal.message.MessageValueBroadcastInform;
 import org.pcj.internal.message.MessageValueBroadcastResponse;
 
 /**
@@ -34,19 +31,18 @@ public class BroadcastState extends InternalFuture<Void> implements PcjFuture<Vo
     private final int groupId;
     private final int requestNum;
     private final int requesterThreadId;
-    private final Set<Integer> childrenSet;
     private final Queue<Exception> exceptions;
-
+    private final Bitmask physicalBarrierBitmask;
+    private final Bitmask physicalBarrierMaskBitmask;
     private Exception exception;
 
-    public BroadcastState(int groupId, int requestNum, int requesterThreadId, List<Integer> childrenNodes) {
+    public BroadcastState(int groupId, int requestNum, int requesterThreadId, Bitmask physicalBitmask) {
         this.groupId = groupId;
         this.requestNum = requestNum;
         this.requesterThreadId = requesterThreadId;
 
-        this.childrenSet = new HashSet<>(childrenNodes.size() + 1, 1.0f);
-        childrenSet.add(InternalPCJ.getNodeData().getPhysicalId());
-        childrenNodes.forEach(childrenSet::add);
+ physicalBarrierBitmask = new Bitmask(physicalBitmask.getSize());
+        physicalBarrierMaskBitmask = new Bitmask(physicalBitmask);
 
         this.exceptions = new ConcurrentLinkedDeque<>();
     }
@@ -96,29 +92,27 @@ public class BroadcastState extends InternalFuture<Void> implements PcjFuture<Vo
         return null;
     }
 
-    public synchronized boolean processPhysical(int physicalId) {
-        childrenSet.remove(physicalId);
+    
+    private void setPhysical(int physicalId) {
+        physicalBarrierBitmask.set(physicalId);
+    }
 
-        if (childrenSet.isEmpty()) {
+    private boolean isPhysicalSet() {
+        return physicalBarrierBitmask.isSet(physicalBarrierMaskBitmask);
+    }
+    
+    public synchronized boolean processPhysical(int physicalId) {
+        this.setPhysical(physicalId);
+        
+        if (isPhysicalSet()) {
             NodeData nodeData = InternalPCJ.getNodeData();
             InternalCommonGroup commonGroup = nodeData.getGroupById(groupId);
 
-            SocketChannel socket;
-            Message message;
+            int globalThreadId = commonGroup.getGlobalThreadId(requesterThreadId);
+            int requesterPhysicalId = nodeData.getPhysicalId(globalThreadId);
+            SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(requesterPhysicalId);
 
-            if (nodeData.getPhysicalId() == commonGroup.getGroupMasterNode()) {
-                int globalThreadId = commonGroup.getGlobalThreadId(requesterThreadId);
-                int requesterPhysicalId = nodeData.getPhysicalId(globalThreadId);
-                socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(requesterPhysicalId);
-
-                message = new MessageValueBroadcastResponse(groupId, requestNum, requesterThreadId, exceptions);
-            } else {
-                int parentId = commonGroup.getParentNode();
-                socket = nodeData.getSocketChannelByPhysicalId().get(parentId);
-
-                message = new MessageValueBroadcastInform(groupId, requestNum, requesterThreadId,
-                        nodeData.getPhysicalId(), exceptions);
-            }
+            Message message = new MessageValueBroadcastResponse(groupId, requestNum, requesterThreadId, exceptions);
 
             InternalPCJ.getNetworker().send(socket, message);
 

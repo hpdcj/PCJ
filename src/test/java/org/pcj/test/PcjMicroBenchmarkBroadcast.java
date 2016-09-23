@@ -58,6 +58,7 @@ public class PcjMicroBenchmarkBroadcast implements StartPoint {
             double time = System.nanoTime();
 
             for (int i = 0; i < ntimes; i++) {
+//                if (PCJ.myId() == i % PCJ.threadCount()) {
                 if (PCJ.myId() == 0) {
                     PCJ.broadcast(b, SharedEnum.a);
                 }

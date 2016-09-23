@@ -28,11 +28,13 @@ public class StorageExample implements StartPoint {
         x, avg;
     }
     int[] x; // Shared bo w Enum
+    final static double[] STATIC_TEST = new double[PCJ.threadCount()];
     double avg; // Shared bo w Enum
     float obiekt_nie_w_Enum_wiec_nie_Shared;
 
     @Override
     public void main() throws Throwable {
+        System.out.println("size of STATIC_TEST: " + STATIC_TEST.length);
         if (PCJ.myId() == 0) {
             x = new int[PCJ.threadCount()];
 //            PCJ.putLocal(SharedEnum.x, x);
@@ -48,11 +50,5 @@ public class StorageExample implements StartPoint {
         PCJ.waitFor(SharedEnum.avg);
 //        System.out.println(PCJ.myId() + ": avg = " + PCJ.<Double>getLocal(SharedEnum.avg));
         System.out.println(PCJ.myId() + ": avg = " + avg);
-    }
-
-    public static void main(String[] args) {
-        PCJ.deploy(StorageExample.class,
-                new NodesDescription(new String[]{"localhost", "localhost", "localhost"})
-        );
     }
 }

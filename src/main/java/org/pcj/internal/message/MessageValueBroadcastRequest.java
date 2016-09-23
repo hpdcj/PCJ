@@ -75,12 +75,10 @@ final public class MessageValueBroadcastRequest extends Message {
         NodeData nodeData = InternalPCJ.getNodeData();
         InternalCommonGroup group = nodeData.getGroupById(groupId);
 
-        List<Integer> children = group.getChildrenNodes();
-
         MessageValueBroadcastBytes message
                 = new MessageValueBroadcastBytes(groupId, requestNum, requesterThreadId, sharedEnumClassName, name, clonedData);
 
-        children.stream().map(nodeData.getSocketChannelByPhysicalId()::get)
+        group.getChildrenNodes().stream().map(nodeData.getSocketChannelByPhysicalId()::get)
                 .forEach(socket -> InternalPCJ.getNetworker().send(socket, message));
 
         BroadcastState broadcastState = group.getBroadcastState(requestNum, requesterThreadId);

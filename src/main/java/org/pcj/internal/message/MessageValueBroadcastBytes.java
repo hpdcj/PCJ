@@ -11,7 +11,10 @@ package org.pcj.internal.message;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayDeque;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.InternalStorages;
@@ -79,15 +82,14 @@ final public class MessageValueBroadcastBytes extends Message {
 
         List<Integer> children = group.getChildrenNodes();
 
-        MessageValueBroadcastBytes message
+        MessageValueBroadcastBytes messageBytes
                 = new MessageValueBroadcastBytes(groupId, requestNum, requesterThreadId,
                         sharedEnumClassName, name, clonedData);
 
         children.stream().map(nodeData.getSocketChannelByPhysicalId()::get)
-                .forEach(socket -> InternalPCJ.getNetworker().send(socket, message));
+                .forEach(socket -> InternalPCJ.getNetworker().send(socket, messageBytes));
 
-        BroadcastState broadcastState = group.getBroadcastState(requestNum, requesterThreadId);
-
+        Queue<Exception> exceptionsQueue = new LinkedList<>();
         int[] threadsId = group.getLocalThreadsId();
         for (int i = 0; i < threadsId.length; ++i) {
             int threadId = threadsId[i];
@@ -101,15 +103,15 @@ final public class MessageValueBroadcastBytes extends Message {
 
                 storage.put(sharedEnumClassName, name, newValue);
             } catch (Exception ex) {
-                broadcastState.addException(ex);
+                exceptionsQueue.add(ex);
             }
         }
 
-        if (broadcastState.processPhysical(nodeData.getPhysicalId())) {
-            int requesterPhysicalId = nodeData.getPhysicalId(group.getGlobalThreadId(requesterThreadId));
-            if (nodeData.getPhysicalId() != requesterPhysicalId) {
-                group.removeBroadcastState(requestNum, requesterThreadId);
-            }
-        }
+        int parentId = group.getGroupMasterNode();
+        SocketChannel masterNodeSocket = nodeData.getSocketChannelByPhysicalId().get(parentId);
+
+        MessageValueBroadcastInform messageInform = new MessageValueBroadcastInform(groupId, requestNum, requesterThreadId,
+                nodeData.getPhysicalId(), exceptionsQueue);
+        InternalPCJ.getNetworker().send(masterNodeSocket, messageInform);
     }
 }

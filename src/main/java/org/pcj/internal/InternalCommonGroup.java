@@ -240,7 +240,7 @@ public class InternalCommonGroup {
     final public BroadcastState getBroadcastState(int requestNum, int requesterThreadId) {
         List<Integer> key = Arrays.asList(requestNum, requesterThreadId);
         return broadcastStateMap.computeIfAbsent(key,
-                k -> new BroadcastState(this.groupId, requestNum, requesterThreadId, getChildrenNodes()));
+                k -> new BroadcastState(this.groupId, requestNum, requesterThreadId, physicalBitmask));
     }
 
     final public BroadcastState removeBroadcastState(int requestNum, int requesterThreadId) {
