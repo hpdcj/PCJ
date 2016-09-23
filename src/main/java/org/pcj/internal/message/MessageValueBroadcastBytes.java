@@ -107,11 +107,12 @@ final public class MessageValueBroadcastBytes extends Message {
             }
         }
 
-        int parentId = group.getGroupMasterNode();
-        SocketChannel masterNodeSocket = nodeData.getSocketChannelByPhysicalId().get(parentId);
+        int globalThreadId = group.getGlobalThreadId(requesterThreadId);
+        int requesterPhysicalId = nodeData.getPhysicalId(globalThreadId);
+        SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(requesterPhysicalId);
 
         MessageValueBroadcastInform messageInform = new MessageValueBroadcastInform(groupId, requestNum, requesterThreadId,
                 nodeData.getPhysicalId(), exceptionsQueue);
-        InternalPCJ.getNetworker().send(masterNodeSocket, messageInform);
+        InternalPCJ.getNetworker().send(socket, messageInform);
     }
 }

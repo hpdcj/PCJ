@@ -83,9 +83,13 @@ final public class MessageValueBroadcastInform extends Message {
         }
 
         if (broadcastState.processPhysical(physicalId)) {
-            int requesterPhysicalId = nodeData.getPhysicalId(group.getGlobalThreadId(requesterThreadId));
-            if (nodeData.getPhysicalId() != requesterPhysicalId) {
-                group.removeBroadcastState(requestNum, requesterThreadId);
+            if (broadcastState.isExceptionOccurs() == false) {
+                broadcastState.signalDone();
+            } else {
+                RuntimeException ex = new RuntimeException("Exception while broadcasting value.");
+                broadcastState.getExceptions().forEach(ex::addSuppressed);
+
+                broadcastState.signalException(ex);
             }
         }
     }

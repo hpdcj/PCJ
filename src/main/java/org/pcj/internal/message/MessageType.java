@@ -186,12 +186,6 @@ public enum MessageType {
             return new MessageValueBroadcastInform();
         }
     },
-    VALUE_BROADCAST_RESPONSE((byte) 37) {
-        @Override
-        public MessageValueBroadcastResponse create() {
-            return new MessageValueBroadcastResponse();
-        }
-    },
     /**
      * @see MessageUnknown
      */

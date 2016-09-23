@@ -230,7 +230,7 @@ public class InternalCommonGroup {
 
     final public GroupBarrierState getBarrierState(int barrierRound) {
         return barrierStateMap.computeIfAbsent(barrierRound,
-                round -> new GroupBarrierState(groupId, round, localBitmask, physicalBitmask));
+                round -> new GroupBarrierState(localBitmask, physicalBitmask));
     }
 
     final public GroupBarrierState removeBarrierState(int barrierRound) {
@@ -240,7 +240,7 @@ public class InternalCommonGroup {
     final public BroadcastState getBroadcastState(int requestNum, int requesterThreadId) {
         List<Integer> key = Arrays.asList(requestNum, requesterThreadId);
         return broadcastStateMap.computeIfAbsent(key,
-                k -> new BroadcastState(this.groupId, requestNum, requesterThreadId, physicalBitmask));
+                k -> new BroadcastState(physicalBitmask));
     }
 
     final public BroadcastState removeBroadcastState(int requestNum, int requesterThreadId) {

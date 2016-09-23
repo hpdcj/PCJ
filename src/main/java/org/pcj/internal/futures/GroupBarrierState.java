@@ -20,17 +20,12 @@ import org.pcj.internal.Bitmask;
  */
 public class GroupBarrierState extends InternalFuture<Void> implements PcjFuture<Void> {
 
-    private final int groupId;
-    private final int barrierRound;
     private final Bitmask physicalBarrierBitmask;
     private final Bitmask physicalBarrierMaskBitmask;
     private final Bitmask localBarrierBitmask;
     private final Bitmask localBarrierMaskBitmask;
 
-    public GroupBarrierState(int groupId, int barrierRound, Bitmask localBitmask, Bitmask physicalBitmask) {
-        this.groupId = groupId;
-        this.barrierRound = barrierRound;
-
+    public GroupBarrierState(Bitmask localBitmask, Bitmask physicalBitmask) {
         physicalBarrierBitmask = new Bitmask(physicalBitmask.getSize());
         physicalBarrierMaskBitmask = new Bitmask(physicalBitmask);
 
