@@ -142,7 +142,6 @@ final public class NodeData {
                 .filter(groups -> name.equals(groups.getGroupName()))
                 .findFirst().orElse(null);
     }
-
     public ConcurrentMap<Integer, SocketChannel> getSocketChannelByPhysicalId() {
         return socketChannelByPhysicalId;
     }
@@ -155,8 +154,12 @@ final public class NodeData {
         return physicalIdByThreadId.get(globalThreadId);
     }
 
-    public ConcurrentMap<Integer, PcjThread> getPcjThreads() {
-        return pcjThreads;
+    public void putPcjThread(PcjThread pcjThread) {
+        pcjThreads.putIfAbsent(pcjThread.getThreadId(), pcjThread);
+    }
+
+    public PcjThread getPcjThread(int pcjThread) {
+        return pcjThreads.get(pcjThread);
     }
 
     public int getPhysicalId() {

@@ -71,7 +71,7 @@ final public class MessageValueGetRequest extends Message {
 
         NodeData nodeData = InternalPCJ.getNodeData();
         int globalThreadId = nodeData.getGroupById(groupId).getGlobalThreadId(threadId);
-        PcjThread pcjThread = nodeData.getPcjThreads().get(globalThreadId);
+        PcjThread pcjThread = nodeData.getPcjThread(globalThreadId);
         InternalStorages storage = (InternalStorages) pcjThread.getThreadData().getStorages();
 
         MessageValueGetResponse messageValueGetResponse;

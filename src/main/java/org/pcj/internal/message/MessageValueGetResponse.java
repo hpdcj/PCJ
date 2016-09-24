@@ -69,7 +69,7 @@ class MessageValueGetResponse extends Message {
         NodeData nodeData = InternalPCJ.getNodeData();
         int globalThreadId = nodeData.getGroupById(groupId).getGlobalThreadId(requesterThreadId);
 
-        PcjThread pcjThread = nodeData.getPcjThreads().get(globalThreadId);
+        PcjThread pcjThread = nodeData.getPcjThread(globalThreadId);
         InternalGroup group = (InternalGroup) pcjThread.getThreadData().getGroupById(groupId);
 
         GetVariable getVariable = group.removeGetVariable(requestNum);

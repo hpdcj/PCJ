@@ -45,7 +45,6 @@ public class InternalCommonGroup {
     private final Bitmask localBitmask;
     private final Bitmask physicalBitmask;
     private final ConcurrentMap<Integer, GroupBarrierState> barrierStateMap;
-    private final ConcurrentMap<List<Integer>, BroadcastState> broadcastStateMap;
     private final ConcurrentMap<List<Integer>, GroupJoinState> groupJoinStateMap;
     final private AtomicInteger threadsCounter;
     final private CommunicationTree physicalTree;
@@ -60,7 +59,6 @@ public class InternalCommonGroup {
         this.physicalBitmask = g.physicalBitmask;
         this.barrierStateMap = g.barrierStateMap;
 
-        this.broadcastStateMap = g.broadcastStateMap;
         this.groupJoinStateMap = g.groupJoinStateMap;
 
         this.localIds = g.localIds;
@@ -80,7 +78,6 @@ public class InternalCommonGroup {
         localBitmask = new Bitmask();
         physicalBitmask = new Bitmask();
         barrierStateMap = new ConcurrentHashMap<>();
-        broadcastStateMap = new ConcurrentHashMap<>();
         groupJoinStateMap = new ConcurrentHashMap<>();
 
         localIds = new ArrayList<>();
@@ -113,6 +110,10 @@ public class InternalCommonGroup {
 
     final public List<Integer> getChildrenNodes() {
         return physicalTree.getChildrenNodes();
+    }
+
+    final protected Bitmask getPhysicalBitmask() {
+        return new Bitmask(physicalBitmask);
     }
 
     protected int myId() {
@@ -235,16 +236,6 @@ public class InternalCommonGroup {
 
     final public GroupBarrierState removeBarrierState(int barrierRound) {
         return barrierStateMap.remove(barrierRound);
-    }
-
-    final public BroadcastState getBroadcastState(int requestNum, int requesterThreadId) {
-        List<Integer> key = Arrays.asList(requestNum, requesterThreadId);
-        return broadcastStateMap.computeIfAbsent(key,
-                k -> new BroadcastState(physicalBitmask));
-    }
-
-    final public BroadcastState removeBroadcastState(int requestNum, int requesterThreadId) {
-        return broadcastStateMap.remove(Arrays.asList(requestNum, requesterThreadId));
     }
 
     public GroupJoinState getGroupJoinState(int requestNum, int threadId, List<Integer> childrenNodes) {

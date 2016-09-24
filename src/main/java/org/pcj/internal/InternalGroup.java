@@ -9,6 +9,7 @@
 package org.pcj.internal;
 
 import java.nio.channels.SocketChannel;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -37,6 +38,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     private final AtomicInteger putVariableCounter;
     private final ConcurrentMap<Integer, PutVariable> putVariableMap;
     private final AtomicInteger broadcastCounter;
+    private final ConcurrentMap<Integer, BroadcastState> broadcastStateMap;
     private final ConcurrentMap<Integer, PeerBarrierState> peerBarrierStateMap;
 
     public InternalGroup(int threadId, InternalCommonGroup internalGroup) {
@@ -53,6 +55,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         putVariableMap = new ConcurrentHashMap<>();
 
         broadcastCounter = new AtomicInteger(0);
+        broadcastStateMap = new ConcurrentHashMap<>();
 
         peerBarrierStateMap = new ConcurrentHashMap<>();
     }
@@ -140,7 +143,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     @Override
     public <T> PcjFuture<Void> asyncBroadcast(T newValue, Enum<?> variable) {
         int requestNum = broadcastCounter.incrementAndGet();
-        BroadcastState broadcastState = this.getBroadcastState(requestNum, myThreadId);
+        BroadcastState broadcastState = getBroadcastState(requestNum);
 
         int physicalMasterId = super.getGroupMasterNode();
         SocketChannel masterSocket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalMasterId);
@@ -151,5 +154,15 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         InternalPCJ.getNetworker().send(masterSocket, message);
 
         return broadcastState;
+    }
+    
+    
+    final public BroadcastState getBroadcastState(int requestNum) {
+        return broadcastStateMap.computeIfAbsent(requestNum, 
+                key -> new BroadcastState(super.getPhysicalBitmask()));
+    }
+    
+    public BroadcastState removeBroadcastState(int requestNum) {
+        return broadcastStateMap.remove(requestNum);
     }
 }

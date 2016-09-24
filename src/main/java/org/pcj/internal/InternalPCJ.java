@@ -129,7 +129,7 @@ public abstract class InternalPCJ {
 
             /* Preparing PcjThreads*/
             Set<PcjThread> pcjThreads = preparePcjThreads(startPointClass, currentJvm.getThreadIds());
-            pcjThreads.forEach(pcjThread -> nodeData.getPcjThreads().put(pcjThread.getThreadId(), pcjThread));
+            pcjThreads.forEach(pcjThread -> nodeData.putPcjThread(pcjThread));
 
             /* Starting PcjThreads*/
             pcjThreads.forEach(pcjThread -> pcjThread.start());

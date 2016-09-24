@@ -11,7 +11,7 @@ package org.pcj.internal.message;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.Queue;
-import org.pcj.internal.InternalCommonGroup;
+import org.pcj.internal.InternalGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.futures.BroadcastState;
@@ -69,9 +69,11 @@ final public class MessageValueBroadcastInform extends Message {
         physicalId = in.readInt();
 
         NodeData nodeData = InternalPCJ.getNodeData();
-        InternalCommonGroup group = nodeData.getGroupById(groupId);
+        
+        
+        InternalGroup group = nodeData.getPcjThread(requesterThreadId).getThreadData().getGroupById(groupId);
 
-        BroadcastState broadcastState = group.getBroadcastState(requestNum, requesterThreadId);
+        BroadcastState broadcastState = group.getBroadcastState(requestNum);
         boolean exceptionOccurs = in.readBoolean();
         try {
             if (exceptionOccurs) {

@@ -88,7 +88,7 @@ final public class MessageValueBroadcastRequest extends Message {
             int threadId = threadsId[i];
             try {
                 int globalThreadId = group.getGlobalThreadId(threadId);
-                PcjThread pcjThread = nodeData.getPcjThreads().get(globalThreadId);
+                PcjThread pcjThread = nodeData.getPcjThread(globalThreadId);
                 InternalStorages storage = (InternalStorages) pcjThread.getThreadData().getStorages();
 
                 clonedData.reset();
