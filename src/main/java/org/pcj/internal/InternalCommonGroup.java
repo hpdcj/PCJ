@@ -8,22 +8,14 @@
  */
 package org.pcj.internal;
 
-import java.nio.channels.SocketChannel;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import org.pcj.internal.futures.GroupBarrierState;
+import org.pcj.internal.futures.GroupJoinState;
+
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.pcj.internal.futures.BroadcastState;
-import org.pcj.internal.futures.GroupBarrierState;
-import org.pcj.internal.futures.GroupJoinState;
-import org.pcj.internal.message.Message;
-import org.pcj.internal.message.MessageGroupBarrierWaiting;
 
 /**
  * Internal (with common ClassLoader) representation of Group. It contains
@@ -214,24 +206,14 @@ public class InternalCommonGroup {
 
     final protected GroupBarrierState barrier(int threadId, int barrierRound) {
         GroupBarrierState barrierState = getBarrierState(barrierRound);
-        if (barrierState.processLocal(threadId)) {
-            NodeData nodeData = InternalPCJ.getNodeData();
-
-            int physicalId = nodeData.getPhysicalId();
-
-            int masterId = this.getGroupMasterNode();
-            SocketChannel socket = nodeData.getSocketChannelByPhysicalId().get(masterId);
-            Message message = new MessageGroupBarrierWaiting(groupId, barrierRound, physicalId);
-
-            InternalPCJ.getNetworker().send(socket, message);
-        }
+        barrierState.processLocal(threadId);
 
         return barrierState;
     }
 
     final public GroupBarrierState getBarrierState(int barrierRound) {
         return barrierStateMap.computeIfAbsent(barrierRound,
-                round -> new GroupBarrierState(localBitmask, physicalBitmask));
+                round -> new GroupBarrierState(groupId, round, localBitmask, getChildrenNodes()));
     }
 
     final public GroupBarrierState removeBarrierState(int barrierRound) {

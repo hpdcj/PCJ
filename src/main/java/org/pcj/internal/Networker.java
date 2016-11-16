@@ -8,28 +8,22 @@
  */
 package org.pcj.internal;
 
+import org.pcj.internal.message.Message;
+import org.pcj.internal.message.MessageType;
+import org.pcj.internal.network.*;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.pcj.internal.message.Message;
-import org.pcj.internal.message.MessageType;
-import org.pcj.internal.network.LoopbackMessageBytesStream;
-import org.pcj.internal.network.LoopbackSocketChannel;
-import org.pcj.internal.network.MessageBytesInputStream;
-import org.pcj.internal.network.MessageDataInputStream;
-import org.pcj.internal.network.SelectorProc;
 
 /**
  * This is intermediate class (between classes that want to send data (eg.
- * {@link org.pcj.internal.Worker}) and
  * {@link org.pcj.internal.network.SelectorProc} classes) for sending data
  * across network. It is used for binding address, connecting to hosts and
  * sending data.
@@ -43,18 +37,21 @@ final public class Networker {
     private final Thread selectorProcThread;
     private final ExecutorService workers;
 
-    protected Networker(int workerCount) {
-        LOGGER.log(Level.FINE, "Networker with {0,number,#} {0,choice,1#worker|1<workers}", workerCount);
-        this.workers = Executors.newFixedThreadPool(
-                workerCount,
+    protected Networker(int maxWorkerCount) {
+        LOGGER.log(Level.FINE, "Networker with {0,number,#} {0,choice,1#worker|1<workers}", maxWorkerCount);
+        Executors.newFixedThreadPool(1);
+        this.workers = new ThreadPoolExecutor(
+                maxWorkerCount, maxWorkerCount,
+                0L, TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<>(),
                 new ThreadFactory() {
-            private final AtomicInteger counter = new AtomicInteger(0);
+                    private final AtomicInteger counter = new AtomicInteger(0);
 
-            @Override
-            public Thread newThread(Runnable r) {
-                return new Thread(r, "Worker-" + counter.getAndIncrement());
-            }
-        });
+                    @Override
+                    public Thread newThread(Runnable r) {
+                        return new Thread(r, "Worker-" + counter.getAndIncrement());
+                    }
+                });
 
         this.selectorProc = new SelectorProc();
 
@@ -148,7 +145,7 @@ final public class Networker {
         workers.submit(new WorkerTask(socket, message, messageDataInputStream));
     }
 
-//    private void submitToWorker(SocketChannel socket, Message message, MessageDataInputStream messageDataInputStream) {
+    //    private void submitToWorker(SocketChannel socket, Message message, MessageDataInputStream messageDataInputStream) {
 //        workers.submit(() -> {
 //            try {
 //                message.execute(socket, messageDataInputStream);

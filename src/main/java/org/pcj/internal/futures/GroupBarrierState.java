@@ -1,33 +1,44 @@
-/* 
- * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
- * All rights reserved.
- *
- * Licensed under New BSD License (3-clause license).
- *
- * See the file "LICENSE" for the full license governing this code.
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
  */
 package org.pcj.internal.futures;
 
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import org.pcj.PcjFuture;
 import org.pcj.PcjRuntimeException;
 import org.pcj.internal.Bitmask;
+import org.pcj.internal.InternalCommonGroup;
+import org.pcj.internal.InternalPCJ;
+import org.pcj.internal.NodeData;
+import org.pcj.internal.message.Message;
+import org.pcj.internal.message.MessageGroupBarrierGo;
+import org.pcj.internal.message.MessageGroupBarrierWaiting;
+
+import java.nio.channels.SocketChannel;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  *
- * @author Marek Nowicki (faramir@mat.umk.pl)
+ * @author faramir
  */
 public class GroupBarrierState extends InternalFuture<Void> implements PcjFuture<Void> {
 
-    private final Bitmask physicalBarrierBitmask;
-    private final Bitmask physicalBarrierMaskBitmask;
+    private final int groupId;
+    private final int barrierRound;
+    private final Set<Integer> childrenSet;
     private final Bitmask localBarrierBitmask;
     private final Bitmask localBarrierMaskBitmask;
 
-    public GroupBarrierState(Bitmask localBitmask, Bitmask physicalBitmask) {
-        physicalBarrierBitmask = new Bitmask(physicalBitmask.getSize());
-        physicalBarrierMaskBitmask = new Bitmask(physicalBitmask);
+    public GroupBarrierState(int groupId, int barrierRound, Bitmask localBitmask, List<Integer> childrenNodes) {
+        this.groupId = groupId;
+        this.barrierRound = barrierRound;
+        this.childrenSet = ConcurrentHashMap.newKeySet(childrenNodes.size());
+        childrenNodes.forEach(childrenSet::add);
 
         this.localBarrierBitmask = new Bitmask(localBitmask.getSize());
         this.localBarrierMaskBitmask = new Bitmask(localBitmask);
@@ -72,20 +83,45 @@ public class GroupBarrierState extends InternalFuture<Void> implements PcjFuture
     }
 
     private void setPhysical(int physicalId) {
-        physicalBarrierBitmask.set(physicalId);
+        childrenSet.remove(physicalId);
     }
 
     private boolean isPhysicalSet() {
-        return physicalBarrierBitmask.isSet(physicalBarrierMaskBitmask);
+        return childrenSet.isEmpty();
     }
 
-    public synchronized boolean processPhysical(int physicalId) {
+    public synchronized void processPhysical(int physicalId) {
         this.setPhysical(physicalId);
-        return isPhysicalSet();
+
+        process();
     }
 
-    public synchronized boolean processLocal(int threadId) {
+    public synchronized void processLocal(int threadId) {
         this.setLocal(threadId);
-        return isLocalSet();
+
+        process();
+    }
+
+    private synchronized void process() {
+        if (this.isLocalSet() && this.isPhysicalSet()) {
+            Message message;
+            SocketChannel socket;
+            NodeData nodeData = InternalPCJ.getNodeData();
+            InternalCommonGroup group = nodeData.getGroupById(groupId);
+
+            int physicalId = nodeData.getPhysicalId();
+            if (physicalId == group.getGroupMasterNode()) {
+                message = new MessageGroupBarrierGo(groupId, barrierRound);
+
+                socket = nodeData.getSocketChannelByPhysicalId().get(physicalId);
+            } else {
+                int parentId = group.getParentNode();
+                socket = nodeData.getSocketChannelByPhysicalId().get(parentId);
+
+                message = new MessageGroupBarrierWaiting(groupId, barrierRound, physicalId);
+            }
+
+            InternalPCJ.getNetworker().send(socket, message);
+        }
     }
 }

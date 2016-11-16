@@ -8,25 +8,6 @@
  */
 package org.pcj.internal;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.nio.channels.SocketChannel;
-import java.util.ArrayDeque;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Objects;
-import java.util.Queue;
-import java.util.Set;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import org.pcj.NodesDescription;
 import org.pcj.StartPoint;
 import org.pcj.internal.futures.GroupJoinQuery;
@@ -36,6 +17,20 @@ import org.pcj.internal.message.MessageGroupJoinQuery;
 import org.pcj.internal.message.MessageGroupJoinRequest;
 import org.pcj.internal.message.MessageHello;
 import org.pcj.internal.network.LoopbackSocketChannel;
+
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.nio.channels.SocketChannel;
+import java.util.*;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Internal class for external PCJ class.
@@ -63,7 +58,7 @@ public abstract class InternalPCJ {
     }
 
     protected static void start(Class<? extends StartPoint> startPoint,
-            NodesDescription nodesFile) {
+                                NodesDescription nodesFile) {
         NodeInfo node0 = nodesFile.getNode0();
         NodeInfo currentJvm = nodesFile.getCurrentJvm();
         int allNodesThreadCount = nodesFile.getAllNodesThreadCount();
@@ -71,7 +66,7 @@ public abstract class InternalPCJ {
     }
 
     protected static void start(Class<? extends StartPoint> startPointClass,
-            NodeInfo node0, NodeInfo currentJvm, int allNodesThreadCount) {
+                                NodeInfo node0, NodeInfo currentJvm, int allNodesThreadCount) {
         if (currentJvm == null) {
             throw new IllegalArgumentException("There is no entry for PCJ threads for current JVM");
         }
@@ -119,11 +114,11 @@ public abstract class InternalPCJ {
             if (isCurrentJvmNode0) {
                 nanoTime = System.nanoTime();
                 LOGGER.log(Level.INFO, "Starting {0} with {1,number,#}"
-                        + " {1,choice,1#thread|1<threads}"
-                        + " (on {2,number,#} {2,choice,1#node|1<nodes})...",
+                                + " {1,choice,1#thread|1<threads}"
+                                + " (on {2,number,#} {2,choice,1#node|1<nodes})...",
                         new Object[]{startPointClass.getName(),
-                            nodeData.getGroupById(InternalCommonGroup.GLOBAL_GROUP_ID).threadCount(),
-                            nodeData.getTotalNodeCount(),});
+                                nodeData.getGroupById(InternalCommonGroup.GLOBAL_GROUP_ID).threadCount(),
+                                nodeData.getTotalNodeCount(),});
             }
 
 
@@ -144,14 +139,14 @@ public abstract class InternalPCJ {
                 long s = (timer % 60);
 
                 LOGGER.log(Level.INFO, "Completed {0}"
-                        + " with {1,number,#} {1,choice,1#thread|1<threads}"
-                        + " (on {2,number,#} {2,choice,1#node|1<nodes})"
-                        + " after {3,number,#}h {4,number,#}m {5,number,#}s.",
+                                + " with {1,number,#} {1,choice,1#thread|1<threads}"
+                                + " (on {2,number,#} {2,choice,1#node|1<nodes})"
+                                + " after {3,number,#}h {4,number,#}m {5,number,#}s.",
                         new Object[]{
-                            startPointClass.getName(),
-                            nodeData.getGroupById(InternalCommonGroup.GLOBAL_GROUP_ID).threadCount(),
-                            nodeData.getTotalNodeCount(),
-                            h, m, s
+                                startPointClass.getName(),
+                                nodeData.getGroupById(InternalCommonGroup.GLOBAL_GROUP_ID).threadCount(),
+                                nodeData.getTotalNodeCount(),
+                                h, m, s
                         });
             }
 
@@ -178,7 +173,7 @@ public abstract class InternalPCJ {
     private static void waitForPcjThreadsComplete(Set<PcjThread> pcjThreads) {
         while (pcjThreads.isEmpty() == false) {
             try {
-                for (Iterator<PcjThread> it = pcjThreads.iterator(); it.hasNext();) {
+                for (Iterator<PcjThread> it = pcjThreads.iterator(); it.hasNext(); ) {
                     PcjThread pcjThread = it.next();
                     pcjThread.join(100);
                     if (pcjThread.isAlive() == false) {
@@ -223,7 +218,7 @@ public abstract class InternalPCJ {
 
     private static void bindOnAllNetworkInterfaces(Queue<InetAddress> inetAddresses, int bindingPort) throws UncheckedIOException {
         for (int attempt = 0; attempt <= Configuration.RETRY_COUNT; ++attempt) {
-            for (Iterator<InetAddress> it = inetAddresses.iterator(); it.hasNext();) {
+            for (Iterator<InetAddress> it = inetAddresses.iterator(); it.hasNext(); ) {
                 InetAddress inetAddress = it.next();
 
                 try {
@@ -234,10 +229,10 @@ public abstract class InternalPCJ {
                         LOGGER.log(Level.WARNING,
                                 "({0,number,#} attempt of {1,number,#}) Binding on port {2,number,#} failed: {3}. Retrying.",
                                 new Object[]{
-                                    attempt + 1,
-                                    Configuration.RETRY_COUNT + 1,
-                                    bindingPort,
-                                    ex.getMessage()});
+                                        attempt + 1,
+                                        Configuration.RETRY_COUNT + 1,
+                                        bindingPort,
+                                        ex.getMessage()});
                     } else {
                         throw new UncheckedIOException(String.format("Binding on port %s failed!", bindingPort), ex);
                     }
@@ -289,7 +284,7 @@ public abstract class InternalPCJ {
                         LOGGER.log(Level.WARNING,
                                 "({0,number,#} attempt of {1,number,#}) Connecting to node0 ({2}:{3,number,#}) failed: {4}. Retrying.",
                                 new Object[]{attempt + 1, Configuration.RETRY_COUNT + 1,
-                                    node0.getHostname(), node0.getPort(), ex.getMessage()});
+                                        node0.getHostname(), node0.getPort(), ex.getMessage()});
                         try {
                             Thread.sleep(Configuration.RETRY_DELAY * 1000 + (int) (Math.random() * 1000));
                         } catch (InterruptedException e) {
@@ -391,7 +386,7 @@ public abstract class InternalPCJ {
 
         MessageGroupJoinRequest message
                 = new MessageGroupJoinRequest(requestNum, groupName, commonGroup.getGroupId(),
-                        nodeData.getPhysicalId(), globalThreadId);
+                nodeData.getPhysicalId(), globalThreadId);
 
         SocketChannel masterSocketChannel = nodeData.getSocketChannelByPhysicalId().get(commonGroup.getGroupMasterNode());
 

@@ -8,6 +8,9 @@
  */
 package org.pcj.internal;
 
+import org.pcj.PcjRuntimeException;
+import org.pcj.Storage;
+
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
@@ -22,11 +25,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import org.pcj.PcjRuntimeException;
-import org.pcj.Storage;
 
 /**
  * External class with methods do handle shared variables.
@@ -181,11 +180,9 @@ public class InternalStorages {
     /**
      * Returns variable from Storages
      *
-     * @param name    name of shared variable
-     * @param indices (optional) indices into the array
-     *
+     * @param variable name of shared variable
+     * @param indices  (optional) indices into the array
      * @return value of variable[indices] or variable if indices omitted
-     *
      * @throws ClassCastException             there is more indices than variable dimension
      * @throws ArrayIndexOutOfBoundsException one of indices is out of bound
      */
@@ -238,10 +235,9 @@ public class InternalStorages {
      * Puts new value of variable to InternalStorages into the array, or as variable
      * value if indices omitted
      *
-     * @param name     name of shared variable
-     * @param newValue new value of variable
+     * @param variable name of shared variable
+     * @param value    new value of variable
      * @param indices  (optional) indices into the array
-     *
      * @throws ClassCastException             there is more indices than variable dimension
      *                                        or value cannot be assigned to the variable
      * @throws ArrayIndexOutOfBoundsException one of indices is out of bound
@@ -396,8 +392,6 @@ public class InternalStorages {
      *
      * @param variable name of shared variable
      * @param count    number of modifications. If 0 - the method exits immediately.
-     *
-     *
      */
     final public int waitFor(Enum<?> variable, int count) {
         return waitFor0(getParent(variable), variable.name(), count);
