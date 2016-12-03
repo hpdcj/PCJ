@@ -99,10 +99,10 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
 
         @Override
         public void write(int b) {
-            currentByteBuffer.put((byte) b);
             if (currentByteBuffer.hasRemaining() == false) {
                 flush();
             }
+            currentByteBuffer.put((byte) b);
         }
 
         @Override
@@ -114,9 +114,7 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
         public void write(byte[] b, int off, int len) {
             int remaining = currentByteBuffer.remaining();
             while (remaining < len) {
-                for (int i = 0; i < remaining; ++i) {
-                    currentByteBuffer.put(b[off + i]);
-                }
+                currentByteBuffer.put(b, off, remaining);
                 flush();
                 len -= remaining;
                 off += remaining;
@@ -124,9 +122,6 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
             }
             for (int i = 0; i < len; ++i) {
                 currentByteBuffer.put(b[off + i]);
-            }
-            if (currentByteBuffer.hasRemaining() == false) {
-                flush();
             }
         }
     }
@@ -174,8 +169,8 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
         }
 
         @Override
-        public int read(byte[] b, int off, int len) {
-            if (len == 0) {
+        public int read(byte[] b, int offset, int length) {
+            if (length == 0) {
                 return 0;
             }
 
@@ -196,12 +191,12 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
                     queue.poll();
                 } else {
                     int remaining = byteBuffer.remaining();
-                    int l = Math.min(remaining, len - i);
-                    for (int j = 0; j < l; ++j) {
-                        b[off + i++] = byteBuffer.get();
-                    }
-                    if (i == len) {
-                        return len;
+                    int len = Math.min(remaining, length - i);
+                    byteBuffer.get(b, offset, len);
+                    i += len;
+                    offset += len;
+                    if (i == length) {
+                        return length;
                     }
                 }
             }
