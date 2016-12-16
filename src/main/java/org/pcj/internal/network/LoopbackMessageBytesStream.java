@@ -191,14 +191,17 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
                         throw new IllegalStateException("Stream not closed, but no more data available.");
                     }
                 } else {
-                    int remaining = byteBuffer.remaining();
-                    int len = Math.min(remaining, length - i);
+                    int len = Math.min(byteBuffer.remaining(), length - i);
+
                     byteBuffer.get(b, offset, len);
+
                     i += len;
                     offset += len;
+
                     if (byteBuffer.hasRemaining() == false) {
                         queue.poll();
                     }
+
                     if (i == length) {
                         return length;
                     }

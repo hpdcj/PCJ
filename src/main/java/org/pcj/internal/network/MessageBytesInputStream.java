@@ -18,18 +18,18 @@ import java.util.Queue;
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 public class MessageBytesInputStream {
-
+    
     private static final int HEADER_SIZE = Integer.BYTES;
     private static final int LAST_CHUNK_BIT = (int) (1 << (Integer.SIZE - 1));
     private final ByteBuffer header;
     private MessageInputStream messageInputStream;
     private ByteBuffer currentByteBuffer;
-
+    
     public MessageBytesInputStream() {
         this.header = ByteBuffer.allocate(HEADER_SIZE);
         reset();
     }
-
+    
     public void offerNextBytes(ByteBuffer byteBuffer) {
         while (byteBuffer.hasRemaining()) {
             if (currentByteBuffer == null) {
@@ -39,26 +39,33 @@ public class MessageBytesInputStream {
                 if (header.hasRemaining() == false) {
                     int lengthWithMarker = header.getInt(0);
                     int length = lengthWithMarker & ~LAST_CHUNK_BIT;
-
+                    
                     header.clear();
-
+                    
                     if ((lengthWithMarker & LAST_CHUNK_BIT) != 0) {
                         messageInputStream.close();
                         if (length == 0) {
                             return;
                         }
                     }
-
+                    
                     currentByteBuffer = ByteBuffer.allocate(length);
                 }
             } else {
-                while (currentByteBuffer.hasRemaining() && byteBuffer.hasRemaining()) {
-                    currentByteBuffer.put(byteBuffer.get());
-                }
-
+//                while (currentByteBuffer.hasRemaining() && byteBuffer.hasRemaining()) {
+//                    currentByteBuffer.put(byteBuffer.get());
+//                }
+                
+                int remaining = Math.min(currentByteBuffer.remaining(), byteBuffer.remaining());
+                ByteBuffer sliceBuffer = byteBuffer.slice();
+                sliceBuffer.limit(remaining);
+                currentByteBuffer.put(sliceBuffer);
+                byteBuffer.position(byteBuffer.position() + remaining);
+                
                 if (currentByteBuffer.hasRemaining() == false) {
                     currentByteBuffer.flip();
                     messageInputStream.offerByteBuffer(currentByteBuffer);
+                    
                     currentByteBuffer = null;
                     if (messageInputStream.isClosed()) {
                         return;
@@ -67,43 +74,43 @@ public class MessageBytesInputStream {
             }
         }
     }
-
+    
     public boolean isClosed() {
         return messageInputStream.isClosed() && currentByteBuffer == null;
     }
-
+    
     public MessageDataInputStream getMessageDataInputStream() {
         return new MessageDataInputStream(messageInputStream);
     }
-
+    
     final public void reset() {
         currentByteBuffer = null;
         messageInputStream = new MessageInputStream();
     }
-
+    
     private static class MessageInputStream extends InputStream {
-
+        
         private final Queue<ByteBuffer> queue;
         volatile private boolean closed;
-
+        
         public MessageInputStream() {
             this.queue = new LinkedList<>();
             this.closed = false;
         }
-
+        
         private boolean offerByteBuffer(ByteBuffer byteBuffer) {
             return queue.offer(byteBuffer);
         }
-
+        
         @Override
         public void close() {
             closed = true;
         }
-
+        
         public boolean isClosed() {
             return closed;
         }
-
+        
         @Override
         public int read() {
             while (true) {
@@ -121,18 +128,18 @@ public class MessageBytesInputStream {
                 }
             }
         }
-
+        
         @Override
         public int read(byte[] b) {
             return read(b, 0, b.length);
         }
-
+        
         @Override
-        public int read(byte[] b, int off, int len) {
-            if (len == 0) {
+        public int read(byte[] b, int offset, int length) {
+            if (length == 0) {
                 return 0;
             }
-
+            
             int i = 0;
             while (true) {
                 ByteBuffer byteBuffer = queue.peek();
@@ -146,14 +153,20 @@ public class MessageBytesInputStream {
                     } else {
                         throw new IllegalStateException("Stream not closed, but no more data available.");
                     }
-                } else if (byteBuffer.hasRemaining() == false) {
-                    queue.poll();
                 } else {
-                    while (byteBuffer.hasRemaining()) {
-                        b[off + i] = byteBuffer.get();
-                        if (++i == len) {
-                            return len;
-                        }
+                    int len = Math.min(byteBuffer.remaining(), length - i);
+                    
+                    byteBuffer.get(b, offset, len);
+                 
+                    i += len;
+                    offset += len;
+                    
+                    if (byteBuffer.hasRemaining() == false) {
+                        queue.poll();
+                    }
+                    
+                    if (i == length) {
+                        return length;
                     }
                 }
             }

@@ -126,10 +126,11 @@ public class MessageBytesOutputStream implements AutoCloseable {
 
         @Override
         public void write(int b) {
-            currentByteBuffer.put((byte) b);
             if (currentByteBuffer.hasRemaining() == false) {
                 flush();
             }
+            currentByteBuffer.put((byte) b);
+
         }
 
         @Override
@@ -139,9 +140,15 @@ public class MessageBytesOutputStream implements AutoCloseable {
 
         @Override
         public void write(byte[] b, int off, int len) {
-            for (int i = 0; i < len; i++) {
-                write(b[off + i]);
+             int remaining = currentByteBuffer.remaining();
+            while (remaining < len) {
+                currentByteBuffer.put(b, off, remaining);
+                len -= remaining;
+                off += remaining;
+//                flush(Math.max(chunkSize, len));
+                flush();
             }
+            currentByteBuffer.put(b, off, len);
         }
     }
 }
