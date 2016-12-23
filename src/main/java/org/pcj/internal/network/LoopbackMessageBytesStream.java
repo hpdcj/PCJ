@@ -177,32 +177,32 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
                 return 0;
             }
 
-            int i = 0;
+            int bytesRead = 0;
             while (true) {
                 ByteBuffer byteBuffer = queue.peek();
                 if (byteBuffer == null) {
                     if (closed) {
-                        if (i == 0) {
+                        if (bytesRead == 0) {
                             return -1;
                         } else {
-                            return i;
+                            return bytesRead;
                         }
                     } else {
                         throw new IllegalStateException("Stream not closed, but no more data available.");
                     }
                 } else {
-                    int len = Math.min(byteBuffer.remaining(), length - i);
+                    int len = Math.min(byteBuffer.remaining(), length - bytesRead);
 
                     byteBuffer.get(b, offset, len);
 
-                    i += len;
+                    bytesRead += len;
                     offset += len;
 
                     if (byteBuffer.hasRemaining() == false) {
                         queue.poll();
                     }
 
-                    if (i == length) {
+                    if (bytesRead == length) {
                         return length;
                     }
                 }

@@ -1,3 +1,5 @@
+import org.ajoberstar.grgit.Grgit
+
 defaultTasks 'info'
 
 buildscript {
@@ -16,7 +18,7 @@ apply plugin: 'eclipse'
 ext.versionNumber = "5.0.0"
 ext.buildNumber = "SNAPSHOT"
 try {
-    ext.repoId = org.ajoberstar.grgit.Grgit.open(project.file('.')).head().abbreviatedId;
+    ext.repoId = Grgit.open(project.file('.')).head().abbreviatedId;
 } catch (Exception e){
     ext.repoId = "unknown"    
 }

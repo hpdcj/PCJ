@@ -140,7 +140,7 @@ public class MessageBytesOutputStream implements AutoCloseable {
 
         @Override
         public void write(byte[] b, int off, int len) {
-             int remaining = currentByteBuffer.remaining();
+            int remaining = currentByteBuffer.remaining();
             while (remaining < len) {
                 currentByteBuffer.put(b, off, remaining);
                 len -= remaining;
