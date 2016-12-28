@@ -100,7 +100,7 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
         }
 
         public boolean isClosed() {
-            return closed;
+            return currentByteBuffer == null && queue.isEmpty();
         }
 
         @Override

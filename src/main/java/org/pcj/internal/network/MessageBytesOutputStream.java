@@ -76,21 +76,22 @@ public class MessageBytesOutputStream implements AutoCloseable {
         private static final int LAST_CHUNK_BIT = (int) (1 << (Integer.SIZE - 1));
         private final int chunkSize;
         private final Queue<ByteBuffer> queue;
+        volatile private boolean closed;
         volatile private ByteBuffer currentByteBuffer;
 
         public MessageOutputStream(int chunkSize) {
             this.chunkSize = chunkSize;
             this.queue = new ConcurrentLinkedQueue<>();
 
-            allocateBuffer();
+            allocateBuffer(chunkSize);
         }
 
-        private void allocateBuffer() {
-            currentByteBuffer = ByteBuffer.allocate(chunkSize);
+        private void allocateBuffer(int size) {
+            currentByteBuffer = ByteBuffer.allocate(size);
             currentByteBuffer.position(HEADER_SIZE);
         }
 
-        private void flush(boolean closed) {
+        private void flush(int size) {
             int length = (currentByteBuffer.position() - HEADER_SIZE);
             if (closed) {
                 length = (length | LAST_CHUNK_BIT);
@@ -98,17 +99,21 @@ public class MessageBytesOutputStream implements AutoCloseable {
             currentByteBuffer.putInt(0, length);
             currentByteBuffer.flip();
             queue.offer(currentByteBuffer);
+
+            if (size > 0) {
+                allocateBuffer(size);
+            }
         }
 
         @Override
         public void flush() {
-            flush(false);
-            allocateBuffer();
+            flush(chunkSize);
         }
 
         @Override
         public void close() throws IOException {
-            flush(true);
+            closed = true;
+            flush(0);
             currentByteBuffer = null;
         }
 
@@ -145,8 +150,10 @@ public class MessageBytesOutputStream implements AutoCloseable {
                 currentByteBuffer.put(b, off, remaining);
                 len -= remaining;
                 off += remaining;
-//                flush(Math.max(chunkSize, len));
-                flush();
+                flush(Math.max(chunkSize, len));
+//                flush(chunkSize);
+                
+                remaining = currentByteBuffer.remaining();
             }
             currentByteBuffer.put(b, off, len);
         }

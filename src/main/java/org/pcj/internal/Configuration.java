@@ -39,7 +39,7 @@ final public class Configuration {
      */
     final public static int DEFAULT_PORT;
     /**
-     * pcj.chunksize (int) default: 1408
+     * pcj.chunksize (int) default: 1024*8
      */
     final public static int CHUNK_SIZE;
     /**
