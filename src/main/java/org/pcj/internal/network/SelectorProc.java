@@ -133,14 +133,10 @@ public class SelectorProc implements Runnable {
         return socket;
     }
 
-    public void writeMessage(SocketChannel socket, Message message) throws IOException {
+    public void writeMessage(SocketChannel socket, MessageBytesOutputStream objectBytes) throws IOException {
         Queue<MessageBytesOutputStream> queue = writeMap.get(socket);
-
-        try (MessageBytesOutputStream objectBytes = new MessageBytesOutputStream(message)) {
-            queue.add(objectBytes);
-            changeInterestOps(socket, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-            objectBytes.writeMessage();
-        }
+        queue.add(objectBytes);
+        changeInterestOps(socket, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
     }
 
     public void closeAllSockets() throws IOException {
@@ -193,7 +189,7 @@ public class SelectorProc implements Runnable {
                     if (!key.isValid()) {
                         continue;
                     }
-                    
+
                     int readyOps;
                     try {
                         readyOps = key.readyOps();
@@ -201,7 +197,7 @@ public class SelectorProc implements Runnable {
                         LOGGER.log(Level.FINE, "Key has been cancelled", ex);
                         continue;
                     }
-                    
+
                     if ((readyOps & SelectionKey.OP_ACCEPT) != 0) {
                         ServerSocketChannel serverSocket = (ServerSocketChannel) key.channel();
 
@@ -311,19 +307,17 @@ public class SelectorProc implements Runnable {
 
         while (!queue.isEmpty()) {
             MessageBytesOutputStream messageBytes = queue.peek();
-            ByteBuffer byteBuffer = messageBytes.getNextBytes();
-            if (byteBuffer != null) {
-                if (socket.isOpen()) {
-                    socket.write(byteBuffer);
-                    return true;
-                } else {
-                    return false;
+            ByteBuffer[] byteBuffersArray = messageBytes.getByteBuffersArray();
+            if (socket.isOpen()) {
+                socket.write(byteBuffersArray);
+
+                if (byteBuffersArray[byteBuffersArray.length - 1].hasRemaining() == false) {
+                    queue.poll();
                 }
-            }
-            if (messageBytes.isClosed() == false) {
+
                 return true;
             } else {
-                queue.poll();
+                return false;
             }
         }
 

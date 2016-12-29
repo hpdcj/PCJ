@@ -25,6 +25,7 @@ public class MessageBytesOutputStream implements AutoCloseable {
     private final Message message;
     private final MessageOutputStream messageOutputStream;
     private final MessageDataOutputStream messageDataOutputStream;
+    private ByteBuffer[] byteBuffersArray;
 
     public MessageBytesOutputStream(Message message) throws IOException {
         this(message, Configuration.CHUNK_SIZE);
@@ -54,22 +55,13 @@ public class MessageBytesOutputStream implements AutoCloseable {
     @Override
     public void close() throws IOException {
         messageOutputStream.close();
+        byteBuffersArray = messageOutputStream.queue.stream().toArray(ByteBuffer[]::new);
     }
 
-    public ByteBuffer getNextBytes() {
-        while (true) {
-            ByteBuffer bb = messageOutputStream.peekByteBuffer();
-            if (bb == null) {
-                return null;
-            }
-            if (bb.hasRemaining()) {
-                return bb;
-            } else {
-                messageOutputStream.pollByteBuffer();
-            }
-        }
+    public ByteBuffer[] getByteBuffersArray() {
+        return byteBuffersArray;
     }
-
+    
     private static class MessageOutputStream extends OutputStream {
 
         private static final int HEADER_SIZE = Integer.BYTES;
@@ -83,16 +75,15 @@ public class MessageBytesOutputStream implements AutoCloseable {
             this.chunkSize = chunkSize;
             this.queue = new ConcurrentLinkedQueue<>();
 
-            allocateBuffer();
+            allocateBuffer(chunkSize);
         }
 
-        private void allocateBuffer() {
-            currentByteBuffer = ByteBuffer.allocate(chunkSize);
+        private void allocateBuffer(int size) {
+            currentByteBuffer = ByteBuffer.allocate(size);
             currentByteBuffer.position(HEADER_SIZE);
         }
 
-        @Override
-        public void flush() {
+        private void flush(int size) {
             int length = (currentByteBuffer.position() - HEADER_SIZE);
             if (closed) {
                 length = (length | LAST_CHUNK_BIT);
@@ -101,13 +92,20 @@ public class MessageBytesOutputStream implements AutoCloseable {
             currentByteBuffer.flip();
             queue.offer(currentByteBuffer);
 
-            allocateBuffer();
+            if (size > 0) {
+                allocateBuffer(size);
+            }
+        }
+
+        @Override
+        public void flush() {
+            flush(chunkSize);
         }
 
         @Override
         public void close() throws IOException {
             closed = true;
-            flush();
+            flush(0);
             currentByteBuffer = null;
         }
 
@@ -144,8 +142,8 @@ public class MessageBytesOutputStream implements AutoCloseable {
                 currentByteBuffer.put(b, off, remaining);
                 len -= remaining;
                 off += remaining;
-                flush();
-
+                flush(Math.max(chunkSize, len));
+                
                 remaining = currentByteBuffer.remaining();
             }
             currentByteBuffer.put(b, off, len);

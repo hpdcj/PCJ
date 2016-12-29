@@ -73,22 +73,28 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
             currentByteBuffer = ByteBuffer.allocate(size);
         }
 
-        @Override
-        public void flush() {
+        private void flush(int size) {
             if (currentByteBuffer.position() <= 0) {
                 return;
             }
             currentByteBuffer.flip();
             queue.offer(currentByteBuffer);
 
-            allocateBuffer(chunkSize);
+            if (size > 0) {
+                allocateBuffer(size);
+            }
+        }
+
+        @Override
+        public void flush() {
+            flush(chunkSize);
         }
 
         @Override
         public void close() throws IOException {
             closed = true;
             if (currentByteBuffer.position() > 0) {
-                flush();
+                flush(0);
             }
             currentByteBuffer = null;
         }
@@ -113,13 +119,11 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
         @Override
         public void write(byte[] b, int off, int len) {
             int remaining = currentByteBuffer.remaining();
-            while (remaining < len) {
+            if (remaining < len) {
                 currentByteBuffer.put(b, off, remaining);
                 len -= remaining;
                 off += remaining;
-                flush();
-
-                remaining = currentByteBuffer.remaining();
+                flush(Math.max(chunkSize, len));
             }
             currentByteBuffer.put(b, off, len);
         }

@@ -45,13 +45,13 @@ final public class Networker {
                 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<>(),
                 new ThreadFactory() {
-                    private final AtomicInteger counter = new AtomicInteger(0);
+            private final AtomicInteger counter = new AtomicInteger(0);
 
-                    @Override
-                    public Thread newThread(Runnable r) {
-                        return new Thread(r, "Worker-" + counter.getAndIncrement());
-                    }
-                });
+            @Override
+            public Thread newThread(Runnable r) {
+                return new Thread(r, "Worker-" + counter.getAndIncrement());
+            }
+        });
 
         this.selectorProc = new SelectorProc();
 
@@ -113,14 +113,16 @@ final public class Networker {
                 if (LOGGER.isLoggable(Level.FINEST)) {
                     LOGGER.log(Level.FINEST, "Locally processing message {0}", message.getType());
                 }
-
-//                submitToWorker(socket, message, loopbackMessageBytesStream.getMessageDataInputStream());
                 workers.submit(new WorkerTask(socket, message, loopbackMessageBytesStream.getMessageDataInputStream()));
             } else {
+                MessageBytesOutputStream objectBytes = new MessageBytesOutputStream(message);
+                objectBytes.writeMessage();
+                objectBytes.close();
+
                 if (LOGGER.isLoggable(Level.FINEST)) {
                     LOGGER.log(Level.FINEST, "Sending message {0} to {1}", new Object[]{message.getType(), socket});
                 }
-                selectorProc.writeMessage(socket, message);
+                selectorProc.writeMessage(socket, objectBytes);
             }
         } catch (Throwable t) {
             LOGGER.log(Level.SEVERE, null, t);
