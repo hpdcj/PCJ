@@ -107,7 +107,6 @@ final public class DeployPCJ {
             }
             params.add(jvmArgument);
         }
-
         params.addAll(Arrays.asList(
                 DeployPCJ.class.getName(),
                 startPoint.getName(), // args[0]

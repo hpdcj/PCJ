@@ -35,7 +35,6 @@ final public class PCJ extends InternalPCJ {
      *
      * @param startPoint       start point class
      * @param nodesDescription description of used nodes (and threads)
-     * @param storages         (optional) Enum<?> Enum classes to register shared variables
      */
     public static void start(Class<? extends StartPoint> startPoint,
             NodesDescription nodesDescription
@@ -56,7 +55,6 @@ final public class PCJ extends InternalPCJ {
      *
      * @param startPoint       start point class
      * @param nodesDescription description of used nodes (and threads)
-     * @param storages         (optional) Enum<?> Enum classes to register shared variables
      */
     public static void deploy(Class<? extends StartPoint> startPoint,
             NodesDescription nodesDescription
