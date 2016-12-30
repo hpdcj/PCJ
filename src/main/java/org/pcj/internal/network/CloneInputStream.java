@@ -22,7 +22,7 @@ import org.pcj.internal.Configuration;
  */
 public class CloneInputStream extends InputStream {
 
-    private static final int BYTES_CHUNK_SIZE = Configuration.CHUNK_SIZE;
+    private static final int CHUNK_SIZE = Configuration.CHUNK_SIZE;
     private static final byte[] EMPTY = new byte[0];
 
     private final List<byte[]> bytesList;
@@ -39,22 +39,22 @@ public class CloneInputStream extends InputStream {
     public static CloneInputStream clone(InputStream in) throws IOException {
         CloneInputStream cloneInputStream = new CloneInputStream();
 
-        byte[] bytes = new byte[BYTES_CHUNK_SIZE];
-        int b;
-        int index = 0;
-        while ((b = in.read()) != -1) {
-            bytes[index++] = (byte) b;
-            if (index == bytes.length) {
+        byte[] bytes = new byte[CHUNK_SIZE];
+        int r;
+        int offset = 0;
+        while ((r = in.read(bytes, offset, bytes.length - offset)) != -1) {
+            offset += r;
+            if (offset == bytes.length) {
                 cloneInputStream.addByteArray(bytes);
 
-                bytes = new byte[BYTES_CHUNK_SIZE];
-                index = 0;
+                bytes = new byte[CHUNK_SIZE];
+                offset = 0;
             }
         }
 
-        if (index > 0) {
-            byte[] dest = new byte[index];
-            System.arraycopy(bytes, 0, dest, 0, index);
+        if (offset > 0) {
+            byte[] dest = new byte[offset];
+            System.arraycopy(bytes, 0, dest, 0, offset);
             cloneInputStream.addByteArray(dest);
         }
 
@@ -86,6 +86,40 @@ public class CloneInputStream extends InputStream {
         return currentByteArray[currentIndex++] & 0xFF;
     }
 
+    @Override
+    public int read(byte[] b) throws IOException {
+        return read(b, 0, b.length);
+    }
+
+    @Override
+    public int read(byte[] b, int offset, int length) throws IOException {
+        if (length == 0) {
+            return 0;
+        }
+        int r = 0;
+        do {
+            int len = Math.min(length, currentByteArray.length - currentIndex);
+            System.arraycopy(currentByteArray, currentIndex, b, offset, len);
+            length -= len;
+            offset += len;
+            r += len;
+            currentIndex += len;
+            if (currentIndex == currentByteArray.length) {
+                if (iterator.hasNext()) {
+                    currentByteArray = iterator.next();
+                    currentIndex = 0;
+                } else {
+                    break;
+                }
+            }
+        } while (length > 0);
+
+        if (r == 0) {
+            return -1;
+        }
+        return r;
+    }
+
     public long getLength() {
         return length;
     }
@@ -96,15 +130,16 @@ public class CloneInputStream extends InputStream {
 
         byte[] bytes;
         for (long left = length; left > 0; left -= bytes.length) {
-            int len = (int) Math.min((long) Integer.MAX_VALUE, left);
+            int len = (int) Math.min((long) CHUNK_SIZE, left);
             bytes = new byte[len];
             int offset = 0;
             while (offset < len) {
-                int bytesRead = in.read(bytes, offset, len - offset);
+                int bytesRead = in.read(bytes, offset, len);
                 if (bytesRead < 0) {
                     throw new EOFException("Unexpectedly reached end of stream.");
                 }
                 offset += bytesRead;
+                len -= bytesRead;
             }
             cloneInputStream.addByteArray(bytes);
         }
@@ -117,7 +152,7 @@ public class CloneInputStream extends InputStream {
 
         long written = 0;
         for (byte[] bytesArray : bytesList) {
-            int len = (int) Math.min(bytesArray.length, length - written);
+            int len = (int) Math.min((long) bytesArray.length, length - written);
             out.write(bytesArray, 0, len);
         }
     }

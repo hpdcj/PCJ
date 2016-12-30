@@ -157,6 +157,7 @@ public class MessageDataOutputStream extends OutputStream {
         if (objectOutputStream == null) {
             objectOutputStream = new ObjectOutputStream(output);
         }
-        objectOutputStream.writeObject(object);
+        objectOutputStream.writeUnshared(object);
+//        objectOutputStream.writeObject(object);
     }
 }

@@ -31,7 +31,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.pcj.internal.Configuration;
 import org.pcj.internal.InternalPCJ;
-import org.pcj.internal.message.Message;
 
 /**
  * Main Runnable class for process all incoming data from network in nonblocking

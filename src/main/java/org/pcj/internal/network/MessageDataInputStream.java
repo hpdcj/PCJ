@@ -171,6 +171,7 @@ public class MessageDataInputStream extends InputStream {
         if (objectInputStream == null) {
             objectInputStream = new ObjectInputStream(input);
         }
-        return (Serializable) objectInputStream.readObject();
+//        return objectInputStream.readObject();
+        return objectInputStream.readUnshared();
     }
 }

@@ -91,8 +91,7 @@ final public class MessageValueBroadcastBytes extends Message {
 
         Queue<Exception> exceptionsQueue = new LinkedList<>();
         int[] threadsId = group.getLocalThreadsId();
-        for (int i = 0; i < threadsId.length; ++i) {
-            int threadId = threadsId[i];
+        for (int threadId : threadsId) {
             try {
                 int globalThreadId = group.getGlobalThreadId(threadId);
                 PcjThread pcjThread = nodeData.getPcjThread(globalThreadId);
