@@ -34,6 +34,16 @@ public class MessageDataInputStream extends InputStream {
     }
 
     @Override
+    public int read(byte[] b) throws IOException {
+        return input.read(b, 0, b.length);
+    }
+
+    @Override
+    public int read(byte[] b, int off, int len) throws IOException {
+        return input.read(b, off, len);
+    }
+
+    @Override
     public void close() throws IOException {
         if (objectInputStream != null) {
             objectInputStream.close();

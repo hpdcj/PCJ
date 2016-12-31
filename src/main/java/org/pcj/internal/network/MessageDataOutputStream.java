@@ -32,6 +32,16 @@ public class MessageDataOutputStream extends OutputStream {
     }
 
     @Override
+    public void write(byte[] b) throws IOException {
+        output.write(b, 0, b.length);
+    }
+
+    @Override
+    public void write(byte[] b, int off, int len) throws IOException {
+        output.write(b, off, len);
+    }
+
+    @Override
     public void close() throws IOException {
         output.close();
     }
