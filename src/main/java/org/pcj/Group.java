@@ -81,7 +81,7 @@ public interface Group {
      * @param variable variable name
      * @param indices  (optional) indices for array variable
      *
-     * @return the org.pcj.PcjFuture<java.lang.Void>
+     * @return {@link org.pcj.PcjFuture}&lt;{@link java.lang.Void}&gt;
      */
     <T> PcjFuture<Void> asyncPut(T newValue, int threadId, Enum<?> variable, int... indices);
 
@@ -93,7 +93,7 @@ public interface Group {
      * @param newValue new variable value
      * @param variable variable name
      *
-     * @return the org.pcj.PcjFuture<java.lang.Void>
+     * @return {@link org.pcj.PcjFuture}&lt;{@link java.lang.Void}&gt;
      */
     <T> PcjFuture<Void> asyncBroadcast(T newValue, Enum<?> variable);
 }

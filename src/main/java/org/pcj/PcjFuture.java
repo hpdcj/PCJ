@@ -46,7 +46,7 @@ public interface PcjFuture<T> extends Future<T> {
     /**
      * Checks if PcjFuture completed.
      *
-     * @return
+     * @return true if done
      */
     @Override
     public boolean isDone();
