@@ -20,6 +20,7 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
@@ -33,13 +34,12 @@ import org.pcj.Storage;
 import org.pcj.RegisterStorage;
 
 /**
- * SharedProcessor is Java Annotation Processor to process
- * {@literal @}Storage, {@literal @}RegisterStorage and
+ * SharedProcessor is Java Annotation Processor to process {@literal @}Storage,
+ * {@literal @}RegisterStorage and
  * {@literal @}RegisterStorageRepeatableContainer annotations.
  * <p>
- * It looks up for shared fields and checks for proper
- * declaration (field have to be non-final, non-static, and
- * Serializable).
+ * It looks up for shared fields and checks for proper declaration (field have
+ * to be non-final, non-static, and Serializable).
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
@@ -60,12 +60,24 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
     private TypeElement registerStorageType;
     private TypeElement registerStorageRepeatableContainerType;
 
+    private void error(String msg, Element e) {
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg, e);
+    }
+
     private void warning(String msg, Element e) {
         processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING, msg, e);
     }
 
-    private void error(String msg, Element e) {
-        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg, e);
+    private void mandatoryWarning(String msg, Element e) {
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.MANDATORY_WARNING, msg, e);
+    }
+
+    private void note(String msg, Element e) {
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, msg, e);
+    }
+
+    private void other(String msg, Element e) {
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.OTHER, msg, e);
     }
 
     @Override
@@ -104,7 +116,10 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
                 .map(element -> (TypeElement) element)
                 .forEach(this::processRegisterStorageRepeatableContainer);
 
-        notSerializableStorageFields.forEach(element -> error("Not serializable variable", element));
+        notSerializableStorageFields.stream()
+                .filter(storageElement -> isSuppressed(storageElement, "serializable") == false)
+//                .filter(storageElement -> !typeUtils.asElement(storageElement.asType()).getKind().equals(ElementKind.INTERFACE))
+                .forEach(element -> warning("[serializable] PCJ shared variable type is not serializable", element));
 
         staticStorageFields.stream()
                 .filter(storageElement -> isSuppressed(storageElement, "static") == false)
@@ -164,7 +179,8 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
 
         if (ElementFilter.constructorsIn(storageClassElement.getEnclosedElements())
                 .stream()
-                .noneMatch(element -> element.getParameters().isEmpty())) {
+                .map(ExecutableElement::getParameters)
+                .noneMatch(List::isEmpty)) {
             error("No-arg constructor not found", enumElement);
             return;
         }
@@ -185,8 +201,8 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
 
         Set<VariableElement> storageFieldsInEnum
                 = ElementFilter.fieldsIn(storageClassElement.getEnclosedElements()).stream()
-                .filter(element -> enumNames.contains(element.toString()))
-                .collect(Collectors.toSet());
+                        .filter(element -> enumNames.contains(element.toString()))
+                        .collect(Collectors.toSet());
 
         storageFieldsInEnum.stream()
                 .filter(storageElement -> typeUtils.isAssignable(storageElement.asType(), serializableType.asType()) == false)

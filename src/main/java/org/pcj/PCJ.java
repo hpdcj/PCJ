@@ -192,7 +192,7 @@ final public class PCJ extends InternalPCJ {
     /**
      * Synchronous barrier with one peer PCJ Thread.
      *
-     * Wrapper for (@link PCJ#asyncBarrier(int)}. It is the equivalent to call:
+     * Wrapper for {@link #asyncBarrier(int)}. It is the equivalent to call:
      *
      * <blockquote>{@code PCJ.asyncBarrier(threadId).get();}</blockquote>
      *
@@ -302,8 +302,8 @@ final public class PCJ extends InternalPCJ {
     /**
      * Synchronous get operation.
      *
-     * Wrapper for (@link asyncGet(int,Enum&lt;?&gt;,int...)}. It is the equivalent to
-     * call:
+     * Wrapper for {@code asyncGet(int, java.lang.Enum<?>, int...)}. It is the
+     * equivalent to call:
      *
      * <blockquote>{@code PCJ.<T>asyncGet(threadId, variable, indices).get();}</blockquote>
      *
@@ -340,8 +340,8 @@ final public class PCJ extends InternalPCJ {
     /**
      * Synchronous put operation.
      *
-     * Wrapper for {@code asyncPut(T, int, java.lang.Enum<?>, int...)}. It is the equivalent
-     * to call:
+     * Wrapper for {@code asyncPut(T, int, java.lang.Enum<?>, int...)}. It is
+     * the equivalent to call:
      *
      * <blockquote>{@code PCJ.<T>asyncPut(threadId, variable, newValue, indices).get();}</blockquote>
      *

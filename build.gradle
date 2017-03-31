@@ -15,7 +15,7 @@ buildscript {
 apply plugin: 'java'
 apply plugin: 'eclipse'
 
-ext.versionNumber = "5.0.1"
+ext.versionNumber = "5.0.2"
 ext.buildNumber = "SNAPSHOT"
 try {
     ext.repoId = Grgit.open(project.file('.')).head().abbreviatedId;
@@ -60,7 +60,7 @@ task release {
 }
 
 gradle.taskGraph.whenReady {taskGraph ->
-    if (taskGraph.hasTask(release)) {  
+    if (taskGraph.hasTask(release)) {
         def versionFile = file('version.properties')
         if (versionFile.canRead()) {
             def Properties properties = new Properties()
