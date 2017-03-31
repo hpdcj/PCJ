@@ -118,7 +118,6 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
 
         notSerializableStorageFields.stream()
                 .filter(storageElement -> isSuppressed(storageElement, "serializable") == false)
-//                .filter(storageElement -> !typeUtils.asElement(storageElement.asType()).getKind().equals(ElementKind.INTERFACE))
                 .forEach(element -> warning("[serializable] PCJ shared variable type is not serializable", element));
 
         staticStorageFields.stream()
