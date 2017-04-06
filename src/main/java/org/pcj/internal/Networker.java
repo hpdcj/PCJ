@@ -143,21 +143,9 @@ final public class Networker {
             LOGGER.log(Level.FINEST, "Received message {0} from {1}", new Object[]{message.getType(), socket});
         }
 
-//        submitToWorker(socket, message, messageDataInputStream);
         workers.submit(new WorkerTask(socket, message, messageDataInputStream));
     }
 
-    //    private void submitToWorker(SocketChannel socket, Message message, MessageDataInputStream messageDataInputStream) {
-//        workers.submit(() -> {
-//            try {
-//                message.execute(socket, messageDataInputStream);
-//                messageDataInputStream.close();
-//            } catch (Throwable t) {
-//                LOGGER.log(Level.SEVERE, "Exception while processing message " + message
-//                        + " by node(" + InternalPCJ.getNodeData().getPhysicalId() + ").", t);
-//            }
-//        });
-//    }
     private static class WorkerTask implements Runnable {
 
         private final SocketChannel socket;
