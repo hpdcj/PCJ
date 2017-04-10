@@ -123,14 +123,11 @@ final public class PCJ extends InternalPCJ {
      * @return Object associated with Storage (type of value from enum
      * annotation)
      *
-     * @throws java.lang.InstantiationException unable to instantiate storage
-     * @throws java.lang.IllegalAccessException unable to set accessibility to
-     * variables
-     * @throws java.lang.NoSuchFieldException mismatch of enum values and
-     * storage class field names
+     * @throws PcjRuntimeException thrown when there is problem with registering
+     * provided class.
      */
     public static Object registerStorage(Class<? extends Enum<?>> sharedEnumClass)
-            throws InstantiationException, IllegalAccessException, NoSuchFieldException {
+            throws PcjRuntimeException {
         return PcjThread.getCurrentThreadData().getStorages().registerStorage(sharedEnumClass);
     }
 
@@ -278,10 +275,15 @@ final public class PCJ extends InternalPCJ {
      * @param newValue value (reference)
      * @param indices (optional) indices for array variable
      *
-     * @throws ClassCastException when unable to put because of wrong type
+     * @throws PcjRuntimeException contains wrapped exception (eg.
+     * ArrayOutOfBoundException).
      */
-    public static <T> void putLocal(Enum<?> variable, T newValue, int... indices) throws ClassCastException {
-        PcjThread.getCurrentThreadData().getStorages().put(variable, newValue, indices);
+    public static <T> void putLocal(Enum<?> variable, T newValue, int... indices) throws PcjRuntimeException {
+        try {
+            PcjThread.getCurrentThreadData().getStorages().put(variable, newValue, indices);
+        } catch (Exception ex) {
+            throw new PcjRuntimeException(ex);
+        }
     }
 
     /**
@@ -314,7 +316,7 @@ final public class PCJ extends InternalPCJ {
      *
      * @return value of variable
      *
-     * @throws PcjRuntimeException possible wrapped exception (eg.
+     * @throws PcjRuntimeException contains wrapped exception (eg.
      * ArrayOutOfBoundException).
      */
     public static <T> T get(int threadId, Enum<?> variable, int... indices) throws PcjRuntimeException {
@@ -351,7 +353,7 @@ final public class PCJ extends InternalPCJ {
      * @param variable variable name
      * @param indices (optional) indices for array variable
      *
-     * @throws PcjRuntimeException possible wrapped exception (eg.
+     * @throws PcjRuntimeException contains wrapped exception (eg.
      * ArrayOutOfBoundException).
      */
     public static <T> void put(T newValue, int threadId, Enum<?> variable, int... indices) throws PcjRuntimeException {

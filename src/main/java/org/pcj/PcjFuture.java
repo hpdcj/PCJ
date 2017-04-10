@@ -24,7 +24,7 @@ public interface PcjFuture<T> extends Future<T> {
      *
      * @return returned value (or null if T is Void)
      *
-     * @throws PcjRuntimeException possible exception
+     * @throws PcjRuntimeException contains wrapped exception
      */
     @Override
     public T get() throws PcjRuntimeException;
@@ -37,8 +37,8 @@ public interface PcjFuture<T> extends Future<T> {
      *
      * @return returned value (or {@code null} if {@code T} is {@code Void})
      *
-     * @throws TimeoutException    timeout if PcjFuture not complete before timeout
-     * @throws PcjRuntimeException possible exception
+     * @throws TimeoutException if PcjFuture not complete before timeout
+     * @throws PcjRuntimeException contains wrapped exception
      */
     @Override
     public T get(long timeout, TimeUnit unit) throws TimeoutException, PcjRuntimeException;

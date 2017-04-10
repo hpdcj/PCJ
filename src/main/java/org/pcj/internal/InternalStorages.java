@@ -88,7 +88,7 @@ public class InternalStorages {
             return registerStorage0(storageClass);
         } catch (NoSuchFieldException | IllegalAccessException | NoSuchMethodException |
                 IllegalArgumentException | InvocationTargetException | InstantiationException ex) {
-            throw new IllegalArgumentException("Provided class is not Storage class.", ex);
+            throw new PcjRuntimeException("Provided class is not right Storage enum class.", ex);
         }
     }
 
