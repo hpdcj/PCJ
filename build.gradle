@@ -15,7 +15,7 @@ buildscript {
 apply plugin: 'java'
 apply plugin: 'eclipse'
 
-ext.versionNumber = "5.0.2"
+ext.versionNumber = "5.0.3"
 ext.buildNumber = "SNAPSHOT"
 try {
     ext.repoId = Grgit.open(project.file('.')).head().abbreviatedId;
