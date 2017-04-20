@@ -85,58 +85,81 @@ public class InternalStorages {
 
     public Object registerStorage(Class<? extends Enum<?>> storageClass) {
         try {
-            return registerStorage0(storageClass);
-        } catch (NoSuchFieldException | IllegalAccessException | NoSuchMethodException |
-                IllegalArgumentException | InvocationTargetException | InstantiationException ex) {
-            throw new PcjRuntimeException("Provided class is not right Storage enum class.", ex);
+            return registerStorage0(storageClass, null);
+        } catch (NoSuchFieldException | IllegalAccessException | NoSuchMethodException
+                | IllegalArgumentException | InvocationTargetException | InstantiationException ex) {
+            throw new PcjRuntimeException("Exception while registering enum class: " + storageClass, ex);
         }
     }
 
-    private Object registerStorage0(Class<? extends Enum<?>> sharedEnumClass) throws NoSuchFieldException, InstantiationException, IllegalAccessException, NoSuchMethodException, IllegalArgumentException, InvocationTargetException {
-        if (sharedEnumClass.isEnum() == false) {
-            throw new IllegalArgumentException("Class is not enum: " + sharedEnumClass.getName());
+    public Object registerStorage(Class<? extends Enum<?>> storageEnumClass, Object storageObject) {
+        try {
+            return registerStorage0(storageEnumClass, storageObject);
+        } catch (NoSuchFieldException | IllegalAccessException | NoSuchMethodException
+                | IllegalArgumentException | InvocationTargetException | InstantiationException
+                | ClassCastException ex) {
+            throw new PcjRuntimeException("Exception while registering enum class: " + storageEnumClass, ex);
         }
-        if (sharedEnumClass.isAnnotationPresent(Storage.class) == false) {
-            throw new IllegalArgumentException("Enum is not annotated by @Storage annotation: " + sharedEnumClass.getName());
+    }
+
+    private Object registerStorage0(Class<? extends Enum<?>> storageEnumClass, Object storageObject) throws NoSuchFieldException, InstantiationException, IllegalAccessException, NoSuchMethodException, IllegalArgumentException, InvocationTargetException {
+        if (storageEnumClass.isEnum() == false) {
+            throw new IllegalArgumentException("Class is not enum: " + storageEnumClass.getName());
         }
-        if (enumToStorageMap.containsKey(sharedEnumClass.getName())) {
-            throw new IllegalArgumentException("Enum is already registered: " + sharedEnumClass.getName());
+        if (storageEnumClass.isAnnotationPresent(Storage.class) == false) {
+            throw new IllegalArgumentException("Enum is not annotated by @Storage annotation: " + storageEnumClass.getName());
         }
 
-        Storage annotation = sharedEnumClass.getAnnotation(Storage.class);
+        Storage annotation = storageEnumClass.getAnnotation(Storage.class);
         Class<?> storageClass = annotation.value();
+
+        if (storageObject != null && !storageClass.isAssignableFrom(storageObject.getClass())) {
+            throw new ClassCastException(storageObject.getClass() + " cannot be cast to " + storageClass);
+        }
+
+        String storageClassName = storageClass.getName();
+
+        if (enumToStorageMap.putIfAbsent(storageEnumClass.getName(), storageClassName) != null) {
+            throw new IllegalArgumentException("Enum is already registered: " + storageEnumClass.getName());
+        }
 
         Set<String> fieldNames = Arrays.stream(storageClass.getDeclaredFields())
                 .map(Field::getName)
                 .collect(Collectors.toCollection(HashSet::new));
 
-        Optional<String> notFoundName = Arrays.stream(sharedEnumClass.getEnumConstants())
+        Optional<String> notFoundName = Arrays.stream(storageEnumClass.getEnumConstants())
                 .map(Enum::name)
                 .filter(enumName -> fieldNames.contains(enumName) == false)
                 .findFirst();
         if (notFoundName.isPresent()) {
-            throw new NoSuchFieldException("Field not found in " + storageClass.getName() + ": " + notFoundName.get());
+            throw new NoSuchFieldException("Field not found in " + storageClassName + ": " + notFoundName.get());
         }
 
-        Object storageObject = storageObjectsMap.get(storageClass.getName());
-        if (storageObject == null) {
-            Constructor<?> storageConstructor = storageClass.getConstructor();
-            storageConstructor.setAccessible(true);
-            storageObject = storageConstructor.newInstance();
+        Object storage = storageObjectsMap.get(storageClassName);
+        if (storage == null) {
+            if (storageObject == null) {
+                Constructor<?> storageConstructor = storageClass.getConstructor();
+                storageConstructor.setAccessible(true);
+                storage = storageConstructor.newInstance();
+            } else {
+                storage = storageObject;
+            }
+        } else {
+            if (storage != storageObject) {
+                throw new IllegalArgumentException("The registered storage object is different than provided");
+            }
         }
 
-        String parent = storageClass.getName();
-        for (Enum<?> enumConstant : sharedEnumClass.getEnumConstants()) {
+        for (Enum<?> enumConstant : storageEnumClass.getEnumConstants()) {
             String name = enumConstant.name();
             Field field = storageClass.getDeclaredField(name);
 
-            createShared0(parent, name, field, storageObject);
+            createShared0(storageClassName, name, field, storage);
         }
 
-        storageObjectsMap.put(parent, storageObject);
-        enumToStorageMap.put(sharedEnumClass.getName(), parent);
+        storageObjectsMap.put(storageClassName, storage);
 
-        return storageObject;
+        return storage;
     }
 
     private void createShared0(String parent, String name, Field field, Object storageObject)
@@ -181,9 +204,9 @@ public class InternalStorages {
      * Returns variable from Storages
      *
      * @param variable name of shared variable
-     * @param indices  (optional) indices into the array
+     * @param indices (optional) indices into the array
      * @return value of variable[indices] or variable if indices omitted
-     * @throws ClassCastException             there is more indices than variable dimension
+     * @throws ClassCastException there is more indices than variable dimension
      * @throws ArrayIndexOutOfBoundsException one of indices is out of bound
      */
     final public <T> T get(Enum<?> variable, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException {
@@ -232,14 +255,14 @@ public class InternalStorages {
     }
 
     /**
-     * Puts new value of variable to InternalStorages into the array, or as variable
-     * value if indices omitted
+     * Puts new value of variable to InternalStorages into the array, or as
+     * variable value if indices omitted
      *
      * @param variable name of shared variable
-     * @param value    new value of variable
-     * @param indices  (optional) indices into the array
-     * @throws ClassCastException             there is more indices than variable dimension
-     *                                        or value cannot be assigned to the variable
+     * @param value new value of variable
+     * @param indices (optional) indices into the array
+     * @throws ClassCastException there is more indices than variable dimension
+     * or value cannot be assigned to the variable
      * @throws ArrayIndexOutOfBoundsException one of indices is out of bound
      */
     final public <T> void put(Enum<?> variable, T value, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
@@ -387,11 +410,12 @@ public class InternalStorages {
 
     /**
      * Pauses current Thread and wait for <code>count</code> modifications of
-     * variable. After modification decreases the variable modification counter by
-     * <code>count</code>.
+     * variable. After modification decreases the variable modification counter
+     * by <code>count</code>.
      *
      * @param variable name of shared variable
-     * @param count    number of modifications. If 0 - the method exits immediately.
+     * @param count number of modifications. If 0 - the method exits
+     * immediately.
      */
     final public int waitFor(Enum<?> variable, int count) {
         return waitFor0(getParent(variable), variable.name(), count);
@@ -431,11 +455,12 @@ public class InternalStorages {
 
     /**
      * Pauses current Thread and wait for <code>count</code> modifications of
-     * variable. After modification decreases the variable modification counter by
-     * <code>count</code>.
+     * variable. After modification decreases the variable modification counter
+     * by <code>count</code>.
      *
      * @param variable name of shared variable
-     * @param count    number of modifications. If 0 - the method exits immediately.
+     * @param count number of modifications. If 0 - the method exits
+     * immediately.
      */
     final public int waitFor(Enum<?> variable, int count, long timeout, TimeUnit unit) throws TimeoutException {
         return waitFor0(getParent(variable), variable.name(), count, timeout, unit);

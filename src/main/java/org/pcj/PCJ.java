@@ -117,7 +117,11 @@ final public class PCJ extends InternalPCJ {
     /**
      * Register storage as enum' constants.
      *
-     * @param sharedEnumClass Enum class that represents storage shared
+     * This method creates object pointing by enum' annotation when necessary,
+     * that is when the class pointed by annotation was not previously used to
+     * store shared variables.
+     *
+     * @param storageEnumClass Enum class that represents storage shared
      * variables
      *
      * @return Object associated with Storage (type of value from enum
@@ -126,9 +130,34 @@ final public class PCJ extends InternalPCJ {
      * @throws PcjRuntimeException thrown when there is problem with registering
      * provided class.
      */
-    public static Object registerStorage(Class<? extends Enum<?>> sharedEnumClass)
+    public static Object registerStorage(Class<? extends Enum<?>> storageEnumClass)
             throws PcjRuntimeException {
-        return PcjThread.getCurrentThreadData().getStorages().registerStorage(sharedEnumClass);
+        return PcjThread.getCurrentThreadData().getStorages().registerStorage(storageEnumClass);
+    }
+
+    /**
+     * Register storage as enum' constants.
+     *
+     * This method uses provided object as storage of shared variables. The
+     * object has to be the same type as the type pointed by enum' annotation.
+     *
+     * If the {@code storageObject} is {@code null}, it works like
+     * {@link #registerStorage(java.lang.Class)} method.
+     *
+     * @param storageEnumClass Enum class that represents storage shared
+     * variables
+     *
+     * @param storageObject object that stores the shared variables
+     *
+     * @return Object associated with Storage (type of value from enum
+     * annotation)
+     *
+     * @throws PcjRuntimeException thrown when there is problem with registering
+     * provided class.
+     */
+    public static Object registerStorage(Class<? extends Enum<?>> storageEnumClass, Object storageObject)
+            throws PcjRuntimeException {
+        return PcjThread.getCurrentThreadData().getStorages().registerStorage(storageEnumClass, storageObject);
     }
 
     /**
