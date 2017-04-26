@@ -225,7 +225,7 @@ public abstract class InternalPCJ {
                     networker.bind(inetAddress, bindingPort, Configuration.BACKLOG_COUNT);
                     it.remove();
                 } catch (IOException ex) {
-                    if (attempt <= Configuration.RETRY_COUNT) {
+                    if (attempt < Configuration.RETRY_COUNT) {
                         LOGGER.log(Level.WARNING,
                                 "({0,number,#} attempt of {1,number,#}) Binding on port {2,number,#} failed: {3}. Retrying.",
                                 new Object[]{
