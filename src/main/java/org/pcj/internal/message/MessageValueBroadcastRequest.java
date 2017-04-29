@@ -70,7 +70,6 @@ final public class MessageValueBroadcastRequest extends Message {
         sharedEnumClassName = in.readString();
         name = in.readString();
 
-        
         CloneInputStream clonedData = CloneInputStream.clone(in);
 
         NodeData nodeData = InternalPCJ.getNodeData();

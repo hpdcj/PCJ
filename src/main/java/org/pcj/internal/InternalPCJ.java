@@ -209,6 +209,7 @@ public abstract class InternalPCJ {
         try {
             return Collections.list(NetworkInterface.getNetworkInterfaces()).stream()
                     .flatMap(iface -> Collections.list(iface.getInetAddresses()).stream())
+                    .distinct()
                     .collect(Collectors.toCollection(ArrayDeque::new));
         } catch (SocketException ex) {
             LOGGER.log(Level.SEVERE, "Unable to get network interfaces", ex);

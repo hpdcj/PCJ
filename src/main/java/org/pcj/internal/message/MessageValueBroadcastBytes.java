@@ -11,7 +11,6 @@ package org.pcj.internal.message;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayDeque;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -20,7 +19,6 @@ import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.InternalStorages;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.PcjThread;
-import org.pcj.internal.futures.BroadcastState;
 import org.pcj.internal.network.CloneInputStream;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
@@ -82,12 +80,12 @@ final public class MessageValueBroadcastBytes extends Message {
 
         List<Integer> children = group.getChildrenNodes();
 
-        MessageValueBroadcastBytes messageBytes
+        MessageValueBroadcastBytes message
                 = new MessageValueBroadcastBytes(groupId, requestNum, requesterThreadId,
                         sharedEnumClassName, name, clonedData);
 
         children.stream().map(nodeData.getSocketChannelByPhysicalId()::get)
-                .forEach(socket -> InternalPCJ.getNetworker().send(socket, messageBytes));
+                .forEach(socket -> InternalPCJ.getNetworker().send(socket, message));
 
         Queue<Exception> exceptionsQueue = new LinkedList<>();
         int[] threadsId = group.getLocalThreadsId();
