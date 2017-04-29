@@ -15,7 +15,7 @@ buildscript {
 apply plugin: 'java'
 apply plugin: 'eclipse'
 
-ext.versionNumber = "5.0.4"
+ext.versionNumber = "5.0"
 ext.buildNumber = "SNAPSHOT"
 try {
     ext.repoId = Grgit.open(project.file('.')).head().abbreviatedId;
@@ -54,25 +54,25 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
     from javadoc.destinationDir 
 } 
 
-task release {
-    //outputs.upToDateWhen { false }
-    release.dependsOn(jar, javadocJar)
+task releaseBuild {
+    outputs.upToDateWhen { false }
+    releaseBuild.dependsOn(clean, jar, javadocJar)
 }
 
 gradle.taskGraph.whenReady {taskGraph ->
-    if (taskGraph.hasTask(release)) {
-        def versionFile = file('version.properties')
+    if (taskGraph.hasTask(releaseBuild)) {
+        def versionFile = file('build.version')
         if (versionFile.canRead()) {
             def Properties properties = new Properties()
 
             properties.load(new FileInputStream(versionFile))
             
-            if (properties['buildNumber']==null) {
-                properties['buildNumber'] = 0
+            if (properties['build.number']==null) {
+                properties['build.number'] = 0
             }
 
-            buildNumber = properties['buildNumber'].toInteger() + 1
-            properties['buildNumber'] = buildNumber.toString()
+            buildNumber = properties['build.number'].toInteger()
+            properties['build.number'] = (buildNumber + 1).toString()
             properties.store(versionFile.newWriter(), null)
         }
     }
