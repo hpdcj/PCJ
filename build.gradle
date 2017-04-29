@@ -37,7 +37,7 @@ compileJava {
 		"-target", "1.8",
 		"-profile", "compact3",
 		"-Xlint:unchecked"
-	]
+    ]
 }
 
 task info {
@@ -60,21 +60,24 @@ task releaseBuild {
 }
 
 gradle.taskGraph.whenReady {taskGraph ->
-    if (taskGraph.hasTask(releaseBuild)) {
-        def versionFile = file('build.version')
-        if (versionFile.canRead()) {
-            def Properties properties = new Properties()
+    def Properties properties = new Properties()
 
-            properties.load(new FileInputStream(versionFile))
+    def versionFile = file('build.version')
+    if (versionFile.canRead()) {
+        properties.load(new FileInputStream(versionFile))
+    }
             
-            if (properties['build.number']==null) {
-                properties['build.number'] = 0
-            }
+    if (properties['build.number'] == null) {
+        properties['build.number'] = '0'
+    }
 
-            buildNumber = properties['build.number'].toInteger()
-            properties['build.number'] = (buildNumber + 1).toString()
-            properties.store(versionFile.newWriter(), null)
-        }
+    buildNumber = properties['build.number'].toInteger()
+    
+    if (taskGraph.hasTask(releaseBuild)) {
+        properties['build.number'] = (buildNumber + 1).toString()
+        properties.store(versionFile.newWriter(), null)
+    } else {
+        buildNumber = buildNumber+"-SNAPSHOT"
     }
     jar.doFirst {
         version="$versionNumber.$buildNumber"
@@ -93,7 +96,7 @@ jar {
                 'Implementation-Vendor': System.getProperty('user.name'),
                 'Implementation-Title': date,
                 'Sealed': true,
-//                'Profile': 'compact3',
+            //                'Profile': 'compact3',
         )
         attributes(['Sealed': false], 'org/pcj/')
     }
