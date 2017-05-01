@@ -80,11 +80,11 @@ gradle.taskGraph.whenReady {taskGraph ->
         buildNumber = buildNumber+"-SNAPSHOT"
     }
     jar.doFirst {
-        version="$versionNumber.$buildNumber"
-        classifier="bin"
+        version = "$versionNumber.$buildNumber"
+        classifier = ''
     }
     javadocJar.doFirst {
-        version="$versionNumber.$buildNumber"
+        version = "$versionNumber.$buildNumber"
         classifier = 'javadoc'
     }
 }
