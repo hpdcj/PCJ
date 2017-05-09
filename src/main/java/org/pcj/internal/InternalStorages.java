@@ -258,14 +258,14 @@ public class InternalStorages {
      * Puts new value of variable to InternalStorages into the array, or as
      * variable value if indices omitted
      *
-     * @param variable name of shared variable
      * @param value new value of variable
+     * @param variable name of shared variable
      * @param indices (optional) indices into the array
      * @throws ClassCastException there is more indices than variable dimension
      * or value cannot be assigned to the variable
      * @throws ArrayIndexOutOfBoundsException one of indices is out of bound
      */
-    final public <T> void put(Enum<?> variable, T value, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
+    final public <T> void put(T value, Enum<?> variable, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
         put0(getParent(variable), variable.name(), value, indices);
     }
 

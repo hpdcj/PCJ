@@ -300,16 +300,16 @@ final public class PCJ extends InternalPCJ {
      * Puts value to shared variable of current PCJ Thread.
      *
      * @param <T> type of variable
-     * @param variable variable name
      * @param newValue value (reference)
+     * @param variable variable name
      * @param indices (optional) indices for array variable
      *
      * @throws PcjRuntimeException contains wrapped exception (eg.
      * ArrayOutOfBoundException).
      */
-    public static <T> void putLocal(Enum<?> variable, T newValue, int... indices) throws PcjRuntimeException {
+    public static <T> void putLocal(T newValue, Enum<?> variable, int... indices) throws PcjRuntimeException {
         try {
-            PcjThread.getCurrentThreadData().getStorages().put(variable, newValue, indices);
+            PcjThread.getCurrentThreadData().getStorages().put(newValue, variable, indices);
         } catch (Exception ex) {
             throw new PcjRuntimeException(ex);
         }
