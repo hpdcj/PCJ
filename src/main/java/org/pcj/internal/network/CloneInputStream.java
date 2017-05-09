@@ -11,8 +11,9 @@ package org.pcj.internal.network;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
+import java.io.ObjectOutputStream;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import org.pcj.internal.Configuration;
 
@@ -32,10 +33,10 @@ public class CloneInputStream extends InputStream {
     private long length;
 
     private CloneInputStream() {
-        bytesList = new ArrayList<>();
-        length = 0;
+        bytesList = new LinkedList<>();
+        length = 0L;
     }
-
+    
     public static CloneInputStream clone(InputStream in) throws IOException {
         CloneInputStream cloneInputStream = new CloneInputStream();
 
@@ -143,7 +144,6 @@ public class CloneInputStream extends InputStream {
             }
             cloneInputStream.addByteArray(bytes);
         }
-
         return cloneInputStream;
     }
 

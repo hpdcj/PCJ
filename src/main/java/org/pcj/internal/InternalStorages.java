@@ -145,7 +145,7 @@ public class InternalStorages {
                 storage = storageObject;
             }
         } else {
-            if (storage != storageObject) {
+            if (storageObject != null && storageObject != storage) {
                 throw new IllegalArgumentException("The registered storage object is different than provided");
             }
         }

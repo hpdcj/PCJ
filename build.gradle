@@ -15,7 +15,7 @@ buildscript {
 apply plugin: 'java'
 apply plugin: 'eclipse'
 
-ext.versionNumber = "5.0.3"
+ext.versionNumber = "5.0"
 ext.buildNumber = "SNAPSHOT"
 try {
     ext.repoId = Grgit.open(project.file('.')).head().abbreviatedId;
@@ -37,7 +37,7 @@ compileJava {
 		"-target", "1.8",
 		"-profile", "compact3",
 		"-Xlint:unchecked"
-	]
+    ]
 }
 
 task info {
@@ -54,34 +54,37 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
     from javadoc.destinationDir 
 } 
 
-task release {
-    //outputs.upToDateWhen { false }
-    release.dependsOn(jar, javadocJar)
+task releaseBuild {
+    outputs.upToDateWhen { false }
+    releaseBuild.dependsOn(clean, jar, javadocJar)
 }
 
 gradle.taskGraph.whenReady {taskGraph ->
-    if (taskGraph.hasTask(release)) {
-        def versionFile = file('version.properties')
-        if (versionFile.canRead()) {
-            def Properties properties = new Properties()
+    def Properties properties = new Properties()
 
-            properties.load(new FileInputStream(versionFile))
+    def versionFile = file('build.version')
+    if (versionFile.canRead()) {
+        properties.load(new FileInputStream(versionFile))
+    }
             
-            if (properties['buildNumber']==null) {
-                properties['buildNumber'] = 0
-            }
+    if (properties['build.number'] == null) {
+        properties['build.number'] = '0'
+    }
 
-            buildNumber = properties['buildNumber'].toInteger() + 1
-            properties['buildNumber'] = buildNumber.toString()
-            properties.store(versionFile.newWriter(), null)
-        }
+    buildNumber = properties['build.number'].toInteger()
+    
+    if (taskGraph.hasTask(releaseBuild)) {
+        properties['build.number'] = (buildNumber + 1).toString()
+        properties.store(versionFile.newWriter(), null)
+    } else {
+        buildNumber = buildNumber+"-SNAPSHOT"
     }
     jar.doFirst {
-        version="$versionNumber.$buildNumber"
-        classifier="bin"
+        version = "$versionNumber.$buildNumber"
+        classifier = ''
     }
     javadocJar.doFirst {
-        version="$versionNumber.$buildNumber"
+        version = "$versionNumber.$buildNumber"
         classifier = 'javadoc'
     }
 }
@@ -93,7 +96,7 @@ jar {
                 'Implementation-Vendor': System.getProperty('user.name'),
                 'Implementation-Title': date,
                 'Sealed': true,
-//                'Profile': 'compact3',
+            //                'Profile': 'compact3',
         )
         attributes(['Sealed': false], 'org/pcj/')
     }

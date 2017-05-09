@@ -9,7 +9,6 @@
 package org.pcj.internal;
 
 import java.nio.channels.SocketChannel;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -147,7 +146,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
 
         int physicalMasterId = super.getGroupMasterNode();
         SocketChannel masterSocket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalMasterId);
-
+        
         MessageValueBroadcastRequest message
                 = new MessageValueBroadcastRequest(super.getGroupId(), requestNum, myThreadId,
                         variable.getDeclaringClass().getName(), variable.name(), newValue);
