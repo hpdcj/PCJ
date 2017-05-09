@@ -266,14 +266,14 @@ public class InternalStorages {
      * @throws ArrayIndexOutOfBoundsException one of indices is out of bound
      */
     final public <T> void put(T value, Enum<?> variable, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
-        put0(getParent(variable), variable.name(), value, indices);
+        put0(value, getParent(variable), variable.name(), indices);
     }
 
-    final public <T> void put(String sharedEnumClassName, String name, T value, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
-        put0(getParent(sharedEnumClassName), name, value, indices);
+    final public <T> void put(T value, String sharedEnumClassName, String name, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
+        put0(value, getParent(sharedEnumClassName), name, indices);
     }
 
-    private <T> void put0(String parent, String name, T value, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
+    private <T> void put0(T value, String parent, String name, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
         ConcurrentMap<String, StorageField> storage = sharedObjectsMap.get(parent);
 
         StorageField field = storage.get(name);

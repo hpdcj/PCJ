@@ -81,7 +81,7 @@ final public class MessageValuePutRequest extends Message {
                 groupId, requestNum, requesterThreadId);
         try {
             newValue = in.readObject();
-            storage.put(sharedEnumClassName, name, newValue, indices);
+            storage.put(newValue, sharedEnumClassName, name, indices);
         } catch (Exception ex) {
             messageValuePutResponse.setException(ex);
         }

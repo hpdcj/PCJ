@@ -93,7 +93,7 @@ final public class MessageValueBroadcastRequest extends Message {
                 clonedData.reset();
                 newValue = new ObjectInputStream(clonedData).readObject();
 
-                storage.put(sharedEnumClassName, name, newValue);
+                storage.put(newValue, sharedEnumClassName, name);
             } catch (Exception ex) {
                 exceptionsQueue.add(ex);
             }

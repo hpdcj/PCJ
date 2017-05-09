@@ -100,7 +100,7 @@ final public class MessageValueBroadcastBytes extends Message {
                 clonedData.reset();
                 Object newValue = new ObjectInputStream(clonedData).readObject();
 
-                storage.put(sharedEnumClassName, name, newValue);
+                storage.put(newValue, sharedEnumClassName, name);
             } catch (Exception ex) {
                 exceptionsQueue.add(ex);
             }
