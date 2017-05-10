@@ -58,13 +58,11 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
 
         private final int chunkSize;
         private final Queue<ByteBuffer> queue;
-        volatile private boolean closed;
         private ByteBuffer currentByteBuffer;
 
         public LoopbackOutputStream(Queue<ByteBuffer> queue, int chunkSize) {
             this.chunkSize = chunkSize;
             this.queue = queue;
-            this.closed = false;
 
             allocateBuffer(chunkSize);
         }
@@ -92,7 +90,6 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
 
         @Override
         public void close() throws IOException {
-            closed = true;
             if (currentByteBuffer.position() > 0) {
                 flush(0);
             }
