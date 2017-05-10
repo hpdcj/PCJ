@@ -82,6 +82,9 @@ gradle.taskGraph.whenReady {taskGraph ->
     jar.doFirst {
         version = "$versionNumber.$buildNumber"
         classifier = ''
+        manifest {
+            attributes('Implementation-Version': "$versionNumber.$buildNumber-$repoId")
+        }
     }
     javadocJar.doFirst {
         version = "$versionNumber.$buildNumber"
@@ -92,11 +95,11 @@ gradle.taskGraph.whenReady {taskGraph ->
 jar {
     from 'LICENSE'
     manifest {
-        attributes('Implementation-Version': "$versionNumber.$buildNumber-$repoId",
+        attributes('Implementation-Version': "$repoId",
                 'Implementation-Vendor': System.getProperty('user.name'),
                 'Implementation-Title': date,
                 'Sealed': true,
-            //                'Profile': 'compact3',
+            //    'Profile': 'compact3',
         )
         attributes(['Sealed': false], 'org/pcj/')
     }
