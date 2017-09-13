@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Executor;
+import org.pcj.AsyncTask;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.PcjThread;
@@ -30,20 +30,20 @@ final public class MessageAsyncAtRequest<T> extends Message {
     private int groupId;
     private int requesterThreadId;
     private int threadId;
-    private Callable<T> callable;
+    private AsyncTask.Task<T> asyncTask;
 
     public MessageAsyncAtRequest() {
         super(MessageType.ASYNC_AT_REQUEST);
     }
 
-    public <I extends Callable & Serializable> MessageAsyncAtRequest(int groupId, int requestNum, int requesterThreadId, int threadId, I callable) {
+    public MessageAsyncAtRequest(int groupId, int requestNum, int requesterThreadId, int threadId, AsyncTask.Task<T> asyncTask) {
         this();
 
         this.groupId = groupId;
         this.requestNum = requestNum;
         this.requesterThreadId = requesterThreadId;
         this.threadId = threadId;
-        this.callable = callable;
+        this.asyncTask = asyncTask;
     }
 
     @Override
@@ -52,7 +52,7 @@ final public class MessageAsyncAtRequest<T> extends Message {
         out.writeInt(requestNum);
         out.writeInt(requesterThreadId);
         out.writeInt(threadId);
-        out.writeObject(callable);
+        out.writeObject(asyncTask);
     }
 
     @Override
@@ -63,7 +63,9 @@ final public class MessageAsyncAtRequest<T> extends Message {
         threadId = in.readInt();
 
         try {
-            callable = (Callable<T>) in.readObject();
+            @SuppressWarnings("unchecked")
+            AsyncTask.Task<T> _asyncTask = (AsyncTask.Task<T>) in.readObject();
+            asyncTask = _asyncTask;
         } catch (Exception ex) {
             MessageAsyncAtResponse messageAsyncAtResponse = new MessageAsyncAtResponse(
                     groupId, requestNum, requesterThreadId, null);
@@ -79,7 +81,7 @@ final public class MessageAsyncAtRequest<T> extends Message {
         pcjThread.execute(() -> {
             MessageAsyncAtResponse messageAsyncAtResponse;
             try {
-                Object returnedValue = callable.call();
+                Object returnedValue = asyncTask.call();
                 messageAsyncAtResponse = new MessageAsyncAtResponse(
                         groupId, requestNum, requesterThreadId, returnedValue);
             } catch (Exception ex) {

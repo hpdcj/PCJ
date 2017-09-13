@@ -97,11 +97,11 @@ public interface Group {
      *
      * @param <T> type of returned value
      * @param threadId peer PCJ Thread
-     * @param callable function to be executed
+     * @param asyncTask function to be executed
      * @return value returned by the function
      */
-    <T> PcjFuture<T> asyncAt(int threadId, SerializedCallable<T> callable);
-    PcjFuture<Void> asyncAt(int threadId, SerializedRunnable runnable);
+    <T> PcjFuture<T> asyncAt(int threadId, AsyncTask.Task<T> asyncTask);
+    PcjFuture<Void> asyncAt(int threadId, AsyncTask.VoidTask asyncTask);
 
     /**
      * Asynchronous broadcast operation. Broadcasts value into shared variable

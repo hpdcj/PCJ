@@ -389,20 +389,20 @@ final public class PCJ extends InternalPCJ {
         PCJ.<T>asyncPut(newValue, threadId, variable, indices).get();
     }
 
-    public static <T> PcjFuture<T> asyncAt(int threadId, SerializedCallable<T> callable) throws PcjRuntimeException {
-        return getGlobalGroup().asyncAt(threadId, callable);
+    public static <T> PcjFuture<T> asyncAt(int threadId, AsyncTask.Task<T> asyncTask) throws PcjRuntimeException {
+        return getGlobalGroup().asyncAt(threadId, asyncTask);
     }
 
-    public static <T> T at(int threadId, SerializedCallable<T> callable) throws PcjRuntimeException {
-        return PCJ.<T>asyncAt(threadId, callable).get();
+    public static <T> T at(int threadId, AsyncTask.Task<T> asyncTask) throws PcjRuntimeException {
+        return PCJ.<T>asyncAt(threadId, asyncTask).get();
     }
 
-    public static PcjFuture<Void> asyncAt(int threadId, SerializedRunnable runnable) throws PcjRuntimeException {
-        return getGlobalGroup().asyncAt(threadId, runnable);
+    public static PcjFuture<Void> asyncAt(int threadId, AsyncTask.VoidTask asyncTask) throws PcjRuntimeException {
+        return getGlobalGroup().asyncAt(threadId, asyncTask);
     }
 
-    public static void at(int threadId, SerializedRunnable runnable) throws PcjRuntimeException {
-        PCJ.asyncAt(threadId, runnable).get();
+    public static void at(int threadId, AsyncTask.VoidTask asyncTask) throws PcjRuntimeException {
+        PCJ.asyncAt(threadId, asyncTask).get();
     }
 
     /**

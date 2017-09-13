@@ -24,8 +24,7 @@ import org.pcj.internal.message.MessagePeerBarrier;
 import org.pcj.internal.message.MessageValueBroadcastRequest;
 import org.pcj.internal.message.MessageValueGetRequest;
 import org.pcj.internal.message.MessageValuePutRequest;
-import org.pcj.SerializedCallable;
-import org.pcj.SerializedRunnable;
+import org.pcj.AsyncTask;
 
 /**
  * External class that represents group for grouped communication.
@@ -148,8 +147,9 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         return putVariableMap.remove(requestNum);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public <T> PcjFuture<T> asyncAt(int threadId, SerializedCallable<T> callable) {
+    public <T> PcjFuture<T> asyncAt(int threadId, AsyncTask.Task<T> asyncTask) {
         int requestNum = asyncAtExecutionCounter.incrementAndGet();
         AsyncAtExecution asyncAtExecution = new AsyncAtExecution();
         asyncAtExecutionMap.put(requestNum, asyncAtExecution);
@@ -158,10 +158,10 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         int physicalId = InternalPCJ.getNodeData().getPhysicalId(globalThreadId);
         SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalId);
 
-        MessageAsyncAtRequest message
-                = new MessageAsyncAtRequest(
+        MessageAsyncAtRequest<T> message
+                = new MessageAsyncAtRequest<>(
                         super.getGroupId(), requestNum, myThreadId, threadId,
-                        callable);
+                        asyncTask);
 
         InternalPCJ.getNetworker().send(socket, message);
 
@@ -169,8 +169,8 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     }
 
     @Override
-    public PcjFuture<Void> asyncAt(int threadId, SerializedRunnable runnable) {
-        return asyncAt(threadId, (SerializedCallable<Void>) runnable);
+    public PcjFuture<Void> asyncAt(int threadId, AsyncTask.VoidTask runnable) {
+        return asyncAt(threadId, (AsyncTask.Task<Void>) runnable);
     }
 
     public AsyncAtExecution removeAsyncAtExecution(int requestNum) {

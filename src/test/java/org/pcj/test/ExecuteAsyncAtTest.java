@@ -13,14 +13,23 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
+import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
+import org.pcj.Storage;
 import org.pcj.internal.InternalStorages;
 
 /**
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
+@RegisterStorage(ExecuteAsyncAtTest.Shared.class)
 public class ExecuteAsyncAtTest extends InternalStorages implements StartPoint {
+
+    @Storage(ExecuteAsyncAtTest.class)
+    enum Shared {
+        v
+    }
+    private int v = -1;
 
     public static void main(String[] args) throws InterruptedException {
         Level level = Level.INFO;
@@ -41,8 +50,11 @@ public class ExecuteAsyncAtTest extends InternalStorages implements StartPoint {
     public void main() throws Throwable {
         if (PCJ.myId() == 0) {
             PCJ.asyncAt(1, () -> {
+                PCJ.putLocal(PCJ.myId(), Shared.v);
                 System.out.println("output: " + PCJ.myId());
             }).get();
         }
+        PCJ.barrier();
+        System.out.println("v = " + v);
     }
 }
