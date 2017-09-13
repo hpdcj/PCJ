@@ -8,13 +8,16 @@
  */
 package org.pcj;
 
-import java.io.Serializable;
-import java.util.concurrent.Callable;
-
 /**
  *
  * @author faramir
  */
-public interface Task<T> extends Callable<T>, Serializable {
+public interface SerializedRunnable extends SerializedCallable<Void>, Runnable {
+
+    @Override
+    public default Void call() throws Exception {
+        run();
+        return null;
+    }
 
 }

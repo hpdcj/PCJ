@@ -8,8 +8,6 @@
  */
 package org.pcj;
 
-import java.util.concurrent.Callable;
-
 /**
  * Class that represents group of PCJ Threads.
  *
@@ -102,7 +100,8 @@ public interface Group {
      * @param callable function to be executed
      * @return value returned by the function
      */
-    <T> PcjFuture<T> asyncAt(int threadId, Task<T> callable);
+    <T> PcjFuture<T> asyncAt(int threadId, SerializedCallable<T> callable);
+    PcjFuture<Void> asyncAt(int threadId, SerializedRunnable runnable);
 
     /**
      * Asynchronous broadcast operation. Broadcasts value into shared variable

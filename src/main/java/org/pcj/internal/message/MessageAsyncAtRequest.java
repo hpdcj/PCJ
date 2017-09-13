@@ -77,7 +77,6 @@ final public class MessageAsyncAtRequest<T> extends Message {
         int globalThreadId = nodeData.getGroupById(groupId).getGlobalThreadId(threadId);
         PcjThread pcjThread = nodeData.getPcjThread(globalThreadId);
         pcjThread.execute(() -> {
-            System.err.println("executing");
             MessageAsyncAtResponse messageAsyncAtResponse;
             try {
                 Object returnedValue = callable.call();

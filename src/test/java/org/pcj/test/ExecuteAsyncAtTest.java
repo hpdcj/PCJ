@@ -40,9 +40,8 @@ public class ExecuteAsyncAtTest extends InternalStorages implements StartPoint {
     @Override
     public void main() throws Throwable {
         if (PCJ.myId() == 0) {
-            PCJ.<Void>asyncAt(1, () -> {
+            PCJ.asyncAt(1, () -> {
                 System.out.println("output: " + PCJ.myId());
-                return null;
             }).get();
         }
     }

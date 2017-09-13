@@ -391,12 +391,20 @@ final public class PCJ extends InternalPCJ {
         PCJ.<T>asyncPut(newValue, threadId, variable, indices).get();
     }
 
-    public static <T> PcjFuture<T> asyncAt(int threadId, Task<T> callable) throws PcjRuntimeException {
+    public static <T> PcjFuture<T> asyncAt(int threadId, SerializedCallable<T> callable) throws PcjRuntimeException {
         return getGlobalGroup().asyncAt(threadId, callable);
     }
 
-    public static <T> T at(int threadId, Task<T> callable) throws PcjRuntimeException {
+    public static <T> T at(int threadId, SerializedCallable<T> callable) throws PcjRuntimeException {
         return PCJ.<T>asyncAt(threadId, callable).get();
+    }
+
+    public static PcjFuture<Void> asyncAt(int threadId, SerializedRunnable runnable) throws PcjRuntimeException {
+        return getGlobalGroup().asyncAt(threadId, runnable);
+    }
+
+    public static void at(int threadId, SerializedRunnable runnable) throws PcjRuntimeException {
+        PCJ.asyncAt(threadId, runnable).get();
     }
 
     /**

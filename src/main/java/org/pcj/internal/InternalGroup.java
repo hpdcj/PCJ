@@ -14,7 +14,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.Group;
 import org.pcj.PcjFuture;
-import org.pcj.Task;
 import org.pcj.internal.futures.AsyncAtExecution;
 import org.pcj.internal.futures.BroadcastState;
 import org.pcj.internal.futures.GetVariable;
@@ -25,6 +24,8 @@ import org.pcj.internal.message.MessagePeerBarrier;
 import org.pcj.internal.message.MessageValueBroadcastRequest;
 import org.pcj.internal.message.MessageValueGetRequest;
 import org.pcj.internal.message.MessageValuePutRequest;
+import org.pcj.SerializedCallable;
+import org.pcj.SerializedRunnable;
 
 /**
  * External class that represents group for grouped communication.
@@ -148,7 +149,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     }
 
     @Override
-    public <T> PcjFuture<T> asyncAt(int threadId, Task<T> callable) {
+    public <T> PcjFuture<T> asyncAt(int threadId, SerializedCallable<T> callable) {
         int requestNum = asyncAtExecutionCounter.incrementAndGet();
         AsyncAtExecution asyncAtExecution = new AsyncAtExecution();
         asyncAtExecutionMap.put(requestNum, asyncAtExecution);
@@ -165,6 +166,11 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         InternalPCJ.getNetworker().send(socket, message);
 
         return asyncAtExecution;
+    }
+
+    @Override
+    public PcjFuture<Void> asyncAt(int threadId, SerializedRunnable runnable) {
+        return asyncAt(threadId, (SerializedCallable<Void>) runnable);
     }
 
     public AsyncAtExecution removeAsyncAtExecution(int requestNum) {
