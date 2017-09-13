@@ -127,7 +127,7 @@ final public class Networker {
                 selectorProc.writeMessage(socket, objectBytes);
             }
         } catch (Throwable t) {
-            LOGGER.log(Level.SEVERE, null, t);
+            LOGGER.log(Level.SEVERE, "Exception while sending message", t);
         }
     }
 

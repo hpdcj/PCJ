@@ -51,6 +51,7 @@ public class ExecuteAsyncAtTest extends InternalStorages implements StartPoint {
         if (PCJ.myId() == 0) {
             PCJ.asyncAt(1, () -> {
                 PCJ.putLocal(PCJ.myId(), Shared.v);
+                // v = PCJ.myId; // throws java.io.NotSerializableException: org.pcj.test.ExecuteAsyncAtTest
                 System.out.println("output: " + PCJ.myId());
             }).get();
         }
