@@ -34,10 +34,13 @@ public class PcjMicroBenchmarkBroadcast implements StartPoint {
     @Override
     public void main() {
 
-        int[] transmit = {1, 10, 100, 1024, 2048, 4096,
-            8192,
-            16348, 32768, 65536, 131072, 262144, 524288,
-            1048576};
+        int[] transmit = {
+//            1, 10, 100, 1024, 2048, 4096, 8192, 16348,
+//            32768, 65536, 131072, 262144, 524288,
+//            1048576,
+            2097152,
+//            4194304,
+        };
 
         for (int n : transmit) {
             if (PCJ.myId() == 0) {
@@ -53,27 +56,28 @@ public class PcjMicroBenchmarkBroadcast implements StartPoint {
 
             PCJ.barrier();
 
-            int ntimes = 100;
+            int ntimes = 5/*00*/;
 
-            double time = System.nanoTime();
+            long time = System.nanoTime();
 
             for (int i = 0; i < ntimes; i++) {
 //                if (PCJ.myId() == i % PCJ.threadCount()) {
                 if (PCJ.myId() == 0) {
                     PCJ.broadcast(b, SharedEnum.a);
+//                    PCJ.asyncBroadcast(b, SharedEnum.a);
                 }
 //                PCJ.waitFor(SharedEnum.a);
 //                PCJ.barrier();
             }
 
             time = System.nanoTime() - time;
-            time = (time / (double) ntimes) * 1e-9;
+            double dtime = (time / (double) ntimes) * 1e-9;
             PCJ.barrier();
 
-            System.out.println(PCJ.threadCount() + " " + time + " " + a[n - 1]);
+//            System.out.println(PCJ.threadCount() + " " + time + " " + a[n - 1]);
             if (PCJ.myId() == 0) {
-                System.out.format(Locale.FRANCE, "%5d size %10f time %f7 %n",
-                        PCJ.threadCount(), (double) n / 128, time);
+                System.out.format(Locale.FRANCE, "%5d size %.10f time %.7f %n",
+                        PCJ.threadCount(), (double) n / 128, dtime);
             }
         }
     }
@@ -91,7 +95,7 @@ public class PcjMicroBenchmarkBroadcast implements StartPoint {
         }
 
         //        int[] threads = {1, 4, 16};
-        int[] threads = {10};
+        int[] threads = {12};
         // run.jvmargs=-Xmx64m
 
         String[] nodesUniq = new String[1024];
@@ -104,13 +108,15 @@ public class PcjMicroBenchmarkBroadcast implements StartPoint {
                 n_nodes++;
             }
         } else {
-            for (int i = 0; i < 4; ++i) {
+            for (int i = 0; i < 6; ++i) {
                 nodesUniq[n_nodes] = "localhost:" + (9100 + i);
                 n_nodes++;
             }
         }
 
-        for (int m = n_nodes; m > 0; m = m / 2) {
+//        for (int m = n_nodes; m > 0; m = m / 2) 
+        int m = n_nodes;
+        {
             int nn = m;
 
             for (int nt : threads) {
@@ -126,7 +132,7 @@ public class PcjMicroBenchmarkBroadcast implements StartPoint {
                 }
 
                 PCJ.deploy(PcjMicroBenchmarkBroadcast.class,
-                        new NodesDescription(nodes));
+                         new NodesDescription(nodes));
             }
         }
     }

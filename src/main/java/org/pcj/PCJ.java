@@ -8,8 +8,6 @@
  */
 package org.pcj;
 
-import java.io.Serializable;
-import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.pcj.internal.DeployPCJ;
@@ -414,11 +412,12 @@ final public class PCJ extends InternalPCJ {
      * @param <T> type of value
      * @param newValue new variable value
      * @param variable variable name
+     * @param indices (optional) indices for array variable
      *
      * @return {@link org.pcj.PcjFuture}&lt;{@link java.lang.Void}&gt;
      */
-    public static <T> PcjFuture<Void> asyncBroadcast(T newValue, Enum<?> variable) {
-        return getGlobalGroup().asyncBroadcast(newValue, variable);
+    public static <T> PcjFuture<Void> asyncBroadcast(T newValue, Enum<?> variable, int... indices) {
+        return getGlobalGroup().asyncBroadcast(newValue, variable, indices);
     }
 
     /**
@@ -432,9 +431,10 @@ final public class PCJ extends InternalPCJ {
      * @param <T> type of value
      * @param newValue new variable value
      * @param variable variable name
+     * @param indices (optional) indices for array variable
      */
-    public static <T> void broadcast(T newValue, Enum<?> variable) {
-        PCJ.<T>asyncBroadcast(newValue, variable).get();
+    public static <T> void broadcast(T newValue, Enum<?> variable, int... indices) {
+        PCJ.<T>asyncBroadcast(newValue, variable, indices).get();
     }
 
     /**

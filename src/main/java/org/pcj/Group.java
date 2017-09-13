@@ -110,8 +110,9 @@ public interface Group {
      * @param <T> type of value
      * @param newValue new variable value
      * @param variable variable name
+     * @param indices (optional) indices for array variable
      *
      * @return {@link org.pcj.PcjFuture}&lt;{@link java.lang.Void}&gt;
      */
-    <T> PcjFuture<Void> asyncBroadcast(T newValue, Enum<?> variable);
+    <T> PcjFuture<Void> asyncBroadcast(T newValue, Enum<?> variable, int... indices);
 }

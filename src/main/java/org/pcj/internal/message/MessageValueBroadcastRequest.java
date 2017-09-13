@@ -34,13 +34,14 @@ final public class MessageValueBroadcastRequest extends Message {
     private int requesterThreadId;
     private String sharedEnumClassName;
     private String name;
+    private int[] indices;
     private Object newValue;
 
     public MessageValueBroadcastRequest() {
         super(MessageType.VALUE_BROADCAST_REQUEST);
     }
 
-    public MessageValueBroadcastRequest(int groupId, int requestNum, int requesterThreadId, String storageName, String name, Object newValue) {
+    public MessageValueBroadcastRequest(int groupId, int requestNum, int requesterThreadId, String storageName, String name, int[] indices, Object newValue) {
         this();
 
         this.groupId = groupId;
@@ -48,6 +49,7 @@ final public class MessageValueBroadcastRequest extends Message {
         this.requesterThreadId = requesterThreadId;
         this.sharedEnumClassName = storageName;
         this.name = name;
+        this.indices = indices;
         this.newValue = newValue;
     }
 
@@ -58,6 +60,7 @@ final public class MessageValueBroadcastRequest extends Message {
         out.writeInt(requesterThreadId);
         out.writeString(sharedEnumClassName);
         out.writeString(name);
+        out.writeIntArray(indices);
         out.writeObject(newValue);
     }
 
@@ -69,6 +72,7 @@ final public class MessageValueBroadcastRequest extends Message {
 
         sharedEnumClassName = in.readString();
         name = in.readString();
+        indices = in.readIntArray();
 
         CloneInputStream clonedData = CloneInputStream.clone(in);
 
@@ -76,7 +80,7 @@ final public class MessageValueBroadcastRequest extends Message {
         InternalCommonGroup group = nodeData.getGroupById(groupId);
 
         MessageValueBroadcastBytes message
-                = new MessageValueBroadcastBytes(groupId, requestNum, requesterThreadId, sharedEnumClassName, name, clonedData);
+                = new MessageValueBroadcastBytes(groupId, requestNum, requesterThreadId, sharedEnumClassName, name, indices, clonedData);
 
         group.getChildrenNodes().stream().map(nodeData.getSocketChannelByPhysicalId()::get)
                 .forEach(socket -> InternalPCJ.getNetworker().send(socket, message));
@@ -92,7 +96,7 @@ final public class MessageValueBroadcastRequest extends Message {
                 clonedData.reset();
                 newValue = new ObjectInputStream(clonedData).readObject();
 
-                storage.put(newValue, sharedEnumClassName, name);
+                storage.put(newValue, sharedEnumClassName, name, indices);
             } catch (Exception ex) {
                 exceptionsQueue.add(ex);
             }
@@ -106,5 +110,4 @@ final public class MessageValueBroadcastRequest extends Message {
                 nodeData.getPhysicalId(), exceptionsQueue);
         InternalPCJ.getNetworker().send(socket, messageInform);
     }
-
 }

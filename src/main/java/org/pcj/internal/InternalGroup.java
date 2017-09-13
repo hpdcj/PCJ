@@ -178,7 +178,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     }
 
     @Override
-    public <T> PcjFuture<Void> asyncBroadcast(T newValue, Enum<?> variable) {
+    public <T> PcjFuture<Void> asyncBroadcast(T newValue, Enum<?> variable, int... indices) {
         int requestNum = broadcastCounter.incrementAndGet();
         BroadcastState broadcastState = getBroadcastState(requestNum);
 
@@ -187,7 +187,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
 
         MessageValueBroadcastRequest message
                 = new MessageValueBroadcastRequest(super.getGroupId(), requestNum, myThreadId,
-                        variable.getDeclaringClass().getName(), variable.name(), newValue);
+                        variable.getDeclaringClass().getName(), variable.name(), indices, newValue);
         InternalPCJ.getNetworker().send(masterSocket, message);
 
         return broadcastState;
