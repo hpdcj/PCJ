@@ -168,19 +168,31 @@ public enum MessageType {
             return new MessageValuePutResponse();
         }
     },
-    VALUE_BROADCAST_REQUEST((byte) 34) {
+    ASYNC_AT_REQUEST((byte) 34) {
+        @Override
+        public MessageAsyncAtRequest create() {
+            return new MessageAsyncAtRequest();
+        }
+    },
+    ASYNC_AT_RESPONSE((byte) 35) {
+        @Override
+        public MessageAsyncAtResponse create() {
+            return new MessageAsyncAtResponse();
+        }
+    },
+    VALUE_BROADCAST_REQUEST((byte) 36) {
         @Override
         public MessageValueBroadcastRequest create() {
             return new MessageValueBroadcastRequest();
         }
     },
-    VALUE_BROADCAST_BYTES((byte) 35) {
+    VALUE_BROADCAST_BYTES((byte) 37) {
         @Override
         public MessageValueBroadcastBytes create() {
             return new MessageValueBroadcastBytes();
         }
     },
-    VALUE_BROADCAST_INFORM((byte) 36) {
+    VALUE_BROADCAST_INFORM((byte) 38) {
         @Override
         public MessageValueBroadcastInform create() {
             return new MessageValueBroadcastInform();

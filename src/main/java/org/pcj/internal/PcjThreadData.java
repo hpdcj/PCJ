@@ -19,9 +19,9 @@ import org.pcj.Group;
  */
 final public class PcjThreadData {
 
-    final private InternalStorages storages;
-    final private InternalGroup globalGroup;
-    final private ConcurrentMap<Integer, InternalGroup> groupById;
+    private final InternalStorages storages;
+    private final InternalGroup globalGroup;
+    private final ConcurrentMap<Integer, InternalGroup> groupById;
 
     PcjThreadData(InternalGroup globalGroup) {
         this.globalGroup = globalGroup;
@@ -47,7 +47,7 @@ final public class PcjThreadData {
     public InternalGroup getGroupById(int groupId) {
         return groupById.get(groupId);
     }
-
+    
     public InternalGroup getGroupByName(String name) {
         return groupById.values().stream()
                 .filter(groups -> name.equals(groups.getGroupName()))

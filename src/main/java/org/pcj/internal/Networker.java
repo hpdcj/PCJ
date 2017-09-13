@@ -39,19 +39,21 @@ final public class Networker {
 
     protected Networker(int maxWorkerCount) {
         LOGGER.log(Level.FINE, "Networker with {0,number,#} {0,choice,1#worker|1<workers}", maxWorkerCount);
-        Executors.newFixedThreadPool(1);
-        this.workers = new ThreadPoolExecutor(
-                maxWorkerCount, maxWorkerCount,
-                0L, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<>(),
-                new ThreadFactory() {
+
+        ThreadFactory threadFactory = new ThreadFactory() {
             private final AtomicInteger counter = new AtomicInteger(0);
 
             @Override
             public Thread newThread(Runnable r) {
                 return new Thread(r, "Worker-" + counter.getAndIncrement());
             }
-        });
+        };
+
+        this.workers = new ThreadPoolExecutor(
+                maxWorkerCount, maxWorkerCount,
+                0L, TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<>(),
+                threadFactory);
 
         this.selectorProc = new SelectorProc();
 

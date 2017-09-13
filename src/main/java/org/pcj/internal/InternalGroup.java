@@ -14,10 +14,13 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.Group;
 import org.pcj.PcjFuture;
+import org.pcj.Task;
+import org.pcj.internal.futures.AsyncAtExecution;
 import org.pcj.internal.futures.BroadcastState;
 import org.pcj.internal.futures.GetVariable;
 import org.pcj.internal.futures.PeerBarrierState;
 import org.pcj.internal.futures.PutVariable;
+import org.pcj.internal.message.MessageAsyncAtRequest;
 import org.pcj.internal.message.MessagePeerBarrier;
 import org.pcj.internal.message.MessageValueBroadcastRequest;
 import org.pcj.internal.message.MessageValueGetRequest;
@@ -36,6 +39,8 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     private final ConcurrentMap<Integer, GetVariable> getVariableMap;
     private final AtomicInteger putVariableCounter;
     private final ConcurrentMap<Integer, PutVariable> putVariableMap;
+    private final AtomicInteger asyncAtExecutionCounter;
+    private final ConcurrentMap<Integer, AsyncAtExecution> asyncAtExecutionMap;
     private final AtomicInteger broadcastCounter;
     private final ConcurrentMap<Integer, BroadcastState> broadcastStateMap;
     private final ConcurrentMap<Integer, PeerBarrierState> peerBarrierStateMap;
@@ -52,6 +57,9 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
 
         putVariableCounter = new AtomicInteger(0);
         putVariableMap = new ConcurrentHashMap<>();
+
+        asyncAtExecutionCounter = new AtomicInteger(0);
+        asyncAtExecutionMap = new ConcurrentHashMap<>();
 
         broadcastCounter = new AtomicInteger(0);
         broadcastStateMap = new ConcurrentHashMap<>();
@@ -140,13 +148,37 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     }
 
     @Override
+    public <T> PcjFuture<T> asyncAt(int threadId, Task<T> callable) {
+        int requestNum = asyncAtExecutionCounter.incrementAndGet();
+        AsyncAtExecution asyncAtExecution = new AsyncAtExecution();
+        asyncAtExecutionMap.put(requestNum, asyncAtExecution);
+
+        int globalThreadId = super.getGlobalThreadId(threadId);
+        int physicalId = InternalPCJ.getNodeData().getPhysicalId(globalThreadId);
+        SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalId);
+
+        MessageAsyncAtRequest message
+                = new MessageAsyncAtRequest(
+                        super.getGroupId(), requestNum, myThreadId, threadId,
+                        callable);
+
+        InternalPCJ.getNetworker().send(socket, message);
+
+        return asyncAtExecution;
+    }
+
+    public AsyncAtExecution removeAsyncAtExecution(int requestNum) {
+        return asyncAtExecutionMap.remove(requestNum);
+    }
+
+    @Override
     public <T> PcjFuture<Void> asyncBroadcast(T newValue, Enum<?> variable) {
         int requestNum = broadcastCounter.incrementAndGet();
         BroadcastState broadcastState = getBroadcastState(requestNum);
 
         int physicalMasterId = super.getGroupMasterNode();
         SocketChannel masterSocket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalMasterId);
-        
+
         MessageValueBroadcastRequest message
                 = new MessageValueBroadcastRequest(super.getGroupId(), requestNum, myThreadId,
                         variable.getDeclaringClass().getName(), variable.name(), newValue);
@@ -154,13 +186,12 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
 
         return broadcastState;
     }
-    
-    
+
     final public BroadcastState getBroadcastState(int requestNum) {
-        return broadcastStateMap.computeIfAbsent(requestNum, 
+        return broadcastStateMap.computeIfAbsent(requestNum,
                 key -> new BroadcastState(super.getPhysicalBitmask()));
     }
-    
+
     public BroadcastState removeBroadcastState(int requestNum) {
         return broadcastStateMap.remove(requestNum);
     }

@@ -8,6 +8,8 @@
  */
 package org.pcj;
 
+import java.io.Serializable;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.pcj.internal.DeployPCJ;
@@ -387,6 +389,14 @@ final public class PCJ extends InternalPCJ {
      */
     public static <T> void put(T newValue, int threadId, Enum<?> variable, int... indices) throws PcjRuntimeException {
         PCJ.<T>asyncPut(newValue, threadId, variable, indices).get();
+    }
+
+    public static <T> PcjFuture<T> asyncAt(int threadId, Task<T> callable) throws PcjRuntimeException {
+        return getGlobalGroup().asyncAt(threadId, callable);
+    }
+
+    public static <T> T at(int threadId, Task<T> callable) throws PcjRuntimeException {
+        return PCJ.<T>asyncAt(threadId, callable).get();
     }
 
     /**

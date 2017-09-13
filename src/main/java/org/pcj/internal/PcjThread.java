@@ -10,6 +10,12 @@ package org.pcj.internal;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.PCJ;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
@@ -29,6 +35,7 @@ public class PcjThread extends Thread {
     private final Class<? extends StartPoint> startPointClass;
     private final PcjThreadGroup pcjThreadGroup;
     private final int threadId;
+    private final ExecutorService executorService;
     private Throwable throwable;
 
     PcjThread(int threadId, Class<? extends StartPoint> startPoint, PcjThreadData threadData) {
@@ -38,6 +45,23 @@ public class PcjThread extends Thread {
         this.pcjThreadGroup = (PcjThreadGroup) this.getThreadGroup();
 
         this.startPointClass = startPoint;
+
+        ThreadFactory threadFactory = new ThreadFactory() {
+            private final AtomicInteger counter = new AtomicInteger(0);
+
+            @Override
+            public Thread newThread(Runnable runnable) {
+                return new Thread(pcjThreadGroup, runnable,
+                        "PcjThread-" + threadId + "-Task-" + counter.getAndIncrement());
+            }
+        };
+
+        this.executorService = new ThreadPoolExecutor(0, Integer.MAX_VALUE,
+                60L, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(),
+                threadFactory
+        );
+
     }
 
     private static class PcjThreadGroup extends ThreadGroup {
@@ -69,6 +93,8 @@ public class PcjThread extends Thread {
             PCJ.barrier();
         } catch (Throwable t) {
             this.throwable = t;
+        } finally {
+            executorService.shutdown();
         }
     }
 
@@ -82,7 +108,7 @@ public class PcjThread extends Thread {
 
     private StartPoint initializeStorages() throws IllegalAccessException, NoSuchFieldException, InstantiationException, RuntimeException {
         StartPoint startPoint = null;
-            
+
         RegisterStorage[] registerStorages = startPointClass.getAnnotationsByType(RegisterStorage.class);
 
         for (RegisterStorage registerStorage : registerStorages) {
@@ -141,5 +167,9 @@ public class PcjThread extends Thread {
 
     public PcjThreadData getThreadData() {
         return pcjThreadGroup.getThreadData();
+    }
+
+    public void execute(Runnable runnable) {
+        executorService.execute(runnable);
     }
 }
