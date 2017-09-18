@@ -324,7 +324,7 @@ final public class PCJ extends InternalPCJ {
      * @param variable variable name
      * @param indices (optional) indices for array variable
      *
-     * @return PcjFuture that will contain shared variable value
+     * @return {@link org.pcj.PcjFuture} that will contain shared variable value
      */
     public static <T> PcjFuture<T> asyncGet(int threadId, Enum<?> variable, int... indices) {
         return getGlobalGroup().asyncGet(threadId, variable, indices);
@@ -389,18 +389,62 @@ final public class PCJ extends InternalPCJ {
         PCJ.<T>asyncPut(newValue, threadId, variable, indices).get();
     }
 
+    /**
+     * Asynchronous execution operation. Executes associated function on
+     * specified thread from global group and returns value.
+     *
+     * @param <T> type of returned value
+     * @param threadId peer PCJ Thread
+     * @param asyncTask function to be executed
+     * @return {@link org.pcj.PcjFuture} that will contain value returned by the
+     * function
+     */
     public static <T> PcjFuture<T> asyncAt(int threadId, AsyncTask.Task<T> asyncTask) throws PcjRuntimeException {
         return getGlobalGroup().asyncAt(threadId, asyncTask);
     }
 
+    /**
+     * Asynchronous execution operation. Executes associated function on
+     * specified thread from global group and returns value.
+     *
+     * It is the equivalent to call:
+     *
+     * <blockquote>{@code PCJ.<T>asyncAt(threadId, asyncTask).get();}</blockquote>
+     *
+     * @param <T> type of returned value
+     * @param threadId peer PCJ Thread
+     * @param asyncTask function to be executed
+     * @return {@link org.pcj.PcjFuture} that will contain value returned by the
+     * function
+     */
     public static <T> T at(int threadId, AsyncTask.Task<T> asyncTask) throws PcjRuntimeException {
         return PCJ.<T>asyncAt(threadId, asyncTask).get();
     }
 
+    /**
+     * Asynchronous execution operation. Executes associated function on
+     * specified thread from global group without returing value.
+     *
+     * @param threadId peer PCJ Thread
+     * @param asyncTask function to be executed
+     * @return {@link org.pcj.PcjFuture} that indicates finish execution of
+     * execution
+     */
     public static PcjFuture<Void> asyncAt(int threadId, AsyncTask.VoidTask asyncTask) throws PcjRuntimeException {
         return getGlobalGroup().asyncAt(threadId, asyncTask);
     }
 
+    /**
+     * Asynchronous execution operation. Executes associated function on
+     * specified thread from global group without returing value.
+     *
+     * It is the equivalent to call:
+     *
+     * <blockquote>{@code PCJ.<T>asyncAt(threadId, asyncTask).get();}</blockquote>
+     *
+     * @param threadId peer PCJ Thread
+     * @param asyncTask function to be executed
+     */
     public static void at(int threadId, AsyncTask.VoidTask asyncTask) throws PcjRuntimeException {
         PCJ.asyncAt(threadId, asyncTask).get();
     }
@@ -450,8 +494,4 @@ final public class PCJ extends InternalPCJ {
         int myThreadId = getGlobalGroup().myId();
         return (Group) InternalPCJ.join(myThreadId, name);
     }
-
-//    public static <T, R> PcjFuture<R> asyncAt(int threadId, Function<R, T> lambda) throws PcjRuntimeException {
-//        throw new UnsupportedOperationException("Not implemented yet.");
-//    }
 }

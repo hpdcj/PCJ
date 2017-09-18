@@ -45,7 +45,7 @@ public interface Group {
      * thread done this barrier using {@link PcjFuture#isDone()} method.
      * PcjFuture returns null when completed.
      *
-     * @return PcjFuture to check barrier state
+     * @return {@link org.pcj.PcjFuture} to check barrier state
      */
     PcjFuture<Void> asyncBarrier();
 
@@ -60,7 +60,7 @@ public interface Group {
      *
      * @param threadId current group PCJ Thread
      *
-     * @return PcjFuture to check barrier state
+     * @return {@link org.pcj.PcjFuture} to check barrier state
      */
     PcjFuture<Void> asyncBarrier(int threadId);
 
@@ -73,7 +73,7 @@ public interface Group {
      * @param variable variable name
      * @param indices (optional) indices for array variable
      *
-     * @return PcjFuture that will contain shared variable value
+     * @return {@link org.pcj.PcjFuture} that will contain shared variable value
      */
     <T> PcjFuture<T> asyncGet(int threadId, Enum<?> variable, int... indices);
 
@@ -92,15 +92,26 @@ public interface Group {
     <T> PcjFuture<Void> asyncPut(T newValue, int threadId, Enum<?> variable, int... indices);
 
     /**
-     * Asynchronous execution operation. Executes associated function and
-     * returns value.
+     * Asynchronous execution operation. Executes associated function on
+     * specified thread and returns value.
      *
      * @param <T> type of returned value
      * @param threadId peer PCJ Thread
      * @param asyncTask function to be executed
-     * @return value returned by the function
+     * @return {@link org.pcj.PcjFuture} that will contain value returned by the
+     * function
      */
     <T> PcjFuture<T> asyncAt(int threadId, AsyncTask.Task<T> asyncTask);
+
+    /**
+     * Asynchronous execution operation. Executes associated function on
+     * specified thread without returing value.
+     *
+     * @param threadId peer PCJ Thread
+     * @param asyncTask function to be executed
+     * @return {@link org.pcj.PcjFuture} that indicates finish execution of
+     * execution
+     */
     PcjFuture<Void> asyncAt(int threadId, AsyncTask.VoidTask asyncTask);
 
     /**
