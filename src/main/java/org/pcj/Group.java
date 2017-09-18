@@ -101,18 +101,7 @@ public interface Group {
      * @return {@link org.pcj.PcjFuture} that will contain value returned by the
      * function
      */
-    <T> PcjFuture<T> asyncAt(int threadId, AsyncTask.Task<T> asyncTask);
-
-    /**
-     * Asynchronous execution operation. Executes associated function on
-     * specified thread without returing value.
-     *
-     * @param threadId peer PCJ Thread
-     * @param asyncTask function to be executed
-     * @return {@link org.pcj.PcjFuture} that indicates finish execution of
-     * execution
-     */
-    PcjFuture<Void> asyncAt(int threadId, AsyncTask.VoidTask asyncTask);
+    <T> PcjFuture<T> asyncAt(int threadId, AsyncTask<T> asyncTask);
 
     /**
      * Asynchronous broadcast operation. Broadcasts value into shared variable

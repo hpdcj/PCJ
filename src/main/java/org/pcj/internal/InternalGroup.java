@@ -149,7 +149,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> PcjFuture<T> asyncAt(int threadId, AsyncTask.Task<T> asyncTask) {
+    public <T> PcjFuture<T> asyncAt(int threadId, AsyncTask<T> asyncTask) {
         int requestNum = asyncAtExecutionCounter.incrementAndGet();
         AsyncAtExecution asyncAtExecution = new AsyncAtExecution();
         asyncAtExecutionMap.put(requestNum, asyncAtExecution);
@@ -166,11 +166,6 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         InternalPCJ.getNetworker().send(socket, message);
 
         return asyncAtExecution;
-    }
-
-    @Override
-    public PcjFuture<Void> asyncAt(int threadId, AsyncTask.VoidTask runnable) {
-        return asyncAt(threadId, (AsyncTask.Task<Void>) runnable);
     }
 
     public AsyncAtExecution removeAsyncAtExecution(int requestNum) {

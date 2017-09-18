@@ -30,13 +30,13 @@ final public class MessageAsyncAtRequest<T> extends Message {
     private int groupId;
     private int requesterThreadId;
     private int threadId;
-    private AsyncTask.Task<T> asyncTask;
+    private AsyncTask<T> asyncTask;
 
     public MessageAsyncAtRequest() {
         super(MessageType.ASYNC_AT_REQUEST);
     }
 
-    public MessageAsyncAtRequest(int groupId, int requestNum, int requesterThreadId, int threadId, AsyncTask.Task<T> asyncTask) {
+    public MessageAsyncAtRequest(int groupId, int requestNum, int requesterThreadId, int threadId, AsyncTask<T> asyncTask) {
         this();
 
         this.groupId = groupId;
@@ -64,7 +64,7 @@ final public class MessageAsyncAtRequest<T> extends Message {
 
         try {
             @SuppressWarnings("unchecked")
-            AsyncTask.Task<T> _asyncTask = (AsyncTask.Task<T>) in.readObject();
+            AsyncTask<T> _asyncTask = (AsyncTask<T>) in.readObject();
             asyncTask = _asyncTask;
         } catch (Exception ex) {
             MessageAsyncAtResponse messageAsyncAtResponse = new MessageAsyncAtResponse(

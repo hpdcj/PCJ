@@ -399,7 +399,7 @@ final public class PCJ extends InternalPCJ {
      * @return {@link org.pcj.PcjFuture} that will contain value returned by the
      * function
      */
-    public static <T> PcjFuture<T> asyncAt(int threadId, AsyncTask.Task<T> asyncTask) throws PcjRuntimeException {
+    public static <T> PcjFuture<T> asyncAt(int threadId, AsyncTask<T> asyncTask) throws PcjRuntimeException {
         return getGlobalGroup().asyncAt(threadId, asyncTask);
     }
 
@@ -417,7 +417,7 @@ final public class PCJ extends InternalPCJ {
      * @return {@link org.pcj.PcjFuture} that will contain value returned by the
      * function
      */
-    public static <T> T at(int threadId, AsyncTask.Task<T> asyncTask) throws PcjRuntimeException {
+    public static <T> T at(int threadId, AsyncTask<T> asyncTask) throws PcjRuntimeException {
         return PCJ.<T>asyncAt(threadId, asyncTask).get();
     }
 

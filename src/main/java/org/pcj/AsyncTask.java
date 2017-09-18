@@ -11,36 +11,29 @@ package org.pcj;
 import java.io.Serializable;
 
 /**
- * Class that contains Task interfaces for execution using asynchronous
- * operation.
+ * Serializable Task to be used as functional interface with returing value.
+ *
+ * @param <T> type of returned value
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-abstract public class AsyncTask {
+@FunctionalInterface
+public interface AsyncTask<T> extends Serializable {
 
     /**
-     * Serializable Task to be used as functional interface with returing value.
+     * Method to implement.
      *
-     * @param <T> type of returned value
+     * @return value returned by the task
+     * @throws Exception can throw any exception
      */
-    @FunctionalInterface
-    public interface Task<T> extends Serializable {
-
-        /**
-         * Method to implement.
-         *
-         * @return value returned by the task
-         * @throws Exception can throw any exception
-         */
-        T call() throws Exception;
-    }
+    T call() throws Exception;
 
     /**
      * Serializable Task to be used as functional interface without returning
      * value.
      */
     @FunctionalInterface
-    public interface VoidTask extends Task<Void> {
+    public interface VoidTask extends AsyncTask<Void> {
 
         /**
          * Method to implement.
