@@ -11,20 +11,18 @@ package org.pcj.test;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.pcj.AsyncTask;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
 import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
-import org.pcj.internal.InternalStorages;
 
 /**
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 @RegisterStorage(ExecuteAsyncAtTest.Shared.class)
-public class ExecuteAsyncAtTest extends InternalStorages implements StartPoint {
+public class ExecuteAsyncAtTest implements StartPoint {
 
     @Storage(ExecuteAsyncAtTest.class)
     enum Shared {

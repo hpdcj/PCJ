@@ -16,14 +16,13 @@ import org.pcj.PCJ;
 import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
-import org.pcj.internal.InternalStorages;
 
 /**
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 @RegisterStorage(BroadcastByAllTest.Shared.class)
-public class BroadcastByAllTest extends InternalStorages implements StartPoint {
+public class BroadcastByAllTest implements StartPoint {
     
     @Storage(BroadcastByAllTest.class)
     enum Shared {
