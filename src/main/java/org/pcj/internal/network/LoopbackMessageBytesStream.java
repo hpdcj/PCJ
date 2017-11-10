@@ -23,7 +23,7 @@ import org.pcj.internal.message.Message;
  */
 public class LoopbackMessageBytesStream implements AutoCloseable {
 
-    private static final ByteBufferPool BYTE_BUFFER_POOL = new ByteBufferPool(Configuration.BUFFER_POOL_SIZE, Configuration.BUFFER_CHUNK_SIZE); // CONFIGURE
+    private static final ByteBufferPool BYTE_BUFFER_POOL = new ByteBufferPool(Configuration.BUFFER_POOL_SIZE, Configuration.BUFFER_CHUNK_SIZE);
     private final Message message;
     private final Queue<ByteBuffer> queue;
     private final MessageDataOutputStream messageDataOutputStream;

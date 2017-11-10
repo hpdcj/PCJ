@@ -306,11 +306,13 @@ public class SelectorProc implements Runnable {
 
         while (!queue.isEmpty()) {
             MessageBytesOutputStream messageBytes = queue.peek();
-            ByteBuffer[] byteBuffersArray = messageBytes.getByteBuffersArray();
-            if (socket.isOpen()) {
-                socket.write(byteBuffersArray);
 
-                if (byteBuffersArray[byteBuffersArray.length - 1].hasRemaining() == false) {
+            MessageBytesOutputStream.ByteBufferArray byteBuffersArray = messageBytes.getByteBufferArray();
+            if (socket.isOpen()) {
+                socket.write(byteBuffersArray.getArray(), byteBuffersArray.getOffset(), byteBuffersArray.getRemainingLength());
+                byteBuffersArray.revalidate();
+
+                if (byteBuffersArray.getRemainingLength() == 0) {
                     queue.poll();
                 }
 

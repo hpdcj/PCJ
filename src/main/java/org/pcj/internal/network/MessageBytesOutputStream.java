@@ -22,19 +22,46 @@ import org.pcj.internal.message.Message;
  */
 public class MessageBytesOutputStream implements AutoCloseable {
 
+    private static final ByteBufferPool BYTE_BUFFER_POOL = new ByteBufferPool(Configuration.BUFFER_POOL_SIZE, Configuration.BUFFER_CHUNK_SIZE);
     private final Message message;
     private final MessageOutputStream messageOutputStream;
     private final MessageDataOutputStream messageDataOutputStream;
-    private ByteBuffer[] byteBuffersArray;
+    private ByteBufferArray byteBufferArray;
 
-    public MessageBytesOutputStream(Message message) throws IOException {
-        this(message, Configuration.BUFFER_CHUNK_SIZE);
+    public static class ByteBufferArray {
+
+        private final ByteBuffer[] array;
+        private int offset;
+
+        private ByteBufferArray(ByteBuffer[] array) {
+            this.array = array;
+            offset = 0;
+        }
+
+        public ByteBuffer[] getArray() {
+            return array;
+        }
+
+        public int getOffset() {
+            return offset;
+        }
+
+        int getRemainingLength() {
+            return array.length - offset;
+        }
+
+        public void revalidate() {
+            while (offset<array.length && array[offset].hasRemaining() == false) {
+                BYTE_BUFFER_POOL.give(array[offset]);
+                ++offset;
+            }
+        }
     }
 
-    public MessageBytesOutputStream(Message message, int chunkSize) {
+    public MessageBytesOutputStream(Message message) throws IOException {
         this.message = message;
 
-        this.messageOutputStream = new MessageOutputStream(chunkSize);
+        this.messageOutputStream = new MessageOutputStream(Configuration.BUFFER_CHUNK_SIZE);
         this.messageDataOutputStream = new MessageDataOutputStream(this.messageOutputStream);
     }
 
@@ -55,13 +82,14 @@ public class MessageBytesOutputStream implements AutoCloseable {
     @Override
     public void close() throws IOException {
         messageOutputStream.close();
-        byteBuffersArray = messageOutputStream.queue.stream().toArray(ByteBuffer[]::new);
+        byteBufferArray = new ByteBufferArray(messageOutputStream.queue.stream().toArray(ByteBuffer[]::new));
+
     }
 
-    public ByteBuffer[] getByteBuffersArray() {
-        return byteBuffersArray;
+    public ByteBufferArray getByteBufferArray() {
+        return byteBufferArray;
     }
-    
+
     private static class MessageOutputStream extends OutputStream {
 
         private static final int HEADER_SIZE = Integer.BYTES;
@@ -79,7 +107,11 @@ public class MessageBytesOutputStream implements AutoCloseable {
         }
 
         private void allocateBuffer(int size) {
-            currentByteBuffer = ByteBuffer.allocate(size);
+            if (size <= chunkSize) {
+                currentByteBuffer = BYTE_BUFFER_POOL.take();
+            } else {
+                currentByteBuffer = ByteBuffer.allocate(size);
+            }
             currentByteBuffer.position(HEADER_SIZE);
         }
 
@@ -143,7 +175,7 @@ public class MessageBytesOutputStream implements AutoCloseable {
                 len -= remaining;
                 off += remaining;
                 flush(Math.max(chunkSize, len));
-                
+
                 remaining = currentByteBuffer.remaining();
             }
             currentByteBuffer.put(b, off, len);

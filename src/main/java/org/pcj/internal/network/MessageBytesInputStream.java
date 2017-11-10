@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.Queue;
+import org.pcj.internal.Configuration;
 
 /**
  *
@@ -19,6 +20,7 @@ import java.util.Queue;
  */
 public class MessageBytesInputStream {
 
+    private static final ByteBufferPool BYTE_BUFFER_POOL = new ByteBufferPool(Configuration.BUFFER_POOL_SIZE, Configuration.BUFFER_CHUNK_SIZE);
     private static final int HEADER_SIZE = Integer.BYTES;
     private static final int LAST_CHUNK_BIT = (int) (1 << (Integer.SIZE - 1));
     private final ByteBuffer header;
@@ -30,11 +32,20 @@ public class MessageBytesInputStream {
         reset();
     }
 
-    public void offerNextBytes(ByteBuffer byteBuffer) {
-        while (byteBuffer.hasRemaining()) {
+    private void allocateBuffer(int size) {
+        if (size <= Configuration.BUFFER_CHUNK_SIZE) {
+            currentByteBuffer = BYTE_BUFFER_POOL.take();
+            currentByteBuffer.limit(size);
+        } else {
+            currentByteBuffer = ByteBuffer.allocate(size);
+        }
+    }
+
+    public void offerNextBytes(ByteBuffer sourceByteBuffer) {
+        while (sourceByteBuffer.hasRemaining()) {
             if (currentByteBuffer == null) {
-                readBuffer(byteBuffer, header);
-                
+                readBuffer(sourceByteBuffer, header);
+
                 if (header.hasRemaining() == false) {
                     int lengthWithMarker = header.getInt(0);
                     int length = lengthWithMarker & ~LAST_CHUNK_BIT;
@@ -48,10 +59,10 @@ public class MessageBytesInputStream {
                         }
                     }
 
-                    currentByteBuffer = ByteBuffer.allocate(length);
+                    allocateBuffer(length);
                 }
             } else {
-                readBuffer(byteBuffer, currentByteBuffer);
+                readBuffer(sourceByteBuffer, currentByteBuffer);
 
                 if (currentByteBuffer.hasRemaining() == false) {
                     currentByteBuffer.flip();
@@ -68,10 +79,13 @@ public class MessageBytesInputStream {
 
     private ByteBuffer readBuffer(ByteBuffer src, ByteBuffer dest) {
         int remaining = Math.min(dest.remaining(), src.remaining());
+
         ByteBuffer sliceBuffer = src.slice();
+
         sliceBuffer.limit(remaining);
         dest.put(sliceBuffer);
         src.position(src.position() + remaining);
+
         return dest;
     }
 
@@ -104,6 +118,10 @@ public class MessageBytesInputStream {
 
         @Override
         public void close() {
+            ByteBuffer bb;
+            while ((bb = queue.poll()) != null) {
+                BYTE_BUFFER_POOL.give(bb);
+            }
             closed = true;
         }
 
@@ -122,6 +140,7 @@ public class MessageBytesInputStream {
                         throw new IllegalStateException("Stream not closed, but no more data available.");
                     }
                 } else if (byteBuffer.hasRemaining() == false) {
+                    BYTE_BUFFER_POOL.give(byteBuffer);
                     queue.poll();
                 } else {
                     return byteBuffer.get() & 0xFF;
@@ -162,6 +181,7 @@ public class MessageBytesInputStream {
                     offset += len;
 
                     if (byteBuffer.hasRemaining() == false) {
+                        BYTE_BUFFER_POOL.give(byteBuffer);
                         queue.poll();
                     }
 
