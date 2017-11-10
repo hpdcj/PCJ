@@ -218,20 +218,20 @@ public abstract class InternalPCJ {
     }
 
     private static void bindOnAllNetworkInterfaces(Queue<InetAddress> inetAddresses, int bindingPort) throws UncheckedIOException {
-        for (int attempt = 0; attempt <= Configuration.RETRY_COUNT; ++attempt) {
+        for (int attempt = 0; attempt <= Configuration.INIT_RETRY_COUNT; ++attempt) {
             for (Iterator<InetAddress> it = inetAddresses.iterator(); it.hasNext(); ) {
                 InetAddress inetAddress = it.next();
 
                 try {
-                    networker.bind(inetAddress, bindingPort, Configuration.BACKLOG_COUNT);
+                    networker.bind(inetAddress, bindingPort, Configuration.INIT_BACKLOG_COUNT);
                     it.remove();
                 } catch (IOException ex) {
-                    if (attempt < Configuration.RETRY_COUNT) {
+                    if (attempt < Configuration.INIT_RETRY_COUNT) {
                         LOGGER.log(Level.WARNING,
                                 "({0,number,#} attempt of {1,number,#}) Binding on port {2,number,#} failed: {3}. Retrying.",
                                 new Object[]{
                                         attempt + 1,
-                                        Configuration.RETRY_COUNT + 1,
+                                        Configuration.INIT_RETRY_COUNT + 1,
                                         bindingPort,
                                         ex.getMessage()});
                     } else {
@@ -245,7 +245,7 @@ public abstract class InternalPCJ {
                 return;
             } else {
                 try {
-                    Thread.sleep(Configuration.RETRY_DELAY * 1000 + (int) (Math.random() * 1000));
+                    Thread.sleep(Configuration.INIT_RETRY_DELAY * 1000 + (int) (Math.random() * 1000));
                 } catch (InterruptedException ex) {
                     throw new RuntimeException("Interruption occurs while waiting for binding retry.", ex);
                 }
@@ -264,7 +264,7 @@ public abstract class InternalPCJ {
             } catch (InterruptedException ex) {
                 throw new RuntimeException("Interruption occurs while waiting before attempting to connect to node0.", ex);
             }
-            for (int attempt = 0; attempt <= Configuration.RETRY_COUNT; ++attempt) {
+            for (int attempt = 0; attempt <= Configuration.INIT_RETRY_COUNT; ++attempt) {
                 try {
                     if (LOGGER.isLoggable(Level.FINE)) {
                         LOGGER.log(Level.FINE, "Connecting to node0 ({0}:{1,number,#})...",
@@ -281,13 +281,13 @@ public abstract class InternalPCJ {
 
                     return node0Socket;
                 } catch (IOException ex) {
-                    if (attempt < Configuration.RETRY_COUNT) {
+                    if (attempt < Configuration.INIT_RETRY_COUNT) {
                         LOGGER.log(Level.WARNING,
                                 "({0,number,#} attempt of {1,number,#}) Connecting to node0 ({2}:{3,number,#}) failed: {4}. Retrying.",
-                                new Object[]{attempt + 1, Configuration.RETRY_COUNT + 1,
+                                new Object[]{attempt + 1, Configuration.INIT_RETRY_COUNT + 1,
                                         node0.getHostname(), node0.getPort(), ex.getMessage()});
                         try {
-                            Thread.sleep(Configuration.RETRY_DELAY * 1000 + (int) (Math.random() * 1000));
+                            Thread.sleep(Configuration.INIT_RETRY_DELAY * 1000 + (int) (Math.random() * 1000));
                         } catch (InterruptedException e) {
                             throw new RuntimeException("Interruption occurs while waiting for connection retry.", e);
                         }

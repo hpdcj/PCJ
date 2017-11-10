@@ -51,9 +51,10 @@ final public class Networker {
 
         this.workers = new ThreadPoolExecutor(
                 maxWorkerCount, maxWorkerCount,
-                0L, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<>(),
-                threadFactory);
+                0L, TimeUnit.NANOSECONDS,
+                new ArrayBlockingQueue<>(Configuration.WORKERS_QUEUE_SIZE),
+                threadFactory,
+                new ThreadPoolExecutor.CallerRunsPolicy());
 
         this.selectorProc = new SelectorProc();
 

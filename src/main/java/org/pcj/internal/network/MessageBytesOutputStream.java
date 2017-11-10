@@ -28,7 +28,7 @@ public class MessageBytesOutputStream implements AutoCloseable {
     private ByteBuffer[] byteBuffersArray;
 
     public MessageBytesOutputStream(Message message) throws IOException {
-        this(message, Configuration.CHUNK_SIZE);
+        this(message, Configuration.BUFFER_CHUNK_SIZE);
     }
 
     public MessageBytesOutputStream(Message message, int chunkSize) {

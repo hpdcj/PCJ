@@ -23,44 +23,57 @@ final public class Configuration {
 
     private static final Logger LOGGER = Logger.getLogger(Configuration.class.getName());
     /**
-     * pcj.backlog (int) default: 4096
-     */
-    final public static int BACKLOG_COUNT;
-    /**
-     * pcj.retry.count (int) default: 19
-     */
-    final public static int RETRY_COUNT;
-    /**
-     * pcj.retry.delay (int) default: 3
-     */
-    final public static int RETRY_DELAY;
-    /**
      * pcj.port (int) default: 8091
      */
     final public static int DEFAULT_PORT;
     /**
-     * pcj.chunksize (int) default: 1024*8
+     * pcj.init.backlog (int) default: 4096
      */
-    final public static int CHUNK_SIZE;
+    final public static int INIT_BACKLOG_COUNT;
     /**
-     * pcj.init.maxtime (int) default: max(60, (pcj.retry.count+1) * pcj.retry.delay)
+     * pcj.init.retry.count (int) default: 19
+     */
+    final public static int INIT_RETRY_COUNT;
+    /**
+     * pcj.init.retry.delay (int) default: 3
+     */
+    final public static int INIT_RETRY_DELAY;
+    /**
+     * pcj.init.maxtime (int) default: max(60, (pcj.retry.count+1) *
+     * pcj.retry.delay)
      */
     final public static int INIT_MAXTIME;
+    /**
+     * pcj.buffer.chunksize (int) default: 1024*8
+     */
+    final public static int BUFFER_CHUNK_SIZE;
+    /**
+     * pcj.buffer.poolsize (int) default: 1024
+     */
+    final public static int BUFFER_POOL_SIZE;
+    /**
+     * pcj.workers.queuesize (int) default: 1024
+     */
+    final public static int WORKERS_QUEUE_SIZE;
 
     static {
-        BACKLOG_COUNT = getPropertyInt("pcj.backlog", 4096);
-        RETRY_COUNT = getPropertyInt("pcj.retry.count", 19);
-        RETRY_DELAY = getPropertyInt("pcj.retry.delay", 3);
         DEFAULT_PORT = getPropertyInt("pcj.port", 8091);
-        CHUNK_SIZE = getPropertyInt("pcj.chunksize", 8 * 1024);
-        INIT_MAXTIME = getPropertyInt("pcj.init.maxtime", Math.max((RETRY_COUNT + 1) * RETRY_DELAY, 60));
+        INIT_BACKLOG_COUNT = getPropertyInt("pcj.init.backlog", 4096);
+        INIT_RETRY_COUNT = getPropertyInt("pcj.init.retry.count", 19);
+        INIT_RETRY_DELAY = getPropertyInt("pcj.init.retry.delay", 3);
+        INIT_MAXTIME = getPropertyInt("pcj.init.maxtime", Math.max((INIT_RETRY_COUNT + 1) * INIT_RETRY_DELAY, 60));
+        BUFFER_CHUNK_SIZE = getPropertyInt("pcj.buffer.chunksize", 8 * 1024);
+        BUFFER_POOL_SIZE = getPropertyInt("pcj.buffer.poolsize", 1024);
+        WORKERS_QUEUE_SIZE = getPropertyInt("pcj.workers.queuesize", 1024);
 
-        LOGGER.log(Level.CONFIG, "BACKLOG_COUNT: {0,number,#}", BACKLOG_COUNT);
-        LOGGER.log(Level.CONFIG, "RETRY_COUNT:   {0,number,#}", RETRY_COUNT);
-        LOGGER.log(Level.CONFIG, "RETRY_DELAY:   {0,number,#}", RETRY_DELAY);
-        LOGGER.log(Level.CONFIG, "DEFAULT_PORT:  {0,number,#}", DEFAULT_PORT);
-        LOGGER.log(Level.CONFIG, "CHUNK_SIZE:    {0,number,#}", CHUNK_SIZE);
-        LOGGER.log(Level.CONFIG, "INIT_MAXTIME:  {0,number,#}", INIT_MAXTIME);
+        LOGGER.log(Level.CONFIG, "pcj.port:  {0,number,#}", DEFAULT_PORT);
+        LOGGER.log(Level.CONFIG, "pcj.init.backlog: {0,number,#}", INIT_BACKLOG_COUNT);
+        LOGGER.log(Level.CONFIG, "pcj.init.retry.count:   {0,number,#}", INIT_RETRY_COUNT);
+        LOGGER.log(Level.CONFIG, "pcj.init.retry.delay:   {0,number,#}", INIT_RETRY_DELAY);
+        LOGGER.log(Level.CONFIG, "pcj.init.maxtime:   {0,number,#}", INIT_MAXTIME);
+        LOGGER.log(Level.CONFIG, "pcj.buffer.chunksize:    {0,number,#}", BUFFER_CHUNK_SIZE);
+        LOGGER.log(Level.CONFIG, "pcj.buffer.poolsize:    {0,number,#}", BUFFER_POOL_SIZE);
+        LOGGER.log(Level.CONFIG, "pcj.workers.queuesize:  {0,number,#}", WORKERS_QUEUE_SIZE);
     }
 
     private static int getPropertyInt(String name, int defaultValue) {

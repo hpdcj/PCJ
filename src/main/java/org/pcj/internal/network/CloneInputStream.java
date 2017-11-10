@@ -22,7 +22,7 @@ import org.pcj.internal.Configuration;
  */
 public class CloneInputStream extends InputStream {
 
-    private static final int CHUNK_SIZE = Configuration.CHUNK_SIZE;
+    private static final int CHUNK_SIZE = Configuration.BUFFER_CHUNK_SIZE;
     private static final byte[] EMPTY = new byte[0];
 
     private final List<byte[]> bytesList;

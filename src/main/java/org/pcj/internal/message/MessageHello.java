@@ -89,7 +89,7 @@ final public class MessageHello extends Message {
             Map<Integer, Integer> physicalIdByThreadId = node0Data.getNodeInfoByPhysicalId()
                     .entrySet().stream()
                     .flatMap(entry -> Arrays.stream(entry.getValue().getThreadIds())
-                            .mapToObj(threadId -> new AbstractMap.SimpleEntry<Integer, Integer>(threadId, entry.getKey())))
+                    .mapToObj(threadId -> new AbstractMap.SimpleEntry<Integer, Integer>(threadId, entry.getKey())))
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
             // threadId -> physicalId

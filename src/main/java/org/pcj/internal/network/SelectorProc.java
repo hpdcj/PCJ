@@ -61,7 +61,7 @@ public class SelectorProc implements Runnable {
     private final Queue<InterestChange> interestChanges;
 
     public SelectorProc() {
-        this.readBuffer = ByteBuffer.allocateDirect(Configuration.CHUNK_SIZE);
+        this.readBuffer = ByteBuffer.allocateDirect(Configuration.BUFFER_CHUNK_SIZE);
         this.writeMap = new ConcurrentHashMap<>();
         this.readMap = new ConcurrentHashMap<>();
         this.interestChanges = new ConcurrentLinkedQueue<>();

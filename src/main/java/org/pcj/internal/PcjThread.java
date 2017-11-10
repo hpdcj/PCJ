@@ -35,7 +35,7 @@ public class PcjThread extends Thread {
     private final Class<? extends StartPoint> startPointClass;
     private final PcjThreadGroup pcjThreadGroup;
     private final int threadId;
-    private final ExecutorService executorService;
+    private final ExecutorService asyncTasksWorkers;
     private Throwable throwable;
 
     PcjThread(int threadId, Class<? extends StartPoint> startPoint, PcjThreadData threadData) {
@@ -56,7 +56,7 @@ public class PcjThread extends Thread {
             }
         };
 
-        this.executorService = new ThreadPoolExecutor(0, Integer.MAX_VALUE,
+        this.asyncTasksWorkers = new ThreadPoolExecutor(0, Integer.MAX_VALUE,
                 60L, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>(),
                 threadFactory
@@ -94,7 +94,7 @@ public class PcjThread extends Thread {
         } catch (Throwable t) {
             this.throwable = t;
         } finally {
-            executorService.shutdown();
+            asyncTasksWorkers.shutdown();
         }
     }
 
@@ -170,6 +170,6 @@ public class PcjThread extends Thread {
     }
 
     public void execute(Runnable runnable) {
-        executorService.execute(runnable);
+        asyncTasksWorkers.execute(runnable);
     }
 }

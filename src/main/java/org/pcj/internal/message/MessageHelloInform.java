@@ -105,7 +105,7 @@ final public class MessageHelloInform extends Message {
     }
 
     private SocketChannel connectToNode(String hostname, int port) {
-        for (int attempt = 0; attempt <= Configuration.RETRY_COUNT; ++attempt) {
+        for (int attempt = 0; attempt <= Configuration.INIT_RETRY_COUNT; ++attempt) {
             try {
                 if (LOGGER.isLoggable(Level.FINE)) {
                     LOGGER.log(Level.FINE, "Connecting to: {0}:{1,number,#}",
@@ -119,13 +119,13 @@ final public class MessageHelloInform extends Message {
                 }
                 return socket;
             } catch (IOException ex) {
-                if (attempt < Configuration.RETRY_COUNT) {
+                if (attempt < Configuration.INIT_RETRY_COUNT) {
                     LOGGER.log(Level.WARNING,
                             "({0,number,#} attempt of {1,number,#}) Connecting to {2}:{3,number,#} failed: {4}. Retrying.",
-                            new Object[]{attempt + 1, Configuration.RETRY_COUNT + 1, hostname, port, ex.getMessage()});
+                            new Object[]{attempt + 1, Configuration.INIT_RETRY_COUNT + 1, hostname, port, ex.getMessage()});
 
                     try {
-                        Thread.sleep(Configuration.RETRY_DELAY * 1000 + (int) (Math.random() * 1000));
+                        Thread.sleep(Configuration.INIT_RETRY_DELAY * 1000 + (int) (Math.random() * 1000));
                     } catch (InterruptedException e) {
                         LOGGER.log(Level.SEVERE, "Interruption occurs while waiting for connection retry.");
                     }

@@ -23,13 +23,14 @@ import org.pcj.internal.message.Message;
  */
 public class LoopbackMessageBytesStream implements AutoCloseable {
 
+    private static final ByteBufferPool BYTE_BUFFER_POOL = new ByteBufferPool(Configuration.BUFFER_POOL_SIZE, Configuration.BUFFER_CHUNK_SIZE); // CONFIGURE
     private final Message message;
     private final Queue<ByteBuffer> queue;
     private final MessageDataOutputStream messageDataOutputStream;
     private final MessageDataInputStream messageDataInputStream;
 
     public LoopbackMessageBytesStream(Message message) {
-        this(message, Configuration.CHUNK_SIZE);
+        this(message, Configuration.BUFFER_CHUNK_SIZE);
     }
 
     public LoopbackMessageBytesStream(Message message, int chunkSize) {
@@ -51,7 +52,6 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
     @Override
     public void close() throws IOException {
         messageDataOutputStream.close();
-        messageDataInputStream.close();
     }
 
     private static class LoopbackOutputStream extends OutputStream {
@@ -68,7 +68,11 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
         }
 
         private void allocateBuffer(int size) {
-            currentByteBuffer = ByteBuffer.allocate(size);
+            if (size <= chunkSize) {
+                currentByteBuffer = BYTE_BUFFER_POOL.take();
+            } else {
+                currentByteBuffer = ByteBuffer.allocate(size);
+            }
         }
 
         private void flush(int size) {
@@ -138,6 +142,10 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
 
         @Override
         public void close() {
+            ByteBuffer bb;
+            while ((bb = queue.poll()) != null) {
+                BYTE_BUFFER_POOL.give(bb);
+            }
             closed = true;
         }
 
@@ -156,6 +164,7 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
                         throw new IllegalStateException("Stream not closed, but no more data available.");
                     }
                 } else if (byteBuffer.hasRemaining() == false) {
+                    BYTE_BUFFER_POOL.give(byteBuffer);
                     queue.poll();
                 } else {
                     return byteBuffer.get() & 0xFF;
@@ -196,6 +205,7 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
                     offset += len;
 
                     if (byteBuffer.hasRemaining() == false) {
+                        BYTE_BUFFER_POOL.give(byteBuffer);
                         queue.poll();
                     }
 
