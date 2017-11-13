@@ -8,6 +8,7 @@
  */
 package org.pcj.internal.network;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
@@ -26,10 +27,19 @@ public class MessageBytesInputStream {
     private final ByteBuffer header;
     private MessageInputStream messageInputStream;
     private ByteBuffer currentByteBuffer;
+    private boolean hasAllData;
 
     public MessageBytesInputStream() {
         this.header = ByteBuffer.allocate(HEADER_SIZE);
-        reset();
+        prepareForNewMessage();
+    }
+
+    final public void prepareForNewMessage() {
+        currentByteBuffer = null;
+        hasAllData = false;
+        /* necessary new MessageInputStream as previous one still has data
+        and will be processed by Worker */
+        messageInputStream = new MessageInputStream();
     }
 
     private void allocateBuffer(int size) {
@@ -53,7 +63,7 @@ public class MessageBytesInputStream {
                     header.clear();
 
                     if ((lengthWithMarker & LAST_CHUNK_BIT) != 0) {
-                        messageInputStream.close();
+                        hasAllData = true;
                         if (length == 0) {
                             return;
                         }
@@ -69,7 +79,7 @@ public class MessageBytesInputStream {
                     messageInputStream.offerByteBuffer(currentByteBuffer);
 
                     currentByteBuffer = null;
-                    if (messageInputStream.isClosed()) {
+                    if (hasAllData) {
                         return;
                     }
                 }
@@ -89,17 +99,12 @@ public class MessageBytesInputStream {
         return dest;
     }
 
-    public boolean isClosed() {
-        return messageInputStream.isClosed() && currentByteBuffer == null;
+    public boolean hasAllData() {
+        return hasAllData && currentByteBuffer == null;
     }
 
     public MessageDataInputStream getMessageDataInputStream() {
         return new MessageDataInputStream(messageInputStream);
-    }
-
-    final public void reset() {
-        currentByteBuffer = null;
-        messageInputStream = new MessageInputStream();
     }
 
     private static class MessageInputStream extends InputStream {
@@ -122,6 +127,7 @@ public class MessageBytesInputStream {
             while ((bb = queue.poll()) != null) {
                 BYTE_BUFFER_POOL.give(bb);
             }
+
             closed = true;
         }
 
