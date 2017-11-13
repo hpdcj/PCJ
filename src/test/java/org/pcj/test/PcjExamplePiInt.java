@@ -11,10 +11,10 @@ package org.pcj.test;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
 import org.pcj.PcjFuture;
+import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
 import org.pcj.test.PcjExamplePiInt.SharedEnum;
-import org.pcj.RegisterStorage;
 
 /**
  *

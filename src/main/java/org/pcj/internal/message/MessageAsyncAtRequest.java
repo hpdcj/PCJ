@@ -9,9 +9,7 @@
 package org.pcj.internal.message;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.nio.channels.SocketChannel;
-import java.util.concurrent.Callable;
 import org.pcj.AsyncTask;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;

@@ -17,10 +17,10 @@ import java.util.Locale;
 import java.util.Scanner;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
+import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
 import org.pcj.test.PcjMicroBenchmarkBroadcast.SharedEnum;
-import org.pcj.RegisterStorage;
 
 @RegisterStorage(SharedEnum.class)
 public class PcjMicroBenchmarkBroadcast implements StartPoint {

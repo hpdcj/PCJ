@@ -3,14 +3,13 @@
  */
 package org.pcj.internal.message;
 
+import java.io.IOException;
+import java.nio.channels.SocketChannel;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.futures.GroupBarrierState;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
-
-import java.io.IOException;
-import java.nio.channels.SocketChannel;
 
 /**
  * ....

@@ -17,9 +17,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.PCJ;
+import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
-import org.pcj.RegisterStorage;
 
 /**
  * This class represents PCJ thread.

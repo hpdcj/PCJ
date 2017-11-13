@@ -29,9 +29,9 @@ import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
+import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
-import org.pcj.RegisterStorage;
 
 /**
  * SharedProcessor is Java Annotation Processor to process {@literal @}Storage,

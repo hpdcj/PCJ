@@ -12,10 +12,10 @@ import java.util.Random;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
 import org.pcj.PcjFuture;
+import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
 import org.pcj.test.PcjExamplePiMC.SharedEnum;
-import org.pcj.RegisterStorage;
 
 @RegisterStorage(SharedEnum.class)
 public class PcjExamplePiMC implements StartPoint {

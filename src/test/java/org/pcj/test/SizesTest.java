@@ -13,10 +13,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
+import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
 import org.pcj.test.SizesTest.SharedEnum;
-import org.pcj.RegisterStorage;
 
 /**
  *

@@ -8,19 +8,27 @@
  */
 package org.pcj.internal;
 
-import org.pcj.internal.message.Message;
-import org.pcj.internal.message.MessageType;
-import org.pcj.internal.network.*;
-
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.concurrent.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.pcj.internal.message.Message;
+import org.pcj.internal.message.MessageType;
+import org.pcj.internal.network.LoopbackMessageBytesStream;
+import org.pcj.internal.network.LoopbackSocketChannel;
+import org.pcj.internal.network.MessageBytesInputStream;
+import org.pcj.internal.network.MessageBytesOutputStream;
+import org.pcj.internal.network.MessageDataInputStream;
+import org.pcj.internal.network.SelectorProc;
 
 /**
  * This is intermediate class (between classes that want to send data (eg.

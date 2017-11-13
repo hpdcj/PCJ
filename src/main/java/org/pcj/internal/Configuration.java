@@ -39,12 +39,12 @@ final public class Configuration {
      */
     final public static int INIT_RETRY_DELAY;
     /**
-     * pcj.init.maxtime (int) default: max(60, (pcj.retry.count+1) *
-     * pcj.retry.delay)
+     * pcj.init.maxtime (int) default: max(60, (pcj.init.retry.count+1) *
+     * pcj.init.retry.delay)
      */
     final public static int INIT_MAXTIME;
     /**
-     * pcj.buffer.chunksize (int) default: 1024*8
+     * pcj.buffer.chunksize (int) default: 8*1024
      */
     final public static int BUFFER_CHUNK_SIZE;
     /**
@@ -66,14 +66,14 @@ final public class Configuration {
         BUFFER_POOL_SIZE = getPropertyInt("pcj.buffer.poolsize", 1024);
         WORKERS_QUEUE_SIZE = getPropertyInt("pcj.workers.queuesize", 1024);
 
-        LOGGER.log(Level.CONFIG, "pcj.port:  {0,number,#}", DEFAULT_PORT);
-        LOGGER.log(Level.CONFIG, "pcj.init.backlog: {0,number,#}", INIT_BACKLOG_COUNT);
-        LOGGER.log(Level.CONFIG, "pcj.init.retry.count:   {0,number,#}", INIT_RETRY_COUNT);
-        LOGGER.log(Level.CONFIG, "pcj.init.retry.delay:   {0,number,#}", INIT_RETRY_DELAY);
-        LOGGER.log(Level.CONFIG, "pcj.init.maxtime:   {0,number,#}", INIT_MAXTIME);
-        LOGGER.log(Level.CONFIG, "pcj.buffer.chunksize:    {0,number,#}", BUFFER_CHUNK_SIZE);
-        LOGGER.log(Level.CONFIG, "pcj.buffer.poolsize:    {0,number,#}", BUFFER_POOL_SIZE);
-        LOGGER.log(Level.CONFIG, "pcj.workers.queuesize:  {0,number,#}", WORKERS_QUEUE_SIZE);
+        LOGGER.log(Level.CONFIG, "pcj.port:              {0,number,#}", DEFAULT_PORT);
+        LOGGER.log(Level.CONFIG, "pcj.init.backlog:      {0,number,#}", INIT_BACKLOG_COUNT);
+        LOGGER.log(Level.CONFIG, "pcj.init.retry.count:  {0,number,#}", INIT_RETRY_COUNT);
+        LOGGER.log(Level.CONFIG, "pcj.init.retry.delay:  {0,number,#}", INIT_RETRY_DELAY);
+        LOGGER.log(Level.CONFIG, "pcj.init.maxtime:      {0,number,#}", INIT_MAXTIME);
+        LOGGER.log(Level.CONFIG, "pcj.buffer.chunksize:  {0,number,#}", BUFFER_CHUNK_SIZE);
+        LOGGER.log(Level.CONFIG, "pcj.buffer.poolsize:   {0,number,#}", BUFFER_POOL_SIZE);
+        LOGGER.log(Level.CONFIG, "pcj.workers.queuesize: {0,number,#}", WORKERS_QUEUE_SIZE);
     }
 
     private static int getPropertyInt(String name, int defaultValue) {

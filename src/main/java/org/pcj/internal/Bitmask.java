@@ -17,7 +17,6 @@ package org.pcj.internal;
 final public class Bitmask {
 
     private int length = 0;
-//    AtomicLongArray ala=new AtomicLongArray(...);
     private long[] value = new long[length];
     private long[] all = new long[length];
     private static final long MASK = 0xffff_ffff_ffff_ffffL;

@@ -12,6 +12,7 @@ import java.nio.channels.SocketChannel;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.pcj.AsyncTask;
 import org.pcj.Group;
 import org.pcj.PcjFuture;
 import org.pcj.internal.futures.AsyncAtExecution;
@@ -24,7 +25,6 @@ import org.pcj.internal.message.MessagePeerBarrier;
 import org.pcj.internal.message.MessageValueBroadcastRequest;
 import org.pcj.internal.message.MessageValueGetRequest;
 import org.pcj.internal.message.MessageValuePutRequest;
-import org.pcj.AsyncTask;
 
 /**
  * External class that represents group for grouped communication.

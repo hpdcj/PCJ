@@ -8,7 +8,6 @@
  */
 package org.pcj.internal.network;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;

@@ -8,6 +8,25 @@
  */
 package org.pcj.internal;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.nio.channels.SocketChannel;
+import java.util.ArrayDeque;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Objects;
+import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import org.pcj.NodesDescription;
 import org.pcj.StartPoint;
 import org.pcj.internal.futures.GroupJoinQuery;
@@ -17,20 +36,6 @@ import org.pcj.internal.message.MessageGroupJoinQuery;
 import org.pcj.internal.message.MessageGroupJoinRequest;
 import org.pcj.internal.message.MessageHello;
 import org.pcj.internal.network.LoopbackSocketChannel;
-
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.nio.channels.SocketChannel;
-import java.util.*;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * Internal class for external PCJ class.

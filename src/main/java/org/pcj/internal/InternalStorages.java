@@ -8,9 +8,6 @@
  */
 package org.pcj.internal;
 
-import org.pcj.PcjRuntimeException;
-import org.pcj.Storage;
-
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
@@ -26,6 +23,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import org.pcj.PcjRuntimeException;
+import org.pcj.Storage;
 
 /**
  * External class with methods do handle shared variables.
