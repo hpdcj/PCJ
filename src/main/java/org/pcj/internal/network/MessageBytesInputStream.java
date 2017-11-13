@@ -26,7 +26,6 @@ public class MessageBytesInputStream {
     private final ByteBuffer header;
     private MessageInputStream messageInputStream;
     private ByteBuffer currentByteBuffer;
-    private boolean hasAllData;
 
     public MessageBytesInputStream() {
         this.header = ByteBuffer.allocate(HEADER_SIZE);
@@ -35,7 +34,6 @@ public class MessageBytesInputStream {
 
     final public void prepareForNewMessage() {
         currentByteBuffer = null;
-        hasAllData = false;
         /* necessary new MessageInputStream as previous one still has data
         and will be processed by Worker */
         messageInputStream = new MessageInputStream();
@@ -52,6 +50,8 @@ public class MessageBytesInputStream {
 
     public void offerNextBytes(ByteBuffer sourceByteBuffer) {
         while (sourceByteBuffer.hasRemaining()) {
+            boolean lastChunk = false;
+
             if (currentByteBuffer == null) {
                 readBuffer(sourceByteBuffer, header);
 
@@ -62,15 +62,17 @@ public class MessageBytesInputStream {
                     header.clear();
 
                     if ((lengthWithMarker & LAST_CHUNK_BIT) != 0) {
-                        hasAllData = true;
-                        if (length == 0) {
-                            return;
-                        }
+                        lastChunk = true;
                     }
 
-                    allocateBuffer(length);
+                    if (length > 0) {
+                        allocateBuffer(length);
+                    }
                 }
-            } else {
+            }
+
+            /* currentByteBuffer can be changed in allocateBuffer() */
+            if (currentByteBuffer != null) {
                 readBuffer(sourceByteBuffer, currentByteBuffer);
 
                 if (currentByteBuffer.hasRemaining() == false) {
@@ -78,10 +80,12 @@ public class MessageBytesInputStream {
                     messageInputStream.offerByteBuffer(currentByteBuffer);
 
                     currentByteBuffer = null;
-                    if (hasAllData) {
-                        return;
-                    }
                 }
+            }
+
+            if (lastChunk) {
+                messageInputStream.setHasAllData();
+                return;
             }
         }
     }
@@ -99,7 +103,7 @@ public class MessageBytesInputStream {
     }
 
     public boolean hasAllData() {
-        return hasAllData && currentByteBuffer == null;
+        return messageInputStream.hasAllData() && currentByteBuffer == null;
     }
 
     public MessageDataInputStream getMessageDataInputStream() {
@@ -109,11 +113,13 @@ public class MessageBytesInputStream {
     private static class MessageInputStream extends InputStream {
 
         private final Queue<ByteBuffer> queue;
-        volatile private boolean closed;
+        private boolean closed;
+        private boolean hasAllData;
 
         public MessageInputStream() {
             this.queue = new LinkedList<>();
             this.closed = false;
+            this.hasAllData = false;
         }
 
         private boolean offerByteBuffer(ByteBuffer byteBuffer) {
@@ -168,7 +174,7 @@ public class MessageBytesInputStream {
             while (true) {
                 ByteBuffer byteBuffer = queue.peek();
                 if (byteBuffer == null) {
-                    if (closed) {
+                    if (hasAllData) {
                         if (bytesRead == 0) {
                             return -1;
                         } else {
@@ -195,6 +201,14 @@ public class MessageBytesInputStream {
                     }
                 }
             }
+        }
+
+        private void setHasAllData() {
+            hasAllData = true;
+        }
+
+        private boolean hasAllData() {
+            return hasAllData;
         }
     }
 }
