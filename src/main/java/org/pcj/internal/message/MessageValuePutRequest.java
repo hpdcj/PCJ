@@ -18,7 +18,6 @@ import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
 /**
- * ....
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
@@ -71,7 +70,7 @@ final public class MessageValuePutRequest extends Message {
         sharedEnumClassName = in.readString();
         name = in.readString();
         indices = in.readIntArray();
-       
+
         NodeData nodeData = InternalPCJ.getNodeData();
         int globalThreadId = nodeData.getGroupById(groupId).getGlobalThreadId(threadId);
         PcjThread pcjThread = nodeData.getPcjThread(globalThreadId);

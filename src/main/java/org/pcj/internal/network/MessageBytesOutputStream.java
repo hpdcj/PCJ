@@ -46,7 +46,7 @@ public class MessageBytesOutputStream implements AutoCloseable {
             return offset;
         }
 
-        int getRemainingLength() {
+        public int getRemainingLength() {
             return array.length - offset;
         }
 
@@ -109,6 +109,7 @@ public class MessageBytesOutputStream implements AutoCloseable {
         private void allocateBuffer(int size) {
             if (size <= chunkSize) {
                 currentByteBuffer = BYTE_BUFFER_POOL.take();
+//                currentByteBuffer.limit(size);
             } else {
                 currentByteBuffer = ByteBuffer.allocate(size);
             }
@@ -145,21 +146,12 @@ public class MessageBytesOutputStream implements AutoCloseable {
             return currentByteBuffer == null && queue.isEmpty();
         }
 
-        private ByteBuffer peekByteBuffer() {
-            return queue.peek();
-        }
-
-        private ByteBuffer pollByteBuffer() {
-            return queue.poll();
-        }
-
         @Override
         public void write(int b) {
             if (currentByteBuffer.hasRemaining() == false) {
                 flush();
             }
             currentByteBuffer.put((byte) b);
-
         }
 
         @Override

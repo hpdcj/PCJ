@@ -50,8 +50,6 @@ public class MessageBytesInputStream {
 
     public void offerNextBytes(ByteBuffer sourceByteBuffer) {
         while (sourceByteBuffer.hasRemaining()) {
-            boolean lastChunk = false;
-
             if (currentByteBuffer == null) {
                 readBuffer(sourceByteBuffer, header);
 
@@ -62,7 +60,7 @@ public class MessageBytesInputStream {
                     header.clear();
 
                     if ((lengthWithMarker & LAST_CHUNK_BIT) != 0) {
-                        lastChunk = true;
+                        messageInputStream.setReceivingLastChunk();
                     }
 
                     if (length > 0) {
@@ -83,8 +81,7 @@ public class MessageBytesInputStream {
                 }
             }
 
-            if (lastChunk) {
-                messageInputStream.setHasAllData();
+            if (messageInputStream.isReceivingLastChunk()) {
                 return;
             }
         }
@@ -103,7 +100,7 @@ public class MessageBytesInputStream {
     }
 
     public boolean hasAllData() {
-        return messageInputStream.hasAllData() && currentByteBuffer == null;
+        return messageInputStream.isReceivingLastChunk() && currentByteBuffer == null;
     }
 
     public MessageDataInputStream getMessageDataInputStream() {
@@ -114,12 +111,12 @@ public class MessageBytesInputStream {
 
         private final Queue<ByteBuffer> queue;
         private boolean closed;
-        private boolean hasAllData;
+        private boolean receivingLastChunk;
 
         public MessageInputStream() {
             this.queue = new LinkedList<>();
             this.closed = false;
-            this.hasAllData = false;
+            this.receivingLastChunk = false;
         }
 
         private boolean offerByteBuffer(ByteBuffer byteBuffer) {
@@ -174,7 +171,7 @@ public class MessageBytesInputStream {
             while (true) {
                 ByteBuffer byteBuffer = queue.peek();
                 if (byteBuffer == null) {
-                    if (hasAllData) {
+                    if (receivingLastChunk) {
                         if (bytesRead == 0) {
                             return -1;
                         } else {
@@ -203,12 +200,12 @@ public class MessageBytesInputStream {
             }
         }
 
-        private void setHasAllData() {
-            hasAllData = true;
+        private void setReceivingLastChunk() {
+            receivingLastChunk = true;
         }
 
-        private boolean hasAllData() {
-            return hasAllData;
+        private boolean isReceivingLastChunk() {
+            return receivingLastChunk;
         }
     }
 }
