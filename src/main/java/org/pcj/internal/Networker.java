@@ -45,8 +45,9 @@ final public class Networker {
     private final Thread selectorProcThread;
     private final ExecutorService workers;
 
-    protected Networker(int maxWorkerCount) {
-        LOGGER.log(Level.FINE, "Networker with {0,number,#} {0,choice,1#worker|1<workers}", maxWorkerCount);
+    protected Networker(int minWorkerCount, int maxWorkerCount) {
+        LOGGER.log(Level.FINE, "Networker with {0,number,#}-{1,number,#} {1,choice,1#worker|1<workers}",
+                new Object[]{minWorkerCount, maxWorkerCount});
 
         ThreadFactory threadFactory = new ThreadFactory() {
             private final AtomicInteger counter = new AtomicInteger(0);
@@ -58,8 +59,8 @@ final public class Networker {
         };
 
         this.workers = new ThreadPoolExecutor(
-                maxWorkerCount, maxWorkerCount,
-                0L, TimeUnit.NANOSECONDS,
+                minWorkerCount, maxWorkerCount,
+                Configuration.WORKERS_KEEPALIVE, TimeUnit.SECONDS,
                 new ArrayBlockingQueue<>(Configuration.WORKERS_QUEUE_SIZE),
                 threadFactory,
                 new ThreadPoolExecutor.CallerRunsPolicy());

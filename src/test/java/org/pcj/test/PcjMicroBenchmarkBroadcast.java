@@ -13,8 +13,11 @@ package org.pcj.test;
  */
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
 import org.pcj.RegisterStorage;
@@ -35,11 +38,11 @@ public class PcjMicroBenchmarkBroadcast implements StartPoint {
     public void main() {
 
         int[] transmit = {
-//            1, 10, 100, 1024, 2048, 4096, 8192, 16348,
-//            32768, 65536, 131072, 262144, 524288,
-//            1048576,
+            1, 10, 100, 1024, 2048, 4096, 8192, 16348,
+            32768, 65536, 131072, 262144, 524288,
+            1048576,
             2097152,
-//            4194304,
+            4194304,
         };
 
         for (int n : transmit) {
@@ -83,6 +86,12 @@ public class PcjMicroBenchmarkBroadcast implements StartPoint {
     }
 
     public static void main(String[] args) {
+        Level level = Level.CONFIG;
+//        Level level = Level.FINEST;
+        Logger logger = Logger.getLogger("");
+        Arrays.stream(logger.getHandlers()).forEach(handler -> handler.setLevel(level));
+        logger.setLevel(level);
+
         String nodesDescription = "nodes.uniq";
         if (args.length > 0) {
             nodesDescription = args[0];
@@ -95,21 +104,22 @@ public class PcjMicroBenchmarkBroadcast implements StartPoint {
         }
 
         //        int[] threads = {1, 4, 16};
-        int[] threads = {12};
+        int maxNodes = 2;
+        int[] threads = {60};
         // run.jvmargs=-Xmx64m
 
-        String[] nodesUniq = new String[1024];
+        String[] nodesUniq = new String[maxNodes * Arrays.stream(threads).max().orElse(1)];
 
         int n_nodes = 0;
         if (nf != null) {
             while (nf.hasNextLine()) {
-                nodesUniq[n_nodes] = nf.nextLine() + ":9100";
+                nodesUniq[n_nodes] = nf.nextLine() + ":8091";
                 System.out.println(nodesUniq[n_nodes]);
                 n_nodes++;
             }
         } else {
-            for (int i = 0; i < 6; ++i) {
-                nodesUniq[n_nodes] = "localhost:" + (9100 + i);
+            for (int i = 0; i < maxNodes; ++i) {
+                nodesUniq[n_nodes] = "localhost:" + (8091 + i);
                 n_nodes++;
             }
         }
@@ -132,7 +142,7 @@ public class PcjMicroBenchmarkBroadcast implements StartPoint {
                 }
 
                 PCJ.deploy(PcjMicroBenchmarkBroadcast.class,
-                         new NodesDescription(nodes));
+                        new NodesDescription(nodes));
             }
         }
     }

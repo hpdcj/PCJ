@@ -77,7 +77,7 @@ gradle.taskGraph.whenReady {taskGraph ->
         properties['build.number'] = (buildNumber + 1).toString()
         properties.store(versionFile.newWriter(), null)
     } else {
-        buildNumber = buildNumber+"-SNAPSHOT"
+        buildNumber = "$buildNumber-SNAPSHOT-$repoId"
     }
     jar.doFirst {
         version = "$versionNumber.$buildNumber"
