@@ -105,8 +105,8 @@ gradle.taskGraph.whenReady { taskGraph ->
         version = "$versionNumber.$buildNumber"
     }
 
-    def releasesRepoUrl = "$buildDir/repos/releases"
-    def snapshotsRepoUrl = "$buildDir/repos/snapshots"
+    def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots"
+    def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2"
     version = "$versionNumber.$buildNumber"
     publishing.repositories.maven.url = version.contains('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
 }
@@ -165,13 +165,17 @@ publishing {
     repositories {
         maven {
             url = "$buildDir/repos/unknown"
+            credentials {
+                username sonatypeUsername
+                password sonatypePassword
+            }
         }
     }
 }
 
-//signing {
-//    sign publishing.publications.mavenJava
-//}
+signing {
+    sign publishing.publications.mavenJava
+}
 
 
 // Code needed for running Main classes from Task Packages in NetBeans
