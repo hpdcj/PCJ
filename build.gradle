@@ -78,7 +78,7 @@ gradle.taskGraph.whenReady { taskGraph ->
 
     def versionFile = file('build.version')
     if (versionFile.canRead()) {
-        properties.load(new FileInputStream(versionFile))
+        versionFile.withReader { reader -> properties.load(reader) }
     }
 
     if (properties['build.number'] == null) {
@@ -89,16 +89,19 @@ gradle.taskGraph.whenReady { taskGraph ->
     if (taskGraph.hasTask(releaseBuild)) {
         publish.doLast {
             properties['build.number'] = (buildNumber.toInteger() + 1).toString()
-            properties.store(versionFile.newWriter(), null)
+
+            versionFile.withWriter { writer -> properties.store(writer, null) }
+
         }
     } else {
-        if (taskGraph.hasTask(publish)) {
-            buildNumber = "$buildNumber-SNAPSHOT"
-        } else {
-            buildNumber = "$buildNumber-SNAPSHOT-$repoId"
-        }
+        buildNumber = "$buildNumber-SNAPSHOT"
     }
-    version = "$versionNumber.$buildNumber"
+
+    if (taskGraph.hasTask(publish)) {
+        version = "$versionNumber.$buildNumber"
+    } else {
+        buildNumber = "$buildNumber-SNAPSHOT-$repoId"
+    }
     jar.doFirst {
         classifier = ''
         manifest {
@@ -106,10 +109,10 @@ gradle.taskGraph.whenReady { taskGraph ->
         }
     }
 
-//    def snapshotsRepoUrl = "$buildDir/repos/snapshots"
-//    def releasesRepoUrl = "$buildDir/repos/releases"
-    def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots"
-    def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2"
+    def snapshotsRepoUrl = "$buildDir/repos/snapshots"
+    def releasesRepoUrl = "$buildDir/repos/releases"
+//    def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots"
+//    def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2"
     publishing.repositories.maven.url = buildNumber.contains('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
     if (publishing.repositories.maven.url.scheme == "https") {
         publishing.repositories.maven.credentials {
