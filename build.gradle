@@ -15,8 +15,6 @@ plugins {
 
 defaultTasks 'info'
 
-group = 'pl.edu.icm.pcj'
-
 ext.versionNumber = "5.0"
 ext.buildNumber = "SNAPSHOT"
 try {
@@ -57,22 +55,26 @@ task javadoc(overwrite: true, type: Javadoc) {
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
+    from 'LICENSE'
     from javadoc.destinationDir
     classifier = 'javadoc'
 }
 
 task sourcesJar(type: Jar) {
+    from 'LICENSE'
     from sourceSets.main.allJava
+    from sourceSets.main.resources
     classifier = 'sources'
 }
 
 task releaseBuild {
     outputs.upToDateWhen { false }
-    releaseBuild.dependsOn(clean, jar, javadocJar, sourcesJar, publish)
+//    releaseBuild.dependsOn(clean, jar, javadocJar, sourcesJar, publish)
+    releaseBuild.dependsOn(jar, javadocJar, sourcesJar, publish)
 }
 
 gradle.taskGraph.whenReady { taskGraph ->
-    def Properties properties = new Properties()
+    def properties = new Properties()
 
     def versionFile = file('build.version')
     if (versionFile.canRead()) {
@@ -83,32 +85,38 @@ gradle.taskGraph.whenReady { taskGraph ->
         properties['build.number'] = '0'
     }
 
-    buildNumber = properties['build.number'].toInteger()
-
+    buildNumber = properties['build.number']
     if (taskGraph.hasTask(releaseBuild)) {
-        properties['build.number'] = (buildNumber + 1).toString()
-        properties.store(versionFile.newWriter(), null)
+        publish.doLast {
+            properties['build.number'] = (buildNumber.toInteger() + 1).toString()
+            properties.store(versionFile.newWriter(), null)
+        }
     } else {
-        buildNumber = "$buildNumber-SNAPSHOT-$repoId"
+        if (taskGraph.hasTask(publish)) {
+            buildNumber = "$buildNumber-SNAPSHOT"
+        } else {
+            buildNumber = "$buildNumber-SNAPSHOT-$repoId"
+        }
     }
+    version = "$versionNumber.$buildNumber"
     jar.doFirst {
-        version = "$versionNumber.$buildNumber"
         classifier = ''
         manifest {
             attributes('Implementation-Version': "$versionNumber.$buildNumber-$repoId")
         }
     }
-    javadocJar.doFirst {
-        version = "$versionNumber.$buildNumber"
-    }
-    sourcesJar.doFirst {
-        version = "$versionNumber.$buildNumber"
-    }
 
+//    def snapshotsRepoUrl = "$buildDir/repos/snapshots"
+//    def releasesRepoUrl = "$buildDir/repos/releases"
     def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots"
     def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2"
-    version = "$versionNumber.$buildNumber"
-    publishing.repositories.maven.url = version.contains('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+    publishing.repositories.maven.url = buildNumber.contains('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+    if (publishing.repositories.maven.url.scheme == "https") {
+        publishing.repositories.maven.credentials {
+            username sonatypeUsername
+            password sonatypePassword
+        }
+    }
 }
 
 jar {
@@ -133,11 +141,13 @@ def getDate() {
 publishing {
     publications {
         mavenJava(MavenPublication) {
+            groupId = 'pl.edu.icm.pcj'
             artifactId = 'pcj'
-            from components.java
             artifact sourcesJar
             artifact javadocJar
             pom {
+                from components.java
+                packaging 'jar'
                 name = 'PCJ'
                 description = 'PCJ is Java library for parallel computing in Java. It is based on the PGAS (Partitioned Global Address Space) paradigm. It allows for easy implementation in Java of any parallel algorithm. PCJ application can be run on laptop, workstation, cluster and HPC system including large supercomputers.'
                 url = 'http://pcj.icm.edu.pl'
@@ -165,10 +175,6 @@ publishing {
     repositories {
         maven {
             url = "$buildDir/repos/unknown"
-            credentials {
-                username sonatypeUsername
-                password sonatypePassword
-            }
         }
     }
 }
