@@ -42,36 +42,13 @@ public abstract class InternalPCJ {
 
     private static final Logger LOGGER = Logger.getLogger(InternalPCJ.class.getName());
     private static final String PCJ_VERSION;
-    private static final String PCJ_BUILD_TIME;
     private static Networker networker;
     private static NodeData nodeData;
 
 
     static {
-        String version = null;
-        String buildTime = null;
-        try {
-            Class clazz = InternalPCJ.class;
-            String className = "/" + clazz.getName().replace('.', '/') + ".class";
-            String classPath = clazz.getResource(className).toString();
-            String manifestPath = classPath.replace(className, "/META-INF/MANIFEST.MF");
-
-            try (InputStream manifestStream = new URL(manifestPath).openStream()) {
-                Manifest manifest = new Manifest(manifestStream);
-                Attributes mainAttributes = manifest.getMainAttributes();
-
-                version = mainAttributes.getValue("Implementation-Version");
-                buildTime = mainAttributes.getValue("Build-Time");
-            }
-        } catch (Exception ex) {
-        }
-        if (version == null || buildTime == null) {
-            Package p = InternalPCJ.class.getPackage();
-            version = p.getImplementationVersion();
-            buildTime = null;
-        }
-        PCJ_VERSION = version == null ? "UNKNOWN" : version;
-        PCJ_BUILD_TIME = buildTime == null ? "UNKNOWN" : buildTime;
+        Package p = InternalPCJ.class.getPackage();
+        PCJ_VERSION = p.getImplementationVersion() == null ? "UNKNOWN" : p.getImplementationVersion();
     }
 
     /* Suppress default constructor for noninstantiability.
@@ -101,8 +78,7 @@ public abstract class InternalPCJ {
                 && node0.getPort() == currentJvm.getPort();
 
         if (isCurrentJvmNode0) {
-            LOGGER.log(Level.INFO, "PCJ version {0} built on {1}.",
-                    new Object[]{PCJ_VERSION, PCJ_BUILD_TIME});
+            LOGGER.log(Level.INFO, "PCJ version {0}", PCJ_VERSION);
         }
 
         networker = prepareNetworker(currentJvm);

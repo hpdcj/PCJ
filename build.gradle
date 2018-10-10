@@ -109,7 +109,7 @@ gradle.taskGraph.whenReady { taskGraph ->
         manifest {
             attributes(
                 'Specification-Version': "$version",
-                'Implementation-Version': "$version-$repoId.abbreviatedId",
+                'Implementation-Version': "$version-$repoId.abbreviatedId ($date)",
                 'Git-Commit-Id': "$repoId.id",
                 'Build-Time': date,
                 'Built-By': System.getProperty('user.name')
@@ -118,10 +118,10 @@ gradle.taskGraph.whenReady { taskGraph ->
     }
 
     if (taskGraph.hasTask(publish)) {
-        def snapshotsRepoUrl = "$buildDir/repos/snapshots"
-        def releasesRepoUrl = "$buildDir/repos/releases"
-    //    def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots"
-    //    def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2"
+//        def snapshotsRepoUrl = "$buildDir/repos/snapshots"
+//        def releasesRepoUrl = "$buildDir/repos/releases"
+        def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots"
+        def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2"
         publishing.repositories.maven.url = buildNumber.contains('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
         if (publishing.repositories.maven.url.scheme == "https") {
             publishing.repositories.maven.credentials {
