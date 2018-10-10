@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
@@ -9,10 +9,9 @@
 package org.pcj.internal;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
+import java.net.*;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayDeque;
 import java.util.Collections;
@@ -24,9 +23,12 @@ import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
 import org.pcj.NodesDescription;
 import org.pcj.StartPoint;
 import org.pcj.internal.futures.GroupJoinQuery;
@@ -46,14 +48,30 @@ public abstract class InternalPCJ {
 
     private static final Logger LOGGER = Logger.getLogger(InternalPCJ.class.getName());
     private static final String PCJ_VERSION;
-    private static final String PCJ_BUILD_DATE;
+    private static final String PCJ_BUILD_TIME;
     private static Networker networker;
     private static NodeData nodeData;
 
     static {
-        Package p = InternalPCJ.class.getPackage();
-        PCJ_VERSION = p.getImplementationVersion() == null ? "UNKNOWN" : p.getImplementationVersion();
-        PCJ_BUILD_DATE = p.getImplementationTitle() == null ? "UNKNOWN" : p.getImplementationTitle();
+        String version;
+        String buildTime;
+        try {
+            URLClassLoader cl = (URLClassLoader) InternalPCJ.class.getClassLoader();
+            URL url = cl.findResource("META-INF/MANIFEST.MF");
+            try (InputStream manifestStream = url.openStream()) {
+                Manifest manifest = new Manifest(manifestStream);
+                Attributes mainAttributes = manifest.getMainAttributes();
+
+                version = mainAttributes.getValue("Implementation-Version");
+                buildTime = mainAttributes.getValue("Build-Time");
+            }
+        } catch (Exception ex) {
+            Package p = InternalPCJ.class.getPackage();
+            version = p.getImplementationVersion() == null ? "UNKNOWN" : p.getImplementationVersion();
+            buildTime = "UNKNOWN";
+        }
+        PCJ_VERSION = version;
+        PCJ_BUILD_TIME = buildTime;
     }
 
     /* Suppress default constructor for noninstantiability.
@@ -63,7 +81,7 @@ public abstract class InternalPCJ {
     }
 
     protected static void start(Class<? extends StartPoint> startPoint,
-            NodesDescription nodesFile) {
+                                NodesDescription nodesFile) {
         NodeInfo node0 = nodesFile.getNode0();
         NodeInfo currentJvm = nodesFile.getCurrentJvm();
         int allNodesThreadCount = nodesFile.getAllNodesThreadCount();
@@ -71,7 +89,7 @@ public abstract class InternalPCJ {
     }
 
     protected static void start(Class<? extends StartPoint> startPointClass,
-            NodeInfo node0, NodeInfo currentJvm, int allNodesThreadCount) {
+                                NodeInfo node0, NodeInfo currentJvm, int allNodesThreadCount) {
         if (currentJvm == null) {
             throw new IllegalArgumentException("There is no entry for PCJ threads for current JVM");
         }
@@ -84,7 +102,7 @@ public abstract class InternalPCJ {
 
         if (isCurrentJvmNode0) {
             LOGGER.log(Level.INFO, "PCJ version {0} built on {1}.",
-                    new Object[]{PCJ_VERSION, PCJ_BUILD_DATE});
+                    new Object[]{PCJ_VERSION, PCJ_BUILD_TIME});
         }
 
         networker = prepareNetworker(currentJvm);
@@ -119,11 +137,11 @@ public abstract class InternalPCJ {
             if (isCurrentJvmNode0) {
                 nanoTime = System.nanoTime();
                 LOGGER.log(Level.INFO, "Starting {0} with {1,number,#}"
-                        + " {1,choice,1#thread|1<threads}"
-                        + " (on {2,number,#} {2,choice,1#node|1<nodes})...",
+                                + " {1,choice,1#thread|1<threads}"
+                                + " (on {2,number,#} {2,choice,1#node|1<nodes})...",
                         new Object[]{startPointClass.getName(),
-                            nodeData.getGroupById(InternalCommonGroup.GLOBAL_GROUP_ID).threadCount(),
-                            nodeData.getTotalNodeCount(),});
+                                nodeData.getGroupById(InternalCommonGroup.GLOBAL_GROUP_ID).threadCount(),
+                                nodeData.getTotalNodeCount(),});
             }
 
 
@@ -144,14 +162,14 @@ public abstract class InternalPCJ {
                 long s = (timer % 60);
 
                 LOGGER.log(Level.INFO, "Completed {0}"
-                        + " with {1,number,#} {1,choice,1#thread|1<threads}"
-                        + " (on {2,number,#} {2,choice,1#node|1<nodes})"
-                        + " after {3,number,#}h {4,number,#}m {5,number,#}s.",
+                                + " with {1,number,#} {1,choice,1#thread|1<threads}"
+                                + " (on {2,number,#} {2,choice,1#node|1<nodes})"
+                                + " after {3,number,#}h {4,number,#}m {5,number,#}s.",
                         new Object[]{
-                            startPointClass.getName(),
-                            nodeData.getGroupById(InternalCommonGroup.GLOBAL_GROUP_ID).threadCount(),
-                            nodeData.getTotalNodeCount(),
-                            h, m, s
+                                startPointClass.getName(),
+                                nodeData.getGroupById(InternalCommonGroup.GLOBAL_GROUP_ID).threadCount(),
+                                nodeData.getTotalNodeCount(),
+                                h, m, s
                         });
             }
 
@@ -190,7 +208,7 @@ public abstract class InternalPCJ {
     private static void waitForPcjThreadsComplete(Set<PcjThread> pcjThreads) {
         while (pcjThreads.isEmpty() == false) {
             try {
-                for (Iterator<PcjThread> it = pcjThreads.iterator(); it.hasNext();) {
+                for (Iterator<PcjThread> it = pcjThreads.iterator(); it.hasNext(); ) {
                     PcjThread pcjThread = it.next();
                     pcjThread.join(100);
                     if (pcjThread.isAlive() == false) {
@@ -236,7 +254,7 @@ public abstract class InternalPCJ {
 
     private static void bindOnAllNetworkInterfaces(Queue<InetAddress> inetAddresses, int bindingPort) throws UncheckedIOException {
         for (int attempt = 0; attempt <= Configuration.INIT_RETRY_COUNT; ++attempt) {
-            for (Iterator<InetAddress> it = inetAddresses.iterator(); it.hasNext();) {
+            for (Iterator<InetAddress> it = inetAddresses.iterator(); it.hasNext(); ) {
                 InetAddress inetAddress = it.next();
 
                 try {
@@ -247,10 +265,10 @@ public abstract class InternalPCJ {
                         LOGGER.log(Level.WARNING,
                                 "({0,number,#} attempt of {1,number,#}) Binding on port {2,number,#} failed: {3}. Retrying.",
                                 new Object[]{
-                                    attempt + 1,
-                                    Configuration.INIT_RETRY_COUNT + 1,
-                                    bindingPort,
-                                    ex.getMessage()});
+                                        attempt + 1,
+                                        Configuration.INIT_RETRY_COUNT + 1,
+                                        bindingPort,
+                                        ex.getMessage()});
                     } else {
                         throw new UncheckedIOException(String.format("Binding on port %s failed!", bindingPort), ex);
                     }
@@ -302,7 +320,7 @@ public abstract class InternalPCJ {
                         LOGGER.log(Level.WARNING,
                                 "({0,number,#} attempt of {1,number,#}) Connecting to node0 ({2}:{3,number,#}) failed: {4}. Retrying.",
                                 new Object[]{attempt + 1, Configuration.INIT_RETRY_COUNT + 1,
-                                    node0.getHostname(), node0.getPort(), ex.getMessage()});
+                                        node0.getHostname(), node0.getPort(), ex.getMessage()});
                         try {
                             Thread.sleep(Configuration.INIT_RETRY_DELAY * 1000 + (int) (Math.random() * 1000));
                         } catch (InterruptedException e) {
@@ -404,7 +422,7 @@ public abstract class InternalPCJ {
 
         MessageGroupJoinRequest message
                 = new MessageGroupJoinRequest(requestNum, groupName, commonGroup.getGroupId(),
-                        nodeData.getPhysicalId(), globalThreadId);
+                nodeData.getPhysicalId(), globalThreadId);
 
         SocketChannel masterSocketChannel = nodeData.getSocketChannelByPhysicalId().get(commonGroup.getGroupMasterNode());
 

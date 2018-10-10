@@ -13,15 +13,14 @@ plugins {
     id 'signing'
 }
 
+def getDate() {
+    return new Date().format("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+}
+
 defaultTasks 'info'
 
 ext.versionNumber = "5.0"
-ext.buildNumber = "SNAPSHOT"
-try {
-    ext.repoId = org.ajoberstar.grgit.Grgit.open(project.file('.')).head().abbreviatedId;
-} catch (Exception e) {
-    ext.repoId = "unknown"
-}
+ext.buildNumber = "unknown"
 
 repositories {
     //    mavenCentral()
@@ -69,8 +68,11 @@ task sourcesJar(type: Jar) {
 
 task releaseBuild {
     outputs.upToDateWhen { false }
-//    releaseBuild.dependsOn(clean, jar, javadocJar, sourcesJar, publish)
-    releaseBuild.dependsOn(jar, javadocJar, sourcesJar, publish)
+    releaseBuild.dependsOn(clean, jar, javadocJar, sourcesJar)
+}
+
+task publishReleaseBuild {
+    publishReleaseBuild.dependsOn(releaseBuild, publish)
 }
 
 gradle.taskGraph.whenReady { taskGraph ->
@@ -78,7 +80,7 @@ gradle.taskGraph.whenReady { taskGraph ->
 
     def versionFile = file('build.version')
     if (versionFile.canRead()) {
-        versionFile.withReader { reader -> properties.load(reader) }
+        versionFile.withReader { properties.load(it) }
     }
 
     if (properties['build.number'] == null) {
@@ -89,35 +91,43 @@ gradle.taskGraph.whenReady { taskGraph ->
     if (taskGraph.hasTask(releaseBuild)) {
         publish.doLast {
             properties['build.number'] = (buildNumber.toInteger() + 1).toString()
-
-            versionFile.withWriter { writer -> properties.store(writer, null) }
-
+            versionFile.withWriter { properties.store(it, null) }
         }
     } else {
         buildNumber = "$buildNumber-SNAPSHOT"
     }
 
-    if (taskGraph.hasTask(publish)) {
-        version = "$versionNumber.$buildNumber"
-    } else {
-        buildNumber = "$buildNumber-SNAPSHOT-$repoId"
+    def repoId = [abbreviatedId: "unknown", id: "unknown"]
+    try {
+        repoId = org.ajoberstar.grgit.Grgit.open(project.file('.')).head();
+    } catch (Exception e) {
     }
+
+    version = "$versionNumber.$buildNumber"
     jar.doFirst {
         classifier = ''
         manifest {
-            attributes('Implementation-Version': "$versionNumber.$buildNumber-$repoId")
+            attributes(
+                'Specification-Version': "$version",
+                'Implementation-Version': "$version-$repoId.abbreviatedId",
+                'Git-Commit-Id': "$repoId.id",
+                'Build-Time': date,
+                'Built-By': System.getProperty('user.name')
+            )
         }
     }
 
-    def snapshotsRepoUrl = "$buildDir/repos/snapshots"
-    def releasesRepoUrl = "$buildDir/repos/releases"
-//    def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots"
-//    def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2"
-    publishing.repositories.maven.url = buildNumber.contains('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
-    if (publishing.repositories.maven.url.scheme == "https") {
-        publishing.repositories.maven.credentials {
-            username sonatypeUsername
-            password sonatypePassword
+    if (taskGraph.hasTask(publish)) {
+        def snapshotsRepoUrl = "$buildDir/repos/snapshots"
+        def releasesRepoUrl = "$buildDir/repos/releases"
+    //    def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots"
+    //    def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2"
+        publishing.repositories.maven.url = buildNumber.contains('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+        if (publishing.repositories.maven.url.scheme == "https") {
+            publishing.repositories.maven.credentials {
+                username sonatypeUsername
+                password sonatypePassword
+            }
         }
     }
 }
@@ -125,9 +135,11 @@ gradle.taskGraph.whenReady { taskGraph ->
 jar {
     from 'LICENSE'
     manifest {
-        attributes('Implementation-Version': "$repoId",
-                'Implementation-Vendor': System.getProperty('user.name'),
-                'Implementation-Title': date,
+        attributes(
+                'Specification-Title': 'PCJ -- Parallel Computing in Java',
+                'Implementation-Title': 'org.pcj',
+                'Specification-Vendor': 'PCJ Library, Marek Nowicki',
+                'Implementation-Vendor': 'Marek Nowicki',
                 'Sealed': true,
                 // 'Profile': 'compact3',
         )
@@ -135,11 +147,6 @@ jar {
     }
 }
 
-def getDate() {
-    def date = new Date()
-    def formattedDate = date.format('yyyy-MM-dd HH:mm:ss.SSS z')
-    return formattedDate
-}
 
 publishing {
     publications {
