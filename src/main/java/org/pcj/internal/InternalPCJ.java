@@ -13,13 +13,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.*;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayDeque;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Objects;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -52,13 +46,17 @@ public abstract class InternalPCJ {
     private static Networker networker;
     private static NodeData nodeData;
 
+
     static {
-        String version;
-        String buildTime;
+        String version = null;
+        String buildTime = null;
         try {
-            URLClassLoader cl = (URLClassLoader) InternalPCJ.class.getClassLoader();
-            URL url = cl.findResource("META-INF/MANIFEST.MF");
-            try (InputStream manifestStream = url.openStream()) {
+            Class clazz = InternalPCJ.class;
+            String className = "/" + clazz.getName().replace('.', '/') + ".class";
+            String classPath = clazz.getResource(className).toString();
+            String manifestPath = classPath.replace(className, "/META-INF/MANIFEST.MF");
+
+            try (InputStream manifestStream = new URL(manifestPath).openStream()) {
                 Manifest manifest = new Manifest(manifestStream);
                 Attributes mainAttributes = manifest.getMainAttributes();
 
@@ -66,12 +64,14 @@ public abstract class InternalPCJ {
                 buildTime = mainAttributes.getValue("Build-Time");
             }
         } catch (Exception ex) {
-            Package p = InternalPCJ.class.getPackage();
-            version = p.getImplementationVersion() == null ? "UNKNOWN" : p.getImplementationVersion();
-            buildTime = "UNKNOWN";
         }
-        PCJ_VERSION = version;
-        PCJ_BUILD_TIME = buildTime;
+        if (version == null || buildTime == null) {
+            Package p = InternalPCJ.class.getPackage();
+            version = p.getImplementationVersion();
+            buildTime = null;
+        }
+        PCJ_VERSION = version == null ? "UNKNOWN" : version;
+        PCJ_BUILD_TIME = buildTime == null ? "UNKNOWN" : buildTime;
     }
 
     /* Suppress default constructor for noninstantiability.
