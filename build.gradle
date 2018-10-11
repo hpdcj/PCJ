@@ -19,6 +19,7 @@ def getDate() {
 
 defaultTasks 'info'
 
+archivesBaseName = "pcj"
 ext.versionNumber = "5.0"
 ext.buildNumber = "unknown"
 
@@ -66,9 +67,13 @@ task sourcesJar(type: Jar) {
     classifier = 'sources'
 }
 
+task snapshotBuild {
+    snapshotBuild.dependsOn(jar, javadocJar, sourcesJar)
+}
+
 task releaseBuild {
     outputs.upToDateWhen { false }
-    releaseBuild.dependsOn(clean, jar, javadocJar, sourcesJar)
+    releaseBuild.dependsOn(clean, build, javadocJar, sourcesJar)
 }
 
 task publishReleaseBuild {
