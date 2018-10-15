@@ -4,10 +4,31 @@ PCJ is Java library for parallel computing in Java. It is based on the PGAS (Par
 
 Library requires at least Java 8, no modifications to Java syntax or JVM are neccessary.
 
+## Using PCJ Library
+
+PCJ Library is now available on Maven Central Repository.
+
+For maven project, just add this dependency to your `pom.xml` file.
+
+    <dependency>
+        <groupId>pl.edu.icm.pcj</groupId>
+        <artifactId>pcj</artifactId>
+        <version>5.0.6</version>
+    </dependency>
+
+If you are using gradle, add those lines to your `build.gradle` file:
+
+    implementation 'pl.edu.icm.pcj:pcj:5.0.6'
+    annotationProcessor 'pl.edu.icm.pcj:pcj:5.0.6'
+
+
 ## Building project
+
+If you wish to compile project by your own, use these instructions:
 
 * to package the jar: ```./gradlew assemble```    or  ```gradlew.bat assemble```
 * to create javadoc: ```./gradlew javadoc``` or ```gradlew.bat javadoc```
+
 
 ## Importing the project in eclipse
 
@@ -15,6 +36,7 @@ Execute `./gradlew eclipse`, start `eclipse`, and use
 `File -> Import : Existing Projects into Workspace`.  See
 <http://gradle.org/docs/current/userguide/eclipse_plugin.html> for more
 information.
+
 
 ## Reference
 The usage should be acknowledged by reference to the [PCJ web site](http://pcj.icm.edu.pl) and/or reference to the papers:
