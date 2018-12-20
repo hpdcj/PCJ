@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
@@ -11,6 +11,7 @@ package org.pcj.internal.message;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.Queue;
+import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
@@ -69,11 +70,10 @@ final public class MessageValueBroadcastInform extends Message {
         physicalId = in.readInt();
 
         NodeData nodeData = InternalPCJ.getNodeData();
-        
-        
-        InternalGroup group = nodeData.getPcjThread(requesterThreadId).getThreadData().getGroupById(groupId);
 
-        BroadcastState broadcastState = group.getBroadcastState(requestNum);
+        InternalCommonGroup group = nodeData.getGroupById(groupId);
+
+        BroadcastState broadcastState = group.getBroadcastState(requestNum, requesterThreadId);
         boolean exceptionOccurs = in.readBoolean();
         try {
             if (exceptionOccurs) {
@@ -85,14 +85,31 @@ final public class MessageValueBroadcastInform extends Message {
         }
 
         if (broadcastState.processPhysical(physicalId)) {
-            if (broadcastState.isExceptionOccurs() == false) {
-                broadcastState.signalDone();
-            } else {
-                RuntimeException ex = new RuntimeException("Exception while broadcasting value.");
-                broadcastState.getExceptions().forEach(ex::addSuppressed);
-
-                broadcastState.signalException(ex);
+            int globalThreadId = group.getGlobalThreadId(requesterThreadId);
+            int requesterPhysicalId = nodeData.getPhysicalId(globalThreadId);
+            if (requesterPhysicalId != nodeData.getPhysicalId()) { // requester is going to receive response
+                group.removeBroadcastState(requestNum);
             }
+
+            Message message;
+            SocketChannel socket;
+
+            int physicalId = nodeData.getPhysicalId();
+            if (physicalId == group.getGroupMasterNode()) {
+                message = new MessageValueBroadcastResponse(groupId, requestNum, requesterThreadId,
+                        nodeData.getPhysicalId(), broadcastState.getExceptions());
+
+                socket = nodeData.getSocketChannelByPhysicalId().get(requesterPhysicalId);
+            } else {
+                int parentId = group.getParentNode();
+                socket = nodeData.getSocketChannelByPhysicalId().get(parentId);
+
+                message = new MessageValueBroadcastInform(groupId, requestNum, requesterThreadId,
+                        nodeData.getPhysicalId(), broadcastState.getExceptions());
+
+            }
+
+            InternalPCJ.getNetworker().send(socket, message);
         }
     }
 }

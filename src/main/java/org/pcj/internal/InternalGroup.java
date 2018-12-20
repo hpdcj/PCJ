@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
@@ -41,8 +41,6 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     private final ConcurrentMap<Integer, PutVariable> putVariableMap;
     private final AtomicInteger asyncAtExecutionCounter;
     private final ConcurrentMap<Integer, AsyncAtExecution> asyncAtExecutionMap;
-    private final AtomicInteger broadcastCounter;
-    private final ConcurrentMap<Integer, BroadcastState> broadcastStateMap;
     private final ConcurrentMap<Integer, PeerBarrierState> peerBarrierStateMap;
 
     public InternalGroup(int threadId, InternalCommonGroup internalGroup) {
@@ -60,9 +58,6 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
 
         asyncAtExecutionCounter = new AtomicInteger(0);
         asyncAtExecutionMap = new ConcurrentHashMap<>();
-
-        broadcastCounter = new AtomicInteger(0);
-        broadcastStateMap = new ConcurrentHashMap<>();
 
         peerBarrierStateMap = new ConcurrentHashMap<>();
     }
@@ -147,6 +142,23 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         return putVariableMap.remove(requestNum);
     }
 
+    @Override
+    public <T> PcjFuture<Void> asyncBroadcast(T newValue, Enum<?> variable, int... indices) {
+        int requestNum = super.getBroadcastCounter().incrementAndGet();
+        BroadcastState broadcastState = super.getBroadcastState(requestNum, myThreadId);
+
+        int physicalMasterId = super.getGroupMasterNode();
+        SocketChannel masterSocket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalMasterId);
+
+        MessageValueBroadcastRequest message
+                = new MessageValueBroadcastRequest(
+                        super.getGroupId(), requestNum, myThreadId,
+                        variable.getDeclaringClass().getName(), variable.name(), indices, newValue);
+        InternalPCJ.getNetworker().send(masterSocket, message);
+
+        return broadcastState;
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public <T> PcjFuture<T> asyncAt(int threadId, AsyncTask<T> asyncTask) {
@@ -159,9 +171,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalId);
 
         MessageAsyncAtRequest<T> message
-                = new MessageAsyncAtRequest<>(
-                        super.getGroupId(), requestNum, myThreadId, threadId,
-                        asyncTask);
+                = new MessageAsyncAtRequest<>(super.getGroupId(), requestNum, myThreadId, threadId, asyncTask);
 
         InternalPCJ.getNetworker().send(socket, message);
 
@@ -172,28 +182,4 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         return asyncAtExecutionMap.remove(requestNum);
     }
 
-    @Override
-    public <T> PcjFuture<Void> asyncBroadcast(T newValue, Enum<?> variable, int... indices) {
-        int requestNum = broadcastCounter.incrementAndGet();
-        BroadcastState broadcastState = getBroadcastState(requestNum);
-
-        int physicalMasterId = super.getGroupMasterNode();
-        SocketChannel masterSocket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalMasterId);
-
-        MessageValueBroadcastRequest message
-                = new MessageValueBroadcastRequest(super.getGroupId(), requestNum, myThreadId,
-                        variable.getDeclaringClass().getName(), variable.name(), indices, newValue);
-        InternalPCJ.getNetworker().send(masterSocket, message);
-
-        return broadcastState;
-    }
-
-    final public BroadcastState getBroadcastState(int requestNum) {
-        return broadcastStateMap.computeIfAbsent(requestNum,
-                key -> new BroadcastState(super.getPhysicalBitmask()));
-    }
-
-    public BroadcastState removeBroadcastState(int requestNum) {
-        return broadcastStateMap.remove(requestNum);
-    }
 }

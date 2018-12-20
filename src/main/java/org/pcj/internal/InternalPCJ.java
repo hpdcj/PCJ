@@ -9,20 +9,24 @@
 package org.pcj.internal;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.net.*;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.nio.channels.SocketChannel;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Objects;
+import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.jar.Attributes;
-import java.util.jar.Manifest;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
 import org.pcj.NodesDescription;
 import org.pcj.StartPoint;
 import org.pcj.internal.futures.GroupJoinQuery;
@@ -44,7 +48,6 @@ public abstract class InternalPCJ {
     private static final String PCJ_VERSION;
     private static Networker networker;
     private static NodeData nodeData;
-
 
     static {
         Package p = InternalPCJ.class.getPackage();

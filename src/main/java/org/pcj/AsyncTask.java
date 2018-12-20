@@ -9,31 +9,23 @@
 package org.pcj;
 
 import java.io.Serializable;
+import java.util.concurrent.Callable;
 
 /**
  * Serializable Task to be used as functional interface with returing value.
  *
  * @param <T> type of returned value
- *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 @FunctionalInterface
-public interface AsyncTask<T> extends Serializable {
-
-    /**
-     * Method to implement.
-     *
-     * @return value returned by the task
-     * @throws Exception can throw any exception
-     */
-    T call() throws Exception;
+public interface AsyncTask<T> extends Callable<T>, Serializable {
 
     /**
      * Serializable Task to be used as functional interface without returning
      * value.
      */
     @FunctionalInterface
-    public interface VoidTask extends AsyncTask<Void> {
+    interface VoidTask extends AsyncTask<Void> {
 
         /**
          * Method to implement.
@@ -47,11 +39,10 @@ public interface AsyncTask<T> extends Serializable {
          * method.
          */
         @Override
-        public default Void call() throws Exception {
+        default Void call() throws Exception {
             run();
             return null;
         }
-
     }
 
 }

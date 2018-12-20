@@ -13,14 +13,14 @@ plugins {
     id 'signing'
 }
 
-def getDate() {
+static def getDate() {
     return new Date().format("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
 }
 
 defaultTasks 'info'
 
 archivesBaseName = "pcj"
-ext.versionNumber = "5.0"
+ext.versionNumber = "5.1"
 ext.buildNumber = "unknown"
 
 repositories {
@@ -104,8 +104,8 @@ gradle.taskGraph.whenReady { taskGraph ->
 
     def repoId = [abbreviatedId: "unknown", id: "unknown"]
     try {
-        repoId = org.ajoberstar.grgit.Grgit.open(project.file('.')).head();
-    } catch (Exception e) {
+        repoId = org.ajoberstar.grgit.Grgit.open(project.file('.')).head()
+    } catch (Exception) {
     }
 
     version = "$versionNumber.$buildNumber"

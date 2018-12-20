@@ -82,7 +82,9 @@ final public class MessageValueBroadcastRequest extends Message {
         MessageValueBroadcastBytes message
                 = new MessageValueBroadcastBytes(groupId, requestNum, requesterThreadId, sharedEnumClassName, name, indices, clonedData);
 
-        group.getChildrenNodes().stream().map(nodeData.getSocketChannelByPhysicalId()::get)
+        group.getChildrenNodes()
+                .stream()
+                .map(nodeData.getSocketChannelByPhysicalId()::get)
                 .forEach(socket -> InternalPCJ.getNetworker().send(socket, message));
         
         Queue<Exception> exceptionsQueue = new LinkedList<>();
@@ -91,7 +93,7 @@ final public class MessageValueBroadcastRequest extends Message {
             try {
                 int globalThreadId = group.getGlobalThreadId(threadId);
                 PcjThread pcjThread = nodeData.getPcjThread(globalThreadId);
-                InternalStorages storage = (InternalStorages) pcjThread.getThreadData().getStorages();
+                InternalStorages storage = pcjThread.getThreadData().getStorages();
 
                 clonedData.reset();
                 newValue = new ObjectInputStream(clonedData).readObject();
@@ -106,8 +108,8 @@ final public class MessageValueBroadcastRequest extends Message {
         int requesterPhysicalId = nodeData.getPhysicalId(globalThreadId);
         SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(requesterPhysicalId);
 
-        MessageValueBroadcastInform messageInform = new MessageValueBroadcastInform(groupId, requestNum, requesterThreadId,
-                nodeData.getPhysicalId(), exceptionsQueue);
+        MessageValueBroadcastInform messageInform
+                = new MessageValueBroadcastInform(groupId, requestNum, requesterThreadId, nodeData.getPhysicalId(), exceptionsQueue);
         InternalPCJ.getNetworker().send(socket, messageInform);
     }
 }

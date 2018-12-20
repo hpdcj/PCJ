@@ -8,7 +8,10 @@
  */
 package org.pcj.internal.futures;
 
+import java.util.List;
 import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -23,13 +26,12 @@ import org.pcj.internal.Bitmask;
 public class BroadcastState extends InternalFuture<Void> implements PcjFuture<Void> {
 
     private final Queue<Exception> exceptions;
-    private final Bitmask physicalBarrierBitmask;
-    private final Bitmask physicalBarrierMaskBitmask;
+    private final Set<Integer> childrenSet;
     private Exception exception;
 
-    public BroadcastState(Bitmask physicalBitmask) {
-        physicalBarrierBitmask = new Bitmask(physicalBitmask.getSize());
-        physicalBarrierMaskBitmask = new Bitmask(physicalBitmask);
+    public BroadcastState(List<Integer> childrenNodes) {
+        this.childrenSet = ConcurrentHashMap.newKeySet(childrenNodes.size());
+        childrenNodes.forEach(childrenSet::add);
 
         this.exceptions = new ConcurrentLinkedDeque<>();
     }
@@ -80,14 +82,14 @@ public class BroadcastState extends InternalFuture<Void> implements PcjFuture<Vo
     }
 
     private void setPhysical(int physicalId) {
-        physicalBarrierBitmask.set(physicalId);
+        childrenSet.remove(physicalId);
     }
 
     private boolean isPhysicalSet() {
-        return physicalBarrierBitmask.isSet(physicalBarrierMaskBitmask);
+        return childrenSet.isEmpty();
     }
 
-    public synchronized boolean processPhysical(int physicalId) {
+    public boolean processPhysical(int physicalId) {
         this.setPhysical(physicalId);
         return isPhysicalSet();
     }

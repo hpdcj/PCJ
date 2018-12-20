@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
@@ -12,11 +12,11 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.nio.channels.SocketChannel;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Queue;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.InternalStorages;
+import org.pcj.internal.Networker;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.PcjThread;
 import org.pcj.internal.network.CloneInputStream;
@@ -82,14 +82,15 @@ final public class MessageValueBroadcastBytes extends Message {
         NodeData nodeData = InternalPCJ.getNodeData();
         InternalCommonGroup group = nodeData.getGroupById(groupId);
 
-        List<Integer> children = group.getChildrenNodes();
+        Networker networker = InternalPCJ.getNetworker();
 
         MessageValueBroadcastBytes message
-                = new MessageValueBroadcastBytes(groupId, requestNum, requesterThreadId,
-                        sharedEnumClassName, name, indices, clonedData);
+                = new MessageValueBroadcastBytes(groupId, requestNum, requesterThreadId, sharedEnumClassName, name, indices, clonedData);
 
-        children.stream().map(nodeData.getSocketChannelByPhysicalId()::get)
-                .forEach(socket -> InternalPCJ.getNetworker().send(socket, message));
+        group.getChildrenNodes()
+                .stream()
+                .map(nodeData.getSocketChannelByPhysicalId()::get)
+                .forEach(socket -> networker.send(socket, message));
 
         Queue<Exception> exceptionsQueue = new LinkedList<>();
         int[] threadsId = group.getLocalThreadsId();
@@ -97,7 +98,7 @@ final public class MessageValueBroadcastBytes extends Message {
             try {
                 int globalThreadId = group.getGlobalThreadId(threadId);
                 PcjThread pcjThread = nodeData.getPcjThread(globalThreadId);
-                InternalStorages storage = (InternalStorages) pcjThread.getThreadData().getStorages();
+                InternalStorages storage = pcjThread.getThreadData().getStorages();
 
                 clonedData.reset();
                 Object newValue = new ObjectInputStream(clonedData).readObject();
@@ -108,12 +109,11 @@ final public class MessageValueBroadcastBytes extends Message {
             }
         }
 
-        int globalThreadId = group.getGlobalThreadId(requesterThreadId);
-        int requesterPhysicalId = nodeData.getPhysicalId(globalThreadId);
-        SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(requesterPhysicalId);
+        int parentId = group.getParentNode();
+        SocketChannel socket = nodeData.getSocketChannelByPhysicalId().get(parentId);
 
-        MessageValueBroadcastInform messageInform = new MessageValueBroadcastInform(groupId, requestNum, requesterThreadId,
-                nodeData.getPhysicalId(), exceptionsQueue);
-        InternalPCJ.getNetworker().send(socket, messageInform);
+        MessageValueBroadcastInform messageInform
+                = new MessageValueBroadcastInform(groupId, requestNum, requesterThreadId, nodeData.getPhysicalId(), exceptionsQueue);
+        networker.send(socket, messageInform);
     }
 }

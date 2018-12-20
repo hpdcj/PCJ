@@ -18,84 +18,54 @@ import java.util.Map;
  */
 public enum MessageType {
 
-    /**
-     * @see MessageHello
-     */
-    /**
-     * @see MessageHello
-     */
     HELLO((byte) 1) {
         @Override
         public MessageHello create() {
             return new MessageHello();
         }
     },
-    /**
-     * @see MessageHelloInform
-     */
     HELLO_INFORM((byte) 2) {
         @Override
         public MessageHelloInform create() {
             return new MessageHelloInform();
         }
     },
-    /**
-     * @see MessageHelloBonjour
-     */
     HELLO_BONJOUR((byte) 3) {
         @Override
         public MessageHelloBonjour create() {
             return new MessageHelloBonjour();
         }
     },
-    /**
-     * @see MessageHelloBonjour
-     */
     HELLO_COMPLETED((byte) 4) {
         @Override
         public MessageHelloCompleted create() {
             return new MessageHelloCompleted();
         }
     },
-    /**
-     * @see MessageHelloGo
-     */
     HELLO_GO((byte) 5) {
         @Override
         public MessageHelloGo create() {
             return new MessageHelloGo();
         }
     },
-    /**
-     * @see MessageHelloBonjour
-     */
     BYE((byte) 6) {
         @Override
         public MessageBye create() {
             return new MessageBye();
         }
     },
-    /**
-     * @see MessageHelloGo
-     */
     BYE_COMPLETED((byte) 7) {
         @Override
         public MessageByeCompleted create() {
             return new MessageByeCompleted();
         }
     },
-    /**
-     * @see MessageGroupBarrierWaiting
-     */
     GROUP_BARRIER_WAITING((byte) 10) {
         @Override
         public MessageGroupBarrierWaiting create() {
             return new MessageGroupBarrierWaiting();
         }
     },
-    /**
-     * @see MessageGroupBarrierGo
-     */
     GROUP_BARRIER_GO((byte) 11) {
         @Override
         public MessageGroupBarrierGo create() {
@@ -198,6 +168,12 @@ public enum MessageType {
             return new MessageValueBroadcastInform();
         }
     },
+    VALUE_BROADCAST_RESPONSE((byte) 39) {
+        @Override
+        public MessageValueBroadcastResponse create() {
+            return new MessageValueBroadcastResponse();
+        }
+    },
     /**
      * @see MessageUnknown
      */
@@ -212,7 +188,7 @@ public enum MessageType {
     private final byte id;
 
     static {
-        Map<Byte, MessageType> localMap = new HashMap<>(32, 1.0f);
+        Map<Byte, MessageType> localMap = new HashMap<>(40, 1.0f);
         for (MessageType type : MessageType.values()) {
             localMap.put(type.getId(), type);
         }
