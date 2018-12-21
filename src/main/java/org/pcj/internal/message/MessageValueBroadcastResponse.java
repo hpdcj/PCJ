@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2018, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -11,10 +11,11 @@ package org.pcj.internal.message;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.Queue;
+import org.pcj.PcjRuntimeException;
 import org.pcj.internal.InternalGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
-import org.pcj.internal.futures.BroadcastState;
+import org.pcj.internal.futures.BroadcastStates;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
@@ -28,20 +29,18 @@ final public class MessageValueBroadcastResponse extends Message {
     private int groupId;
     private int requestNum;
     private int requesterThreadId;
-    private int physicalId;
     private Queue<Exception> exceptions;
 
     public MessageValueBroadcastResponse() {
         super(MessageType.VALUE_BROADCAST_RESPONSE);
     }
 
-    public MessageValueBroadcastResponse(int groupId, int requestNum, int requesterThreadId, int physicalId, Queue<Exception> exceptions) {
+    public MessageValueBroadcastResponse(int groupId, int requestNum, int requesterThreadId, Queue<Exception> exceptions) {
         this();
 
         this.groupId = groupId;
         this.requestNum = requestNum;
         this.requesterThreadId = requesterThreadId;
-        this.physicalId = physicalId;
         this.exceptions = exceptions;
     }
 
@@ -50,7 +49,6 @@ final public class MessageValueBroadcastResponse extends Message {
         out.writeInt(groupId);
         out.writeInt(requestNum);
         out.writeInt(requesterThreadId);
-        out.writeInt(physicalId);
 
         if ((exceptions != null) && (exceptions.isEmpty() == false)) {
             out.writeBoolean(true);
@@ -66,31 +64,31 @@ final public class MessageValueBroadcastResponse extends Message {
         groupId = in.readInt();
         requestNum = in.readInt();
         requesterThreadId = in.readInt();
-        physicalId = in.readInt();
 
         NodeData nodeData = InternalPCJ.getNodeData();
 
         InternalGroup group = nodeData.getPcjThread(requesterThreadId).getThreadData().getGroupById(groupId);
 
-        BroadcastState broadcastState = group.getBroadcastState(requestNum, requesterThreadId);
+        BroadcastStates states = group.getBroadcastStates();
+        BroadcastStates.State state = states.remove(requestNum, requesterThreadId);
+
         boolean exceptionOccurs = in.readBoolean();
         try {
             if (exceptionOccurs) {
                 exceptions = (Queue<Exception>) in.readObject();
-                exceptions.forEach(broadcastState::addException);
+                exceptions.forEach(state::addException);
             }
         } catch (Exception ex) {
-            broadcastState.addException(ex);
+            state.addException(ex);
         }
 
-        group.removeBroadcastState(requestNum);
-        if (broadcastState.isExceptionOccurs() == false) {
-            broadcastState.signalDone();
+        if (state.getExceptions().isEmpty()) {
+            state.signalDone();
         } else {
-            RuntimeException ex = new RuntimeException("Exception while broadcasting value.");
-            broadcastState.getExceptions().forEach(ex::addSuppressed);
+            PcjRuntimeException ex = new PcjRuntimeException("Exception while broadcasting value.");
+            state.getExceptions().forEach(ex::addSuppressed);
 
-            broadcastState.signalException(ex);
+            state.signalException(ex);
         }
     }
 }

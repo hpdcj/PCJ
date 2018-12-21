@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2018, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -11,14 +11,13 @@ package org.pcj.internal.message;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.nio.channels.SocketChannel;
-import java.util.LinkedList;
-import java.util.Queue;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.InternalStorages;
 import org.pcj.internal.Networker;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.PcjThread;
+import org.pcj.internal.futures.BroadcastStates;
 import org.pcj.internal.network.CloneInputStream;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
@@ -30,8 +29,8 @@ import org.pcj.internal.network.MessageDataOutputStream;
  */
 final public class MessageValueBroadcastBytes extends Message {
 
-    private int requestNum;
     private int groupId;
+    private int requestNum;
     private int requesterThreadId;
     private String sharedEnumClassName;
     private String name;
@@ -80,19 +79,19 @@ final public class MessageValueBroadcastBytes extends Message {
         clonedData = CloneInputStream.readFrom(in);
 
         NodeData nodeData = InternalPCJ.getNodeData();
-        InternalCommonGroup group = nodeData.getGroupById(groupId);
-
         Networker networker = InternalPCJ.getNetworker();
 
-        MessageValueBroadcastBytes message
+        MessageValueBroadcastBytes messageValueBroadcastBytes
                 = new MessageValueBroadcastBytes(groupId, requestNum, requesterThreadId, sharedEnumClassName, name, indices, clonedData);
 
+        InternalCommonGroup group = nodeData.getGroupById(groupId);
         group.getChildrenNodes()
                 .stream()
                 .map(nodeData.getSocketChannelByPhysicalId()::get)
-                .forEach(socket -> networker.send(socket, message));
+                .forEach(socket -> networker.send(socket, messageValueBroadcastBytes));
 
-        Queue<Exception> exceptionsQueue = new LinkedList<>();
+        BroadcastStates states = group.getBroadcastStates();
+        BroadcastStates.State state = states.getOrCreate(requestNum, requesterThreadId, group.getChildrenNodes().size());
         int[] threadsId = group.getLocalThreadsId();
         for (int threadId : threadsId) {
             try {
@@ -105,15 +104,35 @@ final public class MessageValueBroadcastBytes extends Message {
 
                 storage.put(newValue, sharedEnumClassName, name, indices);
             } catch (Exception ex) {
-                exceptionsQueue.add(ex);
+                state.addException(ex);
             }
         }
 
-        int parentId = group.getParentNode();
-        SocketChannel socket = nodeData.getSocketChannelByPhysicalId().get(parentId);
+        boolean lastPhysical = state.checkProcessed();
+        if (lastPhysical) {
+            int globalThreadId = group.getGlobalThreadId(requesterThreadId);
+            int requesterPhysicalId = nodeData.getPhysicalId(globalThreadId);
+            if (requesterPhysicalId != nodeData.getPhysicalId()) { // requester is going to receive response
+                states.remove(state);
+            }
 
-        MessageValueBroadcastInform messageInform
-                = new MessageValueBroadcastInform(groupId, requestNum, requesterThreadId, nodeData.getPhysicalId(), exceptionsQueue);
-        networker.send(socket, messageInform);
+            Message message;
+            SocketChannel socket;
+
+            int physicalId = nodeData.getPhysicalId();
+            if (physicalId != group.getGroupMasterNode()) {
+                int parentId = group.getParentNode();
+                socket = nodeData.getSocketChannelByPhysicalId().get(parentId);
+
+                message = new MessageValueBroadcastInform(groupId, requestNum, requesterThreadId, state.getExceptions());
+            } else {
+                message = new MessageValueBroadcastResponse(groupId, requestNum, requesterThreadId, state.getExceptions());
+
+                socket = nodeData.getSocketChannelByPhysicalId().get(requesterPhysicalId);
+            }
+
+            networker.send(socket, message);
+        }
+
     }
 }

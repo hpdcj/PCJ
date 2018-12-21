@@ -16,7 +16,7 @@ import org.pcj.AsyncTask;
 import org.pcj.Group;
 import org.pcj.PcjFuture;
 import org.pcj.internal.futures.AsyncAtExecution;
-import org.pcj.internal.futures.BroadcastState;
+import org.pcj.internal.futures.BroadcastStates;
 import org.pcj.internal.futures.GetVariable;
 import org.pcj.internal.futures.PeerBarrierState;
 import org.pcj.internal.futures.PutVariable;
@@ -144,19 +144,20 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
 
     @Override
     public <T> PcjFuture<Void> asyncBroadcast(T newValue, Enum<?> variable, int... indices) {
-        int requestNum = super.getBroadcastCounter().incrementAndGet();
-        BroadcastState broadcastState = super.getBroadcastState(requestNum, myThreadId);
+        BroadcastStates states = super.getBroadcastStates();
+        BroadcastStates.State state = states.create(myThreadId, getChildrenNodes().size());
+
+        MessageValueBroadcastRequest message
+                = new MessageValueBroadcastRequest(
+                        super.getGroupId(), state.getRequestNum(), myThreadId,
+                        variable.getDeclaringClass().getName(), variable.name(), indices, newValue);
 
         int physicalMasterId = super.getGroupMasterNode();
         SocketChannel masterSocket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalMasterId);
 
-        MessageValueBroadcastRequest message
-                = new MessageValueBroadcastRequest(
-                        super.getGroupId(), requestNum, myThreadId,
-                        variable.getDeclaringClass().getName(), variable.name(), indices, newValue);
         InternalPCJ.getNetworker().send(masterSocket, message);
 
-        return broadcastState;
+        return state.getFuture();
     }
 
     @SuppressWarnings("unchecked")

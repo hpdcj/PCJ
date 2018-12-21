@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.pcj.internal.futures.BroadcastState;
+import org.pcj.internal.futures.BroadcastStates;
 import org.pcj.internal.futures.GroupBarrierState;
 import org.pcj.internal.futures.GroupJoinState;
 
@@ -41,12 +41,11 @@ public class InternalCommonGroup {
     private final List<Integer> physicalIds;
     private final Bitmask localBitmask;
     private final Bitmask physicalBitmask;
-    private final ConcurrentMap<Integer, GroupBarrierState> barrierStateMap;
-    private final AtomicInteger broadcastCounter;
-    private final ConcurrentMap<List<Integer>, BroadcastState> broadcastStateMap;
-    private final ConcurrentMap<List<Integer>, GroupJoinState> groupJoinStateMap;
     final private AtomicInteger threadsCounter;
     final private CommunicationTree physicalTree;
+    private final BroadcastStates broadcastStates;
+    private final ConcurrentMap<Integer, GroupBarrierState> barrierStateMap;
+    private final ConcurrentMap<List<Integer>, GroupJoinState> groupJoinStateMap;
 
     public InternalCommonGroup(InternalCommonGroup g) {
         this.groupId = g.groupId;
@@ -58,8 +57,7 @@ public class InternalCommonGroup {
         this.physicalBitmask = g.physicalBitmask;
         this.barrierStateMap = g.barrierStateMap;
 
-        this.broadcastCounter = g.broadcastCounter;
-        this.broadcastStateMap = g.broadcastStateMap;
+        this.broadcastStates = g.broadcastStates;
         this.groupJoinStateMap = g.groupJoinStateMap;
 
         this.localIds = g.localIds;
@@ -79,8 +77,7 @@ public class InternalCommonGroup {
         localBitmask = new Bitmask();
         physicalBitmask = new Bitmask();
         barrierStateMap = new ConcurrentHashMap<>();
-        broadcastCounter = new AtomicInteger(0);
-        broadcastStateMap = new ConcurrentHashMap<>();
+        broadcastStates = new BroadcastStates();
         groupJoinStateMap = new ConcurrentHashMap<>();
 
         localIds = new ArrayList<>();
@@ -231,21 +228,9 @@ public class InternalCommonGroup {
         return barrierStateMap.remove(barrierRound);
     }
 
-
-
-    final protected AtomicInteger getBroadcastCounter() {
-        return broadcastCounter;
+    final public BroadcastStates getBroadcastStates() {
+        return broadcastStates;
     }
-
-    final public BroadcastState getBroadcastState(int requestNum, int threadId) {
-        return broadcastStateMap.computeIfAbsent(Arrays.asList(requestNum, threadId),
-                key -> new BroadcastState(getChildrenNodes()));
-    }
-
-    final public BroadcastState removeBroadcastState(int requestNum) {
-        return broadcastStateMap.remove(requestNum);
-    }
-
 
     public GroupJoinState getGroupJoinState(int requestNum, int threadId, List<Integer> childrenNodes) {
         return groupJoinStateMap.computeIfAbsent(Arrays.asList(requestNum, threadId),

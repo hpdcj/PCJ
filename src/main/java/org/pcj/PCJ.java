@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2018, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -369,6 +369,20 @@ final public class PCJ extends InternalPCJ {
     }
 
     /**
+     * Asynchronous broadcast operation. Broadcasts value into shared variable
+     * of all PCJ Threads from the global group.
+     *
+     * @param <T>      type of value
+     * @param newValue new variable value
+     * @param variable variable name
+     * @param indices  (optional) indices for array variable
+     * @return {@link org.pcj.PcjFuture}&lt;{@link java.lang.Void}&gt;
+     */
+    public static <T> PcjFuture<Void> asyncBroadcast(T newValue, Enum<?> variable, int... indices) {
+        return getGlobalGroup().asyncBroadcast(newValue, variable, indices);
+    }
+
+    /**
      * Synchronous broadcast operation.
      * <p>
      * Wrapper for {@code asyncBroadcast(T, Enum<?>)}. It is the equivalent to
@@ -443,20 +457,6 @@ final public class PCJ extends InternalPCJ {
      */
     public static void at(int threadId, AsyncTask.VoidTask asyncTask) throws PcjRuntimeException {
         PCJ.asyncAt(threadId, asyncTask).get();
-    }
-
-    /**
-     * Asynchronous broadcast operation. Broadcasts value into shared variable
-     * of all PCJ Threads from the global group.
-     *
-     * @param <T>      type of value
-     * @param newValue new variable value
-     * @param variable variable name
-     * @param indices  (optional) indices for array variable
-     * @return {@link org.pcj.PcjFuture}&lt;{@link java.lang.Void}&gt;
-     */
-    public static <T> PcjFuture<Void> asyncBroadcast(T newValue, Enum<?> variable, int... indices) {
-        return getGlobalGroup().asyncBroadcast(newValue, variable, indices);
     }
 
     /**
