@@ -146,7 +146,7 @@ final public class Networker {
         Message message;
         try {
             byte messageType = messageDataInputStream.readByte();
-            message = MessageType.valueOf(messageType).create();
+            message = MessageType.createMessage(messageType);
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }

@@ -1,5 +1,5 @@
-/* 
- * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+/*
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -11,181 +11,44 @@ package org.pcj.internal.message;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
- *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 public enum MessageType {
 
-    HELLO((byte) 1) {
-        @Override
-        public MessageHello create() {
-            return new MessageHello();
-        }
-    },
-    HELLO_INFORM((byte) 2) {
-        @Override
-        public MessageHelloInform create() {
-            return new MessageHelloInform();
-        }
-    },
-    HELLO_BONJOUR((byte) 3) {
-        @Override
-        public MessageHelloBonjour create() {
-            return new MessageHelloBonjour();
-        }
-    },
-    HELLO_COMPLETED((byte) 4) {
-        @Override
-        public MessageHelloCompleted create() {
-            return new MessageHelloCompleted();
-        }
-    },
-    HELLO_GO((byte) 5) {
-        @Override
-        public MessageHelloGo create() {
-            return new MessageHelloGo();
-        }
-    },
-    BYE((byte) 6) {
-        @Override
-        public MessageBye create() {
-            return new MessageBye();
-        }
-    },
-    BYE_COMPLETED((byte) 7) {
-        @Override
-        public MessageByeCompleted create() {
-            return new MessageByeCompleted();
-        }
-    },
-    GROUP_BARRIER_WAITING((byte) 10) {
-        @Override
-        public MessageGroupBarrierWaiting create() {
-            return new MessageGroupBarrierWaiting();
-        }
-    },
-    GROUP_BARRIER_GO((byte) 11) {
-        @Override
-        public MessageGroupBarrierGo create() {
-            return new MessageGroupBarrierGo();
-        }
-    },
-    PEER_BARRIER((byte) 12) {
-        @Override
-        public MessagePeerBarrier create() {
-            return new MessagePeerBarrier();
-        }
-    },
-    GROUP_JOIN_QUERY((byte) 20) {
-        @Override
-        public MessageGroupJoinQuery create() {
-            return new MessageGroupJoinQuery();
-        }
-    },
-    GROUP_JOIN_ANSWER((byte) 21) {
-        @Override
-        public MessageGroupJoinAnswer create() {
-            return new MessageGroupJoinAnswer();
-        }
-    },
-    GROUP_JOIN_REQUEST((byte) 22) {
-        @Override
-        public MessageGroupJoinRequest create() {
-            return new MessageGroupJoinRequest();
-        }
-    },
-    GROUP_JOIN_INFORM((byte) 23) {
-        @Override
-        public MessageGroupJoinInform create() {
-            return new MessageGroupJoinInform();
-        }
-    },
-    GROUP_JOIN_CONFIRM((byte) 24) {
-        @Override
-        public MessageGroupJoinConfirm create() {
-            return new MessageGroupJoinConfirm();
-        }
-    },
-    GROUP_JOIN_RESPONSE((byte) 25) {
-        @Override
-        public MessageGroupJoinResponse create() {
-            return new MessageGroupJoinResponse();
-        }
-    },
-    VALUE_GET_REQUEST((byte) 30) {
-        @Override
-        public MessageValueGetRequest create() {
-            return new MessageValueGetRequest();
-        }
-    },
-    VALUE_GET_RESPONSE((byte) 31) {
-        @Override
-        public MessageValueGetResponse create() {
-            return new MessageValueGetResponse();
-        }
-    },
-    VALUE_PUT_REQUEST((byte) 32) {
-        @Override
-        public MessageValuePutRequest create() {
-            return new MessageValuePutRequest();
-        }
-    },
-    VALUE_PUT_RESPONSE((byte) 33) {
-        @Override
-        public MessageValuePutResponse create() {
-            return new MessageValuePutResponse();
-        }
-    },
-    ASYNC_AT_REQUEST((byte) 34) {
-        @Override
-        public MessageAsyncAtRequest create() {
-            return new MessageAsyncAtRequest();
-        }
-    },
-    ASYNC_AT_RESPONSE((byte) 35) {
-        @Override
-        public MessageAsyncAtResponse create() {
-            return new MessageAsyncAtResponse();
-        }
-    },
-    VALUE_BROADCAST_REQUEST((byte) 36) {
-        @Override
-        public MessageValueBroadcastRequest create() {
-            return new MessageValueBroadcastRequest();
-        }
-    },
-    VALUE_BROADCAST_BYTES((byte) 37) {
-        @Override
-        public MessageValueBroadcastBytes create() {
-            return new MessageValueBroadcastBytes();
-        }
-    },
-    VALUE_BROADCAST_INFORM((byte) 38) {
-        @Override
-        public MessageValueBroadcastInform create() {
-            return new MessageValueBroadcastInform();
-        }
-    },
-    VALUE_BROADCAST_RESPONSE((byte) 39) {
-        @Override
-        public MessageValueBroadcastResponse create() {
-            return new MessageValueBroadcastResponse();
-        }
-    },
-    /**
-     * @see MessageUnknown
-     */
-    UNKNOWN((byte) -1) {
-        @Override
-        public MessageUnknown create() {
-            return new MessageUnknown();
-        }
-    };
-//    /* **************************************************** */
+    HELLO((byte) 1, MessageHello::new),
+    HELLO_INFORM((byte) 2, MessageHelloInform::new),
+    HELLO_BONJOUR((byte) 3, MessageHelloBonjour::new),
+    HELLO_COMPLETED((byte) 4, MessageHelloCompleted::new),
+    HELLO_GO((byte) 5, MessageHelloGo::new),
+    BYE((byte) 6, MessageBye::new),
+    BYE_COMPLETED((byte) 7, MessageByeCompleted::new),
+    GROUP_BARRIER_WAITING((byte) 10, MessageGroupBarrierWaiting::new),
+    GROUP_BARRIER_GO((byte) 11, MessageGroupBarrierGo::new),
+    PEER_BARRIER((byte) 12, MessagePeerBarrier::new),
+    GROUP_JOIN_QUERY((byte) 20, MessageGroupJoinQuery::new),
+    GROUP_JOIN_ANSWER((byte) 21, MessageGroupJoinAnswer::new),
+    GROUP_JOIN_REQUEST((byte) 22, MessageGroupJoinRequest::new),
+    GROUP_JOIN_INFORM((byte) 23, MessageGroupJoinInform::new),
+    GROUP_JOIN_CONFIRM((byte) 24, MessageGroupJoinConfirm::new),
+    GROUP_JOIN_RESPONSE((byte) 25, MessageGroupJoinResponse::new),
+    VALUE_GET_REQUEST((byte) 30, MessageValueGetRequest::new),
+    VALUE_GET_RESPONSE((byte) 31, MessageValueGetResponse::new),
+    VALUE_PUT_REQUEST((byte) 32, MessageValuePutRequest::new),
+    VALUE_PUT_RESPONSE((byte) 33, MessageValuePutResponse::new),
+    ASYNC_AT_REQUEST((byte) 34, MessageAsyncAtRequest::new),
+    ASYNC_AT_RESPONSE((byte) 35, MessageAsyncAtResponse::new),
+    VALUE_BROADCAST_REQUEST((byte) 36, MessageValueBroadcastRequest::new),
+    VALUE_BROADCAST_BYTES((byte) 37, MessageValueBroadcastBytes::new),
+    VALUE_BROADCAST_INFORM((byte) 38, MessageValueBroadcastInform::new),
+    VALUE_BROADCAST_RESPONSE((byte) 39, MessageValueBroadcastResponse::new),
+    UNKNOWN((byte) -1, MessageUnknown::new);
+    //    /* **************************************************** */
     private static final Map<Byte, MessageType> map;
     private final byte id;
+    private final Supplier<? extends Message> constructor;
 
     static {
         Map<Byte, MessageType> localMap = new HashMap<>(40, 1.0f);
@@ -198,23 +61,23 @@ public enum MessageType {
         map = Collections.unmodifiableMap(localMap);
     }
 
-    public static MessageType valueOf(byte id) {
-        MessageType type = map.get(id);
-        return type == null ? UNKNOWN : type;
-    }
-
-    MessageType(byte id) {
-        this.id = id;
-    }
-
-    public byte getId() {
-        return id;
-    }
-
     /**
-     * Creates Message object that is associated with Enum value.
+     * Creates Message object that is associated with id
      *
      * @return Message object
      */
-    public abstract Message create();
+    final public static Message createMessage(byte messageTypeId) {
+        MessageType type = map.get(messageTypeId);
+        Supplier<? extends Message> constructor = type == null ? UNKNOWN.constructor : type.constructor;
+        return constructor.get();
+    }
+
+    MessageType(byte id, Supplier<? extends Message> constructor) {
+        this.id = id;
+        this.constructor = constructor;
+    }
+
+    final public byte getId() {
+        return id;
+    }
 }
