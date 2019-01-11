@@ -28,12 +28,12 @@ abstract public class Message implements Serializable {
     private MessageType type;
 
     /**
-     * Prevent from creating object
+     * Prevent from creating object without type
      */
     private Message() {
     }
 
-    Message(MessageType type) {
+    protected Message(MessageType type) {
         this.type = type;
     }
 

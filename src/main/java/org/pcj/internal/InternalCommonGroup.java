@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.pcj.internal.futures.BroadcastStates;
+import org.pcj.internal.message.broadcast.BroadcastStates;
 import org.pcj.internal.futures.GroupBarrierState;
 import org.pcj.internal.futures.GroupJoinState;
 
@@ -92,7 +92,7 @@ public class InternalCommonGroup {
         return Collections.unmodifiableList(physicalIds); // DO USUNIECIA
     }
 
-    final protected int getGroupId() {
+    final public int getGroupId() {
         return groupId;
     }
 

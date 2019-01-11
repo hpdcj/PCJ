@@ -12,6 +12,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
+import org.pcj.internal.message.broadcast.BroadcastValueBytesMessage;
+import org.pcj.internal.message.broadcast.BroadcastValueInformMessage;
+import org.pcj.internal.message.broadcast.BroadcastValueRequestMessage;
+import org.pcj.internal.message.broadcast.BroadcastValueResponseMessage;
 
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
@@ -40,10 +44,10 @@ public enum MessageType {
     VALUE_PUT_RESPONSE((byte) 33, MessageValuePutResponse::new),
     ASYNC_AT_REQUEST((byte) 34, MessageAsyncAtRequest::new),
     ASYNC_AT_RESPONSE((byte) 35, MessageAsyncAtResponse::new),
-    VALUE_BROADCAST_REQUEST((byte) 36, MessageValueBroadcastRequest::new),
-    VALUE_BROADCAST_BYTES((byte) 37, MessageValueBroadcastBytes::new),
-    VALUE_BROADCAST_INFORM((byte) 38, MessageValueBroadcastInform::new),
-    VALUE_BROADCAST_RESPONSE((byte) 39, MessageValueBroadcastResponse::new),
+    VALUE_BROADCAST_REQUEST((byte) 36, BroadcastValueRequestMessage::new),
+    VALUE_BROADCAST_BYTES((byte) 37, BroadcastValueBytesMessage::new),
+    VALUE_BROADCAST_INFORM((byte) 38, BroadcastValueInformMessage::new),
+    VALUE_BROADCAST_RESPONSE((byte) 39, BroadcastValueResponseMessage::new),
     UNKNOWN((byte) -1, MessageUnknown::new);
     //    /* **************************************************** */
     private static final Map<Byte, MessageType> map;

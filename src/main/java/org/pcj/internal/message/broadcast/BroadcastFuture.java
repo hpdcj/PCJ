@@ -6,17 +6,18 @@
  *
  * See the file "LICENSE" for the full license governing this code.
  */
-package org.pcj.internal.futures;
+package org.pcj.internal.message.broadcast;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.pcj.PcjFuture;
 import org.pcj.PcjRuntimeException;
+import org.pcj.internal.futures.InternalFuture;
 
 public class BroadcastFuture extends InternalFuture<Void> implements PcjFuture<Void> {
     private PcjRuntimeException exception;
 
-    protected BroadcastFuture() {
+    BroadcastFuture() {
     }
 
     @Override

@@ -16,13 +16,13 @@ import org.pcj.AsyncTask;
 import org.pcj.Group;
 import org.pcj.PcjFuture;
 import org.pcj.internal.futures.AsyncAtExecution;
-import org.pcj.internal.futures.BroadcastStates;
+import org.pcj.internal.message.broadcast.BroadcastStates;
 import org.pcj.internal.futures.GetVariable;
 import org.pcj.internal.futures.PeerBarrierState;
 import org.pcj.internal.futures.PutVariable;
 import org.pcj.internal.message.MessageAsyncAtRequest;
 import org.pcj.internal.message.MessagePeerBarrier;
-import org.pcj.internal.message.MessageValueBroadcastRequest;
+import org.pcj.internal.message.broadcast.BroadcastValueRequestMessage;
 import org.pcj.internal.message.MessageValueGetRequest;
 import org.pcj.internal.message.MessageValuePutRequest;
 
@@ -147,8 +147,8 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         BroadcastStates states = super.getBroadcastStates();
         BroadcastStates.State state = states.create(myThreadId, getChildrenNodes().size());
 
-        MessageValueBroadcastRequest message
-                = new MessageValueBroadcastRequest(
+        BroadcastValueRequestMessage message
+                = new BroadcastValueRequestMessage(
                         super.getGroupId(), state.getRequestNum(), myThreadId,
                         variable.getDeclaringClass().getName(), variable.name(), indices, newValue);
 

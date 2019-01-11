@@ -36,36 +36,6 @@ public class CloneInputStream extends InputStream {
         length = 0L;
     }
     
-    public static CloneInputStream clone(InputStream in) throws IOException {
-        CloneInputStream cloneInputStream = new CloneInputStream();
-
-        byte[] bytes = new byte[CHUNK_SIZE];
-        int r;
-        int offset = 0;
-        while ((r = in.read(bytes, offset, bytes.length - offset)) != -1) {
-            offset += r;
-            if (offset == bytes.length) {
-                cloneInputStream.addByteArray(bytes);
-
-                bytes = new byte[CHUNK_SIZE];
-                offset = 0;
-            }
-        }
-
-        if (offset > 0) {
-            byte[] dest = new byte[offset];
-            System.arraycopy(bytes, 0, dest, 0, offset);
-            cloneInputStream.addByteArray(dest);
-        }
-
-        return cloneInputStream;
-    }
-
-    private void addByteArray(byte[] byteArray) {
-        bytesList.add(byteArray);
-        length += byteArray.length;
-    }
-
     @Override
     public void reset() {
         iterator = bytesList.iterator();
@@ -124,6 +94,36 @@ public class CloneInputStream extends InputStream {
         return length;
     }
 
+    private void addByteArray(byte[] byteArray) {
+        bytesList.add(byteArray);
+        length += byteArray.length;
+    }
+
+    public static CloneInputStream clone(InputStream in) throws IOException {
+        CloneInputStream cloneInputStream = new CloneInputStream();
+
+        byte[] bytes = new byte[CHUNK_SIZE];
+        int r;
+        int offset = 0;
+        while ((r = in.read(bytes, offset, bytes.length - offset)) != -1) {
+            offset += r;
+            if (offset == bytes.length) {
+                cloneInputStream.addByteArray(bytes);
+
+                bytes = new byte[CHUNK_SIZE];
+                offset = 0;
+            }
+        }
+
+        if (offset > 0) {
+            byte[] dest = new byte[offset];
+            System.arraycopy(bytes, 0, dest, 0, offset);
+            cloneInputStream.addByteArray(dest);
+        }
+
+        return cloneInputStream;
+    }
+
     public static CloneInputStream readFrom(MessageDataInputStream in) throws IOException {
         CloneInputStream cloneInputStream = new CloneInputStream();
         long length = in.readLong();
@@ -149,10 +149,8 @@ public class CloneInputStream extends InputStream {
     public void writeInto(MessageDataOutputStream out) throws IOException {
         out.writeLong(length);
 
-        long written = 0;
         for (byte[] bytesArray : bytesList) {
-            int len = (int) Math.min((long) bytesArray.length, length - written);
-            out.write(bytesArray, 0, len);
+            out.write(bytesArray, 0, bytesArray.length);
         }
     }
 }

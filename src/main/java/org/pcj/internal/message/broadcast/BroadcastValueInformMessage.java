@@ -6,16 +6,17 @@
  *
  * See the file "LICENSE" for the full license governing this code.
  */
-package org.pcj.internal.message;
+package org.pcj.internal.message.broadcast;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.Queue;
-import org.pcj.PcjRuntimeException;
-import org.pcj.internal.InternalGroup;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
-import org.pcj.internal.futures.BroadcastStates;
+import org.pcj.internal.message.Message;
+import org.pcj.internal.message.MessageType;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
@@ -24,18 +25,18 @@ import org.pcj.internal.network.MessageDataOutputStream;
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class MessageValueBroadcastResponse extends Message {
+final public class BroadcastValueInformMessage extends Message {
 
     private int groupId;
     private int requestNum;
     private int requesterThreadId;
     private Queue<Exception> exceptions;
 
-    public MessageValueBroadcastResponse() {
-        super(MessageType.VALUE_BROADCAST_RESPONSE);
+    public BroadcastValueInformMessage() {
+        super(MessageType.VALUE_BROADCAST_INFORM);
     }
 
-    public MessageValueBroadcastResponse(int groupId, int requestNum, int requesterThreadId, Queue<Exception> exceptions) {
+    public BroadcastValueInformMessage(int groupId, int requestNum, int requesterThreadId, Queue<Exception> exceptions) {
         this();
 
         this.groupId = groupId;
@@ -66,29 +67,20 @@ final public class MessageValueBroadcastResponse extends Message {
         requesterThreadId = in.readInt();
 
         NodeData nodeData = InternalPCJ.getNodeData();
-
-        InternalGroup group = nodeData.getPcjThread(requesterThreadId).getThreadData().getGroupById(groupId);
+        InternalCommonGroup group = nodeData.getGroupById(groupId);
 
         BroadcastStates states = group.getBroadcastStates();
-        BroadcastStates.State state = states.remove(requestNum, requesterThreadId);
+        BroadcastStates.State state = states.getOrCreate(requestNum, requesterThreadId, group.getChildrenNodes().size());
 
         boolean exceptionOccurs = in.readBoolean();
-        try {
-            if (exceptionOccurs) {
+        if (exceptionOccurs) {
+            try {
                 exceptions = (Queue<Exception>) in.readObject();
-                exceptions.forEach(state::addException);
+            } catch (Exception ex) {
+                exceptions = new ConcurrentLinkedDeque<>();
+                exceptions.add(ex);
             }
-        } catch (Exception ex) {
-            state.addException(ex);
         }
-
-        if (state.getExceptions().isEmpty()) {
-            state.signalDone();
-        } else {
-            PcjRuntimeException ex = new PcjRuntimeException("Exception while broadcasting value.");
-            state.getExceptions().forEach(ex::addSuppressed);
-
-            state.signalException(ex);
-        }
+        state.upProcessNode(group, exceptions);
     }
 }
