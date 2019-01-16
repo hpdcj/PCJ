@@ -34,16 +34,23 @@ public class AsyncAtResponseMessage extends Message {
         super(MessageType.ASYNC_AT_RESPONSE);
     }
 
-    public AsyncAtResponseMessage(int groupId, int requestNum, int requesterThreadId, Object variableValue) {
+    private AsyncAtResponseMessage(int groupId, int requestNum, int requesterThreadId) {
         this();
 
         this.groupId = groupId;
         this.requestNum = requestNum;
         this.requesterThreadId = requesterThreadId;
+    }
+
+    public AsyncAtResponseMessage(int groupId, int requestNum, int requesterThreadId, Object variableValue) {
+        this(groupId, requestNum, requesterThreadId);
+
         this.variableValue = variableValue;
     }
 
-    public void setException(Exception exception) {
+    public AsyncAtResponseMessage(int groupId, int requestNum, int requesterThreadId, Exception exception) {
+        this(groupId, requestNum, requesterThreadId);
+
         this.exception = exception;
     }
 
