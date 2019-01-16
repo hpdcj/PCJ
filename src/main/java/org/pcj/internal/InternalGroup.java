@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -17,15 +17,15 @@ import org.pcj.Group;
 import org.pcj.PcjFuture;
 import org.pcj.internal.message.at.AsyncAtStates;
 import org.pcj.internal.message.broadcast.BroadcastStates;
-import org.pcj.internal.message.get.GetFuture;
 import org.pcj.internal.futures.PeerBarrierState;
-import org.pcj.internal.futures.PutVariable;
+import org.pcj.internal.message.put.PutFuture;
 import org.pcj.internal.message.at.AsyncAtRequestMessage;
 import org.pcj.internal.message.MessagePeerBarrier;
 import org.pcj.internal.message.broadcast.BroadcastValueRequestMessage;
 import org.pcj.internal.message.get.GetStates;
 import org.pcj.internal.message.get.MessageValueGetRequest;
-import org.pcj.internal.message.MessageValuePutRequest;
+import org.pcj.internal.message.put.MessageValuePutRequest;
+import org.pcj.internal.message.put.PutStates;
 
 /**
  * External class that represents group for grouped communication.
@@ -37,8 +37,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     private final int myThreadId;
     private final AtomicInteger barrierRoundCounter;
     private final GetStates getStates;
-    private final AtomicInteger putVariableCounter;
-    private final ConcurrentMap<Integer, PutVariable> putVariableMap;
+    private final PutStates putStates;
     private final AsyncAtStates asyncAtStates;
     private final ConcurrentMap<Integer, PeerBarrierState> peerBarrierStateMap;
 
@@ -50,10 +49,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         barrierRoundCounter = new AtomicInteger(0);
 
         this.getStates = new GetStates();
-
-        putVariableCounter = new AtomicInteger(0);
-        putVariableMap = new ConcurrentHashMap<>();
-
+        this.putStates = new PutStates();
         this.asyncAtStates = new AsyncAtStates();
 
         peerBarrierStateMap = new ConcurrentHashMap<>();
@@ -114,26 +110,23 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
 
     @Override
     public <T> PcjFuture<Void> asyncPut(T newValue, int threadId, Enum<?> variable, int... indices) {
-        int requestNum = putVariableCounter.incrementAndGet();
-        PutVariable putVariable = new PutVariable();
-        putVariableMap.put(requestNum, putVariable);
+        PutStates.State state = putStates.create();
 
         int globalThreadId = super.getGlobalThreadId(threadId);
         int physicalId = InternalPCJ.getNodeData().getPhysicalId(globalThreadId);
         SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalId);
 
-        MessageValuePutRequest message
-                = new MessageValuePutRequest(
-                        super.getGroupId(), requestNum, myThreadId, threadId,
+        MessageValuePutRequest message = new MessageValuePutRequest(
+                        super.getGroupId(), state.getRequestNum(), myThreadId, threadId,
                         variable.getDeclaringClass().getName(), variable.name(), indices, newValue);
 
         InternalPCJ.getNetworker().send(socket, message);
 
-        return putVariable;
+        return state.getFuture();
     }
 
-    public PutVariable removePutVariable(int requestNum) {
-        return putVariableMap.remove(requestNum);
+    public PutStates getPutStates() {
+        return putStates;
     }
 
     @Override

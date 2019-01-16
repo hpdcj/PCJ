@@ -15,7 +15,6 @@ import org.pcj.PcjRuntimeException;
 import org.pcj.internal.futures.InternalFuture;
 
 /**
- *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 public class BroadcastFuture extends InternalFuture<Void> implements PcjFuture<Void> {

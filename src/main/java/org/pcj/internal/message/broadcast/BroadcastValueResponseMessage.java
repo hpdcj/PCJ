@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -12,17 +12,17 @@ import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
+import org.pcj.internal.PcjThread;
 import org.pcj.internal.message.Message;
 import org.pcj.internal.message.MessageType;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
 /**
- * ....
- *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 final public class BroadcastValueResponseMessage extends Message {
@@ -66,10 +66,6 @@ final public class BroadcastValueResponseMessage extends Message {
         requestNum = in.readInt();
         requesterThreadId = in.readInt();
 
-        NodeData nodeData = InternalPCJ.getNodeData();
-
-        InternalGroup group = nodeData.getPcjThread(requesterThreadId).getThreadData().getGroupById(groupId);
-
         boolean exceptionOccurs = in.readBoolean();
         if (exceptionOccurs) {
             try {
@@ -79,6 +75,11 @@ final public class BroadcastValueResponseMessage extends Message {
                 exceptions.add(ex);
             }
         }
+
+        NodeData nodeData = InternalPCJ.getNodeData();
+        PcjThread pcjThread = nodeData.getPcjThread(groupId, requesterThreadId);
+
+        InternalGroup group = pcjThread.getThreadData().getGroupById(groupId);
 
         BroadcastStates states = group.getBroadcastStates();
         BroadcastStates.State state = states.remove(requestNum, requesterThreadId);

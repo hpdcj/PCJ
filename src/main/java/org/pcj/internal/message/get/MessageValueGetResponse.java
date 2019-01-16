@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -10,6 +10,7 @@ package org.pcj.internal.message.get;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
+import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
@@ -73,12 +74,6 @@ public class MessageValueGetResponse extends Message {
         requestNum = in.readInt();
         requesterThreadId = in.readInt();
 
-        NodeData nodeData = InternalPCJ.getNodeData();
-        int globalThreadId = nodeData.getGroupById(groupId).getGlobalThreadId(requesterThreadId);
-
-        PcjThread pcjThread = nodeData.getPcjThread(globalThreadId);
-        InternalGroup group = pcjThread.getThreadData().getGroupById(groupId);
-
         boolean exceptionOccurs = in.readBoolean();
         try {
             if (!exceptionOccurs) {
@@ -89,6 +84,11 @@ public class MessageValueGetResponse extends Message {
         } catch (Exception ex) {
             exception = ex;
         }
+
+        NodeData nodeData = InternalPCJ.getNodeData();
+        PcjThread pcjThread = nodeData.getPcjThread(groupId, requesterThreadId);
+
+        InternalGroup group = pcjThread.getThreadData().getGroupById(groupId);
 
         GetStates states = group.getGetStates();
         GetStates.State<?> state = states.remove(requestNum);

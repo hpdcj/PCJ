@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2011-2018, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -21,8 +21,6 @@ import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
 /**
- * ....
- *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 final public class BroadcastValueRequestMessage extends Message {
@@ -80,16 +78,16 @@ final public class BroadcastValueRequestMessage extends Message {
         BroadcastValueBytesMessage broadcastValueBytesMessage
                 = new BroadcastValueBytesMessage(groupId, requestNum, requesterThreadId, sharedEnumClassName, variableName, indices, clonedData);
 
-        InternalCommonGroup group = nodeData.getGroupById(groupId);
-        group.getChildrenNodes()
+        InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
+        commonGroup.getChildrenNodes()
                 .stream()
                 .map(nodeData.getSocketChannelByPhysicalId()::get)
                 .forEach(socket -> networker.send(socket, broadcastValueBytesMessage));
 
-        BroadcastStates states = group.getBroadcastStates();
-        BroadcastStates.State state = states.getOrCreate(requestNum, requesterThreadId, group.getChildrenNodes().size());
+        BroadcastStates states = commonGroup.getBroadcastStates();
+        BroadcastStates.State state = states.getOrCreate(requestNum, requesterThreadId, commonGroup.getChildrenNodes().size());
 
-        state.downProcessNode(group, clonedData, sharedEnumClassName, variableName, indices);
+        state.downProcessNode(commonGroup, clonedData, sharedEnumClassName, variableName, indices);
 
     }
 }

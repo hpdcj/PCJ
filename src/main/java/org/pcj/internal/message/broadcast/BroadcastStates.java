@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -26,6 +26,9 @@ import org.pcj.internal.PcjThread;
 import org.pcj.internal.message.Message;
 import org.pcj.internal.network.CloneInputStream;
 
+/**
+ * @author Marek Nowicki (faramir@mat.umk.pl)
+ */
 public class BroadcastStates {
     private final AtomicInteger counter;
     private final ConcurrentMap<List<Integer>, State> stateMap;
@@ -66,7 +69,6 @@ public class BroadcastStates {
         private State(int requestNum, int requesterThreadId, int childrenCount, BroadcastFuture future) {
             this.requestNum = requestNum;
             this.requesterThreadId = requesterThreadId;
-
             this.future = future;
 
             // notification from children and from itself

@@ -74,7 +74,7 @@ public class MessageGroupJoinInform extends Message {
         }
 
         NodeData nodeData = InternalPCJ.getNodeData();
-        InternalCommonGroup commonGroup = nodeData.getGroupById(groupId);
+        InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
 
         List<Integer> keys = new ArrayList<>(threadsMapping.keySet());
         keys.sort(Integer::compare);

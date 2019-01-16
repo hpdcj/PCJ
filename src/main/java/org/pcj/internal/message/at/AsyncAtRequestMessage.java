@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -11,6 +11,7 @@ package org.pcj.internal.message.at;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import org.pcj.AsyncTask;
+import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.PcjThread;
@@ -20,8 +21,6 @@ import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
 /**
- * ....
- *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 final public class AsyncAtRequestMessage<T> extends Message {
@@ -73,8 +72,8 @@ final public class AsyncAtRequestMessage<T> extends Message {
         }
 
         NodeData nodeData = InternalPCJ.getNodeData();
-        int globalThreadId = nodeData.getGroupById(groupId).getGlobalThreadId(threadId);
-        PcjThread pcjThread = nodeData.getPcjThread(globalThreadId);
+        PcjThread pcjThread = nodeData.getPcjThread(groupId, requesterThreadId);
+
         pcjThread.execute(() -> {
             AsyncAtResponseMessage asyncAtResponseMessage;
             try {

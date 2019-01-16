@@ -58,7 +58,7 @@ final public class MessagePeerBarrier extends Message {
         threadId = in.readInt();
 
         NodeData nodeData = InternalPCJ.getNodeData();
-        InternalCommonGroup commonGroup = nodeData.getGroupById(groupId);
+        InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
 
         int globalThreadId = commonGroup.getGlobalThreadId(threadId);
         PcjThread pcjThread = nodeData.getPcjThread(globalThreadId);

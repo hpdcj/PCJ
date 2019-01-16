@@ -106,7 +106,7 @@ public class GroupBarrierState extends InternalFuture<Void> implements PcjFuture
             Message message;
             SocketChannel socket;
             NodeData nodeData = InternalPCJ.getNodeData();
-            InternalCommonGroup group = nodeData.getGroupById(groupId);
+            InternalCommonGroup group = nodeData.getCommonGroupById(groupId);
 
             int physicalId = nodeData.getPhysicalId();
             if (physicalId == group.getGroupMasterNode()) {

@@ -133,7 +133,7 @@ final public class NodeData {
                 key -> new InternalCommonGroup(groupMaster, groupId, groupName));
     }
 
-    public InternalCommonGroup getGroupById(int id) {
+    public InternalCommonGroup getCommonGroupById(int id) {
         return groupById.get(id);
     }
 
@@ -158,8 +158,15 @@ final public class NodeData {
         pcjThreads.putIfAbsent(pcjThread.getThreadId(), pcjThread);
     }
 
-    public PcjThread getPcjThread(int pcjThread) {
-        return pcjThreads.get(pcjThread);
+    public PcjThread getPcjThread(int globalThreadId) {
+        return pcjThreads.get(globalThreadId);
+    }
+
+    public PcjThread getPcjThread(int groupId, int threadId) {
+        InternalCommonGroup commonGroup = getCommonGroupById(groupId);
+        int globalThreadId = commonGroup.getGlobalThreadId(threadId);
+
+        return getPcjThread(globalThreadId);
     }
 
     public int getPhysicalId() {

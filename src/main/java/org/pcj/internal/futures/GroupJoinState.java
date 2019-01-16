@@ -49,7 +49,7 @@ public class GroupJoinState {
 
         if (childrenSet.isEmpty()) {
             NodeData nodeData = InternalPCJ.getNodeData();
-            InternalCommonGroup commonGroup = nodeData.getGroupById(groupId);
+            InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
 
             SocketChannel socket;
             Message message;

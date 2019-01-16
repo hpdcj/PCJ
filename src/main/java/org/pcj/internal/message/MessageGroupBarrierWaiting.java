@@ -48,7 +48,7 @@ final public class MessageGroupBarrierWaiting extends Message {
         barrierRound = in.readInt();
         physicalId = in.readInt();
 
-        InternalCommonGroup group = InternalPCJ.getNodeData().getGroupById(groupId);
+        InternalCommonGroup group = InternalPCJ.getNodeData().getCommonGroupById(groupId);
 
         GroupBarrierState barrierState = group.getBarrierState(barrierRound);
         barrierState.processPhysical(physicalId);

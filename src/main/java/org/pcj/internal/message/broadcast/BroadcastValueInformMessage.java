@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -21,8 +21,6 @@ import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
 /**
- * ....
- *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 final public class BroadcastValueInformMessage extends Message {
@@ -66,12 +64,6 @@ final public class BroadcastValueInformMessage extends Message {
         requestNum = in.readInt();
         requesterThreadId = in.readInt();
 
-        NodeData nodeData = InternalPCJ.getNodeData();
-        InternalCommonGroup group = nodeData.getGroupById(groupId);
-
-        BroadcastStates states = group.getBroadcastStates();
-        BroadcastStates.State state = states.getOrCreate(requestNum, requesterThreadId, group.getChildrenNodes().size());
-
         boolean exceptionOccurs = in.readBoolean();
         if (exceptionOccurs) {
             try {
@@ -81,6 +73,12 @@ final public class BroadcastValueInformMessage extends Message {
                 exceptions.add(ex);
             }
         }
-        state.upProcessNode(group, exceptions);
+
+        NodeData nodeData = InternalPCJ.getNodeData();
+        InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
+
+        BroadcastStates states = commonGroup.getBroadcastStates();
+        BroadcastStates.State state = states.getOrCreate(requestNum, requesterThreadId, commonGroup.getChildrenNodes().size());
+        state.upProcessNode(commonGroup, exceptions);
     }
 }

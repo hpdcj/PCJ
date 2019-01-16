@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -73,12 +73,6 @@ public class AsyncAtResponseMessage extends Message {
         requestNum = in.readInt();
         requesterThreadId = in.readInt();
 
-        NodeData nodeData = InternalPCJ.getNodeData();
-        int globalThreadId = nodeData.getGroupById(groupId).getGlobalThreadId(requesterThreadId);
-
-        PcjThread pcjThread = nodeData.getPcjThread(globalThreadId);
-        InternalGroup group = pcjThread.getThreadData().getGroupById(groupId);
-
         boolean exceptionOccurs = in.readBoolean();
         try {
             if (!exceptionOccurs) {
@@ -89,6 +83,11 @@ public class AsyncAtResponseMessage extends Message {
         } catch (Exception ex) {
             exception = ex;
         }
+
+        NodeData nodeData = InternalPCJ.getNodeData();
+        PcjThread pcjThread = nodeData.getPcjThread(groupId, requesterThreadId);
+
+        InternalGroup group = pcjThread.getThreadData().getGroupById(groupId);
 
         AsyncAtStates states = group.getAsyncAtStates();
         AsyncAtStates.State<?> state = states.remove(requestNum);

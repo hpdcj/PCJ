@@ -119,7 +119,7 @@ public abstract class InternalPCJ {
                                 + " {1,choice,1#thread|1<threads}"
                                 + " (on {2,number,#} {2,choice,1#node|1<nodes})...",
                         new Object[]{startPointClass.getName(),
-                                nodeData.getGroupById(InternalCommonGroup.GLOBAL_GROUP_ID).threadCount(),
+                                nodeData.getCommonGroupById(InternalCommonGroup.GLOBAL_GROUP_ID).threadCount(),
                                 nodeData.getTotalNodeCount(),});
             }
 
@@ -146,7 +146,7 @@ public abstract class InternalPCJ {
                                 + " after {3,number,#}h {4,number,#}m {5,number,#}s.",
                         new Object[]{
                                 startPointClass.getName(),
-                                nodeData.getGroupById(InternalCommonGroup.GLOBAL_GROUP_ID).threadCount(),
+                                nodeData.getCommonGroupById(InternalCommonGroup.GLOBAL_GROUP_ID).threadCount(),
                                 nodeData.getTotalNodeCount(),
                                 h, m, s
                         });
@@ -205,7 +205,7 @@ public abstract class InternalPCJ {
     }
 
     private static Set<PcjThread> preparePcjThreads(Class<? extends StartPoint> startPointClass, int[] threadIds) {
-        InternalCommonGroup globalGroup = nodeData.getGroupById(InternalCommonGroup.GLOBAL_GROUP_ID);
+        InternalCommonGroup globalGroup = nodeData.getCommonGroupById(InternalCommonGroup.GLOBAL_GROUP_ID);
         Set<PcjThread> pcjThreads = new HashSet<>();
 
         for (int threadId : threadIds) {

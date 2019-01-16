@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
+ * All rights reserved.
+ *
+ * Licensed under New BSD License (3-clause license).
+ *
+ * See the file "LICENSE" for the full license governing this code.
+ */
 package org.pcj.internal.message.get;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -6,6 +14,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.PcjFuture;
 import org.pcj.PcjRuntimeException;
 
+/**
+ * @author Marek Nowicki (faramir@mat.umk.pl)
+ */
 public class GetStates {
     private final AtomicInteger counter;
     private final ConcurrentMap<Integer, State<?>> stateMap;
