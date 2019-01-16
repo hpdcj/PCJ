@@ -18,6 +18,8 @@ import org.pcj.internal.message.broadcast.BroadcastValueBytesMessage;
 import org.pcj.internal.message.broadcast.BroadcastValueInformMessage;
 import org.pcj.internal.message.broadcast.BroadcastValueRequestMessage;
 import org.pcj.internal.message.broadcast.BroadcastValueResponseMessage;
+import org.pcj.internal.message.get.MessageValueGetRequest;
+import org.pcj.internal.message.get.MessageValueGetResponse;
 
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)

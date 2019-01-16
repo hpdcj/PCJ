@@ -6,29 +6,30 @@
  *
  * See the file "LICENSE" for the full license governing this code.
  */
-package org.pcj.internal.futures;
+package org.pcj.internal.message.get;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.pcj.PcjFuture;
 import org.pcj.PcjRuntimeException;
+import org.pcj.internal.futures.InternalFuture;
 
 /**
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public class GetVariable<T> extends InternalFuture<T> implements PcjFuture<T> {
+public class GetFuture<T> extends InternalFuture<T> implements PcjFuture<T> {
 
     private T variableValue;
-    private Exception exception;
+    private PcjRuntimeException exception;
 
     @SuppressWarnings("unchecked")
-    public void signalDone(Object variableValue) {
+    protected void signalDone(Object variableValue) {
         this.variableValue = (T) variableValue;
         super.signalDone();
     }
 
-    public void signalException(Exception exception) {
+    protected void signalException(PcjRuntimeException exception) {
         this.exception = exception;
         super.signalDone();
     }
@@ -46,7 +47,7 @@ public class GetVariable<T> extends InternalFuture<T> implements PcjFuture<T> {
             throw new PcjRuntimeException(ex);
         }
         if (exception != null) {
-            throw new PcjRuntimeException(exception);
+            throw exception ;
         }
         return variableValue;
     }
@@ -59,7 +60,7 @@ public class GetVariable<T> extends InternalFuture<T> implements PcjFuture<T> {
             throw new PcjRuntimeException(ex);
         }
         if (exception != null) {
-            throw new PcjRuntimeException(exception);
+            throw exception;
         }
         return variableValue;
     }

@@ -15,16 +15,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.AsyncTask;
 import org.pcj.Group;
 import org.pcj.PcjFuture;
-import org.pcj.internal.message.at.AsyncAtFuture;
 import org.pcj.internal.message.at.AsyncAtStates;
 import org.pcj.internal.message.broadcast.BroadcastStates;
-import org.pcj.internal.futures.GetVariable;
+import org.pcj.internal.message.get.GetFuture;
 import org.pcj.internal.futures.PeerBarrierState;
 import org.pcj.internal.futures.PutVariable;
 import org.pcj.internal.message.at.AsyncAtRequestMessage;
 import org.pcj.internal.message.MessagePeerBarrier;
 import org.pcj.internal.message.broadcast.BroadcastValueRequestMessage;
-import org.pcj.internal.message.MessageValueGetRequest;
+import org.pcj.internal.message.get.GetStates;
+import org.pcj.internal.message.get.MessageValueGetRequest;
 import org.pcj.internal.message.MessageValuePutRequest;
 
 /**
@@ -36,8 +36,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
 
     private final int myThreadId;
     private final AtomicInteger barrierRoundCounter;
-    private final AtomicInteger getVariableCounter;
-    private final ConcurrentMap<Integer, GetVariable> getVariableMap;
+    private final GetStates getStates;
     private final AtomicInteger putVariableCounter;
     private final ConcurrentMap<Integer, PutVariable> putVariableMap;
     private final AsyncAtStates asyncAtStates;
@@ -50,8 +49,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
 
         barrierRoundCounter = new AtomicInteger(0);
 
-        getVariableCounter = new AtomicInteger(0);
-        getVariableMap = new ConcurrentHashMap<>();
+        this.getStates = new GetStates();
 
         putVariableCounter = new AtomicInteger(0);
         putVariableMap = new ConcurrentHashMap<>();
@@ -95,26 +93,23 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
 
     @Override
     public <T> PcjFuture<T> asyncGet(int threadId, Enum<?> variable, int... indices) {
-        int requestNum = getVariableCounter.incrementAndGet();
-        GetVariable<T> getVariable = new GetVariable<>();
-        getVariableMap.put(requestNum, getVariable);
+        GetStates.State<T> state = getStates.create();
 
         int globalThreadId = super.getGlobalThreadId(threadId);
         int physicalId = InternalPCJ.getNodeData().getPhysicalId(globalThreadId);
         SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalId);
 
-        MessageValueGetRequest message
-                = new MessageValueGetRequest(
-                        super.getGroupId(), requestNum, myThreadId, threadId,
+        MessageValueGetRequest message = new MessageValueGetRequest(
+                        super.getGroupId(), state.getRequestNum(), myThreadId, threadId,
                         variable.getDeclaringClass().getName(), variable.name(), indices);
 
         InternalPCJ.getNetworker().send(socket, message);
 
-        return getVariable;
+        return state.getFuture();
     }
 
-    public GetVariable removeGetVariable(int requestNum) {
-        return getVariableMap.remove(requestNum);
+    public GetStates getGetStates() {
+        return getStates;
     }
 
     @Override
