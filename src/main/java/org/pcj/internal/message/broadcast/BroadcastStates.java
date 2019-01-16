@@ -86,10 +86,6 @@ public class BroadcastStates {
             return future;
         }
 
-        public Queue<Exception> getExceptions() {
-            return exceptions;
-        }
-
         public void downProcessNode(InternalCommonGroup group, CloneInputStream clonedData, String sharedEnumClassName, String name, int[] indices) {
             NodeData nodeData = InternalPCJ.getNodeData();
             int[] threadsId = group.getLocalThreadsId();
@@ -155,7 +151,7 @@ public class BroadcastStates {
             if (exceptions.isEmpty()) {
                 future.signalDone();
             } else {
-                PcjRuntimeException ex = new PcjRuntimeException("Exception while broadcasting value.");
+                PcjRuntimeException ex = new PcjRuntimeException("Broadcasting value failed");
                 exceptions.forEach(ex::addSuppressed);
                 future.signalException(ex);
             }
