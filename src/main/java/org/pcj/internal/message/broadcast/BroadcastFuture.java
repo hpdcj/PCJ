@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -14,6 +14,10 @@ import org.pcj.PcjFuture;
 import org.pcj.PcjRuntimeException;
 import org.pcj.internal.futures.InternalFuture;
 
+/**
+ *
+ * @author Marek Nowicki (faramir@mat.umk.pl)
+ */
 public class BroadcastFuture extends InternalFuture<Void> implements PcjFuture<Void> {
     
     private PcjRuntimeException exception;

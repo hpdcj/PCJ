@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -22,6 +22,9 @@ public class GetFuture<T> extends InternalFuture<T> implements PcjFuture<T> {
 
     private T variableValue;
     private PcjRuntimeException exception;
+
+    GetFuture() {
+    }
 
     @SuppressWarnings("unchecked")
     protected void signalDone(Object variableValue) {
