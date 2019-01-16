@@ -1,12 +1,12 @@
-/* 
- * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+/*
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
  *
  * See the file "LICENSE" for the full license governing this code.
  */
-package org.pcj.internal.message;
+package org.pcj.internal.message.put;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
@@ -14,11 +14,12 @@ import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.InternalStorages;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.PcjThread;
+import org.pcj.internal.message.Message;
+import org.pcj.internal.message.MessageType;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
 /**
- *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 final public class MessageValuePutRequest extends Message {
@@ -72,9 +73,9 @@ final public class MessageValuePutRequest extends Message {
         indices = in.readIntArray();
 
         NodeData nodeData = InternalPCJ.getNodeData();
-        int globalThreadId = nodeData.getGroupById(groupId).getGlobalThreadId(threadId);
-        PcjThread pcjThread = nodeData.getPcjThread(globalThreadId);
-        InternalStorages storage = (InternalStorages) pcjThread.getThreadData().getStorages();
+        PcjThread pcjThread = nodeData.getPcjThread(groupId, requesterThreadId);
+
+        InternalStorages storage = pcjThread.getThreadData().getStorages();
 
         MessageValuePutResponse messageValuePutResponse = new MessageValuePutResponse(
                 groupId, requestNum, requesterThreadId);
