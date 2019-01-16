@@ -367,7 +367,7 @@ public abstract class InternalPCJ {
         return LoopbackSocketChannel.getInstance();
     }
 
-    protected static InternalGroup join(int globalThreadId, String groupName) {
+    protected static InternalGroup joinGroup(int globalThreadId, String groupName) {
         PcjThreadData currentThreadData = PcjThread.getCurrentThreadData();
         InternalGroup group = currentThreadData.getGroupByName(groupName);
         if (group != null) {

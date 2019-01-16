@@ -467,8 +467,8 @@ final public class PCJ extends InternalPCJ {
      * @param name name of the group
      * @return joined group
      */
-    public static Group join(String name) {
+    public static Group joinGroup(String name) {
         int myThreadId = getGlobalGroup().myId();
-        return (Group) InternalPCJ.join(myThreadId, name);
+        return (Group) InternalPCJ.joinGroup(myThreadId, name);
     }
 }

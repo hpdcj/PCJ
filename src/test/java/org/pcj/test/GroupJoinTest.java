@@ -77,7 +77,7 @@ public class GroupJoinTest implements StartPoint {
     public void main() throws Throwable {
 //        Thread.sleep((PCJ.getNodeCount()- PCJ.getNodeId()) * 50);
 
-        Group g = PCJ.join("group" + (PCJ.myId() % 2));
+        Group g = PCJ.joinGroup("group" + (PCJ.myId() % 2));
         PCJ.barrier();
 
         for (int i = 0; i < g.threadCount(); ++i) {
@@ -91,7 +91,7 @@ public class GroupJoinTest implements StartPoint {
         for (int i = 1; i <= 500; ++i) {
             Thread.sleep((long) (Math.random() * 100));
             System.out.println(PCJ.myId() + "> joining to test" + i);
-            PCJ.join("test" + i);
+            PCJ.joinGroup("test" + i);
             System.out.println(PCJ.myId() + "> joined to test" + i);
 //            if (i % 20 == 0) {
             PCJ.barrier();
