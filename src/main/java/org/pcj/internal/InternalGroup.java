@@ -158,10 +158,9 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         return state.getFuture();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <T> PcjFuture<T> asyncAt(int threadId, AsyncTask<T> asyncTask) {
-        AsyncAtStates.State state = asyncAtStates.create();
+        AsyncAtStates.State<T> state = asyncAtStates.create();
 
         int globalThreadId = super.getGlobalThreadId(threadId);
         int physicalId = InternalPCJ.getNodeData().getPhysicalId(globalThreadId);
