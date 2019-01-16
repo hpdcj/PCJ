@@ -1,4 +1,4 @@
-/*
+/* 
  * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
@@ -6,7 +6,7 @@
  *
  * See the file "LICENSE" for the full license governing this code.
  */
-package org.pcj.internal.message.put;
+package org.pcj.internal.message.get;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -17,15 +17,17 @@ import org.pcj.internal.futures.InternalFuture;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public class PutFuture extends InternalFuture<Void> implements PcjFuture<Void> {
+public class AsyncGetFuture<T> extends InternalFuture<T> implements PcjFuture<T> {
 
+    private T variableValue;
     private PcjRuntimeException exception;
 
-    PutFuture() {
+    AsyncGetFuture() {
     }
 
-    @Override
-    protected void signalDone() {
+    @SuppressWarnings("unchecked")
+    protected void signalDone(Object variableValue) {
+        this.variableValue = (T) variableValue;
         super.signalDone();
     }
 
@@ -40,20 +42,20 @@ public class PutFuture extends InternalFuture<Void> implements PcjFuture<Void> {
     }
 
     @Override
-    public Void get() throws PcjRuntimeException {
+    public T get() throws PcjRuntimeException {
         try {
             super.await();
         } catch (InterruptedException ex) {
             throw new PcjRuntimeException(ex);
         }
         if (exception != null) {
-            throw exception;
+            throw exception ;
         }
-        return null;
+        return variableValue;
     }
 
     @Override
-    public Void get(long timeout, TimeUnit unit) throws TimeoutException, PcjRuntimeException {
+    public T get(long timeout, TimeUnit unit) throws TimeoutException, PcjRuntimeException {
         try {
             super.await(timeout, unit);
         } catch (InterruptedException ex) {
@@ -62,6 +64,6 @@ public class PutFuture extends InternalFuture<Void> implements PcjFuture<Void> {
         if (exception != null) {
             throw exception;
         }
-        return null;
+        return variableValue;
     }
 }

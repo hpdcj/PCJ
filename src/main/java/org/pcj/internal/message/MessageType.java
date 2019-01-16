@@ -18,10 +18,10 @@ import org.pcj.internal.message.broadcast.BroadcastValueBytesMessage;
 import org.pcj.internal.message.broadcast.BroadcastValueInformMessage;
 import org.pcj.internal.message.broadcast.BroadcastValueRequestMessage;
 import org.pcj.internal.message.broadcast.BroadcastValueResponseMessage;
-import org.pcj.internal.message.get.MessageValueGetRequest;
-import org.pcj.internal.message.get.MessageValueGetResponse;
-import org.pcj.internal.message.put.MessageValuePutRequest;
-import org.pcj.internal.message.put.MessageValuePutResponse;
+import org.pcj.internal.message.get.ValueGetRequestMessage;
+import org.pcj.internal.message.get.ValueGetResponseMessage;
+import org.pcj.internal.message.put.ValuePutRequestMessage;
+import org.pcj.internal.message.put.ValuePutResponseMessage;
 
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
@@ -44,10 +44,10 @@ public enum MessageType {
     GROUP_JOIN_INFORM((byte) 23, MessageGroupJoinInform::new),
     GROUP_JOIN_CONFIRM((byte) 24, MessageGroupJoinConfirm::new),
     GROUP_JOIN_RESPONSE((byte) 25, MessageGroupJoinResponse::new),
-    VALUE_GET_REQUEST((byte) 30, MessageValueGetRequest::new),
-    VALUE_GET_RESPONSE((byte) 31, MessageValueGetResponse::new),
-    VALUE_PUT_REQUEST((byte) 32, MessageValuePutRequest::new),
-    VALUE_PUT_RESPONSE((byte) 33, MessageValuePutResponse::new),
+    VALUE_GET_REQUEST((byte) 30, ValueGetRequestMessage::new),
+    VALUE_GET_RESPONSE((byte) 31, ValueGetResponseMessage::new),
+    VALUE_PUT_REQUEST((byte) 32, ValuePutRequestMessage::new),
+    VALUE_PUT_RESPONSE((byte) 33, ValuePutResponseMessage::new),
     ASYNC_AT_REQUEST((byte) 34, AsyncAtRequestMessage::new),
     ASYNC_AT_RESPONSE((byte) 35, AsyncAtResponseMessage::new),
     VALUE_BROADCAST_REQUEST((byte) 36, BroadcastValueRequestMessage::new),

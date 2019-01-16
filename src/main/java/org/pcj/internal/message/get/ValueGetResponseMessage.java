@@ -6,11 +6,10 @@
  *
  * See the file "LICENSE" for the full license governing this code.
  */
-package org.pcj.internal.message.put;
+package org.pcj.internal.message.get;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
-import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
@@ -23,25 +22,35 @@ import org.pcj.internal.network.MessageDataOutputStream;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public class MessageValuePutResponse extends Message {
+public class ValueGetResponseMessage extends Message {
 
-    private int requestNum;
     private int groupId;
+    private int requestNum;
     private int requesterThreadId;
+    private Object variableValue;
     private Exception exception;
 
-    public MessageValuePutResponse() {
-        super(MessageType.VALUE_PUT_RESPONSE);
+    public ValueGetResponseMessage() {
+        super(MessageType.VALUE_GET_RESPONSE);
     }
 
-    public MessageValuePutResponse(int groupId, int requestNum, int requesterThreadId) {
+    private ValueGetResponseMessage(int groupId, int requestNum, int requesterThreadId) {
         this();
+
         this.groupId = groupId;
         this.requestNum = requestNum;
         this.requesterThreadId = requesterThreadId;
     }
 
-    public void setException(Exception exception) {
+    public ValueGetResponseMessage(int groupId, int requestNum, int requesterThreadId, Object variableValue) {
+        this(groupId, requestNum, requesterThreadId);
+
+        this.variableValue = variableValue;
+    }
+
+    public ValueGetResponseMessage(int groupId, int requestNum, int requesterThreadId, Exception exception) {
+        this(groupId, requestNum, requesterThreadId);
+
         this.exception = exception;
     }
 
@@ -51,7 +60,9 @@ public class MessageValuePutResponse extends Message {
         out.writeInt(requestNum);
         out.writeInt(requesterThreadId);
         out.writeBoolean(exception != null);
-        if (exception != null) {
+        if (exception == null) {
+            out.writeObject(variableValue);
+        } else {
             out.writeObject(exception);
         }
     }
@@ -63,12 +74,14 @@ public class MessageValuePutResponse extends Message {
         requesterThreadId = in.readInt();
 
         boolean exceptionOccurs = in.readBoolean();
-        if (exceptionOccurs) {
-            try {
+        try {
+            if (!exceptionOccurs) {
+                variableValue = in.readObject();
+            } else {
                 exception = (Exception) in.readObject();
-            } catch (Exception ex) {
-                exception = ex;
             }
+        } catch (Exception ex) {
+            exception = ex;
         }
 
         NodeData nodeData = InternalPCJ.getNodeData();
@@ -76,9 +89,8 @@ public class MessageValuePutResponse extends Message {
 
         InternalGroup group = pcjThread.getThreadData().getGroupById(groupId);
 
-        PutStates states = group.getPutStates();
-        PutStates.State state = states.remove(requestNum);
-        state.signal(exception);
+        AsyncGetStates states = group.getAsyncGetStates();
+        AsyncGetStates.State<?> state = states.remove(requestNum);
+        state.signal(variableValue, exception);
     }
-
 }

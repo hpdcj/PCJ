@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
@@ -6,11 +6,10 @@
  *
  * See the file "LICENSE" for the full license governing this code.
  */
-package org.pcj.internal.message.get;
+package org.pcj.internal.message.put;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
-import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.InternalStorages;
 import org.pcj.internal.NodeData;
@@ -23,21 +22,22 @@ import org.pcj.internal.network.MessageDataOutputStream;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public class MessageValueGetRequest extends Message {
+final public class ValuePutRequestMessage extends Message {
 
-    private int groupId;
     private int requestNum;
+    private int groupId;
     private int requesterThreadId;
     private int threadId;
     private String sharedEnumClassName;
     private String name;
     private int[] indices;
+    private Object newValue;
 
-    public MessageValueGetRequest() {
-        super(MessageType.VALUE_GET_REQUEST);
+    public ValuePutRequestMessage() {
+        super(MessageType.VALUE_PUT_REQUEST);
     }
 
-    public MessageValueGetRequest(int groupId, int requestNum, int requesterThreadId, int threadId, String storageName, String name, int[] indices) {
+    public ValuePutRequestMessage(int groupId, int requestNum, int requesterThreadId, int threadId, String storageName, String name, int[] indices, Object newValue) {
         this();
 
         this.groupId = groupId;
@@ -47,6 +47,7 @@ public class MessageValueGetRequest extends Message {
         this.sharedEnumClassName = storageName;
         this.name = name;
         this.indices = indices;
+        this.newValue = newValue;
     }
 
     @Override
@@ -58,6 +59,7 @@ public class MessageValueGetRequest extends Message {
         out.writeString(sharedEnumClassName);
         out.writeString(name);
         out.writeIntArray(indices);
+        out.writeObject(newValue);
     }
 
     @Override
@@ -75,14 +77,14 @@ public class MessageValueGetRequest extends Message {
 
         InternalStorages storage = pcjThread.getThreadData().getStorages();
 
-        MessageValueGetResponse messageValueGetResponse;
+        ValuePutResponseMessage valuePutResponseMessage = new ValuePutResponseMessage(groupId, requestNum, requesterThreadId);
         try {
-            Object variableValue = storage.get(sharedEnumClassName, name, indices);
-            messageValueGetResponse = new MessageValueGetResponse(groupId, requestNum, requesterThreadId, variableValue);
+            newValue = in.readObject();
+            storage.put(newValue, sharedEnumClassName, name, indices);
         } catch (Exception ex) {
-            messageValueGetResponse = new MessageValueGetResponse(groupId, requestNum, requesterThreadId, ex);
+            valuePutResponseMessage.setException(ex);
         }
 
-        InternalPCJ.getNetworker().send(sender, messageValueGetResponse);
+        InternalPCJ.getNetworker().send(sender, valuePutResponseMessage);
     }
 }

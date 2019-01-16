@@ -18,14 +18,13 @@ import org.pcj.PcjFuture;
 import org.pcj.internal.message.at.AsyncAtStates;
 import org.pcj.internal.message.broadcast.BroadcastStates;
 import org.pcj.internal.futures.PeerBarrierState;
-import org.pcj.internal.message.put.PutFuture;
 import org.pcj.internal.message.at.AsyncAtRequestMessage;
 import org.pcj.internal.message.MessagePeerBarrier;
 import org.pcj.internal.message.broadcast.BroadcastValueRequestMessage;
-import org.pcj.internal.message.get.GetStates;
-import org.pcj.internal.message.get.MessageValueGetRequest;
-import org.pcj.internal.message.put.MessageValuePutRequest;
-import org.pcj.internal.message.put.PutStates;
+import org.pcj.internal.message.get.AsyncGetStates;
+import org.pcj.internal.message.get.ValueGetRequestMessage;
+import org.pcj.internal.message.put.ValuePutRequestMessage;
+import org.pcj.internal.message.put.AsyncPutStates;
 
 /**
  * External class that represents group for grouped communication.
@@ -36,8 +35,8 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
 
     private final int myThreadId;
     private final AtomicInteger barrierRoundCounter;
-    private final GetStates getStates;
-    private final PutStates putStates;
+    private final AsyncGetStates asyncGetStates;
+    private final AsyncPutStates asyncPutStates;
     private final AsyncAtStates asyncAtStates;
     private final ConcurrentMap<Integer, PeerBarrierState> peerBarrierStateMap;
 
@@ -48,8 +47,8 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
 
         barrierRoundCounter = new AtomicInteger(0);
 
-        this.getStates = new GetStates();
-        this.putStates = new PutStates();
+        this.asyncGetStates = new AsyncGetStates();
+        this.asyncPutStates = new AsyncPutStates();
         this.asyncAtStates = new AsyncAtStates();
 
         peerBarrierStateMap = new ConcurrentHashMap<>();
@@ -89,13 +88,13 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
 
     @Override
     public <T> PcjFuture<T> asyncGet(int threadId, Enum<?> variable, int... indices) {
-        GetStates.State<T> state = getStates.create();
+        AsyncGetStates.State<T> state = asyncGetStates.create();
 
         int globalThreadId = super.getGlobalThreadId(threadId);
         int physicalId = InternalPCJ.getNodeData().getPhysicalId(globalThreadId);
         SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalId);
 
-        MessageValueGetRequest message = new MessageValueGetRequest(
+        ValueGetRequestMessage message = new ValueGetRequestMessage(
                         super.getGroupId(), state.getRequestNum(), myThreadId, threadId,
                         variable.getDeclaringClass().getName(), variable.name(), indices);
 
@@ -104,19 +103,19 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         return state.getFuture();
     }
 
-    public GetStates getGetStates() {
-        return getStates;
+    public AsyncGetStates getAsyncGetStates() {
+        return asyncGetStates;
     }
 
     @Override
     public <T> PcjFuture<Void> asyncPut(T newValue, int threadId, Enum<?> variable, int... indices) {
-        PutStates.State state = putStates.create();
+        AsyncPutStates.State state = asyncPutStates.create();
 
         int globalThreadId = super.getGlobalThreadId(threadId);
         int physicalId = InternalPCJ.getNodeData().getPhysicalId(globalThreadId);
         SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalId);
 
-        MessageValuePutRequest message = new MessageValuePutRequest(
+        ValuePutRequestMessage message = new ValuePutRequestMessage(
                         super.getGroupId(), state.getRequestNum(), myThreadId, threadId,
                         variable.getDeclaringClass().getName(), variable.name(), indices, newValue);
 
@@ -125,8 +124,8 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         return state.getFuture();
     }
 
-    public PutStates getPutStates() {
-        return putStates;
+    public AsyncPutStates getAsyncPutStates() {
+        return asyncPutStates;
     }
 
     @Override

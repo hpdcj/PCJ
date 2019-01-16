@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
@@ -6,7 +6,7 @@
  *
  * See the file "LICENSE" for the full license governing this code.
  */
-package org.pcj.internal.message.get;
+package org.pcj.internal.message.put;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -17,17 +17,15 @@ import org.pcj.internal.futures.InternalFuture;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public class GetFuture<T> extends InternalFuture<T> implements PcjFuture<T> {
+public class AsyncPutFuture extends InternalFuture<Void> implements PcjFuture<Void> {
 
-    private T variableValue;
     private PcjRuntimeException exception;
 
-    GetFuture() {
+    AsyncPutFuture() {
     }
 
-    @SuppressWarnings("unchecked")
-    protected void signalDone(Object variableValue) {
-        this.variableValue = (T) variableValue;
+    @Override
+    protected void signalDone() {
         super.signalDone();
     }
 
@@ -42,20 +40,20 @@ public class GetFuture<T> extends InternalFuture<T> implements PcjFuture<T> {
     }
 
     @Override
-    public T get() throws PcjRuntimeException {
+    public Void get() throws PcjRuntimeException {
         try {
             super.await();
         } catch (InterruptedException ex) {
             throw new PcjRuntimeException(ex);
         }
         if (exception != null) {
-            throw exception ;
+            throw exception;
         }
-        return variableValue;
+        return null;
     }
 
     @Override
-    public T get(long timeout, TimeUnit unit) throws TimeoutException, PcjRuntimeException {
+    public Void get(long timeout, TimeUnit unit) throws TimeoutException, PcjRuntimeException {
         try {
             super.await(timeout, unit);
         } catch (InterruptedException ex) {
@@ -64,6 +62,6 @@ public class GetFuture<T> extends InternalFuture<T> implements PcjFuture<T> {
         if (exception != null) {
             throw exception;
         }
-        return variableValue;
+        return null;
     }
 }
