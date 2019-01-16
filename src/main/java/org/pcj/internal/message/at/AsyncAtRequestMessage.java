@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
@@ -6,7 +6,7 @@
  *
  * See the file "LICENSE" for the full license governing this code.
  */
-package org.pcj.internal.message;
+package org.pcj.internal.message.at;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
@@ -14,6 +14,8 @@ import org.pcj.AsyncTask;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.PcjThread;
+import org.pcj.internal.message.Message;
+import org.pcj.internal.message.MessageType;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
@@ -22,7 +24,7 @@ import org.pcj.internal.network.MessageDataOutputStream;
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class MessageAsyncAtRequest<T> extends Message {
+final public class AsyncAtRequestMessage<T> extends Message {
 
     private int requestNum;
     private int groupId;
@@ -30,11 +32,11 @@ final public class MessageAsyncAtRequest<T> extends Message {
     private int threadId;
     private AsyncTask<T> asyncTask;
 
-    public MessageAsyncAtRequest() {
+    public AsyncAtRequestMessage() {
         super(MessageType.ASYNC_AT_REQUEST);
     }
 
-    public MessageAsyncAtRequest(int groupId, int requestNum, int requesterThreadId, int threadId, AsyncTask<T> asyncTask) {
+    public AsyncAtRequestMessage(int groupId, int requestNum, int requesterThreadId, int threadId, AsyncTask<T> asyncTask) {
         this();
 
         this.groupId = groupId;
@@ -53,6 +55,7 @@ final public class MessageAsyncAtRequest<T> extends Message {
         out.writeObject(asyncTask);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
         groupId = in.readInt();
@@ -61,15 +64,13 @@ final public class MessageAsyncAtRequest<T> extends Message {
         threadId = in.readInt();
 
         try {
-            @SuppressWarnings("unchecked")
-            AsyncTask<T> _asyncTask = (AsyncTask<T>) in.readObject();
-            asyncTask = _asyncTask;
+            asyncTask = (AsyncTask<T>) in.readObject();
         } catch (Exception ex) {
-            MessageAsyncAtResponse messageAsyncAtResponse = new MessageAsyncAtResponse(
+            AsyncAtResponseMessage asyncAtResponseMessage = new AsyncAtResponseMessage(
                     groupId, requestNum, requesterThreadId, null);
-            messageAsyncAtResponse.setException(ex);
+            asyncAtResponseMessage.setException(ex);
 
-            InternalPCJ.getNetworker().send(sender, messageAsyncAtResponse);
+            InternalPCJ.getNetworker().send(sender, asyncAtResponseMessage);
             return;
         }
 
@@ -77,17 +78,18 @@ final public class MessageAsyncAtRequest<T> extends Message {
         int globalThreadId = nodeData.getGroupById(groupId).getGlobalThreadId(threadId);
         PcjThread pcjThread = nodeData.getPcjThread(globalThreadId);
         pcjThread.execute(() -> {
-            MessageAsyncAtResponse messageAsyncAtResponse;
+            AsyncAtResponseMessage asyncAtResponseMessage;
             try {
-                Object returnedValue = asyncTask.call();
-                messageAsyncAtResponse = new MessageAsyncAtResponse(
+                T returnedValue = asyncTask.call();
+
+                asyncAtResponseMessage = new AsyncAtResponseMessage(
                         groupId, requestNum, requesterThreadId, returnedValue);
             } catch (Exception ex) {
-                messageAsyncAtResponse = new MessageAsyncAtResponse(
+                asyncAtResponseMessage = new AsyncAtResponseMessage(
                         groupId, requestNum, requesterThreadId, null);
-                messageAsyncAtResponse.setException(ex);
+                asyncAtResponseMessage.setException(ex);
             }
-            InternalPCJ.getNetworker().send(sender, messageAsyncAtResponse);
+            InternalPCJ.getNetworker().send(sender, asyncAtResponseMessage);
         });
     }
 }

@@ -55,10 +55,6 @@ public class BroadcastStates {
         return stateMap.remove(Arrays.asList(requestNum, threadId));
     }
 
-    public State remove(State state) {
-        return stateMap.remove(Arrays.asList(state.requestNum, state.requesterThreadId));
-    }
-
     public class State {
 
         private final int requestNum;
@@ -130,7 +126,7 @@ public class BroadcastStates {
                 int globalThreadId = group.getGlobalThreadId(requesterThreadId);
                 int requesterPhysicalId = nodeData.getPhysicalId(globalThreadId);
                 if (requesterPhysicalId != nodeData.getPhysicalId()) { // requester is going to receive response
-                    BroadcastStates.this.remove(this);
+                    BroadcastStates.this.remove(requestNum, requesterThreadId);
                 }
 
                 Message message;

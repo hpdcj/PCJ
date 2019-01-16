@@ -12,6 +12,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
+import org.pcj.internal.message.at.AsyncAtRequestMessage;
+import org.pcj.internal.message.at.AsyncAtResponseMessage;
 import org.pcj.internal.message.broadcast.BroadcastValueBytesMessage;
 import org.pcj.internal.message.broadcast.BroadcastValueInformMessage;
 import org.pcj.internal.message.broadcast.BroadcastValueRequestMessage;
@@ -42,8 +44,8 @@ public enum MessageType {
     VALUE_GET_RESPONSE((byte) 31, MessageValueGetResponse::new),
     VALUE_PUT_REQUEST((byte) 32, MessageValuePutRequest::new),
     VALUE_PUT_RESPONSE((byte) 33, MessageValuePutResponse::new),
-    ASYNC_AT_REQUEST((byte) 34, MessageAsyncAtRequest::new),
-    ASYNC_AT_RESPONSE((byte) 35, MessageAsyncAtResponse::new),
+    ASYNC_AT_REQUEST((byte) 34, AsyncAtRequestMessage::new),
+    ASYNC_AT_RESPONSE((byte) 35, AsyncAtResponseMessage::new),
     VALUE_BROADCAST_REQUEST((byte) 36, BroadcastValueRequestMessage::new),
     VALUE_BROADCAST_BYTES((byte) 37, BroadcastValueBytesMessage::new),
     VALUE_BROADCAST_INFORM((byte) 38, BroadcastValueInformMessage::new),
@@ -51,8 +53,6 @@ public enum MessageType {
     UNKNOWN((byte) -1, MessageUnknown::new);
     //    /* **************************************************** */
     private static final Map<Byte, MessageType> map;
-    private final byte id;
-    private final Supplier<? extends Message> constructor;
 
     static {
         Map<Byte, MessageType> localMap = new HashMap<>(40, 1.0f);
@@ -65,6 +65,14 @@ public enum MessageType {
         map = Collections.unmodifiableMap(localMap);
     }
 
+    private final byte id;
+    private final Supplier<? extends Message> constructor;
+
+    MessageType(byte id, Supplier<? extends Message> constructor) {
+        this.id = id;
+        this.constructor = constructor;
+    }
+
     /**
      * Creates Message object that is associated with id
      *
@@ -74,11 +82,6 @@ public enum MessageType {
         MessageType type = map.get(messageTypeId);
         Supplier<? extends Message> constructor = type == null ? UNKNOWN.constructor : type.constructor;
         return constructor.get();
-    }
-
-    MessageType(byte id, Supplier<? extends Message> constructor) {
-        this.id = id;
-        this.constructor = constructor;
     }
 
     final public byte getId() {

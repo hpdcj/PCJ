@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
@@ -6,7 +6,7 @@
  *
  * See the file "LICENSE" for the full license governing this code.
  */
-package org.pcj.internal.message;
+package org.pcj.internal.message.at;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
@@ -14,15 +14,15 @@ import org.pcj.internal.InternalGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.PcjThread;
-import org.pcj.internal.futures.AsyncAtExecution;
+import org.pcj.internal.message.Message;
+import org.pcj.internal.message.MessageType;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
 /**
- *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-class MessageAsyncAtResponse extends Message {
+public class AsyncAtResponseMessage extends Message {
 
     private int groupId;
     private int requestNum;
@@ -30,11 +30,11 @@ class MessageAsyncAtResponse extends Message {
     private Object variableValue;
     private Exception exception;
 
-    public MessageAsyncAtResponse() {
+    public AsyncAtResponseMessage() {
         super(MessageType.ASYNC_AT_RESPONSE);
     }
 
-    public MessageAsyncAtResponse(int groupId, int requestNum, int requesterThreadId, Object variableValue) {
+    public AsyncAtResponseMessage(int groupId, int requestNum, int requesterThreadId, Object variableValue) {
         this();
 
         this.groupId = groupId;
@@ -70,21 +70,21 @@ class MessageAsyncAtResponse extends Message {
         int globalThreadId = nodeData.getGroupById(groupId).getGlobalThreadId(requesterThreadId);
 
         PcjThread pcjThread = nodeData.getPcjThread(globalThreadId);
-        InternalGroup group = (InternalGroup) pcjThread.getThreadData().getGroupById(groupId);
-
-        AsyncAtExecution asyncAtExecution = group.removeAsyncAtExecution(requestNum);
+        InternalGroup group = pcjThread.getThreadData().getGroupById(groupId);
 
         boolean exceptionOccurs = in.readBoolean();
         try {
             if (!exceptionOccurs) {
                 variableValue = in.readObject();
-                asyncAtExecution.signalDone(variableValue);
             } else {
                 exception = (Exception) in.readObject();
-                asyncAtExecution.signalException(exception);
             }
         } catch (Exception ex) {
-            asyncAtExecution.signalException(ex);
+            exception = ex;
         }
+
+        AsyncAtStates states = group.getAsyncAtStates();
+        AsyncAtStates.State<?> state = states.remove(requestNum);
+        state.signal(variableValue, exception);
     }
 }
