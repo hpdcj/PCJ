@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.pcj.internal.futures;
+package org.pcj.internal.message.barrier;
 
 import java.nio.channels.SocketChannel;
 import java.util.List;
@@ -17,9 +17,10 @@ import org.pcj.internal.Bitmask;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
+import org.pcj.internal.futures.InternalFuture;
 import org.pcj.internal.message.Message;
-import org.pcj.internal.message.MessageGroupBarrierGo;
-import org.pcj.internal.message.MessageGroupBarrierWaiting;
+import org.pcj.internal.message.barrier.MessageGroupBarrierGo;
+import org.pcj.internal.message.barrier.MessageGroupBarrierWaiting;
 
 /**
  *

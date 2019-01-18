@@ -1,42 +1,38 @@
-/* 
- * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+/*
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
  *
  * See the file "LICENSE" for the full license governing this code.
  */
-package org.pcj.internal.message;
+package org.pcj.internal.message.peerbarrier;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
-import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.PcjThread;
-import org.pcj.internal.futures.PeerBarrierState;
+import org.pcj.internal.message.Message;
+import org.pcj.internal.message.MessageType;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
 /**
- * Message sent by each node to node0 about finished execution.
- *
- * @param physicalId physicalId of node
- *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class MessagePeerBarrier extends Message {
+final public class PeerBarrierMessage extends Message {
 
     private int groupId;
     private int requesterThreadId;
     private int threadId;
 
-    public MessagePeerBarrier() {
+    public PeerBarrierMessage() {
         super(MessageType.PEER_BARRIER);
     }
 
-    public MessagePeerBarrier(int groupId, int requesterThreadId, int threadId) {
+    public PeerBarrierMessage(int groupId, int requesterThreadId, int threadId) {
         this();
 
         this.groupId = groupId;
@@ -58,14 +54,12 @@ final public class MessagePeerBarrier extends Message {
         threadId = in.readInt();
 
         NodeData nodeData = InternalPCJ.getNodeData();
-        InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
+        PcjThread pcjThread = nodeData.getPcjThread(groupId, threadId);
 
-        int globalThreadId = commonGroup.getGlobalThreadId(threadId);
-        PcjThread pcjThread = nodeData.getPcjThread(globalThreadId);
+        InternalGroup group = pcjThread.getThreadData().getGroupById(groupId);
 
-        InternalGroup group = (InternalGroup) pcjThread.getThreadData().getGroupById(groupId);
-
-        PeerBarrierState peerBarrierState = group.getPeerBarrierState(requesterThreadId);
-        peerBarrierState.peerBarrier();
+        PeerBarrierStates peerBarrierStates = group.getPeerBarrierStates();
+        PeerBarrierStates.State state = peerBarrierStates.getOrCreate(requesterThreadId);
+        state.doPeerBarrier();
     }
 }

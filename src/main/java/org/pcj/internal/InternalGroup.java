@@ -9,22 +9,20 @@
 package org.pcj.internal;
 
 import java.nio.channels.SocketChannel;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.AsyncTask;
 import org.pcj.Group;
 import org.pcj.PcjFuture;
+import org.pcj.internal.message.at.AsyncAtRequestMessage;
 import org.pcj.internal.message.at.AsyncAtStates;
 import org.pcj.internal.message.broadcast.BroadcastStates;
-import org.pcj.internal.futures.PeerBarrierState;
-import org.pcj.internal.message.at.AsyncAtRequestMessage;
-import org.pcj.internal.message.MessagePeerBarrier;
 import org.pcj.internal.message.broadcast.BroadcastValueRequestMessage;
 import org.pcj.internal.message.get.AsyncGetStates;
 import org.pcj.internal.message.get.ValueGetRequestMessage;
-import org.pcj.internal.message.put.ValuePutRequestMessage;
+import org.pcj.internal.message.peerbarrier.PeerBarrierMessage;
+import org.pcj.internal.message.peerbarrier.PeerBarrierStates;
 import org.pcj.internal.message.put.AsyncPutStates;
+import org.pcj.internal.message.put.ValuePutRequestMessage;
 
 /**
  * External class that represents group for grouped communication.
@@ -38,7 +36,8 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     private final AsyncGetStates asyncGetStates;
     private final AsyncPutStates asyncPutStates;
     private final AsyncAtStates asyncAtStates;
-    private final ConcurrentMap<Integer, PeerBarrierState> peerBarrierStateMap;
+    private final PeerBarrierStates peerBarrierStates;
+
 
     public InternalGroup(int threadId, InternalCommonGroup internalGroup) {
         super(internalGroup);
@@ -50,8 +49,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         this.asyncGetStates = new AsyncGetStates();
         this.asyncPutStates = new AsyncPutStates();
         this.asyncAtStates = new AsyncAtStates();
-
-        peerBarrierStateMap = new ConcurrentHashMap<>();
+        this.peerBarrierStates  = new PeerBarrierStates();
     }
 
     @Override
@@ -67,23 +65,24 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     @Override
     public PcjFuture<Void> asyncBarrier(int threadId) {
         if (myThreadId == threadId) {
-            throw new IllegalArgumentException("Given PCJ Thread Id should be different from current PCJ Thread Id.");
+            throw new IllegalArgumentException("Cannot barrier with myself: " + threadId);
         }
 
-        PeerBarrierState peerBarrierState = getPeerBarrierState(threadId);
+        PeerBarrierStates.State state = peerBarrierStates.getOrCreate(threadId);
 
         int globalThreadId = super.getGlobalThreadId(threadId);
         int physicalId = InternalPCJ.getNodeData().getPhysicalId(globalThreadId);
         SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalId);
 
-        MessagePeerBarrier message = new MessagePeerBarrier(super.getGroupId(), myThreadId, threadId);
+        PeerBarrierMessage message = new PeerBarrierMessage(super.getGroupId(), myThreadId, threadId);
+
         InternalPCJ.getNetworker().send(socket, message);
 
-        return peerBarrierState.mineBarrier();
+        return state.doMineBarrier();
     }
 
-    public PeerBarrierState getPeerBarrierState(int threadId) {
-        return peerBarrierStateMap.computeIfAbsent(threadId, key -> new PeerBarrierState());
+    public PeerBarrierStates getPeerBarrierStates() {
+        return peerBarrierStates;
     }
 
     @Override
@@ -95,8 +94,8 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalId);
 
         ValueGetRequestMessage message = new ValueGetRequestMessage(
-                        super.getGroupId(), state.getRequestNum(), myThreadId, threadId,
-                        variable.getDeclaringClass().getName(), variable.name(), indices);
+                super.getGroupId(), state.getRequestNum(), myThreadId, threadId,
+                variable.getDeclaringClass().getName(), variable.name(), indices);
 
         InternalPCJ.getNetworker().send(socket, message);
 
@@ -116,8 +115,8 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalId);
 
         ValuePutRequestMessage message = new ValuePutRequestMessage(
-                        super.getGroupId(), state.getRequestNum(), myThreadId, threadId,
-                        variable.getDeclaringClass().getName(), variable.name(), indices, newValue);
+                super.getGroupId(), state.getRequestNum(), myThreadId, threadId,
+                variable.getDeclaringClass().getName(), variable.name(), indices, newValue);
 
         InternalPCJ.getNetworker().send(socket, message);
 
@@ -134,8 +133,8 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         BroadcastStates.State state = states.create(myThreadId, getChildrenNodes().size());
 
         BroadcastValueRequestMessage message = new BroadcastValueRequestMessage(
-                        super.getGroupId(), state.getRequestNum(), myThreadId,
-                        variable.getDeclaringClass().getName(), variable.name(), indices, newValue);
+                super.getGroupId(), state.getRequestNum(), myThreadId,
+                variable.getDeclaringClass().getName(), variable.name(), indices, newValue);
 
         int physicalMasterId = super.getGroupMasterNode();
         SocketChannel masterSocket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalMasterId);
@@ -154,7 +153,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalId);
 
         AsyncAtRequestMessage<T> message = new AsyncAtRequestMessage<>(
-                        super.getGroupId(), state.getRequestNum(), myThreadId,
+                super.getGroupId(), state.getRequestNum(), myThreadId,
                 threadId, asyncTask);
 
         InternalPCJ.getNetworker().send(socket, message);

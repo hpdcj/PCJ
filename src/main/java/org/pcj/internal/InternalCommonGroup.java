@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.internal.message.broadcast.BroadcastStates;
-import org.pcj.internal.futures.GroupBarrierState;
+import org.pcj.internal.message.barrier.GroupBarrierState;
 import org.pcj.internal.futures.GroupJoinState;
 
 /**
