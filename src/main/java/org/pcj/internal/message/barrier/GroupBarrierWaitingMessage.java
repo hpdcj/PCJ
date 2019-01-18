@@ -12,53 +12,45 @@ import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
-import org.pcj.internal.NodeData;
 import org.pcj.internal.message.Message;
 import org.pcj.internal.message.MessageType;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
 /**
- * ....
- *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class MessageGroupBarrierGo extends Message {
+final public class GroupBarrierWaitingMessage extends Message {
 
     private int groupId;
-    private int barrierRound;
+    private int round;
 
-    public MessageGroupBarrierGo() {
-        super(MessageType.GROUP_BARRIER_GO);
+    public GroupBarrierWaitingMessage() {
+        super(MessageType.GROUP_BARRIER_WAITING);
     }
 
-    public MessageGroupBarrierGo(int groupId, int barrierRound) {
+    public GroupBarrierWaitingMessage(int groupId, int round) {
         this();
 
         this.groupId = groupId;
-        this.barrierRound = barrierRound;
+        this.round = round;
     }
 
     @Override
     public void write(MessageDataOutputStream out) throws IOException {
         out.writeInt(groupId);
-        out.writeInt(barrierRound);
+        out.writeInt(round);
     }
 
     @Override
     public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
         groupId = in.readInt();
-        barrierRound = in.readInt();
+        round = in.readInt();
 
-        NodeData nodeData = InternalPCJ.getNodeData();
+        InternalCommonGroup commonGroup = InternalPCJ.getNodeData().getCommonGroupById(groupId);
 
-        InternalCommonGroup group = nodeData.getCommonGroupById(groupId);
-
-        group.getChildrenNodes().stream()
-                .map(nodeData.getSocketChannelByPhysicalId()::get)
-                .forEach(socket -> InternalPCJ.getNetworker().send(socket, this));
-
-        GroupBarrierState barrier = group.removeBarrierState(barrierRound);
-        barrier.signalDone();
+        BarrierStates states = commonGroup.getBarrierStates();
+        BarrierStates.State state = states.getOrCreate(round, commonGroup);
+        state.processPhysical(commonGroup);
     }
 }

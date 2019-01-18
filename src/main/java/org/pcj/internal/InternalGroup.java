@@ -9,12 +9,12 @@
 package org.pcj.internal;
 
 import java.nio.channels.SocketChannel;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.AsyncTask;
 import org.pcj.Group;
 import org.pcj.PcjFuture;
 import org.pcj.internal.message.at.AsyncAtRequestMessage;
 import org.pcj.internal.message.at.AsyncAtStates;
+import org.pcj.internal.message.barrier.BarrierStates;
 import org.pcj.internal.message.broadcast.BroadcastStates;
 import org.pcj.internal.message.broadcast.BroadcastValueRequestMessage;
 import org.pcj.internal.message.get.AsyncGetStates;
@@ -32,7 +32,6 @@ import org.pcj.internal.message.put.ValuePutRequestMessage;
 final public class InternalGroup extends InternalCommonGroup implements Group {
 
     private final int myThreadId;
-    private final AtomicInteger barrierRoundCounter;
     private final AsyncGetStates asyncGetStates;
     private final AsyncPutStates asyncPutStates;
     private final AsyncAtStates asyncAtStates;
@@ -43,8 +42,6 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         super(internalGroup);
 
         this.myThreadId = threadId;
-
-        barrierRoundCounter = new AtomicInteger(0);
 
         this.asyncGetStates = new AsyncGetStates();
         this.asyncPutStates = new AsyncPutStates();
@@ -58,7 +55,12 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
 
     @Override
     public PcjFuture<Void> asyncBarrier() {
-        return super.barrier(myThreadId, barrierRoundCounter.incrementAndGet());
+        BarrierStates states = super.getBarrierStates();
+        int round = states.getNextRound(myThreadId);
+        BarrierStates.State state = states.getOrCreate(round, this);
+        state.processLocal(this);
+
+        return state.getFuture();
     }
 
     @Override

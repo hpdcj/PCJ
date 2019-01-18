@@ -12,49 +12,54 @@ import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
+import org.pcj.internal.NodeData;
 import org.pcj.internal.message.Message;
 import org.pcj.internal.message.MessageType;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
 /**
+ * ....
+ *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class MessageGroupBarrierWaiting extends Message {
+final public class GroupBarrierGoMessage extends Message {
 
-    private int physicalId;
     private int groupId;
-    private int barrierRound;
+    private int round;
 
-    public MessageGroupBarrierWaiting() {
-        super(MessageType.GROUP_BARRIER_WAITING);
+    public GroupBarrierGoMessage() {
+        super(MessageType.GROUP_BARRIER_GO);
     }
 
-    public MessageGroupBarrierWaiting(int groupId, int barrierRound, int physicalId) {
+    public GroupBarrierGoMessage(int groupId, int round) {
         this();
 
         this.groupId = groupId;
-        this.barrierRound = barrierRound;
-        this.physicalId = physicalId;
+        this.round = round;
     }
 
     @Override
     public void write(MessageDataOutputStream out) throws IOException {
         out.writeInt(groupId);
-        out.writeInt(barrierRound);
-        out.writeInt(physicalId);
-
+        out.writeInt(round);
     }
 
     @Override
     public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
         groupId = in.readInt();
-        barrierRound = in.readInt();
-        physicalId = in.readInt();
+        round = in.readInt();
 
-        InternalCommonGroup group = InternalPCJ.getNodeData().getCommonGroupById(groupId);
+        NodeData nodeData = InternalPCJ.getNodeData();
 
-        GroupBarrierState barrierState = group.getBarrierState(barrierRound);
-        barrierState.processPhysical(physicalId);
+        InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
+
+        commonGroup.getChildrenNodes().stream()
+                .map(nodeData.getSocketChannelByPhysicalId()::get)
+                .forEach(socket -> InternalPCJ.getNetworker().send(socket, this));
+
+        BarrierStates states = commonGroup.getBarrierStates();
+        BarrierStates.State state = states.remove(round);
+        state.signalDone();
     }
 }

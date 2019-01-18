@@ -19,8 +19,8 @@ import org.pcj.internal.message.broadcast.BroadcastValueBytesMessage;
 import org.pcj.internal.message.broadcast.BroadcastValueInformMessage;
 import org.pcj.internal.message.broadcast.BroadcastValueRequestMessage;
 import org.pcj.internal.message.broadcast.BroadcastValueResponseMessage;
-import org.pcj.internal.message.barrier.MessageGroupBarrierGo;
-import org.pcj.internal.message.barrier.MessageGroupBarrierWaiting;
+import org.pcj.internal.message.barrier.GroupBarrierGoMessage;
+import org.pcj.internal.message.barrier.GroupBarrierWaitingMessage;
 import org.pcj.internal.message.get.ValueGetRequestMessage;
 import org.pcj.internal.message.get.ValueGetResponseMessage;
 import org.pcj.internal.message.put.ValuePutRequestMessage;
@@ -38,8 +38,8 @@ public enum MessageType {
     HELLO_GO((byte) 5, MessageHelloGo::new),
     BYE((byte) 6, MessageBye::new),
     BYE_COMPLETED((byte) 7, MessageByeCompleted::new),
-    GROUP_BARRIER_WAITING((byte) 10, MessageGroupBarrierWaiting::new),
-    GROUP_BARRIER_GO((byte) 11, MessageGroupBarrierGo::new),
+    GROUP_BARRIER_WAITING((byte) 10, GroupBarrierWaitingMessage::new),
+    GROUP_BARRIER_GO((byte) 11, GroupBarrierGoMessage::new),
     PEER_BARRIER((byte) 12, PeerBarrierMessage::new),
     GROUP_JOIN_QUERY((byte) 20, MessageGroupJoinQuery::new),
     GROUP_JOIN_ANSWER((byte) 21, MessageGroupJoinAnswer::new),

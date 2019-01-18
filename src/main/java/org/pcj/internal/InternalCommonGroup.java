@@ -18,8 +18,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.pcj.internal.message.barrier.BarrierStates;
 import org.pcj.internal.message.broadcast.BroadcastStates;
-import org.pcj.internal.message.barrier.GroupBarrierState;
 import org.pcj.internal.futures.GroupJoinState;
 
 /**
@@ -43,8 +43,8 @@ public class InternalCommonGroup {
     private final Bitmask physicalBitmask;
     final private AtomicInteger threadsCounter;
     final private CommunicationTree physicalTree;
+    private final BarrierStates barrierStates;
     private final BroadcastStates broadcastStates;
-    private final ConcurrentMap<Integer, GroupBarrierState> barrierStateMap;
     private final ConcurrentMap<List<Integer>, GroupJoinState> groupJoinStateMap;
 
     public InternalCommonGroup(InternalCommonGroup g) {
@@ -55,8 +55,8 @@ public class InternalCommonGroup {
         this.threadsMapping = g.threadsMapping;
         this.localBitmask = g.localBitmask;
         this.physicalBitmask = g.physicalBitmask;
-        this.barrierStateMap = g.barrierStateMap;
 
+        this.barrierStates = g.barrierStates;
         this.broadcastStates = g.broadcastStates;
         this.groupJoinStateMap = g.groupJoinStateMap;
 
@@ -76,7 +76,8 @@ public class InternalCommonGroup {
 
         localBitmask = new Bitmask();
         physicalBitmask = new Bitmask();
-        barrierStateMap = new ConcurrentHashMap<>();
+
+        barrierStates = new BarrierStates();
         broadcastStates = new BroadcastStates();
         groupJoinStateMap = new ConcurrentHashMap<>();
 
@@ -200,20 +201,8 @@ public class InternalCommonGroup {
         return Collections.unmodifiableMap(threadsMapping);
     }
 
-    final protected GroupBarrierState barrier(int threadId, int barrierRound) {
-        GroupBarrierState barrierState = getBarrierState(barrierRound);
-        barrierState.processLocal(threadId);
-
-        return barrierState;
-    }
-
-    final public GroupBarrierState getBarrierState(int barrierRound) {
-        return barrierStateMap.computeIfAbsent(barrierRound,
-                round -> new GroupBarrierState(groupId, round, localBitmask, getChildrenNodes()));
-    }
-
-    final public GroupBarrierState removeBarrierState(int barrierRound) {
-        return barrierStateMap.remove(barrierRound);
+    public BarrierStates getBarrierStates() {
+        return barrierStates;
     }
 
     final public BroadcastStates getBroadcastStates() {
