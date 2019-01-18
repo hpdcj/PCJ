@@ -85,7 +85,7 @@ final public class BroadcastValueRequestMessage extends Message {
                 .forEach(socket -> networker.send(socket, broadcastValueBytesMessage));
 
         BroadcastStates states = commonGroup.getBroadcastStates();
-        BroadcastStates.State state = states.getOrCreate(requestNum, requesterThreadId, commonGroup.getChildrenNodes().size());
+        BroadcastStates.State state = states.getOrCreate(requestNum, requesterThreadId, commonGroup);
 
         state.downProcessNode(commonGroup, clonedData, sharedEnumClassName, variableName, indices);
 

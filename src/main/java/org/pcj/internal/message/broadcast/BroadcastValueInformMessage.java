@@ -78,7 +78,7 @@ final public class BroadcastValueInformMessage extends Message {
         InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
 
         BroadcastStates states = commonGroup.getBroadcastStates();
-        BroadcastStates.State state = states.getOrCreate(requestNum, requesterThreadId, commonGroup.getChildrenNodes().size());
+        BroadcastStates.State state = states.getOrCreate(requestNum, requesterThreadId, commonGroup);
         state.upProcessNode(commonGroup, exceptions);
     }
 }

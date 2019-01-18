@@ -88,10 +88,6 @@ public class InternalCommonGroup {
         joinGroupSynchronizer = new Object();
     }
 
-    public List<Integer> getPhysicalIds() {
-        return Collections.unmodifiableList(physicalIds); // DO USUNIECIA
-    }
-
     final public int getGroupId() {
         return groupId;
     }
@@ -110,14 +106,6 @@ public class InternalCommonGroup {
 
     final public List<Integer> getChildrenNodes() {
         return physicalTree.getChildrenNodes();
-    }
-
-    final protected Bitmask getPhysicalBitmask() {
-        return new Bitmask(physicalBitmask);
-    }
-
-    protected int myId() {
-        throw new IllegalStateException("This method has to be overriden!");
     }
 
     final public int threadCount() {

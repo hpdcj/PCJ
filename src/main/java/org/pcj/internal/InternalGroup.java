@@ -52,7 +52,6 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         this.peerBarrierStates  = new PeerBarrierStates();
     }
 
-    @Override
     public int myId() {
         return myThreadId;
     }
@@ -130,7 +129,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     @Override
     public <T> PcjFuture<Void> asyncBroadcast(T newValue, Enum<?> variable, int... indices) {
         BroadcastStates states = super.getBroadcastStates();
-        BroadcastStates.State state = states.create(myThreadId, getChildrenNodes().size());
+        BroadcastStates.State state = states.create(myThreadId, this);
 
         BroadcastValueRequestMessage message = new BroadcastValueRequestMessage(
                 super.getGroupId(), state.getRequestNum(), myThreadId,

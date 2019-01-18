@@ -38,20 +38,20 @@ public class BroadcastStates {
         stateMap = new ConcurrentHashMap<>();
     }
 
-    public State create(int threadId, int childrenCount) {
+    public State create(int threadId, InternalCommonGroup commonGroup) {
         int requestNum = counter.incrementAndGet();
 
         BroadcastFuture future = new BroadcastFuture();
-        State state = new State(requestNum, threadId, childrenCount, future);
+        State state = new State(requestNum, threadId, commonGroup.getChildrenNodes().size(), future);
 
         stateMap.put(Arrays.asList(requestNum, threadId), state);
 
         return state;
     }
 
-    public State getOrCreate(int requestNum, int requesterThreadId, int childrenCount) {
+    public State getOrCreate(int requestNum, int requesterThreadId, InternalCommonGroup commonGroup) {
         return stateMap.computeIfAbsent(Arrays.asList(requestNum, requesterThreadId),
-                key -> new State(requestNum, requesterThreadId, childrenCount));
+                key -> new State(requestNum, requesterThreadId, commonGroup.getChildrenNodes().size()));
     }
 
     public State remove(int requestNum, int threadId) {
