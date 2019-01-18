@@ -73,7 +73,7 @@ final public class ValuePutRequestMessage extends Message {
         indices = in.readIntArray();
 
         NodeData nodeData = InternalPCJ.getNodeData();
-        PcjThread pcjThread = nodeData.getPcjThread(groupId, requesterThreadId);
+        PcjThread pcjThread = nodeData.getPcjThread(groupId, threadId);
 
         InternalStorages storage = pcjThread.getThreadData().getStorages();
 

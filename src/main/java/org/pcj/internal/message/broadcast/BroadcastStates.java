@@ -17,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.pcj.PcjFuture;
 import org.pcj.PcjRuntimeException;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
@@ -84,7 +85,7 @@ public class BroadcastStates {
             return requestNum;
         }
 
-        public BroadcastFuture getFuture() {
+        public PcjFuture<Void> getFuture() {
             return future;
         }
 

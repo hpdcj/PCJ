@@ -41,12 +41,12 @@ public class AsyncGetStates {
         return stateMap.remove(requestNum);
     }
 
-    public class State<T> {
+    public static class State<T> {
 
         private final int requestNum;
         private final AsyncGetFuture<T> future;
 
-        public State(int requestNum, AsyncGetFuture<T> future) {
+        private State(int requestNum, AsyncGetFuture<T> future) {
             this.requestNum = requestNum;
 
             this.future = future;
