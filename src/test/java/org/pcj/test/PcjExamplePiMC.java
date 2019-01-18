@@ -1,13 +1,14 @@
-/* 
+/*
  * Copyright (c) 2016, Marek Nowicki
  * All rights reserved.
- * 
+ *
  * Licensed under New BSD License (3-clause license).
- * 
+ *
  * See the file "LICENSE" for the full license governing this code.
  */
 package org.pcj.test;
 
+import java.util.Arrays;
 import java.util.Random;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
@@ -22,10 +23,10 @@ public class PcjExamplePiMC implements StartPoint {
 
     @Storage(PcjExamplePiMC.class)
     enum SharedEnum {
-        circleCount
+        circleCountArray
     }
 
-    long circleCount;
+    private long[] circleCountArray = PCJ.myId() == 0 ? new long[PCJ.threadCount()] : null;
 
     @Override
     public void main() {
@@ -34,7 +35,8 @@ public class PcjExamplePiMC implements StartPoint {
         long n = nAll / PCJ.threadCount();
 
         double time = System.nanoTime();
-// Calculate  
+// Calculate
+        long circleCount = 0;
         for (long i = 0; i < n; ++i) {
             double x = 2.0 * random.nextDouble() - 1.0;
             double y = 2.0 * random.nextDouble() - 1.0;
@@ -43,23 +45,17 @@ public class PcjExamplePiMC implements StartPoint {
             }
         }
         PCJ.barrier();
-// Gather results 
-        long c = 0;
-        PcjFuture cL[] = new PcjFuture[PCJ.threadCount()];
+// Gather results
+        PCJ.put(circleCount, 0, SharedEnum.circleCountArray, PCJ.myId());
 
         if (PCJ.myId() == 0) {
-            for (int p = 0; p < PCJ.threadCount(); p++) {
-                cL[p] = PCJ.asyncGet(p, SharedEnum.circleCount);
-            }
-            for (int p = 0; p < PCJ.threadCount(); p++) {
-                c = c + (long) cL[p].get();
-            }
-        }
-// Calculate pi 
-        double pi = 4.0 * (double) c / (double) nAll;
-        time = System.nanoTime() - time;
-// Print results         
-        if (PCJ.myId() == 0) {
+            PCJ.waitFor(SharedEnum.circleCountArray, PCJ.threadCount());
+
+// Calculate pi
+            long c = Arrays.stream(circleCountArray).sum();
+            double pi = 4.0 * (double) c / (double) nAll;
+            time = System.nanoTime() - time;
+// Print results
             System.out.println(pi + " " + time * 1.0E-9 + "s " + (pi - Math.PI));
         }
     }
