@@ -12,7 +12,7 @@ import java.nio.channels.SocketChannel;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.pcj.internal.futures.GroupJoinQuery;
+import org.pcj.internal.message.join.GroupJoinQuery;
 import org.pcj.internal.futures.WaitObject;
 
 /**

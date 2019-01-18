@@ -20,7 +20,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.internal.message.barrier.BarrierStates;
 import org.pcj.internal.message.broadcast.BroadcastStates;
-import org.pcj.internal.futures.GroupJoinState;
+import org.pcj.internal.message.join.GroupJoinState;
 
 /**
  * Internal (with common ClassLoader) representation of Group. It contains

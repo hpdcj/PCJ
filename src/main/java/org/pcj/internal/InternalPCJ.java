@@ -29,11 +29,11 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.pcj.NodesDescription;
 import org.pcj.StartPoint;
-import org.pcj.internal.futures.GroupJoinQuery;
+import org.pcj.internal.message.join.GroupJoinQuery;
 import org.pcj.internal.futures.WaitObject;
 import org.pcj.internal.message.MessageBye;
-import org.pcj.internal.message.MessageGroupJoinQuery;
-import org.pcj.internal.message.MessageGroupJoinRequest;
+import org.pcj.internal.message.join.MessageGroupJoinQuery;
+import org.pcj.internal.message.join.MessageGroupJoinRequest;
 import org.pcj.internal.message.MessageHello;
 import org.pcj.internal.network.LoopbackSocketChannel;
 
