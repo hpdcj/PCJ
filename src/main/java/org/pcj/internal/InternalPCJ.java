@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -32,10 +32,11 @@ import org.pcj.PcjFuture;
 import org.pcj.StartPoint;
 import org.pcj.internal.futures.WaitObject;
 import org.pcj.internal.message.MessageBye;
-import org.pcj.internal.message.join.GroupJoinQueryStates;
-import org.pcj.internal.message.join.GroupJoinQueryMessage;
-import org.pcj.internal.message.join.MessageGroupJoinRequest;
 import org.pcj.internal.message.MessageHello;
+import org.pcj.internal.message.join.GroupQueryMessage;
+import org.pcj.internal.message.join.GroupQueryStates;
+import org.pcj.internal.message.join.GroupJoinStates;
+import org.pcj.internal.message.join.GroupJoinRequestMessage;
 import org.pcj.internal.network.LoopbackSocketChannel;
 
 /**
@@ -57,7 +58,7 @@ public abstract class InternalPCJ {
 
     /**
      * Suppress default constructor for noninstantiability.
-     *
+     * <p>
      * Have to be protected to allow inheritance - to give rights to its protected methods.
      */
     protected InternalPCJ() {
@@ -82,7 +83,7 @@ public abstract class InternalPCJ {
         }
 
         boolean isCurrentJvmNode0 = node0.isLocalAddress()
-                && node0.getPort() == currentJvm.getPort();
+                                            && node0.getPort() == currentJvm.getPort();
 
         if (isCurrentJvmNode0) {
             LOGGER.log(Level.INFO, "PCJ version {0}", PCJ_VERSION);
@@ -120,8 +121,8 @@ public abstract class InternalPCJ {
             if (isCurrentJvmNode0) {
                 nanoTime = System.nanoTime();
                 LOGGER.log(Level.INFO, "Starting {0} with {1,number,#}"
-                                + " {1,choice,1#thread|1<threads}"
-                                + " (on {2,number,#} {2,choice,1#node|1<nodes})...",
+                                               + " {1,choice,1#thread|1<threads}"
+                                               + " (on {2,number,#} {2,choice,1#node|1<nodes})...",
                         new Object[]{startPointClass.getName(),
                                 nodeData.getCommonGroupById(InternalCommonGroup.GLOBAL_GROUP_ID).threadCount(),
                                 nodeData.getTotalNodeCount(),});
@@ -145,9 +146,9 @@ public abstract class InternalPCJ {
                 long s = (timer % 60);
 
                 LOGGER.log(Level.INFO, "Completed {0}"
-                                + " with {1,number,#} {1,choice,1#thread|1<threads}"
-                                + " (on {2,number,#} {2,choice,1#node|1<nodes})"
-                                + " after {3,number,#}h {4,number,#}m {5,number,#}s.",
+                                               + " with {1,number,#} {1,choice,1#thread|1<threads}"
+                                               + " (on {2,number,#} {2,choice,1#node|1<nodes})"
+                                               + " after {3,number,#}h {4,number,#}m {5,number,#}s.",
                         new Object[]{
                                 startPointClass.getName(),
                                 nodeData.getCommonGroupById(InternalCommonGroup.GLOBAL_GROUP_ID).threadCount(),
@@ -226,9 +227,9 @@ public abstract class InternalPCJ {
     private static Queue<InetAddress> getHostAllNetworkInferfaces() throws UncheckedIOException {
         try {
             return Collections.list(NetworkInterface.getNetworkInterfaces()).stream()
-                    .flatMap(iface -> Collections.list(iface.getInetAddresses()).stream())
-                    .distinct()
-                    .collect(Collectors.toCollection(ArrayDeque::new));
+                           .flatMap(iface -> Collections.list(iface.getInetAddresses()).stream())
+                           .distinct()
+                           .collect(Collectors.toCollection(ArrayDeque::new));
         } catch (SocketException ex) {
             LOGGER.log(Level.SEVERE, "Unable to get network interfaces", ex);
             throw new UncheckedIOException(ex);
@@ -380,10 +381,10 @@ public abstract class InternalPCJ {
 
         InternalCommonGroup commonGroup = nodeData.getGroupByName(groupName);
         if (commonGroup == null) {
-            GroupJoinQueryStates groupJoinQueryStates = nodeData.getGroupJoinQueryStates();
-            GroupJoinQueryStates.State state = groupJoinQueryStates.create();
+            GroupQueryStates groupQueryStates = nodeData.getGroupQueryStates();
+            GroupQueryStates.State state = groupQueryStates.create();
 
-            GroupJoinQueryMessage message = new GroupJoinQueryMessage(state.getRequestNum(), nodeData.getPhysicalId(), groupName);
+            GroupQueryMessage message = new GroupQueryMessage(state.getRequestNum(), nodeData.getPhysicalId(), groupName);
 
             networker.send(nodeData.getNode0Socket(), message);
 
@@ -394,15 +395,14 @@ public abstract class InternalPCJ {
         GroupJoinStates groupJoinQueryStates = nodeData.getGroupJoinStates();
         GroupJoinStates.State state = groupJoinQueryStates.create();
 
-        MessageGroupJoinRequest message = new MessageGroupJoinRequest(
+        GroupJoinRequestMessage message = new GroupJoinRequestMessage(
                 state.getRequestNum(), groupName, commonGroup.getGroupId(), nodeData.getPhysicalId(), globalThreadId);
 
         SocketChannel groupMasterSocketChannel = nodeData.getSocketChannelByPhysicalId().get(commonGroup.getGroupMasterNode());
 
-            networker.send(groupMasterSocketChannel, message);
+        networker.send(groupMasterSocketChannel, message);
 
-            PcjFuture<InternalGroup> future = state.getFuture();
-
-            return future.get();
+        PcjFuture<InternalGroup> future = state.getFuture();
+        return future.get();
     }
 }

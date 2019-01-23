@@ -12,17 +12,17 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.PcjFuture;
-import org.pcj.internal.InternalCommonGroup;
+import org.pcj.internal.InternalGroup;
 
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public class GroupJoinQueryStates {
+public class GroupJoinStates {
     private final AtomicInteger counter;
 
     private final ConcurrentMap<Integer, State> stateMap;
 
-    public GroupJoinQueryStates() {
+    public GroupJoinStates() {
         counter = new AtomicInteger(0);
         stateMap = new ConcurrentHashMap<>();
     }
@@ -30,7 +30,7 @@ public class GroupJoinQueryStates {
     public State create() {
         int requestNum = counter.incrementAndGet();
 
-        GroupJoinQueryFuture future = new GroupJoinQueryFuture();
+        GroupJoinFuture future = new GroupJoinFuture();
         State state = new State(requestNum, future);
 
         stateMap.put(requestNum, state);
@@ -44,9 +44,9 @@ public class GroupJoinQueryStates {
 
     public static class State {
         private final int requestNum;
-        private final GroupJoinQueryFuture future;
+        private final GroupJoinFuture future;
 
-        public State(int requestNum, GroupJoinQueryFuture future) {
+        public State(int requestNum, GroupJoinFuture future) {
             this.requestNum = requestNum;
             this.future = future;
         }
@@ -55,12 +55,12 @@ public class GroupJoinQueryStates {
             return requestNum;
         }
 
-        public PcjFuture<InternalCommonGroup> getFuture() {
+        public PcjFuture<InternalGroup> getFuture() {
             return future;
         }
 
-        public void signal(InternalCommonGroup internalCommonGroup) {
-            future.signalDone(internalCommonGroup);
+        public void signal(InternalGroup internalGroup) {
+            future.signalDone(internalGroup);
         }
     }
 

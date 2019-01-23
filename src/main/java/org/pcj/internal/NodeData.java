@@ -13,7 +13,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.internal.futures.WaitObject;
-import org.pcj.internal.message.join.GroupJoinQueryStates;
+import org.pcj.internal.message.join.GroupQueryStates;
+import org.pcj.internal.message.join.GroupJoinStates;
 
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
@@ -27,7 +28,8 @@ final public class NodeData {
     private final ConcurrentMap<Integer, PcjThread> pcjThreads;
     private final Node0Data node0Data;
     private final WaitObject globalWaitObject;
-    private final GroupJoinQueryStates groupJoinQueryStates;
+    private final GroupQueryStates groupQueryStates;
+    private final GroupJoinStates groupJoinStates;
     private int physicalId;
     private int totalNodeCount;
 
@@ -102,7 +104,8 @@ final public class NodeData {
         this.physicalIdByThreadId = new ConcurrentHashMap<>();
         this.pcjThreads = new ConcurrentHashMap<>();
         this.globalWaitObject = new WaitObject();
-        this.groupJoinQueryStates = new GroupJoinQueryStates();
+        this.groupQueryStates = new GroupQueryStates();
+        this.groupJoinStates = new GroupJoinStates();
 
         if (isCurrentJvmNode0) {
             node0Data = new Node0Data();
@@ -181,7 +184,11 @@ final public class NodeData {
         return globalWaitObject;
     }
 
-    public GroupJoinQueryStates getGroupJoinQueryStates() {
-        return groupJoinQueryStates;
+    public GroupQueryStates getGroupQueryStates() {
+        return groupQueryStates;
+    }
+
+    public GroupJoinStates getGroupJoinStates() {
+        return groupJoinStates;
     }
 }

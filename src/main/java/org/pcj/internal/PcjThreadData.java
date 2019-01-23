@@ -32,7 +32,7 @@ final public class PcjThreadData {
         this.addGroup(globalGroup);
     }
 
-    void addGroup(InternalGroup group) {
+    public void addGroup(InternalGroup group) {
         groupById.put(group.getGroupId(), group);
     }
 

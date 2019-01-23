@@ -1,5 +1,5 @@
-/* 
- * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+/*
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -21,18 +21,18 @@ import org.pcj.internal.network.MessageDataOutputStream;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public class GroupJoinQueryAnswerMessage extends Message {
+public class GroupQueryAnswerMessage extends Message {
 
     private int requestNum;
     private String groupName;
     private int groupId;
     private int masterPhysicalId;
 
-    public GroupJoinQueryAnswerMessage() {
+    public GroupQueryAnswerMessage() {
         super(MessageType.GROUP_JOIN_ANSWER);
     }
 
-    public GroupJoinQueryAnswerMessage(int requestNum, String name, int groupId, int masterPhysicalId) {
+    public GroupQueryAnswerMessage(int requestNum, String name, int groupId, int masterPhysicalId) {
         this();
 
         this.requestNum = requestNum;
@@ -59,8 +59,8 @@ public class GroupJoinQueryAnswerMessage extends Message {
         NodeData nodeData = InternalPCJ.getNodeData();
         InternalCommonGroup internalCommonGroup = nodeData.getOrCreateGroup(masterPhysicalId, groupId, groupName);
 
-        GroupJoinQueryStates states = nodeData.getGroupJoinQueryStates();
-        GroupJoinQueryStates.State state = states.remove(requestNum);
+        GroupQueryStates states = nodeData.getGroupQueryStates();
+        GroupQueryStates.State state = states.remove(requestNum);
         state.signal(internalCommonGroup);
     }
 }

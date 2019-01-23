@@ -1,5 +1,5 @@
-/* 
- * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+/*
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -11,34 +11,36 @@ package org.pcj.internal.message.join;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import org.pcj.internal.InternalCommonGroup;
+import org.pcj.internal.InternalGroup;
 import org.pcj.internal.InternalPCJ;
+import org.pcj.internal.NodeData;
+import org.pcj.internal.PcjThread;
 import org.pcj.internal.message.Message;
 import org.pcj.internal.message.MessageType;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
 /**
- *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public class MessageGroupJoinConfirm extends Message {
+public class GroupJoinResponseMessage extends Message {
 
     private int requestNum;
     private int groupId;
-    private int physicalId;
     private int globalThreadId;
+    private int groupThreadId;
 
-    public MessageGroupJoinConfirm() {
-        super(MessageType.GROUP_JOIN_CONFIRM);
+    public GroupJoinResponseMessage() {
+        super(MessageType.GROUP_JOIN_RESPONSE);
     }
 
-    public MessageGroupJoinConfirm(int requestNum, int groupId, int globalThreadId, int physicalId) {
+    public GroupJoinResponseMessage(int requestNum, int groupId, int globalThreadId, int groupThreadId) {
         this();
 
         this.requestNum = requestNum;
         this.groupId = groupId;
         this.globalThreadId = globalThreadId;
-        this.physicalId = physicalId;
+        this.groupThreadId = groupThreadId;
     }
 
     @Override
@@ -46,7 +48,7 @@ public class MessageGroupJoinConfirm extends Message {
         out.writeInt(requestNum);
         out.writeInt(groupId);
         out.writeInt(globalThreadId);
-        out.writeInt(physicalId);
+        out.writeInt(groupThreadId);
     }
 
     @Override
@@ -54,15 +56,17 @@ public class MessageGroupJoinConfirm extends Message {
         requestNum = in.readInt();
         groupId = in.readInt();
         globalThreadId = in.readInt();
-        physicalId = in.readInt();
+        groupThreadId = in.readInt();
 
-        InternalCommonGroup commonGroup = InternalPCJ.getNodeData().getCommonGroupById(groupId);
+        NodeData nodeData = InternalPCJ.getNodeData();
 
-        GroupJoinState groupJoinState = commonGroup.getGroupJoinState(requestNum, globalThreadId, commonGroup.getChildrenNodes());
+        InternalCommonGroup internalCommonGroup = nodeData.getCommonGroupById(groupId);
+        InternalGroup threadGroup = new InternalGroup(groupThreadId, internalCommonGroup);
+        PcjThread pcjThread = nodeData.getPcjThread(globalThreadId);
+        pcjThread.getThreadData().addGroup(threadGroup);
 
-        if (groupJoinState.processPhysical(physicalId)) {
-            commonGroup.removeGroupJoinState(requestNum, globalThreadId);
-        }
+        GroupJoinStates states = nodeData.getGroupJoinStates();
+        GroupJoinStates.State state = states.remove(requestNum);
+        state.signal(threadGroup);
     }
-
 }

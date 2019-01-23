@@ -1,5 +1,5 @@
-/* 
- * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+/*
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -18,7 +18,6 @@ import org.pcj.internal.NodeData;
 import org.pcj.internal.message.Message;
 
 /**
- *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 public class GroupJoinState {
@@ -56,14 +55,14 @@ public class GroupJoinState {
                 int requesterPhysicalId = nodeData.getPhysicalId(globalThreadId);
                 socket = nodeData.getSocketChannelByPhysicalId().get(requesterPhysicalId);
 
-                message = new MessageGroupJoinResponse(requestNum, groupId, globalThreadId,
+                message = new GroupJoinResponseMessage(requestNum, groupId, globalThreadId,
                         commonGroup.getGroupThreadId(globalThreadId));
             } else {
                 int parentId = commonGroup.getParentNode();
 
                 socket = nodeData.getSocketChannelByPhysicalId().get(parentId);
 
-                message = new MessageGroupJoinConfirm(requestNum, groupId, globalThreadId,
+                message = new GroupJoinConfirmMessage(requestNum, groupId, globalThreadId,
                         nodeData.getPhysicalId());
             }
 

@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
+ * All rights reserved.
+ *
+ * Licensed under New BSD License (3-clause license).
+ *
+ * See the file "LICENSE" for the full license governing this code.
+ */
 package org.pcj.internal.message.join;
 
 import java.util.concurrent.TimeUnit;
@@ -5,13 +13,17 @@ import java.util.concurrent.TimeoutException;
 import org.pcj.PcjFuture;
 import org.pcj.PcjRuntimeException;
 import org.pcj.internal.InternalCommonGroup;
+import org.pcj.internal.InternalGroup;
 import org.pcj.internal.futures.InternalFuture;
 
-class GroupJoinQueryFuture extends InternalFuture<InternalCommonGroup> implements PcjFuture<InternalCommonGroup> {
-    private InternalCommonGroup internalCommonGroup;
+/**
+ * @author Marek Nowicki (faramir@mat.umk.pl)
+ */
+class GroupJoinFuture extends InternalFuture<InternalGroup> implements PcjFuture<InternalGroup> {
+    private InternalGroup internalGroup;
     private PcjRuntimeException exception;
 
-    GroupJoinQueryFuture() {
+    GroupJoinFuture() {
     }
 
     @Override
@@ -19,13 +31,13 @@ class GroupJoinQueryFuture extends InternalFuture<InternalCommonGroup> implement
         return super.isSignaled();
     }
 
-    protected void signalDone(InternalCommonGroup internalCommonGroup) {
-        this.internalCommonGroup = internalCommonGroup;
+    protected void signalDone(InternalGroup internalGroup) {
+        this.internalGroup = internalGroup;
         super.signal();
     }
 
     @Override
-    public InternalCommonGroup get() throws PcjRuntimeException {
+    public InternalGroup get() throws PcjRuntimeException {
         try {
             super.await();
         } catch (InterruptedException ex) {
@@ -34,11 +46,11 @@ class GroupJoinQueryFuture extends InternalFuture<InternalCommonGroup> implement
         if (exception != null) {
             throw exception;
         }
-        return internalCommonGroup;
+        return internalGroup;
     }
 
     @Override
-    public InternalCommonGroup get(long timeout, TimeUnit unit) throws TimeoutException, PcjRuntimeException {
+    public InternalGroup get(long timeout, TimeUnit unit) throws TimeoutException, PcjRuntimeException {
         try {
             super.await(timeout, unit);
         } catch (InterruptedException ex) {
@@ -47,6 +59,6 @@ class GroupJoinQueryFuture extends InternalFuture<InternalCommonGroup> implement
         if (exception != null) {
             throw exception;
         }
-        return internalCommonGroup;
+        return internalGroup;
     }
 }
