@@ -16,8 +16,6 @@ import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.message.Message;
-import org.pcj.internal.message.join.MessageGroupJoinConfirm;
-import org.pcj.internal.message.join.MessageGroupJoinResponse;
 
 /**
  *

@@ -10,6 +10,7 @@ package org.pcj.internal.message.join;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
+import org.pcj.internal.InternalGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.message.Message;
 import org.pcj.internal.message.MessageType;
@@ -57,6 +58,9 @@ public class MessageGroupJoinResponse extends Message {
 
         GroupJoinQuery groupJoinQuery = InternalPCJ.getNodeData().removeGroupJoinQuery(requestNum);
         groupJoinQuery.setGroupThreadId(groupThreadId);
+
+        InternalGroup threadGroup = new InternalGroup(groupJoinQuery.getGroupThreadId(), commonGroup);
+        currentThreadData.addGroup(threadGroup);
 
         groupJoinQuery.getWaitObject().signalAll();
     }

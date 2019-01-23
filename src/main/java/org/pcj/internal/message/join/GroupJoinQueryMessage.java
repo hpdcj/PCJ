@@ -21,17 +21,17 @@ import org.pcj.internal.network.MessageDataOutputStream;
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public class MessageGroupJoinQuery extends Message {
+public class GroupJoinQueryMessage extends Message {
 
     private int requestNum;
     private int requesterPhysialId;
     private String groupName;
 
-    public MessageGroupJoinQuery() {
+    public GroupJoinQueryMessage() {
         super(MessageType.GROUP_JOIN_QUERY);
     }
 
-    public MessageGroupJoinQuery(int requestNum, int requesterPhysialId, String groupName) {
+    public GroupJoinQueryMessage(int requestNum, int requesterPhysialId, String groupName) {
         this();
 
         this.requestNum = requestNum;
@@ -57,7 +57,7 @@ public class MessageGroupJoinQuery extends Message {
         int groupId = node0Data.getGroupId(groupName);
         int masterPhysicalId = node0Data.getGroupMaster(groupId, requesterPhysialId);
 
-        MessageGroupJoinAnswer message = new MessageGroupJoinAnswer(requestNum, groupName, groupId, masterPhysicalId);
+        GroupJoinQueryAnswerMessage message = new GroupJoinQueryAnswerMessage(requestNum, groupName, groupId, masterPhysicalId);
         InternalPCJ.getNetworker().send(sender, message);
     }
 

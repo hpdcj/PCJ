@@ -28,11 +28,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.pcj.NodesDescription;
+import org.pcj.PcjFuture;
 import org.pcj.StartPoint;
-import org.pcj.internal.message.join.GroupJoinQuery;
 import org.pcj.internal.futures.WaitObject;
 import org.pcj.internal.message.MessageBye;
-import org.pcj.internal.message.join.MessageGroupJoinQuery;
+import org.pcj.internal.message.join.GroupJoinQueryStates;
+import org.pcj.internal.message.join.GroupJoinQueryMessage;
 import org.pcj.internal.message.join.MessageGroupJoinRequest;
 import org.pcj.internal.message.MessageHello;
 import org.pcj.internal.network.LoopbackSocketChannel;
@@ -54,8 +55,11 @@ public abstract class InternalPCJ {
         PCJ_VERSION = p.getImplementationVersion() == null ? "UNKNOWN" : p.getImplementationVersion();
     }
 
-    /* Suppress default constructor for noninstantiability.
-     * Have to be protected to allow inheritance */
+    /**
+     * Suppress default constructor for noninstantiability.
+     *
+     * Have to be protected to allow inheritance - to give rights to its protected methods.
+     */
     protected InternalPCJ() {
         throw new AssertionError();
     }
@@ -373,53 +377,32 @@ public abstract class InternalPCJ {
         if (group != null) {
             return group;
         }
-        int requestNum = nodeData.getGroupJoinCounter().incrementAndGet();
 
         InternalCommonGroup commonGroup = nodeData.getGroupByName(groupName);
-
-        GroupJoinQuery groupJoinQuery = nodeData.getGroupJoinQuery(requestNum);
-        WaitObject waitObject = groupJoinQuery.getWaitObject();
-
         if (commonGroup == null) {
-            MessageGroupJoinQuery message
-                    = new MessageGroupJoinQuery(requestNum, nodeData.getPhysicalId(), groupName);
+            GroupJoinQueryStates groupJoinQueryStates = nodeData.getGroupJoinQueryStates();
+            GroupJoinQueryStates.State state = groupJoinQueryStates.create();
 
-            waitObject.lock();
-            try {
-                networker.send(nodeData.getNode0Socket(), message);
+            GroupJoinQueryMessage message = new GroupJoinQueryMessage(state.getRequestNum(), nodeData.getPhysicalId(), groupName);
 
-                waitObject.await();
+            networker.send(nodeData.getNode0Socket(), message);
 
-                commonGroup = nodeData.createGroup(
-                        groupJoinQuery.getGroupMasterId(), groupJoinQuery.getGroupId(), groupName);
-            } catch (InterruptedException ex) {
-                throw new RuntimeException(ex);
-            } finally {
-                waitObject.unlock();
-            }
+            PcjFuture<InternalCommonGroup> future = state.getFuture();
+            commonGroup = future.get();
         }
 
-        MessageGroupJoinRequest message
-                = new MessageGroupJoinRequest(requestNum, groupName, commonGroup.getGroupId(),
-                nodeData.getPhysicalId(), globalThreadId);
+        GroupJoinStates groupJoinQueryStates = nodeData.getGroupJoinStates();
+        GroupJoinStates.State state = groupJoinQueryStates.create();
 
-        SocketChannel masterSocketChannel = nodeData.getSocketChannelByPhysicalId().get(commonGroup.getGroupMasterNode());
+        MessageGroupJoinRequest message = new MessageGroupJoinRequest(
+                state.getRequestNum(), groupName, commonGroup.getGroupId(), nodeData.getPhysicalId(), globalThreadId);
 
-        waitObject.lock();
-        try {
-            networker.send(masterSocketChannel, message);
+        SocketChannel groupMasterSocketChannel = nodeData.getSocketChannelByPhysicalId().get(commonGroup.getGroupMasterNode());
 
-            waitObject.await();
+            networker.send(groupMasterSocketChannel, message);
 
-            InternalGroup threadGroup = new InternalGroup(groupJoinQuery.getGroupThreadId(), commonGroup);
+            PcjFuture<InternalGroup> future = state.getFuture();
 
-            currentThreadData.addGroup(threadGroup);
-
-            return threadGroup;
-        } catch (InterruptedException ex) {
-            throw new RuntimeException(ex);
-        } finally {
-            waitObject.unlock();
-        }
+            return future.get();
     }
 }

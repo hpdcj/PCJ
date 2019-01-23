@@ -14,10 +14,10 @@ import java.util.Map;
 import java.util.function.Supplier;
 import org.pcj.internal.message.at.AsyncAtRequestMessage;
 import org.pcj.internal.message.at.AsyncAtResponseMessage;
-import org.pcj.internal.message.join.MessageGroupJoinAnswer;
+import org.pcj.internal.message.join.GroupJoinQueryAnswerMessage;
 import org.pcj.internal.message.join.MessageGroupJoinConfirm;
 import org.pcj.internal.message.join.MessageGroupJoinInform;
-import org.pcj.internal.message.join.MessageGroupJoinQuery;
+import org.pcj.internal.message.join.GroupJoinQueryMessage;
 import org.pcj.internal.message.join.MessageGroupJoinRequest;
 import org.pcj.internal.message.join.MessageGroupJoinResponse;
 import org.pcj.internal.message.peerbarrier.PeerBarrierMessage;
@@ -47,8 +47,8 @@ public enum MessageType {
     GROUP_BARRIER_WAITING((byte) 10, GroupBarrierWaitingMessage::new),
     GROUP_BARRIER_GO((byte) 11, GroupBarrierGoMessage::new),
     PEER_BARRIER((byte) 12, PeerBarrierMessage::new),
-    GROUP_JOIN_QUERY((byte) 20, MessageGroupJoinQuery::new),
-    GROUP_JOIN_ANSWER((byte) 21, MessageGroupJoinAnswer::new),
+    GROUP_JOIN_QUERY((byte) 20, GroupJoinQueryMessage::new),
+    GROUP_JOIN_ANSWER((byte) 21, GroupJoinQueryAnswerMessage::new),
     GROUP_JOIN_REQUEST((byte) 22, MessageGroupJoinRequest::new),
     GROUP_JOIN_INFORM((byte) 23, MessageGroupJoinInform::new),
     GROUP_JOIN_CONFIRM((byte) 24, MessageGroupJoinConfirm::new),

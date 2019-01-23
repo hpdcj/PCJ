@@ -1,5 +1,5 @@
-/* 
- * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+/*
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -12,11 +12,10 @@ import java.nio.channels.SocketChannel;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.pcj.internal.message.join.GroupJoinQuery;
 import org.pcj.internal.futures.WaitObject;
+import org.pcj.internal.message.join.GroupJoinQueryStates;
 
 /**
- *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 final public class NodeData {
@@ -28,8 +27,7 @@ final public class NodeData {
     private final ConcurrentMap<Integer, PcjThread> pcjThreads;
     private final Node0Data node0Data;
     private final WaitObject globalWaitObject;
-    private final AtomicInteger groupJoinCounter;
-    private final ConcurrentMap<Integer, GroupJoinQuery> groupJoinQueryMap;
+    private final GroupJoinQueryStates groupJoinQueryStates;
     private int physicalId;
     private int totalNodeCount;
 
@@ -89,17 +87,11 @@ final public class NodeData {
         }
 
         public int getGroupId(String name) {
-            synchronized (groupsId) {
-                return groupsId.computeIfAbsent(name, key -> groupIdCounter.getAndIncrement());
-            }
+            return groupsId.computeIfAbsent(name, key -> groupIdCounter.getAndIncrement());
         }
 
         public int getGroupMaster(int groupId, int physicalId) {
             return groupsMaster.computeIfAbsent(groupId, key -> physicalId);
-        }
-
-        public ConcurrentMap<Integer, Integer> getPhysicalIdByThreadId() {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
     }
 
@@ -110,8 +102,7 @@ final public class NodeData {
         this.physicalIdByThreadId = new ConcurrentHashMap<>();
         this.pcjThreads = new ConcurrentHashMap<>();
         this.globalWaitObject = new WaitObject();
-        this.groupJoinCounter = new AtomicInteger(0);
-        this.groupJoinQueryMap = new ConcurrentHashMap<>();
+        this.groupJoinQueryStates = new GroupJoinQueryStates();
 
         if (isCurrentJvmNode0) {
             node0Data = new Node0Data();
@@ -128,7 +119,7 @@ final public class NodeData {
         return node0Socket;
     }
 
-    public InternalCommonGroup createGroup(int groupMaster, int groupId, String groupName) {
+    public InternalCommonGroup getOrCreateGroup(int groupMaster, int groupId, String groupName) {
         return groupById.computeIfAbsent(groupId,
                 key -> new InternalCommonGroup(groupMaster, groupId, groupName));
     }
@@ -139,9 +130,10 @@ final public class NodeData {
 
     public InternalCommonGroup getGroupByName(String name) {
         return groupById.values().stream()
-                .filter(groups -> name.equals(groups.getGroupName()))
-                .findFirst().orElse(null);
+                       .filter(groups -> name.equals(groups.getGroupName()))
+                       .findFirst().orElse(null);
     }
+
     public ConcurrentMap<Integer, SocketChannel> getSocketChannelByPhysicalId() {
         return socketChannelByPhysicalId;
     }
@@ -189,15 +181,7 @@ final public class NodeData {
         return globalWaitObject;
     }
 
-    public AtomicInteger getGroupJoinCounter() {
-        return groupJoinCounter;
-    }
-
-    public GroupJoinQuery getGroupJoinQuery(int requestNum) {
-        return groupJoinQueryMap.computeIfAbsent(requestNum, key -> new GroupJoinQuery());
-    }
-
-    public GroupJoinQuery removeGroupJoinQuery(int requestNum) {
-        return groupJoinQueryMap.remove(requestNum);
+    public GroupJoinQueryStates getGroupJoinQueryStates() {
+        return groupJoinQueryStates;
     }
 }

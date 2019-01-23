@@ -69,7 +69,7 @@ public class MessageGroupJoinRequest extends Message {
         NodeData nodeData = InternalPCJ.getNodeData();
         InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
         if (commonGroup == null) {
-            commonGroup = nodeData.createGroup(nodeData.getPhysicalId(), groupId, groupName);
+            commonGroup = nodeData.getOrCreateGroup(nodeData.getPhysicalId(), groupId, groupName);
         }
 
         commonGroup.addNewThread(globalThreadId);

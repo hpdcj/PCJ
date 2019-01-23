@@ -10,28 +10,29 @@ package org.pcj.internal.message.join;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
+import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
+import org.pcj.internal.NodeData;
 import org.pcj.internal.message.Message;
 import org.pcj.internal.message.MessageType;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
 /**
- *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public class MessageGroupJoinAnswer extends Message {
+public class GroupJoinQueryAnswerMessage extends Message {
 
     private int requestNum;
     private String groupName;
     private int groupId;
     private int masterPhysicalId;
 
-    public MessageGroupJoinAnswer() {
+    public GroupJoinQueryAnswerMessage() {
         super(MessageType.GROUP_JOIN_ANSWER);
     }
 
-    public MessageGroupJoinAnswer(int requestNum, String name, int groupId, int masterPhysicalId) {
+    public GroupJoinQueryAnswerMessage(int requestNum, String name, int groupId, int masterPhysicalId) {
         this();
 
         this.requestNum = requestNum;
@@ -55,11 +56,11 @@ public class MessageGroupJoinAnswer extends Message {
         this.groupId = in.readInt();
         this.masterPhysicalId = in.readInt();
 
-        GroupJoinQuery groupQuery = InternalPCJ.getNodeData().getGroupJoinQuery(requestNum);
-        groupQuery.setGroupId(groupId);
-        groupQuery.setGroupMasterId(masterPhysicalId);
+        NodeData nodeData = InternalPCJ.getNodeData();
+        InternalCommonGroup internalCommonGroup = nodeData.getOrCreateGroup(masterPhysicalId, groupId, groupName);
 
-        groupQuery.getWaitObject().signalAll();
+        GroupJoinQueryStates states = nodeData.getGroupJoinQueryStates();
+        GroupJoinQueryStates.State state = states.remove(requestNum);
+        state.signal(internalCommonGroup);
     }
-
 }
