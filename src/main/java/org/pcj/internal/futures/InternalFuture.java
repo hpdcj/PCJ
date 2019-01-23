@@ -30,7 +30,7 @@ public abstract class InternalFuture<T> {
         }
     }
 
-    final protected void signalDone() {
+    final protected void signal() {
         synchronized (lock) {
             signaled = true;
             lock.notifyAll();

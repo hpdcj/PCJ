@@ -21,7 +21,7 @@ class GroupJoinQueryFuture extends InternalFuture<InternalCommonGroup> implement
 
     protected void signalDone(InternalCommonGroup internalCommonGroup) {
         this.internalCommonGroup = internalCommonGroup;
-        super.signalDone();
+        super.signal();
     }
 
     @Override

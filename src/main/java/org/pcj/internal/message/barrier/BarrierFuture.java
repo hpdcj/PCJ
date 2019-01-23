@@ -11,6 +11,10 @@ public class BarrierFuture extends InternalFuture<Void> implements PcjFuture<Voi
     BarrierFuture() {
     }
 
+    protected void signalDone() {
+        super.signal();
+    }
+
     @Override
     public boolean isDone() {
         return super.isSignaled();

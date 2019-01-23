@@ -9,7 +9,10 @@ import org.pcj.internal.futures.InternalFuture;
 public class PeerBarrierFuture extends InternalFuture<Void> implements PcjFuture<Void> {
 
     PeerBarrierFuture() {
+    }
 
+    protected void signalDone() {
+        super.signal();
     }
 
     @Override

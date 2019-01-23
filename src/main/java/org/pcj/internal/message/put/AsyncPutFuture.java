@@ -24,9 +24,13 @@ public class AsyncPutFuture extends InternalFuture<Void> implements PcjFuture<Vo
     AsyncPutFuture() {
     }
 
+    protected void signalDone() {
+        super.signal();
+    }
+
     protected void signalException(PcjRuntimeException exception) {
         this.exception = exception;
-        super.signalDone();
+        super.signal();
     }
 
     @Override

@@ -33,12 +33,12 @@ public class AsyncGetFuture<T> extends InternalFuture<T> implements PcjFuture<T>
     @SuppressWarnings("unchecked")
     protected void signalDone(Object variableValue) {
         this.variableValue = (T) variableValue;
-        super.signalDone();
+        super.signal();
     }
 
     protected void signalException(PcjRuntimeException exception) {
         this.exception = exception;
-        super.signalDone();
+        super.signal();
     }
 
     @Override
