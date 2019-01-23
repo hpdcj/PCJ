@@ -32,7 +32,7 @@ final public class PcjThreadData {
         this.addGroup(globalGroup);
     }
 
-    public void addGroup(InternalGroup group) {
+    void addGroup(InternalGroup group) {
         groupById.put(group.getGroupId(), group);
     }
 
@@ -48,7 +48,7 @@ final public class PcjThreadData {
         return groupById.get(groupId);
     }
     
-    public InternalGroup getGroupByName(String name) {
+    InternalGroup getGroupByName(String name) {
         return groupById.values().stream()
                 .filter(groups -> name.equals(groups.getGroupName()))
                 .findFirst().orElse(null);

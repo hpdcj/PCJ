@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -12,7 +12,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 public abstract class InternalFuture<T> {
@@ -25,20 +24,20 @@ public abstract class InternalFuture<T> {
         this.signaled = false;
     }
 
-    protected boolean isSignaled() {
+    final protected boolean isSignaled() {
         synchronized (lock) {
             return signaled;
         }
     }
 
-    protected void signalDone() {
+    final protected void signalDone() {
         synchronized (lock) {
             signaled = true;
             lock.notifyAll();
         }
     }
 
-    protected void await() throws InterruptedException {
+    final protected void await() throws InterruptedException {
         synchronized (lock) {
             while (signaled == false) {
                 lock.wait();
@@ -46,7 +45,7 @@ public abstract class InternalFuture<T> {
         }
     }
 
-    protected void await(long timeout, TimeUnit unit) throws TimeoutException, InterruptedException {
+    final protected void await(long timeout, TimeUnit unit) throws TimeoutException, InterruptedException {
         long nanosTimeout = unit.toNanos(timeout);
         final long deadline = System.nanoTime() + nanosTimeout;
 

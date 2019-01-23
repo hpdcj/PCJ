@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
@@ -25,6 +25,11 @@ public class AsyncAtFuture<T> extends InternalFuture<T> implements PcjFuture<T> 
     AsyncAtFuture() {
     }
 
+    @Override
+    public boolean isDone() {
+        return super.isSignaled();
+    }
+
     @SuppressWarnings("unchecked")
     protected void signalDone(Object variableValue) {
         this.variableValue = (T) variableValue;
@@ -34,11 +39,6 @@ public class AsyncAtFuture<T> extends InternalFuture<T> implements PcjFuture<T> 
     protected void signalException(PcjRuntimeException exception) {
         this.exception = exception;
         super.signalDone();
-    }
-
-    @Override
-    public boolean isDone() {
-        return super.isSignaled();
     }
 
     @Override

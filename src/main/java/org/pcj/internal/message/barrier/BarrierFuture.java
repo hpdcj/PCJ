@@ -8,9 +8,7 @@ import org.pcj.internal.futures.InternalFuture;
 
 public class BarrierFuture extends InternalFuture<Void> implements PcjFuture<Void> {
 
-    @Override
-    public void signalDone() {
-        super.signalDone();
+    BarrierFuture() {
     }
 
     @Override

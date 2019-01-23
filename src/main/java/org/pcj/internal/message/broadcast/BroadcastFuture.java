@@ -18,25 +18,20 @@ import org.pcj.internal.futures.InternalFuture;
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 public class BroadcastFuture extends InternalFuture<Void> implements PcjFuture<Void> {
-    
+
     private PcjRuntimeException exception;
 
     BroadcastFuture() {
     }
 
     @Override
-    protected void signalDone() {
-        super.signalDone();
+    public boolean isDone() {
+        return super.isSignaled();
     }
 
     protected void signalException(PcjRuntimeException exception) {
         this.exception = exception;
         super.signalDone();
-    }
-
-    @Override
-    public boolean isDone() {
-        return super.isSignaled();
     }
 
     @Override
