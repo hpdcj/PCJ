@@ -1,5 +1,5 @@
-/* 
- * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+/*
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -17,7 +17,6 @@ import java.util.List;
 import org.pcj.internal.Configuration;
 
 /**
- *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 public class CloneInputStream extends InputStream {
@@ -35,7 +34,7 @@ public class CloneInputStream extends InputStream {
         bytesList = new LinkedList<>();
         length = 0L;
     }
-    
+
     @Override
     public void reset() {
         iterator = bytesList.iterator();
@@ -57,12 +56,12 @@ public class CloneInputStream extends InputStream {
     }
 
     @Override
-    public int read(byte[] b) throws IOException {
+    public int read(byte[] b) {
         return read(b, 0, b.length);
     }
 
     @Override
-    public int read(byte[] b, int offset, int length) throws IOException {
+    public int read(byte[] b, int offset, int length) {
         if (length == 0) {
             return 0;
         }
