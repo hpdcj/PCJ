@@ -374,12 +374,12 @@ public abstract class InternalPCJ {
 
     protected static InternalGroup joinGroup(int globalThreadId, String groupName) {
         PcjThreadData currentThreadData = PcjThread.getCurrentThreadData();
-        InternalGroup group = currentThreadData.getGroupByName(groupName);
+        InternalGroup group = currentThreadData.getInternalGroupByName(groupName);
         if (group != null) {
             return group;
         }
 
-        InternalCommonGroup commonGroup = nodeData.getGroupByName(groupName);
+        InternalCommonGroup commonGroup = nodeData.getInternalCommonGroupByName(groupName);
         if (commonGroup == null) {
             GroupQueryStates groupQueryStates = nodeData.getGroupQueryStates();
             GroupQueryStates.State state = groupQueryStates.create();

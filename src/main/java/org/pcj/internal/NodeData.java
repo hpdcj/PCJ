@@ -131,9 +131,9 @@ final public class NodeData {
         return groupById.get(id);
     }
 
-    public InternalCommonGroup getGroupByName(String name) {
+    public InternalCommonGroup getInternalCommonGroupByName(String name) {
         return groupById.values().stream()
-                       .filter(groups -> name.equals(groups.getGroupName()))
+                       .filter(groups -> name.equals(groups.getName()))
                        .findFirst().orElse(null);
     }
 

@@ -35,7 +35,7 @@ public interface Group {
      *
      * @return name of the group
      */
-    String getGroupName();
+    String getName();
 
     /**
      * Starts asynchronos barrier. After starting barrier the PcjFuture is

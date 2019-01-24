@@ -93,7 +93,7 @@ public class InternalCommonGroup {
         return groupId;
     }
 
-    final public String getGroupName() {
+    final public String getName() {
         return groupName;
     }
 

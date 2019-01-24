@@ -48,9 +48,9 @@ final public class PcjThreadData {
         return groupById.get(groupId);
     }
     
-    InternalGroup getGroupByName(String name) {
+    InternalGroup getInternalGroupByName(String name) {
         return groupById.values().stream()
-                .filter(groups -> name.equals(groups.getGroupName()))
+                .filter(groups -> name.equals(groups.getName()))
                 .findFirst().orElse(null);
     }
 }
