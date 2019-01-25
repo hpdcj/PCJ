@@ -57,6 +57,7 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
 
     private Types typeUtils;
     private Elements elementUtils;
+    private Set<Element> notSerializableButTypeFinalStorageFields;
     private Set<Element> notSerializableStorageFields;
     private Set<Element> staticStorageFields;
     private Set<Element> finalStorageFields;
@@ -108,6 +109,7 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+        notSerializableButTypeFinalStorageFields = new LinkedHashSet<>();
         notSerializableStorageFields = new LinkedHashSet<>();
         staticStorageFields = new LinkedHashSet<>();
         finalStorageFields = new LinkedHashSet<>();
@@ -128,7 +130,11 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
                 .map(element -> (TypeElement) element)
                 .forEach(this::processRegisterStorageRepeatableContainer);
 
+        notSerializableButTypeFinalStorageFields.stream()
+                .forEach(element -> error("PCJ shared variable type is not serializable but final", element));
+
         notSerializableStorageFields.stream()
+                .filter(storageElement -> !notSerializableButTypeFinalStorageFields.contains(storageElement))
                 .filter(storageElement -> isSuppressed(storageElement, "serializable") == false)
                 .forEach(element -> warning("[serializable] PCJ shared variable type is not serializable", element));
 
@@ -175,7 +181,9 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
                 .flatMap(element -> element.getElementValues().entrySet().stream())
                 .filter(element -> element.getKey().getSimpleName().contentEquals("value"))
                 .map(Map.Entry::getValue)
+                .filter(element -> element.getValue() instanceof DeclaredType)
                 .map(element -> (DeclaredType) element.getValue())
+                .filter(element -> element.asElement() instanceof TypeElement)
                 .map(element -> (TypeElement) element.asElement())
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException(enumElement + ": Not annotated with storage."));
@@ -217,6 +225,11 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
 
         storageFieldsInEnum.stream()
                 .filter(storageElement -> typeUtils.isAssignable(storageElement.asType(), serializableType.asType()) == false)
+                .filter(storageElement -> typeUtils.asElement(storageElement.asType()).getModifiers().contains(Modifier.FINAL))
+                .forEach(notSerializableButTypeFinalStorageFields::add);
+
+        storageFieldsInEnum.stream()
+                .filter(storageElement -> typeUtils.isAssignable(storageElement.asType(), serializableType.asType()) == false)
                 .forEach(notSerializableStorageFields::add);
 
         storageFieldsInEnum.stream()
@@ -245,10 +258,10 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
                 .filter(element -> element.getKey().getSimpleName().contentEquals("value"))
                 .map(Map.Entry::getValue)
                 // get type object of value
-                .filter(element -> element instanceof DeclaredType)
+                .filter(element -> element.getValue() instanceof DeclaredType)
                 .map(element -> (DeclaredType) element.getValue())
                 // get element object of value type
-                .filter(element -> element instanceof TypeElement)
+                .filter(element -> element.asElement() instanceof TypeElement)
                 .map(element -> (TypeElement) element.asElement())
                 // collect values
                 .toArray(TypeElement[]::new);
@@ -281,17 +294,17 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
                 // value is array: RegisterStorage[]
                 .flatMap(element -> ((List<? extends AnnotationValue>) element.getValue()).stream())
                 // treat value as annotation @RegisterStorage
-                .filter(element -> element instanceof AnnotationMirror)
+                .filter(element -> element.getValue() instanceof AnnotationMirror)
                 .map(element -> (AnnotationMirror) element.getValue())
                 // get value of @RegisterStorage
                 .flatMap(element -> element.getElementValues().entrySet().stream())
                 .filter(element -> element.getKey().getSimpleName().contentEquals("value"))
                 .map(Map.Entry::getValue)
                 // get type object of value
-                .filter(element -> element instanceof DeclaredType)
+                .filter(element -> element.getValue() instanceof DeclaredType)
                 .map(element -> (DeclaredType) element.getValue())
                 // get element object of value type
-                .filter(element -> element instanceof TypeElement)
+                .filter(element -> element.asElement() instanceof TypeElement)
                 .map(element -> (TypeElement) element.asElement())
                 // collect values
                 .toArray(TypeElement[]::new);

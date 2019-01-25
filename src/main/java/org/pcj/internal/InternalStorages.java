@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -8,10 +8,12 @@
  */
 package org.pcj.internal;
 
+import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Optional;
@@ -163,6 +165,10 @@ public class InternalStorages {
     private void createShared0(String parent, String name, Field field, Object storageObject)
             throws NullPointerException, IllegalArgumentException, IllegalStateException {
         Class<?> type = field.getType();
+
+        if (!type.isPrimitive() && !Serializable.class.isAssignableFrom(type) && Modifier.isFinal(type.getModifiers())) {
+            throw new IllegalArgumentException("Type of '" + name + "' (" + type.getCanonicalName() + ") from class '" + parent + "' is not serializable but final");
+        }
 
         ConcurrentMap<String, StorageField> storage
                 = sharedObjectsMap.computeIfAbsent(parent, key -> new ConcurrentHashMap<>());
