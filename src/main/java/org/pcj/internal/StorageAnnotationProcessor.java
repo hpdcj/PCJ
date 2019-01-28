@@ -1,16 +1,13 @@
 /*
- * This file is the internal part of the PCJ Library
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
+ * All rights reserved.
+ *
+ * Licensed under New BSD License (3-clause license).
+ *
+ * See the file "LICENSE" for the full license governing this code.
  */
 package org.pcj.internal;
 
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
@@ -29,6 +26,14 @@ import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
@@ -43,13 +48,16 @@ import org.pcj.Storage;
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-@SupportedAnnotationTypes({"org.pcj.Storage",
-    "org.pcj.RegisterStorage", "org.pcj.internal.RegisterStorageRepeatableContainer"})
+@SupportedAnnotationTypes({
+        "org.pcj.Storage",
+        "org.pcj.RegisterStorage",
+        "org.pcj.internal.RegisterStorageRepeatableContainer"})
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class StorageAnnotationProcessor extends javax.annotation.processing.AbstractProcessor {
 
     private Types typeUtils;
     private Elements elementUtils;
+    private Set<Element> notSerializableButTypeFinalStorageFields;
     private Set<Element> notSerializableStorageFields;
     private Set<Element> staticStorageFields;
     private Set<Element> finalStorageFields;
@@ -81,6 +89,11 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
     }
 
     @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.latestSupported();
+    }
+
+    @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
 
@@ -96,6 +109,7 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+        notSerializableButTypeFinalStorageFields = new LinkedHashSet<>();
         notSerializableStorageFields = new LinkedHashSet<>();
         staticStorageFields = new LinkedHashSet<>();
         finalStorageFields = new LinkedHashSet<>();
@@ -116,7 +130,11 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
                 .map(element -> (TypeElement) element)
                 .forEach(this::processRegisterStorageRepeatableContainer);
 
+        notSerializableButTypeFinalStorageFields.stream()
+                .forEach(element -> error("PCJ shared variable type is not serializable but final", element));
+
         notSerializableStorageFields.stream()
+                .filter(storageElement -> !notSerializableButTypeFinalStorageFields.contains(storageElement))
                 .filter(storageElement -> isSuppressed(storageElement, "serializable") == false)
                 .forEach(element -> warning("[serializable] PCJ shared variable type is not serializable", element));
 
@@ -140,11 +158,11 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
         return true;
     }
 
-    private boolean isSuppressed(Element e, String warning) {
+    private boolean isSuppressed(Element e, String warningType) {
         SuppressWarnings suppressWarnings = e.getAnnotation(SuppressWarnings.class);
         if (suppressWarnings != null) {
             for (String w : suppressWarnings.value()) {
-                if (w.equals(warning)) {
+                if (w.equals(warningType)) {
                     return true;
                 }
             }
@@ -163,7 +181,9 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
                 .flatMap(element -> element.getElementValues().entrySet().stream())
                 .filter(element -> element.getKey().getSimpleName().contentEquals("value"))
                 .map(Map.Entry::getValue)
+                .filter(element -> element.getValue() instanceof DeclaredType)
                 .map(element -> (DeclaredType) element.getValue())
+                .filter(element -> element.asElement() instanceof TypeElement)
                 .map(element -> (TypeElement) element.asElement())
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException(enumElement + ": Not annotated with storage."));
@@ -205,6 +225,11 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
 
         storageFieldsInEnum.stream()
                 .filter(storageElement -> typeUtils.isAssignable(storageElement.asType(), serializableType.asType()) == false)
+                .filter(storageElement -> typeUtils.asElement(storageElement.asType()).getModifiers().contains(Modifier.FINAL))
+                .forEach(notSerializableButTypeFinalStorageFields::add);
+
+        storageFieldsInEnum.stream()
+                .filter(storageElement -> typeUtils.isAssignable(storageElement.asType(), serializableType.asType()) == false)
                 .forEach(notSerializableStorageFields::add);
 
         storageFieldsInEnum.stream()
@@ -233,8 +258,10 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
                 .filter(element -> element.getKey().getSimpleName().contentEquals("value"))
                 .map(Map.Entry::getValue)
                 // get type object of value
+                .filter(element -> element.getValue() instanceof DeclaredType)
                 .map(element -> (DeclaredType) element.getValue())
                 // get element object of value type
+                .filter(element -> element.asElement() instanceof TypeElement)
                 .map(element -> (TypeElement) element.asElement())
                 // collect values
                 .toArray(TypeElement[]::new);
@@ -267,14 +294,17 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
                 // value is array: RegisterStorage[]
                 .flatMap(element -> ((List<? extends AnnotationValue>) element.getValue()).stream())
                 // treat value as annotation @RegisterStorage
+                .filter(element -> element.getValue() instanceof AnnotationMirror)
                 .map(element -> (AnnotationMirror) element.getValue())
                 // get value of @RegisterStorage
                 .flatMap(element -> element.getElementValues().entrySet().stream())
                 .filter(element -> element.getKey().getSimpleName().contentEquals("value"))
                 .map(Map.Entry::getValue)
                 // get type object of value
+                .filter(element -> element.getValue() instanceof DeclaredType)
                 .map(element -> (DeclaredType) element.getValue())
                 // get element object of value type
+                .filter(element -> element.asElement() instanceof TypeElement)
                 .map(element -> (TypeElement) element.asElement())
                 // collect values
                 .toArray(TypeElement[]::new);

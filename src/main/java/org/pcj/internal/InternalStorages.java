@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
@@ -13,6 +13,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Optional;
@@ -86,7 +87,7 @@ public class InternalStorages {
         try {
             return registerStorage0(storageClass, null);
         } catch (NoSuchFieldException | IllegalAccessException | NoSuchMethodException
-                | IllegalArgumentException | InvocationTargetException | InstantiationException ex) {
+                         | IllegalArgumentException | InvocationTargetException | InstantiationException ex) {
             throw new PcjRuntimeException("Exception while registering enum class: " + storageClass, ex);
         }
     }
@@ -95,8 +96,8 @@ public class InternalStorages {
         try {
             return registerStorage0(storageEnumClass, storageObject);
         } catch (NoSuchFieldException | IllegalAccessException | NoSuchMethodException
-                | IllegalArgumentException | InvocationTargetException | InstantiationException
-                | ClassCastException ex) {
+                         | IllegalArgumentException | InvocationTargetException | InstantiationException
+                         | ClassCastException ex) {
             throw new PcjRuntimeException("Exception while registering enum class: " + storageEnumClass, ex);
         }
     }
@@ -123,13 +124,13 @@ public class InternalStorages {
         }
 
         Set<String> fieldNames = Arrays.stream(storageClass.getDeclaredFields())
-                .map(Field::getName)
-                .collect(Collectors.toCollection(HashSet::new));
+                                         .map(Field::getName)
+                                         .collect(Collectors.toCollection(HashSet::new));
 
         Optional<String> notFoundName = Arrays.stream(storageEnumClass.getEnumConstants())
-                .map(Enum::name)
-                .filter(enumName -> fieldNames.contains(enumName) == false)
-                .findFirst();
+                                                .map(Enum::name)
+                                                .filter(enumName -> fieldNames.contains(enumName) == false)
+                                                .findFirst();
         if (notFoundName.isPresent()) {
             throw new NoSuchFieldException("Field not found in " + storageClassName + ": " + notFoundName.get());
         }
@@ -165,8 +166,8 @@ public class InternalStorages {
             throws NullPointerException, IllegalArgumentException, IllegalStateException {
         Class<?> type = field.getType();
 
-        if (type.isPrimitive() == false && Serializable.class.isAssignableFrom(type) == false) {
-            throw new IllegalArgumentException("Variable type is not serializable");
+        if (!type.isPrimitive() && !Serializable.class.isAssignableFrom(type) && Modifier.isFinal(type.getModifiers())) {
+            throw new IllegalArgumentException("Type of '" + name + "' (" + type.getCanonicalName() + ") from class '" + parent + "' is not serializable but final");
         }
 
         ConcurrentMap<String, StorageField> storage
@@ -203,9 +204,9 @@ public class InternalStorages {
      * Returns variable from Storages
      *
      * @param variable name of shared variable
-     * @param indices (optional) indices into the array
+     * @param indices  (optional) indices into the array
      * @return value of variable[indices] or variable if indices omitted
-     * @throws ClassCastException there is more indices than variable dimension
+     * @throws ClassCastException             there is more indices than variable dimension
      * @throws ArrayIndexOutOfBoundsException one of indices is out of bound
      */
     final public <T> T get(Enum<?> variable, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException {
@@ -257,11 +258,11 @@ public class InternalStorages {
      * Puts new value of variable to InternalStorages into the array, or as
      * variable value if indices omitted
      *
-     * @param value new value of variable
+     * @param value    new value of variable
      * @param variable name of shared variable
-     * @param indices (optional) indices into the array
-     * @throws ClassCastException there is more indices than variable dimension
-     * or value cannot be assigned to the variable
+     * @param indices  (optional) indices into the array
+     * @throws ClassCastException             there is more indices than variable dimension
+     *                                        or value cannot be assigned to the variable
      * @throws ArrayIndexOutOfBoundsException one of indices is out of bound
      */
     final public <T> void put(T value, Enum<?> variable, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
@@ -296,9 +297,9 @@ public class InternalStorages {
 
         if (isAssignableFrom(targetClass, fromClass) == false) {
             throw new ClassCastException("Cannot cast " + fromClass.getName()
-                    + " to the type of variable '" + parent + "." + name + ""
-                    + (indices.length == 0 ? "" : Arrays.toString(indices))
-                    + "': " + targetClass);
+                                                 + " to the type of variable '" + parent + "." + name + ""
+                                                 + (indices.length == 0 ? "" : Arrays.toString(indices))
+                                                 + "': " + targetClass);
         }
 
         Object newValue = value;
@@ -376,13 +377,13 @@ public class InternalStorages {
                 return fromClass.equals(Boolean.class);
             } else {
                 return fromClass.equals(Boolean.class) == false
-                        && PrimitiveTypes.isBoxedClass(fromClass);
+                               && PrimitiveTypes.isBoxedClass(fromClass);
             }
         }
 
         if (PrimitiveTypes.isBoxedClass(targetClass) && PrimitiveTypes.isBoxedClass(fromClass)) {
             return targetClass.equals(Boolean.class) == false
-                    && fromClass.equals(Boolean.class) == false;
+                           && fromClass.equals(Boolean.class) == false;
         }
 
         return false;
@@ -413,8 +414,8 @@ public class InternalStorages {
      * by <code>count</code>.
      *
      * @param variable name of shared variable
-     * @param count number of modifications. If 0 - the method exits
-     * immediately.
+     * @param count    number of modifications. If 0 - the method exits
+     *                 immediately.
      */
     final public int waitFor(Enum<?> variable, int count) {
         return waitFor0(getParent(variable), variable.name(), count);
@@ -458,8 +459,8 @@ public class InternalStorages {
      * by <code>count</code>.
      *
      * @param variable name of shared variable
-     * @param count number of modifications. If 0 - the method exits
-     * immediately.
+     * @param count    number of modifications. If 0 - the method exits
+     *                 immediately.
      */
     final public int waitFor(Enum<?> variable, int count, long timeout, TimeUnit unit) throws TimeoutException {
         return waitFor0(getParent(variable), variable.name(), count, timeout, unit);
