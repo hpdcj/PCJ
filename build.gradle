@@ -73,7 +73,8 @@ task snapshotBuild {
 
 task releaseBuild {
     outputs.upToDateWhen { false }
-    releaseBuild.dependsOn(clean, build, javadocJar, sourcesJar)
+    compileJava.dependsOn(clean)
+    releaseBuild.dependsOn(build, javadocJar, sourcesJar)
 }
 
 task publishReleaseBuild {
