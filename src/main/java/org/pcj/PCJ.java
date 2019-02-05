@@ -471,4 +471,16 @@ final public class PCJ extends InternalPCJ {
         int myThreadId = getGlobalGroup().myId();
         return InternalPCJ.joinGroup(myThreadId, name);
     }
+
+    /**
+     * This function will be removed. Use {@link #joinGroup(String)} instead
+     *
+     * @param name name of the group
+     * @return joined group
+     */
+    @Deprecated
+    public static Group join(String name) {
+        int myThreadId = getGlobalGroup().myId();
+        return InternalPCJ.joinGroup(myThreadId, name);
+    }
 }
