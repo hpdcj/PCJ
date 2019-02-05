@@ -32,6 +32,9 @@ dependencies {
 }
 
 compileJava {
+    group 'build'
+    description 'Compiling java classes using Java 8'
+
     options.compilerArgs = [
             '-source', '1.8',
             '-target', '1.8',
@@ -41,26 +44,43 @@ compileJava {
 }
 
 compileTestJava {
+    group 'build'
+    description 'Compiles java test classes using Java 8 disabling StorageAnnotationProcessor'
+
     options.compilerArgs += '-proc:none' // 'org.pcj.internal.StorageAnnotationProcessor'
 }
 
 task info {
+    group 'other'
+    description 'PCJ -- Parallel Computing in Java build script'
+
     println "PCJ -- Parallel Computing in Java build script"
 }
 
 task javadoc(overwrite: true, type: Javadoc) {
+    group 'build'
+    description 'Generates javadoc from sources without internal packages'
+
     failOnError = false
     source = sourceSets.main.allJava
     exclude "org/pcj/internal/**"
 }
 
+jar.group = 'release'
+
 task javadocJar(type: Jar, dependsOn: javadoc) {
+    group 'release'
+    description 'Generates jar with javadoc'
+
     from 'LICENSE'
     from javadoc.destinationDir
     classifier = 'javadoc'
 }
 
 task sourcesJar(type: Jar) {
+    group 'release'
+    description 'Generates jar with sources'
+
     from 'LICENSE'
     from sourceSets.main.allJava
     from sourceSets.main.resources
@@ -68,74 +88,26 @@ task sourcesJar(type: Jar) {
 }
 
 task snapshotBuild {
+    group 'release'
+    description 'Generates snapshot build with jar, javadoc and sources'
+
     snapshotBuild.dependsOn(jar, javadocJar, sourcesJar)
 }
 
 task releaseBuild {
+    group 'release'
+    description 'Generates release build starting with clean with jar, javadoc and sources'
+
     outputs.upToDateWhen { false }
-    compileJava.dependsOn(clean)
-    releaseBuild.dependsOn(build, javadocJar, sourcesJar)
+    jar.mustRunAfter(clean)
+    releaseBuild.dependsOn(clean, build, javadocJar, sourcesJar)
 }
 
 task publishReleaseBuild {
+    group 'publishing'
+    description 'Publishes release build to Maven Central'
+
     publishReleaseBuild.dependsOn(releaseBuild, publish)
-}
-
-gradle.taskGraph.whenReady { taskGraph ->
-    def properties = new Properties()
-
-    def versionFile = file('build.version')
-    if (versionFile.canRead()) {
-        versionFile.withReader { properties.load(it) }
-    }
-
-    if (properties['build.number'] == null) {
-        properties['build.number'] = '0'
-    }
-
-    buildNumber = properties['build.number']
-    if (taskGraph.hasTask(releaseBuild)) {
-        publish.doLast {
-            properties['build.number'] = (buildNumber.toInteger() + 1).toString()
-            versionFile.withWriter { properties.store(it, null) }
-        }
-    } else {
-        buildNumber = "$buildNumber-SNAPSHOT"
-    }
-
-    def repoId = [abbreviatedId: "unknown", id: "unknown"]
-    try {
-        repoId = org.ajoberstar.grgit.Grgit.open(project.file('.')).head();
-    } catch (Exception e) {
-    }
-
-    version = "$versionNumber.$buildNumber"
-    jar.doFirst {
-        classifier = ''
-        manifest {
-            attributes(
-                'Specification-Version': "$version",
-                'Implementation-Version': "$version-$repoId.abbreviatedId ($date)",
-                'Git-Commit-Id': "$repoId.id",
-                'Build-Time': date,
-                'Built-By': System.getProperty('user.name')
-            )
-        }
-    }
-
-    if (taskGraph.hasTask(publish)) {
-//        def snapshotsRepoUrl = "$buildDir/repos/snapshots"
-//        def releasesRepoUrl = "$buildDir/repos/releases"
-        def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots"
-        def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2"
-        publishing.repositories.maven.url = buildNumber.contains('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
-        if (publishing.repositories.maven.url.scheme == "https") {
-            publishing.repositories.maven.credentials {
-                username sonatypeUsername
-                password sonatypePassword
-            }
-        }
-    }
 }
 
 jar {
@@ -152,7 +124,6 @@ jar {
         attributes(['Sealed': false], 'org/pcj/')
     }
 }
-
 
 publishing {
     publications {
@@ -193,12 +164,73 @@ publishing {
             url = "$buildDir/repos/unknown"
         }
     }
+    generatePomFileForMavenJavaPublication.mustRunAfter(clean)
 }
 
 signing {
+    group 'publishing'
+    description 'Signs generated jar for publishing'
+
     sign publishing.publications.mavenJava
 }
 
+
+gradle.taskGraph.whenReady { taskGraph ->
+    def properties = new Properties()
+
+    def versionFile = file('build.version')
+    if (versionFile.canRead()) {
+        versionFile.withReader { properties.load(it) }
+    }
+
+    if (properties['build.number'] == null) {
+        properties['build.number'] = '0'
+    }
+
+    buildNumber = properties['build.number']
+    if (taskGraph.hasTask(releaseBuild)) {
+        publish.doLast {
+            properties['build.number'] = (buildNumber.toInteger() + 1).toString()
+            versionFile.withWriter { properties.store(it, null) }
+        }
+    } else {
+        buildNumber = "$buildNumber-SNAPSHOT"
+    }
+
+    def repoId = [abbreviatedId: "unknown", id: "unknown"]
+    try {
+        repoId = org.ajoberstar.grgit.Grgit.open(project.file('.')).head();
+    } catch (Exception e) {
+    }
+
+    version = "$versionNumber.$buildNumber"
+    jar.doFirst {
+        classifier = ''
+        manifest {
+            attributes(
+                    'Specification-Version': "$version",
+                    'Implementation-Version': "$version-$repoId.abbreviatedId ($date)",
+                    'Git-Commit-Id': "$repoId.id",
+                    'Build-Time': date,
+                    'Built-By': System.getProperty('user.name')
+            )
+        }
+    }
+
+    if (taskGraph.hasTask(publish)) {
+//        def snapshotsRepoUrl = "$buildDir/repos/snapshots"
+//        def releasesRepoUrl = "$buildDir/repos/releases"
+        def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots"
+        def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2"
+        publishing.repositories.maven.url = buildNumber.contains('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+        if (publishing.repositories.maven.url.scheme == "https") {
+            publishing.repositories.maven.credentials {
+                username sonatypeUsername
+                password sonatypePassword
+            }
+        }
+    }
+}
 
 // Code needed for running Main classes from Task Packages in NetBeans
 def createJavaExec = { String taskName ->
