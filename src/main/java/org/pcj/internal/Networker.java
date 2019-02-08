@@ -173,7 +173,7 @@ final public class Networker {
         @Override
         public void run() {
             try {
-                message.execute(socket, messageDataInputStream);
+                message.onReceive(socket, messageDataInputStream);
                 messageDataInputStream.close();
             } catch (Throwable t) {
                 LOGGER.log(Level.SEVERE, "Exception while processing message " + message

@@ -54,7 +54,7 @@ final public class MessageHello extends Message {
     }
 
     @Override
-    public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
+    public void onReceive(SocketChannel sender, MessageDataInputStream in) throws IOException {
         port = in.readInt();
         threadIds = in.readIntArray();
 

@@ -58,7 +58,7 @@ public class GroupJoinRequestMessage extends Message {
     }
 
     @Override
-    public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
+    public void onReceive(SocketChannel sender, MessageDataInputStream in) throws IOException {
         this.requestNum = in.readInt();
         this.groupName = in.readString();
         this.groupId = in.readInt();

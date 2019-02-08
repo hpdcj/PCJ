@@ -57,7 +57,7 @@ final public class MessageHelloInform extends Message {
     }
 
     @Override
-    public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
+    public void onReceive(SocketChannel sender, MessageDataInputStream in) throws IOException {
         physicalId = in.readInt();
         try {
             Object obj = in.readObject();

@@ -60,7 +60,7 @@ public class ValueGetRequestMessage extends Message {
     }
 
     @Override
-    public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
+    public void onReceive(SocketChannel sender, MessageDataInputStream in) throws IOException {
         groupId = in.readInt();
         requestNum = in.readInt();
         requesterThreadId = in.readInt();

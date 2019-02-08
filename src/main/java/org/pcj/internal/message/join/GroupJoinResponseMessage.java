@@ -52,7 +52,7 @@ public class GroupJoinResponseMessage extends Message {
     }
 
     @Override
-    public void execute(SocketChannel sender, MessageDataInputStream in) throws IOException {
+    public void onReceive(SocketChannel sender, MessageDataInputStream in) throws IOException {
         requestNum = in.readInt();
         groupId = in.readInt();
         globalThreadId = in.readInt();
