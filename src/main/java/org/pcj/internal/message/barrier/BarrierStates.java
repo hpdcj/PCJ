@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
+ * All rights reserved.
+ *
+ * Licensed under New BSD License (3-clause license).
+ *
+ * See the file "LICENSE" for the full license governing this code.
+ */
 package org.pcj.internal.message.barrier;
 
 import java.nio.channels.SocketChannel;
@@ -27,7 +35,7 @@ public class BarrierStates {
 
     public State getOrCreate(int round, InternalCommonGroup commonGroup) {
         return stateMap.computeIfAbsent(round,
-                _round -> new State(_round, commonGroup.getLocalThreadsId().length, commonGroup.getChildrenNodes().size(), new BarrierFuture()));
+                _round -> new State(_round, commonGroup.getLocalThreadsId().size(), commonGroup.getCommunicationTree().getChildrenNodes().size(), new BarrierFuture()));
     }
 
     public State remove(int round) {
@@ -74,12 +82,12 @@ public class BarrierStates {
             NodeData nodeData = InternalPCJ.getNodeData();
 
             int physicalId = nodeData.getPhysicalId();
-            if (physicalId == group.getGroupMasterNode()) {
+            if (physicalId == group.getCommunicationTree().getMasterNode()) {
                 socket = nodeData.getSocketChannelByPhysicalId().get(physicalId);
 
                 message = new GroupBarrierGoMessage(group.getGroupId(), round);
             } else {
-                int parentId = group.getParentNode();
+                int parentId = group.getCommunicationTree().getParentNode();
                 socket = nodeData.getSocketChannelByPhysicalId().get(parentId);
 
                 message = new GroupBarrierWaitingMessage(group.getGroupId(), round);

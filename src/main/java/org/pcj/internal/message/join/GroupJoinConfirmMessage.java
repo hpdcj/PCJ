@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
+import org.pcj.internal.NodeData;
 import org.pcj.internal.message.Message;
 import org.pcj.internal.message.MessageType;
 import org.pcj.internal.network.MessageDataInputStream;
@@ -25,18 +26,18 @@ public class GroupJoinConfirmMessage extends Message {
     private int requestNum;
     private int groupId;
     private int physicalId;
-    private int globalThreadId;
+    private int requesterGlobalThreadId;
 
     public GroupJoinConfirmMessage() {
         super(MessageType.GROUP_JOIN_CONFIRM);
     }
 
-    public GroupJoinConfirmMessage(int requestNum, int groupId, int globalThreadId, int physicalId) {
+    public GroupJoinConfirmMessage(int requestNum, int groupId, int requesterGlobalThreadId, int physicalId) {
         this();
 
         this.requestNum = requestNum;
         this.groupId = groupId;
-        this.globalThreadId = globalThreadId;
+        this.requesterGlobalThreadId = requesterGlobalThreadId;
         this.physicalId = physicalId;
     }
 
@@ -44,7 +45,7 @@ public class GroupJoinConfirmMessage extends Message {
     public void write(MessageDataOutputStream out) throws IOException {
         out.writeInt(requestNum);
         out.writeInt(groupId);
-        out.writeInt(globalThreadId);
+        out.writeInt(requesterGlobalThreadId);
         out.writeInt(physicalId);
     }
 
@@ -52,16 +53,16 @@ public class GroupJoinConfirmMessage extends Message {
     public void onReceive(SocketChannel sender, MessageDataInputStream in) throws IOException {
         requestNum = in.readInt();
         groupId = in.readInt();
-        globalThreadId = in.readInt();
+        requesterGlobalThreadId = in.readInt();
         physicalId = in.readInt();
 
-        InternalCommonGroup commonGroup = InternalPCJ.getNodeData().getCommonGroupById(groupId);
+        NodeData nodeData = InternalPCJ.getNodeData();
 
-        GroupJoinState groupJoinState = commonGroup.getGroupJoinState(requestNum, globalThreadId, commonGroup.getChildrenNodes());
+        InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
 
-        if (groupJoinState.processPhysical(physicalId)) {
-            commonGroup.removeGroupJoinState(requestNum, globalThreadId);
-        }
+        GroupJoinStates states = commonGroup.getGroupJoinStates();
+        GroupJoinStates.State state = states.get(requestNum, requesterGlobalThreadId);
+        state.processNode(physicalId, commonGroup);
     }
 
 }

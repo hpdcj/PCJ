@@ -392,17 +392,17 @@ public abstract class InternalPCJ {
             commonGroup = future.get();
         }
 
-        GroupJoinStates groupJoinQueryStates = nodeData.getGroupJoinStates();
-        GroupJoinStates.State state = groupJoinQueryStates.create();
+        GroupJoinStates groupJoinStates = nodeData.getGroupJoinStates();
+        GroupJoinStates.Notification notification = groupJoinStates.createNotification(globalThreadId);
 
         GroupJoinRequestMessage message = new GroupJoinRequestMessage(
-                state.getRequestNum(), groupName, commonGroup.getGroupId(), nodeData.getPhysicalId(), globalThreadId);
+                notification.getRequestNum(), groupName, commonGroup.getGroupId(), nodeData.getPhysicalId(), globalThreadId);
 
-        SocketChannel groupMasterSocketChannel = nodeData.getSocketChannelByPhysicalId().get(commonGroup.getGroupMasterNode());
+        SocketChannel groupMasterSocketChannel = nodeData.getSocketChannelByPhysicalId().get(commonGroup.getCommunicationTree().getMasterNode());
 
         networker.send(groupMasterSocketChannel, message);
 
-        PcjFuture<InternalGroup> future = state.getFuture();
+        PcjFuture<InternalGroup> future = notification.getFuture();
         return future.get();
     }
 }

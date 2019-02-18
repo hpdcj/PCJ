@@ -79,7 +79,7 @@ final public class BroadcastValueRequestMessage extends Message {
                 = new BroadcastValueBytesMessage(groupId, requestNum, requesterThreadId, sharedEnumClassName, variableName, indices, clonedData);
 
         InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
-        commonGroup.getChildrenNodes()
+        commonGroup.getCommunicationTree().getChildrenNodes()
                 .stream()
                 .map(nodeData.getSocketChannelByPhysicalId()::get)
                 .forEach(socket -> networker.send(socket, broadcastValueBytesMessage));
@@ -88,6 +88,5 @@ final public class BroadcastValueRequestMessage extends Message {
         BroadcastStates.State state = states.getOrCreate(requestNum, requesterThreadId, commonGroup);
 
         state.downProcessNode(commonGroup, clonedData, sharedEnumClassName, variableName, indices);
-
     }
 }

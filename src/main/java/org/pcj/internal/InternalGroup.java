@@ -137,7 +137,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
                 super.getGroupId(), state.getRequestNum(), myThreadId,
                 variable.getDeclaringClass().getName(), variable.name(), indices, newValue);
 
-        int physicalMasterId = super.getGroupMasterNode();
+        int physicalMasterId = super.getCommunicationTree().getMasterNode();
         SocketChannel masterSocket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalMasterId);
 
         InternalPCJ.getNetworker().send(masterSocket, message);

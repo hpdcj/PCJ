@@ -11,11 +11,11 @@ package org.pcj.internal.message.join;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.stream.Collectors;
+import java.util.Set;
+import org.pcj.PCJ;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
@@ -38,14 +38,13 @@ public class GroupJoinInformMessage extends Message {
         super(MessageType.GROUP_JOIN_INFORM);
     }
 
-    public GroupJoinInformMessage(int requestNum, int groupId, int globalThreadId,
-                                  Map<Integer, Integer> threadsMapping) {
+    public GroupJoinInformMessage(int requestNum, int groupId, int globalThreadId, Map<Integer, Integer> threadsMapping) {
         this();
 
         this.requestNum = requestNum;
         this.groupId = groupId;
         this.globalThreadId = globalThreadId;
-        this.threadsMapping = new HashMap<>(threadsMapping);
+        this.threadsMapping = threadsMapping;
     }
 
     @Override
@@ -56,6 +55,7 @@ public class GroupJoinInformMessage extends Message {
         out.writeObject(threadsMapping);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void onReceive(SocketChannel sender, MessageDataInputStream in) throws IOException {
         requestNum = in.readInt();
@@ -63,49 +63,44 @@ public class GroupJoinInformMessage extends Message {
         globalThreadId = in.readInt();
 
         try {
-            Object obj = in.readObject();
-            if (obj instanceof Map) {
-                @SuppressWarnings("unchecked")
-                Map<Integer, Integer> map = (Map<Integer, Integer>) obj;
-                threadsMapping = map;
-            }
-        } catch (ClassNotFoundException ex) {
+            threadsMapping = (Map<Integer, Integer>) in.readObject();
+        } catch (Exception ex) {
             throw new RuntimeException("Unable to read threadsMapping", ex);
         }
 
         NodeData nodeData = InternalPCJ.getNodeData();
         InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
 
-        List<Integer> keys = new ArrayList<>(threadsMapping.keySet());
-        keys.sort(Integer::compare);
-        for (int groupThreadId : keys) {
-            int globalId = threadsMapping.get(groupThreadId);
+        commonGroup.updateThreadsMap(threadsMapping);
 
-            commonGroup.addThread(globalId, groupThreadId);
+//        List<Integer> childrenNodes = new ArrayList<>(commonGroup.getCommunicationTree().getChildrenNodes());
+        Set<Integer> physicalIdsSet = new LinkedHashSet<>();
+        physicalIdsSet.add(commonGroup.getCommunicationTree().getMasterNode());
+        threadsMapping.keySet().stream()
+                .sorted()
+                .map(threadsMapping::get)
+                .map(nodeData::getPhysicalId)
+                .forEach(physicalIdsSet::add);
+        List<Integer> physicalIds = new ArrayList<>(physicalIdsSet);
+
+        int currentPhysicalId = nodeData.getPhysicalId();
+        int currentIndex = physicalIds.indexOf(currentPhysicalId);
+
+        List<Integer> childrenNodes = new ArrayList<>();
+        if (currentIndex * 2 + 1 < physicalIds.size()) {
+            childrenNodes.add(physicalIds.get(currentIndex * 2 + 1));
+        }
+        if (currentIndex * 2 + 2 < physicalIds.size()) {
+            childrenNodes.add(physicalIds.get(currentIndex * 2 + 2));
         }
 
-        CopyOnWriteArrayList<Integer> physicalIds = new CopyOnWriteArrayList<>();
-        physicalIds.add(commonGroup.getGroupMasterNode());
-        int currentPhysicalId = nodeData.getPhysicalId();
-        List<Integer> childrenNodes = threadsMapping.keySet().stream()
-                .sorted()
-                .mapToInt(threadsMapping::get)
-                .map(nodeData::getPhysicalId)
-                .filter(physicalIds::addIfAbsent)
-                .map(physicalIds::lastIndexOf)
-                .filter(index -> index > 0)
-                .filter(index -> physicalIds.get((index - 1) / 2) == currentPhysicalId)
-                .map(physicalIds::get)
-                .boxed().collect(Collectors.toList());
-
-        GroupJoinState groupJoinState = commonGroup.getGroupJoinState(requestNum, globalThreadId, childrenNodes);
+        GroupJoinStates states = commonGroup.getGroupJoinStates();
+        GroupJoinStates.State state = states.create(requestNum, globalThreadId, childrenNodes.size());
 
         childrenNodes.stream()
                 .map(nodeData.getSocketChannelByPhysicalId()::get)
                 .forEach(socket -> InternalPCJ.getNetworker().send(socket, this));
 
-        if (groupJoinState.processPhysical(currentPhysicalId)) {
-            commonGroup.removeGroupJoinState(requestNum, globalThreadId);
-        }
+        state.processNode(currentPhysicalId, commonGroup);
     }
 }

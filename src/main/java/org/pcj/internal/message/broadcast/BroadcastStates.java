@@ -13,6 +13,7 @@ import java.nio.channels.SocketChannel;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentMap;
@@ -43,7 +44,7 @@ public class BroadcastStates {
         int requestNum = counter.incrementAndGet();
 
         BroadcastFuture future = new BroadcastFuture();
-        State state = new State(requestNum, threadId, commonGroup.getChildrenNodes().size(), future);
+        State state = new State(requestNum, threadId, commonGroup.getCommunicationTree().getChildrenNodes().size(), future);
 
         stateMap.put(Arrays.asList(requestNum, threadId), state);
 
@@ -52,7 +53,7 @@ public class BroadcastStates {
 
     public State getOrCreate(int requestNum, int requesterThreadId, InternalCommonGroup commonGroup) {
         return stateMap.computeIfAbsent(Arrays.asList(requestNum, requesterThreadId),
-                key -> new State(requestNum, requesterThreadId, commonGroup.getChildrenNodes().size()));
+                key -> new State(requestNum, requesterThreadId, commonGroup.getCommunicationTree().getChildrenNodes().size()));
     }
 
     public State remove(int requestNum, int threadId) {
@@ -91,7 +92,7 @@ public class BroadcastStates {
 
         public void downProcessNode(InternalCommonGroup group, CloneInputStream clonedData, String sharedEnumClassName, String name, int[] indices) {
             NodeData nodeData = InternalPCJ.getNodeData();
-            int[] threadsId = group.getLocalThreadsId();
+            Set<Integer> threadsId = group.getLocalThreadsId();
             for (int threadId : threadsId) {
                 int globalThreadId = group.getGlobalThreadId(threadId);
                 PcjThread pcjThread = nodeData.getPcjThread(globalThreadId);
@@ -119,9 +120,10 @@ public class BroadcastStates {
         }
 
         private void nodeProcessed(InternalCommonGroup group) {
-            NodeData nodeData = InternalPCJ.getNodeData();
             int leftPhysical = notificationCount.decrementAndGet();
             if (leftPhysical == 0) {
+                NodeData nodeData = InternalPCJ.getNodeData();
+
                 int globalThreadId = group.getGlobalThreadId(requesterThreadId);
                 int requesterPhysicalId = nodeData.getPhysicalId(globalThreadId);
                 if (requesterPhysicalId != nodeData.getPhysicalId()) { // requester is going to receive response
@@ -132,8 +134,8 @@ public class BroadcastStates {
                 SocketChannel socket;
 
                 int physicalId = nodeData.getPhysicalId();
-                if (physicalId != group.getGroupMasterNode()) {
-                    int parentId = group.getParentNode();
+                if (physicalId != group.getCommunicationTree().getMasterNode()) {
+                    int parentId = group.getCommunicationTree().getParentNode();
                     socket = nodeData.getSocketChannelByPhysicalId().get(parentId);
 
                     message = new BroadcastValueInformMessage(group.getGroupId(), requestNum, requesterThreadId, exceptions);

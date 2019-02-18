@@ -27,46 +27,46 @@ public class GroupJoinResponseMessage extends Message {
 
     private int requestNum;
     private int groupId;
-    private int globalThreadId;
-    private int groupThreadId;
+    private int requesterGlobalThreadId;
+    private int requesterGroupThreadId;
 
     public GroupJoinResponseMessage() {
         super(MessageType.GROUP_JOIN_RESPONSE);
     }
 
-    public GroupJoinResponseMessage(int requestNum, int groupId, int globalThreadId, int groupThreadId) {
+    public GroupJoinResponseMessage(int requestNum, int groupId, int requesterGlobalThreadId, int requesterGroupThreadId) {
         this();
 
         this.requestNum = requestNum;
         this.groupId = groupId;
-        this.globalThreadId = globalThreadId;
-        this.groupThreadId = groupThreadId;
+        this.requesterGlobalThreadId = requesterGlobalThreadId;
+        this.requesterGroupThreadId = requesterGroupThreadId;
     }
 
     @Override
     public void write(MessageDataOutputStream out) throws IOException {
         out.writeInt(requestNum);
         out.writeInt(groupId);
-        out.writeInt(globalThreadId);
-        out.writeInt(groupThreadId);
+        out.writeInt(requesterGlobalThreadId);
+        out.writeInt(requesterGroupThreadId);
     }
 
     @Override
     public void onReceive(SocketChannel sender, MessageDataInputStream in) throws IOException {
         requestNum = in.readInt();
         groupId = in.readInt();
-        globalThreadId = in.readInt();
-        groupThreadId = in.readInt();
+        requesterGlobalThreadId = in.readInt();
+        requesterGroupThreadId = in.readInt();
 
         NodeData nodeData = InternalPCJ.getNodeData();
 
-        InternalCommonGroup internalCommonGroup = nodeData.getCommonGroupById(groupId);
-        InternalGroup threadGroup = new InternalGroup(groupThreadId, internalCommonGroup);
-        PcjThread pcjThread = nodeData.getPcjThread(globalThreadId);
+        InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
+        InternalGroup threadGroup = new InternalGroup(requesterGroupThreadId, commonGroup);
+        PcjThread pcjThread = nodeData.getPcjThread(requesterGlobalThreadId);
         pcjThread.getThreadData().addGroup(threadGroup);
 
         GroupJoinStates states = nodeData.getGroupJoinStates();
-        GroupJoinStates.State state = states.remove(requestNum);
-        state.signal(threadGroup);
+        GroupJoinStates.Notification notification = states.removeNotification(requestNum, requesterGlobalThreadId);
+        notification.signal(threadGroup);
     }
 }

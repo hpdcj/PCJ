@@ -81,7 +81,7 @@ final public class BroadcastValueBytesMessage extends Message {
                 = new BroadcastValueBytesMessage(groupId, requestNum, requesterThreadId, sharedEnumClassName, variableName, indices, clonedData);
 
         InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
-        commonGroup.getChildrenNodes()
+        commonGroup.getCommunicationTree().getChildrenNodes()
                 .stream()
                 .map(nodeData.getSocketChannelByPhysicalId()::get)
                 .forEach(socket -> networker.send(socket, broadcastValueBytesMessage));

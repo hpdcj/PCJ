@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -13,6 +13,7 @@ import java.net.InetAddress;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -28,9 +29,6 @@ import org.pcj.internal.network.MessageDataOutputStream;
 
 /**
  * Message sent by node0 to every node about node's physicalId and with data about all nodes in run.
- *
- * @param physicalId           physicalId of node
- * @param nodeInfoByPhysicalId information about all nodes in run
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
@@ -80,12 +78,13 @@ final public class MessageHelloInform extends Message {
 
         List<Integer> keys = new ArrayList<>(nodeInfoByPhysicalId.keySet());
         keys.sort(Integer::compare);
+        Map<Integer,Integer> threadsMap = new HashMap<>();
         for (int currentPhysicalId : keys) {
             NodeInfo nodeInfo = nodeInfoByPhysicalId.get(currentPhysicalId);
             Arrays.stream(nodeInfo.getThreadIds())
                     .forEach(threadId -> {
                         nodeData.setPhysicalId(threadId, currentPhysicalId);
-                        globalGroup.addThread(threadId, threadId);
+                        threadsMap.put(threadId, threadId);
                     });
 
             if (0 < currentPhysicalId && currentPhysicalId < physicalId) {
@@ -95,6 +94,7 @@ final public class MessageHelloInform extends Message {
                 networker.send(socketChannel, new MessageHelloBonjour(physicalId));
             }
         }
+        globalGroup.updateThreadsMap(threadsMap);
 
         nodeData.getSocketChannelByPhysicalId().put(physicalId, InternalPCJ.getLoopbackSocketChannel());
 
