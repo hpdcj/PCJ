@@ -190,6 +190,9 @@ public class InternalCommonGroup {
 
             int currentPhysicalId = InternalPCJ.getNodeData().getPhysicalId();
             int currentIndex = physicalIds.indexOf(currentPhysicalId);
+            if (currentIndex < 0) {
+                return;
+            }
 
             if (currentIndex > 0) {
                 parentNode = physicalIds.get((currentIndex - 1) / 2);
@@ -200,6 +203,10 @@ public class InternalCommonGroup {
             if (currentIndex * 2 + 2 < physicalIds.size()) {
                 childrenNodes.add(physicalIds.get(currentIndex * 2 + 2));
             }
+        }
+
+        public void setParentNode(int parentNode) {
+            this.parentNode = parentNode;
         }
     }
 }

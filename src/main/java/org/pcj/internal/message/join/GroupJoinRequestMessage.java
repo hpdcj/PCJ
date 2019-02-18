@@ -12,10 +12,8 @@ import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
@@ -73,26 +71,30 @@ public class GroupJoinRequestMessage extends Message {
 
         Map<Integer, Integer> threadsMapping = new HashMap<>(commonGroup.getThreadsMap());
 
-//        List<Integer> childrenNodes = new ArrayList<>(commonGroup.getCommunicationTree().getChildrenNodes());
-        Set<Integer> physicalIdsSet = new LinkedHashSet<>();
-        physicalIdsSet.add(commonGroup.getCommunicationTree().getMasterNode());
-        threadsMapping.keySet().stream()
-                .sorted()
-                .map(threadsMapping::get)
-                .map(nodeData::getPhysicalId)
-                .forEach(physicalIdsSet::add);
-        List<Integer> physicalIds = new ArrayList<>(physicalIdsSet);
+        int senderPhysicalId = nodeData.getPhysicalIdBySocketChannel(sender);
+        commonGroup.getCommunicationTree().setParentNode(senderPhysicalId);
 
+        List<Integer> childrenNodes = new ArrayList<>(commonGroup.getCommunicationTree().getChildrenNodes());
+        // generate ChildrenNodes from current threadsMapping
+//        Set<Integer> physicalIdsSet = new LinkedHashSet<>();
+//        physicalIdsSet.add(commonGroup.getCommunicationTree().getMasterNode());
+//        threadsMapping.keySet().stream()
+//                .sorted()
+//                .map(threadsMapping::get)
+//                .map(nodeData::getPhysicalId)
+//                .forEach(physicalIdsSet::add);
+//        List<Integer> physicalIds = new ArrayList<>(physicalIdsSet);
+//
         int currentPhysicalId = nodeData.getPhysicalId();
-        int currentIndex = physicalIds.indexOf(currentPhysicalId);
-
-        List<Integer> childrenNodes = new ArrayList<>();
-        if (currentIndex * 2 + 1 < physicalIds.size()) {
-            childrenNodes.add(physicalIds.get(currentIndex * 2 + 1));
-        }
-        if (currentIndex * 2 + 2 < physicalIds.size()) {
-            childrenNodes.add(physicalIds.get(currentIndex * 2 + 2));
-        }
+//        int currentIndex = physicalIds.indexOf(currentPhysicalId);
+//
+//        List<Integer> childrenNodes = new ArrayList<>();
+//        if (currentIndex * 2 + 1 < physicalIds.size()) {
+//            childrenNodes.add(physicalIds.get(currentIndex * 2 + 1));
+//        }
+//        if (currentIndex * 2 + 2 < physicalIds.size()) {
+//            childrenNodes.add(physicalIds.get(currentIndex * 2 + 2));
+//        }
 
         GroupJoinInformMessage message
                 = new GroupJoinInformMessage(requestNum, groupId, globalThreadId, threadsMapping);

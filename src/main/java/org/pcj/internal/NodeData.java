@@ -9,12 +9,13 @@
 package org.pcj.internal;
 
 import java.nio.channels.SocketChannel;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.internal.futures.WaitObject;
-import org.pcj.internal.message.join.GroupQueryStates;
 import org.pcj.internal.message.join.GroupJoinStates;
+import org.pcj.internal.message.join.GroupQueryStates;
 
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
@@ -139,6 +140,15 @@ final public class NodeData {
 
     public ConcurrentMap<Integer, SocketChannel> getSocketChannelByPhysicalId() {
         return socketChannelByPhysicalId;
+    }
+
+    public int getPhysicalIdBySocketChannel(SocketChannel socketChannel) {
+        return socketChannelByPhysicalId.entrySet()
+                       .stream()
+                       .filter(entry -> entry.getValue().equals(socketChannel))
+                       .map(Map.Entry::getKey)
+                       .findAny()
+                       .get();
     }
 
     public void setPhysicalId(int globalThreadId, int physicalId) {
