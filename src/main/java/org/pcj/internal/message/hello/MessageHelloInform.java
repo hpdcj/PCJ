@@ -6,7 +6,7 @@
  *
  * See the file "LICENSE" for the full license governing this code.
  */
-package org.pcj.internal.message;
+package org.pcj.internal.message.hello;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -24,6 +24,8 @@ import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.Networker;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.NodeInfo;
+import org.pcj.internal.message.Message;
+import org.pcj.internal.message.MessageType;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 

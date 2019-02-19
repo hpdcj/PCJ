@@ -32,7 +32,7 @@ import org.pcj.PcjFuture;
 import org.pcj.StartPoint;
 import org.pcj.internal.futures.WaitObject;
 import org.pcj.internal.message.MessageBye;
-import org.pcj.internal.message.MessageHello;
+import org.pcj.internal.message.hello.MessageHello;
 import org.pcj.internal.message.join.GroupQueryMessage;
 import org.pcj.internal.message.join.GroupQueryStates;
 import org.pcj.internal.message.join.GroupJoinStates;
@@ -120,8 +120,8 @@ public abstract class InternalPCJ {
             /* Starting execution */
             if (isCurrentJvmNode0) {
                 nanoTime = System.nanoTime();
-                LOGGER.log(Level.INFO, "Starting {0} with {1,number,#}"
-                                               + " {1,choice,1#thread|1<threads}"
+                LOGGER.log(Level.INFO, "Starting {0}" +
+                                               " with {1,number,#} {1,choice,1#thread|1<threads}"
                                                + " (on {2,number,#} {2,choice,1#node|1<nodes})...",
                         new Object[]{startPointClass.getName(),
                                 nodeData.getCommonGroupById(InternalCommonGroup.GLOBAL_GROUP_ID).threadCount(),
@@ -327,11 +327,12 @@ public abstract class InternalPCJ {
     }
 
     private static void helloPhase(int port, int[] threadIds) throws UncheckedIOException {
-        MessageHello messageHello = new MessageHello(port, threadIds);
 
         WaitObject sync = nodeData.getGlobalWaitObject();
         sync.lock();
         try {
+            MessageHello messageHello = new MessageHello(port, threadIds);
+            
             networker.send(nodeData.getNode0Socket(), messageHello);
 
             /* waiting for HELLO_GO */

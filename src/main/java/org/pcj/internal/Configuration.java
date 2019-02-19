@@ -31,15 +31,15 @@ final public class Configuration {
      */
     final public static int INIT_BACKLOG_COUNT;
     /**
-     * pcj.init.retry.count (int) default: 19
+     * pcj.init.retry.count (int) default: 3
      */
     final public static int INIT_RETRY_COUNT;
     /**
-     * pcj.init.retry.delay (int in seconds) default: 3
+     * pcj.init.retry.delay (int in seconds) default: 5
      */
     final public static int INIT_RETRY_DELAY;
     /**
-     * pcj.init.maxtime (int in seconds) default: max(60, (pcj.init.retry.count+1) *
+     * pcj.init.maxtime (int in seconds) default: max(30, (pcj.init.retry.count+1) *
      * pcj.init.retry.delay)
      */
     final public static int INIT_MAXTIME;
@@ -71,9 +71,9 @@ final public class Configuration {
     static {
         DEFAULT_PORT = getPropertyInt("pcj.port", 8091);
         INIT_BACKLOG_COUNT = getPropertyInt("pcj.init.backlog", 4096);
-        INIT_RETRY_COUNT = getPropertyInt("pcj.init.retry.count", 19);
-        INIT_RETRY_DELAY = getPropertyInt("pcj.init.retry.delay", 3);
-        INIT_MAXTIME = getPropertyInt("pcj.init.maxtime", Math.max((INIT_RETRY_COUNT + 1) * INIT_RETRY_DELAY, 60));
+        INIT_RETRY_COUNT = getPropertyInt("pcj.init.retry.count", 3);
+        INIT_RETRY_DELAY = getPropertyInt("pcj.init.retry.delay", 5);
+        INIT_MAXTIME = getPropertyInt("pcj.init.maxtime", Math.max(30, (INIT_RETRY_COUNT + 1) * INIT_RETRY_DELAY));
         BUFFER_CHUNK_SIZE = getPropertyInt("pcj.buffer.chunksize", 8 * 1024);
         BUFFER_POOL_SIZE = getPropertyInt("pcj.buffer.poolsize", 1024);
         WORKERS_MIN_COUNT = getPropertyInt("pcj.workers.min", -1);

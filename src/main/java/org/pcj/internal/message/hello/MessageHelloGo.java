@@ -1,25 +1,24 @@
 /* 
- * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
  *
  * See the file "LICENSE" for the full license governing this code.
  */
-package org.pcj.internal.message;
+package org.pcj.internal.message.hello;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
+import org.pcj.internal.message.Message;
+import org.pcj.internal.message.MessageType;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
 /**
  * Message sent by new-Client to Server with <b>new client connection data</b>
- *
- * @param port      listen-on port of new-Client (<tt>int</tt>)
- * @param threadIds global ids of new-Client threads (<tt>int[]</tt>)
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */

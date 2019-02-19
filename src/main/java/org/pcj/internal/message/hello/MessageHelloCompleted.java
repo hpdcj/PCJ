@@ -6,31 +6,32 @@
  *
  * See the file "LICENSE" for the full license governing this code.
  */
-package org.pcj.internal.message;
+package org.pcj.internal.message.hello;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
+import org.pcj.internal.Bitmask;
 import org.pcj.internal.InternalPCJ;
-import org.pcj.internal.NodeData;
+import org.pcj.internal.NodeData.Node0Data;
+import org.pcj.internal.message.Message;
+import org.pcj.internal.message.MessageType;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
 /**
  * Message sent by each node to all nodes with physicalId less than its.
  *
- * @param physicalId physicalId of node
- *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class MessageHelloBonjour extends Message {
+final public class MessageHelloCompleted extends Message {
 
     private int physicalId;
 
-    public MessageHelloBonjour() {
-        super(MessageType.HELLO_BONJOUR);
+    public MessageHelloCompleted() {
+        super(MessageType.HELLO_COMPLETED);
     }
 
-    public MessageHelloBonjour(int physicalId) {
+    public MessageHelloCompleted(int physicalId) {
         this();
 
         this.physicalId = physicalId;
@@ -45,12 +46,17 @@ final public class MessageHelloBonjour extends Message {
     public void onReceive(SocketChannel sender, MessageDataInputStream in) throws IOException {
         physicalId = in.readInt();
 
-        NodeData nodeData = InternalPCJ.getNodeData();
-        nodeData.getSocketChannelByPhysicalId().put(physicalId, sender);
+        Node0Data node0Data = InternalPCJ.getNodeData().getNode0Data();
+        Bitmask bitmask = node0Data.getHelloBitmask();
+        synchronized (bitmask) {
+            bitmask.set(physicalId);
+            if (bitmask.isSet()) {
+                bitmask.clear();
+                MessageHelloGo messageHelloGo = new MessageHelloGo();
 
-        if (nodeData.getSocketChannelByPhysicalId().size() == nodeData.getTotalNodeCount()) {
-            InternalPCJ.getNetworker().send(InternalPCJ.getNodeData().getNode0Socket(),
-                    new MessageHelloCompleted(nodeData.getPhysicalId()));
+                // broadcasting:
+                InternalPCJ.getNetworker().send(InternalPCJ.getNodeData().getNode0Socket(), messageHelloGo);
+            }
         }
     }
 }

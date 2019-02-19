@@ -1,12 +1,12 @@
-/* 
- * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+/*
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
  *
  * See the file "LICENSE" for the full license governing this code.
  */
-package org.pcj.internal.message;
+package org.pcj.internal.message.hello;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -19,15 +19,14 @@ import java.util.stream.Collectors;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.NodeInfo;
+import org.pcj.internal.message.Message;
+import org.pcj.internal.message.MessageType;
 import org.pcj.internal.network.LoopbackSocketChannel;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
 /**
  * Message sent by new-Client to Server with <b>new client connection data</b>
- *
- * @param port      listen-on port of new-Client (<tt>int</tt>)
- * @param threadIds global ids of new-Client threads (<tt>int[]</tt>)
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
@@ -86,15 +85,16 @@ final public class MessageHello extends Message {
 
             int nextPhysicalId = 0;
 
-            Map<Integer, Integer> physicalIdByThreadId = node0Data.getNodeInfoByPhysicalId()
-                    .entrySet().stream()
-                    .flatMap(entry -> Arrays.stream(entry.getValue().getThreadIds())
-                    .mapToObj(threadId -> new AbstractMap.SimpleEntry<Integer, Integer>(threadId, entry.getKey())))
-                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            Map<Integer, Integer> physicalIdByThreadId
+                    = node0Data.getNodeInfoByPhysicalId()
+                              .entrySet().stream()
+                              .flatMap(entry -> Arrays.stream(entry.getValue().getThreadIds())
+                                                        .mapToObj(threadId -> new AbstractMap.SimpleEntry<>(threadId, entry.getKey())))
+                              .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
             // threadId -> physicalId
             for (int threadId : physicalIdByThreadId.keySet().stream()
-                    .mapToInt(Integer::intValue).sorted().toArray()) {
+                                        .mapToInt(Integer::intValue).sorted().toArray()) {
                 int oldPhysicalId = physicalIdByThreadId.remove(threadId);
 
                 /* if that physicalId isn't mapped... */
