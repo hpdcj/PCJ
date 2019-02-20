@@ -168,6 +168,5 @@ public class MessageDataOutputStream extends OutputStream {
             objectOutputStream = new ObjectOutputStream(output);
         }
         objectOutputStream.writeUnshared(object);
-//        objectOutputStream.writeObject(object);
     }
 }

@@ -131,15 +131,7 @@ public class CloneInputStream extends InputStream {
         for (long left = length; left > 0; left -= bytes.length) {
             int len = (int) Math.min((long) CHUNK_SIZE, left);
             bytes = new byte[len];
-            int offset = 0;
-            while (offset < len) {
-                int bytesRead = in.read(bytes, offset, len);
-                if (bytesRead < 0) {
-                    throw new EOFException("Unexpectedly reached end of stream.");
-                }
-                offset += bytesRead;
-                len -= bytesRead;
-            }
+            in.readFully(bytes);
             cloneInputStream.addByteArray(bytes);
         }
         return cloneInputStream;
