@@ -32,11 +32,12 @@ import org.pcj.PcjFuture;
 import org.pcj.StartPoint;
 import org.pcj.internal.futures.WaitObject;
 import org.pcj.internal.message.MessageBye;
+import org.pcj.internal.message.hello.HelloState;
 import org.pcj.internal.message.hello.MessageHello;
+import org.pcj.internal.message.join.GroupJoinRequestMessage;
+import org.pcj.internal.message.join.GroupJoinStates;
 import org.pcj.internal.message.join.GroupQueryMessage;
 import org.pcj.internal.message.join.GroupQueryStates;
-import org.pcj.internal.message.join.GroupJoinStates;
-import org.pcj.internal.message.join.GroupJoinRequestMessage;
 import org.pcj.internal.network.LoopbackSocketChannel;
 
 /**
@@ -82,8 +83,7 @@ public abstract class InternalPCJ {
             throw new IllegalArgumentException("There is no node0 entry in nodes description file.");
         }
 
-        boolean isCurrentJvmNode0 = node0.isLocalAddress()
-                                            && node0.getPort() == currentJvm.getPort();
+        boolean isCurrentJvmNode0 = node0.isLocalAddress() && node0.getPort() == currentJvm.getPort();
 
         if (isCurrentJvmNode0) {
             LOGGER.log(Level.INFO, "PCJ version {0}", PCJ_VERSION);
@@ -92,36 +92,38 @@ public abstract class InternalPCJ {
         networker = prepareNetworker(currentJvm);
         networker.startup();
         try {
+            /* Prepare initial data */
+            nodeData = new NodeData();
+            nodeData.setHelloState(new HelloState(allNodesThreadCount));
+            if (isCurrentJvmNode0) {
+                nodeData.setNode0Data(new NodeData.Node0Data());
+            }
+
             /* Getting all interfaces */
             Queue<InetAddress> inetAddresses = getHostAllNetworkInferfaces();
 
             /* Binding on all interfaces */
             bindOnAllNetworkInterfaces(inetAddresses, currentJvm.getPort());
 
-            ScheduledFuture<?> exitTimer = scheduleExitTimer(Thread.currentThread());
+            ScheduledFuture<?> helloTimeoutTimer = scheduleInterruptTimer(Thread.currentThread(), Configuration.INIT_MAXTIME, TimeUnit.SECONDS);
 
             /* connecting to node0 */
-            SocketChannel node0Socket = connectToNode0(isCurrentJvmNode0, node0);
-
-            /* Prepare initial data */
-            nodeData = new NodeData(node0Socket, isCurrentJvmNode0);
-            nodeData.getSocketChannelByPhysicalId().put(0, node0Socket);
-
-            if (isCurrentJvmNode0) {
-                nodeData.getNode0Data().setAllNodesThreadCount(allNodesThreadCount);
-            }
+            SocketChannel node0Socket = connectToNode0(node0, isCurrentJvmNode0);
+            nodeData.setNode0Socket(node0Socket);
 
             /* send HELLO message */
             helloPhase(currentJvm.getPort(), currentJvm.getThreadIds());
 
-            exitTimer.cancel(true);
+            helloTimeoutTimer.cancel(true);
+
+            nodeData.setHelloState(null);
 
             long nanoTime = Long.MIN_VALUE;
             /* Starting execution */
             if (isCurrentJvmNode0) {
                 nanoTime = System.nanoTime();
-                LOGGER.log(Level.INFO, "Starting {0}" +
-                                               " with {1,number,#} {1,choice,1#thread|1<threads}"
+                LOGGER.log(Level.INFO, "Starting {0}"
+                                               + " with {1,number,#} {1,choice,1#thread|1<threads}"
                                                + " (on {2,number,#} {2,choice,1#node|1<nodes})...",
                         new Object[]{startPointClass.getName(),
                                 nodeData.getCommonGroupById(InternalCommonGroup.GLOBAL_GROUP_ID).threadCount(),
@@ -165,8 +167,8 @@ public abstract class InternalPCJ {
     }
 
     private static Networker prepareNetworker(NodeInfo currentJvm) {
-        int minWorkerCount = currentJvm.getThreadIds().length + 1;
-        int maxWorkerCount = currentJvm.getThreadIds().length + 1;
+        int minWorkerCount = currentJvm.getThreadIds().size() + 1;
+        int maxWorkerCount = currentJvm.getThreadIds().size() + 1;
         if (Configuration.WORKERS_MIN_COUNT >= 0) {
             minWorkerCount = Configuration.WORKERS_MIN_COUNT;
         }
@@ -176,13 +178,12 @@ public abstract class InternalPCJ {
         return new Networker(minWorkerCount, Math.max(minWorkerCount, maxWorkerCount));
     }
 
-    private static ScheduledFuture<?> scheduleExitTimer(Thread thread) {
+    private static ScheduledFuture<?> scheduleInterruptTimer(Thread thread, long delay, TimeUnit unit) {
         ScheduledThreadPoolExecutor timer = new ScheduledThreadPoolExecutor(1);
         timer.setRemoveOnCancelPolicy(true);
         timer.setExecuteExistingDelayedTasksAfterShutdownPolicy(true);
 
-        ScheduledFuture<?> exitTimer = timer.schedule(() -> thread.interrupt(),
-                Configuration.INIT_MAXTIME, TimeUnit.SECONDS);
+        ScheduledFuture<?> exitTimer = timer.schedule(() -> thread.interrupt(), delay, unit);
 
         timer.shutdown();
 
@@ -209,7 +210,7 @@ public abstract class InternalPCJ {
         }
     }
 
-    private static Set<PcjThread> preparePcjThreads(Class<? extends StartPoint> startPointClass, int[] threadIds) {
+    private static Set<PcjThread> preparePcjThreads(Class<? extends StartPoint> startPointClass, Set<Integer> threadIds) {
         InternalCommonGroup globalGroup = nodeData.getCommonGroupById(InternalCommonGroup.GLOBAL_GROUP_ID);
         Set<PcjThread> pcjThreads = new HashSet<>();
 
@@ -273,7 +274,7 @@ public abstract class InternalPCJ {
         throw new IllegalStateException("Unreachable code.");
     }
 
-    private static SocketChannel connectToNode0(boolean isCurrentJvmNode0, NodeInfo node0) throws RuntimeException {
+    private static SocketChannel connectToNode0(NodeInfo node0, boolean isCurrentJvmNode0) throws RuntimeException {
         if (isCurrentJvmNode0 == true) {
             return LoopbackSocketChannel.getInstance();
         } else {
@@ -326,21 +327,18 @@ public abstract class InternalPCJ {
 
     }
 
-    private static void helloPhase(int port, int[] threadIds) throws UncheckedIOException {
-
-        WaitObject sync = nodeData.getGlobalWaitObject();
-        sync.lock();
+    private static void helloPhase(int port, Set<Integer> threadIds) throws UncheckedIOException {
         try {
-            MessageHello messageHello = new MessageHello(port, threadIds);
-            
+            HelloState state = nodeData.getHelloState();
+
+            MessageHello messageHello = new MessageHello(port, threadIds.stream().mapToInt(Integer::intValue).toArray());
+
             networker.send(nodeData.getNode0Socket(), messageHello);
 
             /* waiting for HELLO_GO */
-            sync.await();
+            state.await();
         } catch (InterruptedException ex) {
             throw new RuntimeException("Interruption occurs while waiting for finish HELLO phase", ex);
-        } finally {
-            sync.unlock();
         }
     }
 

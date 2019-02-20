@@ -150,7 +150,7 @@ public class NodesDescription {
      */
     public int getAllNodesThreadCount() {
         return nodesMap.values().stream()
-                .mapToInt(nodeInfo -> nodeInfo.getThreadIds().length)
+                .mapToInt(nodeInfo -> nodeInfo.getThreadIds().size())
                 .sum();
     }
 }

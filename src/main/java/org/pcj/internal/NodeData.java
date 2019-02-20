@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.internal.futures.WaitObject;
+import org.pcj.internal.message.hello.HelloState;
 import org.pcj.internal.message.join.GroupJoinStates;
 import org.pcj.internal.message.join.GroupQueryStates;
 
@@ -22,63 +23,38 @@ import org.pcj.internal.message.join.GroupQueryStates;
  */
 final public class NodeData {
 
-    private final SocketChannel node0Socket;
     private final ConcurrentMap<Integer, InternalCommonGroup> groupById;
     private final ConcurrentMap<Integer, SocketChannel> socketChannelByPhysicalId; // physicalId -> socket
     private final ConcurrentMap<Integer, Integer> physicalIdByThreadId; // threadId -> physicalId
-    private final ConcurrentMap<Integer, PcjThread> pcjThreads;
-    private final Node0Data node0Data;
+    private final ConcurrentMap<Integer, PcjThread> pcjThreads; // threadId -> pcjThread
     private final WaitObject globalWaitObject;
     private final GroupQueryStates groupQueryStates;
     private final GroupJoinStates groupJoinStates;
+    private SocketChannel node0Socket;
+    private Node0Data node0Data;
+    private HelloState helloState;
     private int physicalId;
     private int totalNodeCount;
 
     public static class Node0Data {
 
-        private final AtomicInteger connectedNodeCount;
-        private final AtomicInteger connectedThreadCount;
         private final Bitmask helloBitmask;
         private final Bitmask finishedBitmask;
+
         private final AtomicInteger groupIdCounter;
         private final ConcurrentMap<String, Integer> groupsId; // groupName -> groupId
         private final ConcurrentMap<Integer, Integer> groupsMaster; // groupId -> physicalId
-        private final ConcurrentMap<Integer, NodeInfo> nodeInfoByPhysicalId; // physicalId -> nodeInfo
-        private int allNodesThreadCount;
 
         public Node0Data() {
-            this.connectedNodeCount = new AtomicInteger(0);
-            this.connectedThreadCount = new AtomicInteger(0);
             this.helloBitmask = new Bitmask();
             this.finishedBitmask = new Bitmask();
 
             this.groupIdCounter = new AtomicInteger(1);
             this.groupsId = new ConcurrentHashMap<>();
             this.groupsMaster = new ConcurrentHashMap<>();
-            this.nodeInfoByPhysicalId = new ConcurrentHashMap<>();
 
             groupsId.put("", 0);
             groupsMaster.put(0, 0);
-        }
-
-        public int getAllNodesThreadCount() {
-            return allNodesThreadCount;
-        }
-
-        void setAllNodesThreadCount(int allNodesThreadCount) {
-            this.allNodesThreadCount = allNodesThreadCount;
-        }
-
-        public AtomicInteger getConnectedNodeCount() {
-            return connectedNodeCount;
-        }
-
-        public AtomicInteger getConnectedThreadCount() {
-            return connectedThreadCount;
-        }
-
-        public ConcurrentMap<Integer, NodeInfo> getNodeInfoByPhysicalId() {
-            return nodeInfoByPhysicalId;
         }
 
         public Bitmask getHelloBitmask() {
@@ -96,31 +72,36 @@ final public class NodeData {
         public int getGroupMaster(int groupId, int physicalId) {
             return groupsMaster.computeIfAbsent(groupId, key -> physicalId);
         }
+
     }
 
-    public NodeData(SocketChannel node0Socket, boolean isCurrentJvmNode0) {
-        this.node0Socket = node0Socket;
+    public NodeData() {
         this.groupById = new ConcurrentHashMap<>();
         this.socketChannelByPhysicalId = new ConcurrentHashMap<>();
         this.physicalIdByThreadId = new ConcurrentHashMap<>();
         this.pcjThreads = new ConcurrentHashMap<>();
+
         this.globalWaitObject = new WaitObject();
+
         this.groupQueryStates = new GroupQueryStates();
         this.groupJoinStates = new GroupJoinStates();
+    }
 
-        if (isCurrentJvmNode0) {
-            node0Data = new Node0Data();
-        } else {
-            node0Data = null;
-        }
+    public SocketChannel getNode0Socket() {
+        return node0Socket;
+    }
+
+    protected void setNode0Socket(SocketChannel node0Socket) {
+        this.node0Socket = node0Socket;
+        this.socketChannelByPhysicalId.put(0, node0Socket);
     }
 
     public Node0Data getNode0Data() {
         return node0Data;
     }
 
-    public SocketChannel getNode0Socket() {
-        return node0Socket;
+    protected void setNode0Data(Node0Data node0Data) {
+        this.node0Data = node0Data;
     }
 
     public InternalCommonGroup getOrCreateGroup(int groupMaster, int groupId, String groupName) {
@@ -193,6 +174,15 @@ final public class NodeData {
     public WaitObject getGlobalWaitObject() {
         return globalWaitObject;
     }
+
+    public HelloState getHelloState() {
+        return helloState;
+    }
+
+    public void setHelloState(HelloState helloState) {
+        this.helloState = helloState;
+    }
+
 
     public GroupQueryStates getGroupQueryStates() {
         return groupQueryStates;

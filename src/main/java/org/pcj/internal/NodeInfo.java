@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
@@ -8,6 +8,7 @@
  */
 package org.pcj.internal;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -18,7 +19,9 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Objects;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.concurrent.ConcurrentSkipListSet;
 
@@ -75,8 +78,8 @@ public class NodeInfo implements Serializable {
         return port;
     }
 
-    public int[] getThreadIds() {
-        return threadIds.stream().mapToInt(Integer::intValue).toArray();
+    public Set<Integer> getThreadIds() {
+        return Collections.unmodifiableSet(threadIds);
     }
 
     public void addThreadId(int i) {
@@ -103,7 +106,14 @@ public class NodeInfo implements Serializable {
             hostname = null;
         } else {
             byte[] b = new byte[length];
-            in.read(b);
+            int offset = 0;
+            while (offset < length) {
+                int bytesRead = in.read(b, offset, length - offset);
+                if (bytesRead < 0) {
+                    throw new EOFException("Unexpectedly reached end of stream.");
+                }
+                offset += bytesRead;
+            }
             hostname = new String(b, StandardCharsets.UTF_8);
         }
         port = in.readInt();

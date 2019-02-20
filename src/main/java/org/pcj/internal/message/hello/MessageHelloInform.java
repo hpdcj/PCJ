@@ -83,7 +83,7 @@ final public class MessageHelloInform extends Message {
         Map<Integer,Integer> threadsMap = new HashMap<>();
         for (int currentPhysicalId : keys) {
             NodeInfo nodeInfo = nodeInfoByPhysicalId.get(currentPhysicalId);
-            Arrays.stream(nodeInfo.getThreadIds())
+            nodeInfo.getThreadIds().stream()
                     .forEach(threadId -> {
                         nodeData.setPhysicalId(threadId, currentPhysicalId);
                         threadsMap.put(threadId, threadId);

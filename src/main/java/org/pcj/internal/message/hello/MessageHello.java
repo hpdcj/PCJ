@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.AbstractMap;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -57,39 +56,43 @@ final public class MessageHello extends Message {
         port = in.readInt();
         threadIds = in.readIntArray();
 
-        String address = null;
-        if (sender instanceof LoopbackSocketChannel == false) {
+        String address;
+        if (sender instanceof LoopbackSocketChannel) {
+            address = null;
+        } else {
             address = ((InetSocketAddress) sender.getRemoteAddress()).getHostString();
         }
 
         NodeInfo currentNodeInfo = new NodeInfo(address, this.port, this.threadIds);
 
         NodeData nodeData = InternalPCJ.getNodeData();
-        NodeData.Node0Data node0Data = nodeData.getNode0Data();
+        HelloState state = nodeData.getHelloState();
 
-        int currentPhysicalId = -node0Data.getConnectedNodeCount().incrementAndGet();
+        int currentPhysicalId = -state.getNextPhysicalId();
 
-        nodeData.getSocketChannelByPhysicalId().put(currentPhysicalId, sender);
-        node0Data.getNodeInfoByPhysicalId().put(currentPhysicalId, currentNodeInfo);
+        state.getSocketChannelByPhysicalId().put(currentPhysicalId, sender);
+        state.getNodeInfoByPhysicalId().put(currentPhysicalId, currentNodeInfo);
 
-        int currentThreadCount = node0Data.getConnectedThreadCount().addAndGet(threadIds.length);
+        int threadsLeftToConnect = state.decrementThreadsLeftToConnect(threadIds.length);
 
-        if (currentThreadCount == node0Data.getAllNodesThreadCount()) {
+        if (threadsLeftToConnect == 0) {
+            int nodesConnected = state.getNextPhysicalId() - 1;
+            nodeData.getNode0Data().getHelloBitmask().enlarge(nodesConnected);
+            nodeData.getNode0Data().getFinishedBitmask().enlarge(nodesConnected);
+
             LOGGER.finest("Received HELLO from all nodes. Ordering physicalIds.");
-            int connectedNodeCount = node0Data.getConnectedNodeCount().get();
 
-            node0Data.getFinishedBitmask().enlarge(connectedNodeCount);
-            node0Data.getHelloBitmask().enlarge(connectedNodeCount);
-
-            Map<Integer, Integer> physicalIdMapping = new HashMap<>(connectedNodeCount);
+            Map<Integer, Integer> physicalIdMapping = new HashMap<>();
 
             int nextPhysicalId = 0;
 
             Map<Integer, Integer> physicalIdByThreadId
-                    = node0Data.getNodeInfoByPhysicalId()
+                    = state.getNodeInfoByPhysicalId()
                               .entrySet().stream()
-                              .flatMap(entry -> Arrays.stream(entry.getValue().getThreadIds())
-                                                        .mapToObj(threadId -> new AbstractMap.SimpleEntry<>(threadId, entry.getKey())))
+                              .flatMap(entry -> entry.getValue()
+                                                        .getThreadIds()
+                                                        .stream()
+                                                        .map(threadId -> new AbstractMap.SimpleEntry<>(threadId, entry.getKey())))
                               .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
             // threadId -> physicalId
@@ -103,13 +106,13 @@ final public class MessageHello extends Message {
                     physicalIdMapping.put(oldPhysicalId, nextPhysicalId);
 
                     /* get socket associeted with old-physicalId */
-                    SocketChannel socketChannel = nodeData.getSocketChannelByPhysicalId().remove(oldPhysicalId);
-                    NodeInfo nodeInfo = node0Data.getNodeInfoByPhysicalId().remove(oldPhysicalId);
+                    SocketChannel socketChannel = state.getSocketChannelByPhysicalId().remove(oldPhysicalId);
+                    NodeInfo nodeInfo = state.getNodeInfoByPhysicalId().remove(oldPhysicalId);
 
 
                     /* and put it as new-physicalId */
                     nodeData.getSocketChannelByPhysicalId().put(nextPhysicalId, socketChannel);
-                    node0Data.getNodeInfoByPhysicalId().put(nextPhysicalId, nodeInfo);
+                    state.getNodeInfoByPhysicalId().put(nextPhysicalId, nodeInfo);
 
                     /* prepare for new physicalId */
                     ++nextPhysicalId;
@@ -124,7 +127,7 @@ final public class MessageHello extends Message {
                         int physicalId = element.getKey();
                         SocketChannel socketChannel = element.getValue();
 
-                        MessageHelloInform helloInform = new MessageHelloInform(physicalId, node0Data.getNodeInfoByPhysicalId());
+                        MessageHelloInform helloInform = new MessageHelloInform(physicalId, state.getNodeInfoByPhysicalId());
 
                         InternalPCJ.getNetworker().send(socketChannel, helloInform);
                     });

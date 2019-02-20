@@ -27,11 +27,7 @@ final public class MessageHelloGo extends Message {
     public MessageHelloGo() {
         super(MessageType.HELLO_GO);
     }
-
-    public MessageHelloGo(int port, int[] threadIds) {
-        this();
-    }
-
+    
     @Override
     public void write(MessageDataOutputStream out) throws IOException {
     }
@@ -47,6 +43,6 @@ final public class MessageHelloGo extends Message {
             InternalPCJ.getNetworker().send(nodeData.getSocketChannelByPhysicalId().get(physicalId * 2 + 2), this);
         }
 
-        nodeData.getGlobalWaitObject().signal();
+        nodeData.getHelloState().signalDone();
     }
 }

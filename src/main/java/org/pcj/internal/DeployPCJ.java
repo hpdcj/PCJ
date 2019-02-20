@@ -114,7 +114,7 @@ final public class DeployPCJ {
                 node0.getHostname(), // args[2]
                 Integer.toString(node0.getPort()), // args[3]
                 Long.toString(allNodesThreadCount), // args[4]
-                Arrays.toString(node.getThreadIds()) // args[5]
+                node.getThreadIds().toString() // args[5]
         ));
         return params;
     }
