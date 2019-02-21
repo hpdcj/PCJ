@@ -98,7 +98,7 @@ public class GroupJoinStates {
             this.notificationCount = new AtomicInteger(childrenCount + 1);
         }
 
-        public void processNode(int physicalId, InternalCommonGroup commonGroup) {
+        public void processNode(InternalCommonGroup commonGroup) {
             NodeData nodeData = InternalPCJ.getNodeData();
 
             int leftPhysical = notificationCount.decrementAndGet();

@@ -31,20 +31,20 @@ public class GroupJoinRequestMessage extends Message {
     private String groupName;
     private int groupId;
     private int physicalId;
-    private int globalThreadId;
+    private int requesterGlobalThreadId;
 
     public GroupJoinRequestMessage() {
         super(MessageType.GROUP_JOIN_REQUEST);
     }
 
-    public GroupJoinRequestMessage(int requestNum, String name, int groupId, int physicalId, int globalThreadId) {
+    public GroupJoinRequestMessage(int requestNum, String name, int groupId, int physicalId, int requesterGlobalThreadId) {
         this();
 
         this.requestNum = requestNum;
         this.groupName = name;
         this.groupId = groupId;
         this.physicalId = physicalId;
-        this.globalThreadId = globalThreadId;
+        this.requesterGlobalThreadId = requesterGlobalThreadId;
     }
 
     @Override
@@ -53,7 +53,7 @@ public class GroupJoinRequestMessage extends Message {
         out.writeString(groupName);
         out.writeInt(groupId);
         out.writeInt(physicalId);
-        out.writeInt(globalThreadId);
+        out.writeInt(requesterGlobalThreadId);
     }
 
     @Override
@@ -62,50 +62,30 @@ public class GroupJoinRequestMessage extends Message {
         this.groupName = in.readString();
         this.groupId = in.readInt();
         this.physicalId = in.readInt();
-        this.globalThreadId = in.readInt();
+        this.requesterGlobalThreadId = in.readInt();
 
         NodeData nodeData = InternalPCJ.getNodeData();
         InternalCommonGroup commonGroup = nodeData.getOrCreateGroup(nodeData.getPhysicalId(), groupId, groupName);
 
-        commonGroup.addNewThread(globalThreadId);
+        commonGroup.addNewThread(requesterGlobalThreadId);
 
-        Map<Integer, Integer> threadsMapping = new HashMap<>(commonGroup.getThreadsMap());
+        Map<Integer, Integer> groupThreadsMap = new HashMap<>(commonGroup.getThreadsMap());
 
         int senderPhysicalId = nodeData.getPhysicalIdBySocketChannel(sender);
         commonGroup.getCommunicationTree().setParentNode(senderPhysicalId);
 
         List<Integer> childrenNodes = new ArrayList<>(commonGroup.getCommunicationTree().getChildrenNodes());
-        // generate ChildrenNodes from current threadsMapping
-//        Set<Integer> physicalIdsSet = new LinkedHashSet<>();
-//        physicalIdsSet.add(commonGroup.getCommunicationTree().getMasterNode());
-//        threadsMapping.keySet().stream()
-//                .sorted()
-//                .map(threadsMapping::get)
-//                .map(nodeData::getPhysicalId)
-//                .forEach(physicalIdsSet::add);
-//        List<Integer> physicalIds = new ArrayList<>(physicalIdsSet);
-//
-        int currentPhysicalId = nodeData.getPhysicalId();
-//        int currentIndex = physicalIds.indexOf(currentPhysicalId);
-//
-//        List<Integer> childrenNodes = new ArrayList<>();
-//        if (currentIndex * 2 + 1 < physicalIds.size()) {
-//            childrenNodes.add(physicalIds.get(currentIndex * 2 + 1));
-//        }
-//        if (currentIndex * 2 + 2 < physicalIds.size()) {
-//            childrenNodes.add(physicalIds.get(currentIndex * 2 + 2));
-//        }
 
         GroupJoinInformMessage message
-                = new GroupJoinInformMessage(requestNum, groupId, globalThreadId, threadsMapping);
+                = new GroupJoinInformMessage(requestNum, groupId, requesterGlobalThreadId, groupThreadsMap);
 
         GroupJoinStates states = commonGroup.getGroupJoinStates();
-        GroupJoinStates.State state = states.create(requestNum, globalThreadId, childrenNodes.size());
+        GroupJoinStates.State state = states.create(requestNum, requesterGlobalThreadId, childrenNodes.size());
 
         childrenNodes.stream()
                 .map(nodeData.getSocketChannelByPhysicalId()::get)
                 .forEach(socket -> InternalPCJ.getNetworker().send(socket, message));
 
-        state.processNode(currentPhysicalId, commonGroup);
+        state.processNode(commonGroup);
     }
 }

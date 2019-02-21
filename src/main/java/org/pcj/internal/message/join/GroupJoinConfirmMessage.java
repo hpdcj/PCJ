@@ -25,20 +25,18 @@ public class GroupJoinConfirmMessage extends Message {
 
     private int requestNum;
     private int groupId;
-    private int physicalId;
     private int requesterGlobalThreadId;
 
     public GroupJoinConfirmMessage() {
         super(MessageType.GROUP_JOIN_CONFIRM);
     }
 
-    public GroupJoinConfirmMessage(int requestNum, int groupId, int requesterGlobalThreadId, int physicalId) {
+    public GroupJoinConfirmMessage(int requestNum, int groupId, int requesterGlobalThreadId, int confirmerPhysicalId) {
         this();
 
         this.requestNum = requestNum;
         this.groupId = groupId;
         this.requesterGlobalThreadId = requesterGlobalThreadId;
-        this.physicalId = physicalId;
     }
 
     @Override
@@ -46,7 +44,6 @@ public class GroupJoinConfirmMessage extends Message {
         out.writeInt(requestNum);
         out.writeInt(groupId);
         out.writeInt(requesterGlobalThreadId);
-        out.writeInt(physicalId);
     }
 
     @Override
@@ -54,7 +51,6 @@ public class GroupJoinConfirmMessage extends Message {
         requestNum = in.readInt();
         groupId = in.readInt();
         requesterGlobalThreadId = in.readInt();
-        physicalId = in.readInt();
 
         NodeData nodeData = InternalPCJ.getNodeData();
 
@@ -62,7 +58,7 @@ public class GroupJoinConfirmMessage extends Message {
 
         GroupJoinStates states = commonGroup.getGroupJoinStates();
         GroupJoinStates.State state = states.get(requestNum, requesterGlobalThreadId);
-        state.processNode(physicalId, commonGroup);
+        state.processNode(commonGroup);
     }
 
 }

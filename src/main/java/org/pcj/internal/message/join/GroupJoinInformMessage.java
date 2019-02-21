@@ -28,28 +28,28 @@ public class GroupJoinInformMessage extends Message {
 
     private int requestNum;
     private int groupId;
-    private int globalThreadId;
-    private Map<Integer, Integer> threadsMapping;
+    private int requesterGlobalThreadId;
+    private Map<Integer, Integer> groupThreadsMap;
 
     public GroupJoinInformMessage() {
         super(MessageType.GROUP_JOIN_INFORM);
     }
 
-    public GroupJoinInformMessage(int requestNum, int groupId, int globalThreadId, Map<Integer, Integer> threadsMapping) {
+    public GroupJoinInformMessage(int requestNum, int groupId, int requesterGlobalThreadId, Map<Integer, Integer> groupThreadsMap) {
         this();
 
         this.requestNum = requestNum;
         this.groupId = groupId;
-        this.globalThreadId = globalThreadId;
-        this.threadsMapping = threadsMapping;
+        this.requesterGlobalThreadId = requesterGlobalThreadId;
+        this.groupThreadsMap = groupThreadsMap;
     }
 
     @Override
     public void write(MessageDataOutputStream out) throws IOException {
         out.writeInt(requestNum);
         out.writeInt(groupId);
-        out.writeInt(globalThreadId);
-        out.writeObject(threadsMapping);
+        out.writeInt(requesterGlobalThreadId);
+        out.writeObject(groupThreadsMap);
     }
 
     @SuppressWarnings("unchecked")
@@ -57,51 +57,31 @@ public class GroupJoinInformMessage extends Message {
     public void onReceive(SocketChannel sender, MessageDataInputStream in) throws IOException {
         requestNum = in.readInt();
         groupId = in.readInt();
-        globalThreadId = in.readInt();
+        requesterGlobalThreadId = in.readInt();
 
         try {
-            threadsMapping = (Map<Integer, Integer>) in.readObject();
+            groupThreadsMap = (Map<Integer, Integer>) in.readObject();
         } catch (Exception ex) {
-            throw new RuntimeException("Unable to read threadsMapping", ex);
+            throw new RuntimeException("Unable to read groupThreadsMap", ex);
         }
 
         NodeData nodeData = InternalPCJ.getNodeData();
         InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
 
-        commonGroup.updateThreadsMap(threadsMapping);
+        commonGroup.updateThreadsMap(groupThreadsMap);
 
         int senderPhysicalId = nodeData.getPhysicalIdBySocketChannel(sender);
         commonGroup.getCommunicationTree().setParentNode(senderPhysicalId);
 
         List<Integer> childrenNodes = new ArrayList<>(commonGroup.getCommunicationTree().getChildrenNodes());
-        // generate ChildrenNodes from current threadsMapping
-//        Set<Integer> physicalIdsSet = new LinkedHashSet<>();
-//        physicalIdsSet.add(commonGroup.getCommunicationTree().getMasterNode());
-//        threadsMapping.keySet().stream()
-//                .sorted()
-//                .map(threadsMapping::get)
-//                .map(nodeData::getPhysicalId)
-//                .forEach(physicalIdsSet::add);
-//        List<Integer> physicalIds = new ArrayList<>(physicalIdsSet);
-//
-        int currentPhysicalId = nodeData.getPhysicalId();
-//        int currentIndex = physicalIds.indexOf(currentPhysicalId);
-//
-//        List<Integer> childrenNodes = new ArrayList<>();
-//        if (currentIndex * 2 + 1 < physicalIds.size()) {
-//            childrenNodes.add(physicalIds.get(currentIndex * 2 + 1));
-//        }
-//        if (currentIndex * 2 + 2 < physicalIds.size()) {
-//            childrenNodes.add(physicalIds.get(currentIndex * 2 + 2));
-//        }
 
         GroupJoinStates states = commonGroup.getGroupJoinStates();
-        GroupJoinStates.State state = states.create(requestNum, globalThreadId, childrenNodes.size());
+        GroupJoinStates.State state = states.create(requestNum, requesterGlobalThreadId, childrenNodes.size());
 
         childrenNodes.stream()
                 .map(nodeData.getSocketChannelByPhysicalId()::get)
                 .forEach(socket -> InternalPCJ.getNetworker().send(socket, this));
 
-        state.processNode(currentPhysicalId, commonGroup);
+        state.processNode(commonGroup);
     }
 }
