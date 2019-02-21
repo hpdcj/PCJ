@@ -8,6 +8,7 @@
  */
 package org.pcj.internal.network;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -68,6 +69,18 @@ public class MessageDataInputStream extends InputStream {
                 | ((long) (bytes[7] & 0xff)));
     }
 
+    public void readFully(byte[] b) throws IOException {
+        int offset = 0;
+        int length = b.length;
+        while (offset < length) {
+            int bytesRead = input.read(b, offset, length - offset);
+            if (bytesRead < 0) {
+                throw new EOFException("Unexpectedly reached end of stream.");
+            }
+            offset += bytesRead;
+        }
+    }
+
     public boolean readBoolean() throws IOException {
         return input.read() != 0;
     }
@@ -82,14 +95,14 @@ public class MessageDataInputStream extends InputStream {
             return null;
         } else {
             byte[] array = new byte[length];
-            input.read(array, 0, array.length);
+            readFully(array);
             return array;
         }
     }
 
     public double readDouble() throws IOException {
         byte[] bytes = new byte[Double.BYTES];
-        input.read(bytes, 0, bytes.length);
+        readFully(bytes);
         long longBits = bytesToLong(bytes);
         return Double.longBitsToDouble(longBits);
     }
@@ -109,7 +122,7 @@ public class MessageDataInputStream extends InputStream {
 
     public float readFloat() throws IOException {
         byte[] bytes = new byte[Float.BYTES];
-        input.read(bytes, 0, bytes.length);
+        readFully(bytes);
         int intBits = bytesToInt(bytes);
         return Float.intBitsToFloat(intBits);
     }
@@ -129,7 +142,7 @@ public class MessageDataInputStream extends InputStream {
 
     public int readInt() throws IOException {
         byte[] bytes = new byte[Integer.BYTES];
-        input.read(bytes, 0, bytes.length);
+        readFully(bytes);
         return bytesToInt(bytes);
     }
 
@@ -148,7 +161,7 @@ public class MessageDataInputStream extends InputStream {
 
     public long readLong() throws IOException {
         byte[] bytes = new byte[Long.BYTES];
-        input.read(bytes, 0, bytes.length);
+        readFully(bytes);
         return bytesToLong(bytes);
     }
 
@@ -171,7 +184,7 @@ public class MessageDataInputStream extends InputStream {
             return null;
         } else {
             byte[] bytes = new byte[length];
-            input.read(bytes, 0, bytes.length);
+            readFully(bytes);
             return new String(bytes, StandardCharsets.UTF_8);
         }
     }
@@ -180,7 +193,6 @@ public class MessageDataInputStream extends InputStream {
         if (objectInputStream == null) {
             objectInputStream = new ObjectInputStream(input);
         }
-//        return objectInputStream.readObject();
         return objectInputStream.readUnshared();
     }
 }
