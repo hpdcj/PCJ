@@ -159,7 +159,7 @@ final public class NodeData {
         return physicalId;
     }
 
-    public void setPhysicalId(int physicalId) {
+    public void setCurrentNodePhysicalId(int physicalId) {
         this.physicalId = physicalId;
     }
 

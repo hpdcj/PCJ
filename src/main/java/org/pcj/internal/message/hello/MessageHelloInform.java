@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,7 +70,7 @@ final public class MessageHelloInform extends Message {
         }
 
         NodeData nodeData = InternalPCJ.getNodeData();
-        nodeData.setPhysicalId(physicalId);
+        nodeData.setCurrentNodePhysicalId(physicalId);
 
         Networker networker = InternalPCJ.getNetworker();
         InternalCommonGroup globalGroup = nodeData.getOrCreateGroup(0, InternalCommonGroup.GLOBAL_GROUP_ID, InternalCommonGroup.GLOBAL_GROUP_NAME);
