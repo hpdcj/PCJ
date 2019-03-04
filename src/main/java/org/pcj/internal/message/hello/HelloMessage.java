@@ -81,7 +81,7 @@ final public class HelloMessage extends Message {
         int threadsLeftToConnect = state.decrementThreadsLeftToConnect(threadIds.length);
 
         if (threadsLeftToConnect == 0) {
-            int nodesConnected = state.getNextPhysicalId() - 1;
+            int nodesConnected = nodeInfoByPhysicalId.size();
             nodeData.getNode0Data().getFinishedBitmask().enlarge(nodesConnected);
 
             LOGGER.finest("Received HELLO from all nodes. Ordering physicalIds.");
