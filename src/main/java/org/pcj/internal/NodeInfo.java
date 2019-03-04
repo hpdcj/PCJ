@@ -55,7 +55,7 @@ public class NodeInfo implements Serializable {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof NodeInfo)) {
+        if (!(obj instanceof NodeInfo)) {
             return false;
         }
         NodeInfo other = (NodeInfo) obj;

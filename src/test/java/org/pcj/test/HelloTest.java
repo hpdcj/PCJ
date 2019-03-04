@@ -29,7 +29,7 @@ public class HelloTest implements StartPoint {
 
         NodesDescription nodesDescription = new NodesDescription(new String[]{
                 "localhost:8091",
-//                "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091",
+                "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091",
                 "localhost:8002",
 //                "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002", "localhost:8002",
                 "localhost:8003",
@@ -68,25 +68,32 @@ public class HelloTest implements StartPoint {
 //                "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019",
         });
 
+        boolean isCurrentJvmNode0 = nodesDescription.isCurrentJvmNode0() | true;
+
         long[] time = new long[10];
         for (int i = 0; i < time.length; i++) {
-            System.err.println("--- iteration " + (i + 1) + " of " + time.length + " ---");
+            if (isCurrentJvmNode0) {
+                System.err.println("--- iteration " + (i + 1) + " of " + time.length + " ---");
+            }
 
             long start = System.nanoTime();
+//            PCJ.start(HelloTest.class, nodesDescription);
             PCJ.deploy(HelloTest.class, nodesDescription);
             time[i] = (System.nanoTime() - start);
         }
-        System.out.println("t[]= \t" + Arrays.toString(Arrays.stream(time).mapToDouble(t -> t / 1e9).toArray()));
-        System.out.println("min: \t" + Arrays.stream(time).min().getAsLong() / 1e9);
-        System.out.println("max: \t" + Arrays.stream(time).max().getAsLong() / 1e9);
-        System.out.println("avg: \t" + Arrays.stream(time).average().getAsDouble() / 1e9);
-        System.out.println("median:\t" + Arrays.stream(time).sorted().skip((time.length - 1) / 2).limit(time.length % 2 == 1 ? 1 : 2).average().getAsDouble() / 1e9);
+        if (isCurrentJvmNode0) {
+            System.out.println("t[]= \t" + Arrays.toString(Arrays.stream(time).mapToDouble(t -> t / 1e9).toArray()));
+            System.out.println("min: \t" + Arrays.stream(time).min().getAsLong() / 1e9);
+            System.out.println("max: \t" + Arrays.stream(time).max().getAsLong() / 1e9);
+            System.out.println("avg: \t" + Arrays.stream(time).average().getAsDouble() / 1e9);
+            System.out.println("median:\t" + Arrays.stream(time).sorted().skip((time.length - 1) / 2).limit(time.length % 2 == 1 ? 1 : 2).average().getAsDouble() / 1e9);
+        }
     }
 
     @Override
     public void main() {
         if (PCJ.myId() == 0) {
-            System.out.println("nodeCount: " + PCJ.getNodeCount());
+            System.out.println(PCJ.threadCount() + " threads on " + PCJ.getNodeCount() + " nodes");
         }
     }
 }

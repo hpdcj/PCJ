@@ -83,7 +83,7 @@ public abstract class InternalPCJ {
             throw new IllegalArgumentException("There is no node0 entry in nodes description file.");
         }
 
-        boolean isCurrentJvmNode0 = node0.isLocalAddress() && node0.getPort() == currentJvm.getPort();
+        boolean isCurrentJvmNode0 = node0.getPort() == currentJvm.getPort() && node0.isLocalAddress();
 
         if (isCurrentJvmNode0) {
             LOGGER.log(Level.INFO, "PCJ version {0}", PCJ_VERSION);
