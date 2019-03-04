@@ -64,7 +64,7 @@ public class InternalCommonGroup {
 
         this.threadsMap = new ConcurrentHashMap<>();
         this.threadsCounter = new AtomicInteger(0);
-        this.localIds = new CopyOnWriteArraySet<>();
+        this.localIds = ConcurrentHashMap.newKeySet();
 
         this.barrierStates = new BarrierStates();
         this.broadcastStates = new BroadcastStates();
@@ -123,10 +123,11 @@ public class InternalCommonGroup {
     }
 
     private void updateLocalThreads() {
-        int currentPhysicalId = InternalPCJ.getNodeData().getCurrentNodePhysicalId();
+        NodeData nodeData = InternalPCJ.getNodeData();
+        int currentPhysicalId = nodeData.getCurrentNodePhysicalId();
         threadsMap.entrySet()
                 .stream()
-                .filter(entry -> entry.getValue() == currentPhysicalId)
+                .filter(entry -> nodeData.getPhysicalId(entry.getValue()) == currentPhysicalId)
                 .map(Map.Entry::getKey)
                 .sorted()
                 .forEach(localIds::add);
