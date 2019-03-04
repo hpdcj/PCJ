@@ -31,7 +31,7 @@ import org.pcj.NodesDescription;
 import org.pcj.PcjFuture;
 import org.pcj.StartPoint;
 import org.pcj.internal.futures.WaitObject;
-import org.pcj.internal.message.MessageBye;
+import org.pcj.internal.message.bye.MessageBye;
 import org.pcj.internal.message.hello.HelloState;
 import org.pcj.internal.message.hello.HelloMessage;
 import org.pcj.internal.message.join.GroupJoinRequestMessage;

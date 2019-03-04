@@ -6,13 +6,15 @@
  *
  * See the file "LICENSE" for the full license governing this code.
  */
-package org.pcj.internal.message;
+package org.pcj.internal.message.bye;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import org.pcj.internal.Bitmask;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData.Node0Data;
+import org.pcj.internal.message.Message;
+import org.pcj.internal.message.MessageType;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 

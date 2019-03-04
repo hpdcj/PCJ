@@ -14,6 +14,8 @@ import java.util.Map;
 import java.util.function.Supplier;
 import org.pcj.internal.message.at.AsyncAtRequestMessage;
 import org.pcj.internal.message.at.AsyncAtResponseMessage;
+import org.pcj.internal.message.bye.MessageBye;
+import org.pcj.internal.message.bye.MessageByeCompleted;
 import org.pcj.internal.message.hello.HelloMessage;
 import org.pcj.internal.message.hello.HelloBonjourMessage;
 import org.pcj.internal.message.hello.HelloCompletedMessage;
