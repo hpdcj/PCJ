@@ -83,12 +83,12 @@ public class BarrierStates {
 
             int physicalId = nodeData.getCurrentNodePhysicalId();
             if (physicalId == group.getCommunicationTree().getMasterNode()) {
-                socket = nodeData.getSocketChannelByPhysicalId().get(physicalId);
+                socket = nodeData.getSocketChannelByPhysicalId(physicalId);
 
                 message = new GroupBarrierGoMessage(group.getGroupId(), round);
             } else {
                 int parentId = group.getCommunicationTree().getParentNode();
-                socket = nodeData.getSocketChannelByPhysicalId().get(parentId);
+                socket = nodeData.getSocketChannelByPhysicalId(parentId);
 
                 message = new GroupBarrierWaitingMessage(group.getGroupId(), round);
             }

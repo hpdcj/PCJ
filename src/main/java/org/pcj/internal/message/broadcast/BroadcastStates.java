@@ -136,13 +136,13 @@ public class BroadcastStates {
                 int physicalId = nodeData.getCurrentNodePhysicalId();
                 if (physicalId != group.getCommunicationTree().getMasterNode()) {
                     int parentId = group.getCommunicationTree().getParentNode();
-                    socket = nodeData.getSocketChannelByPhysicalId().get(parentId);
+                    socket = nodeData.getSocketChannelByPhysicalId(parentId);
 
                     message = new BroadcastValueInformMessage(group.getGroupId(), requestNum, requesterThreadId, exceptions);
                 } else {
                     message = new BroadcastValueResponseMessage(group.getGroupId(), requestNum, requesterThreadId, exceptions);
 
-                    socket = nodeData.getSocketChannelByPhysicalId().get(requesterPhysicalId);
+                    socket = nodeData.getSocketChannelByPhysicalId(requesterPhysicalId);
                 }
 
                 InternalPCJ.getNetworker().send(socket, message);

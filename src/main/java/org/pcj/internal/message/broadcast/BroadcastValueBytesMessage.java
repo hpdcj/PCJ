@@ -83,7 +83,7 @@ final public class BroadcastValueBytesMessage extends Message {
         InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
         commonGroup.getCommunicationTree().getChildrenNodes()
                 .stream()
-                .map(nodeData.getSocketChannelByPhysicalId()::get)
+                .map(nodeData::getSocketChannelByPhysicalId)
                 .forEach(socket -> networker.send(socket, broadcastValueBytesMessage));
 
         BroadcastStates states = commonGroup.getBroadcastStates();

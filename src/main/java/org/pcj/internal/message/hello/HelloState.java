@@ -160,7 +160,7 @@ public class HelloState {
             NodeData nodeData = InternalPCJ.getNodeData();
             Networker networker = InternalPCJ.getNetworker();
 
-            nodeData.getSocketChannelByPhysicalId().putAll(socketChannelByPhysicalId);
+            nodeData.updateSocketChannelByPhysicalId(socketChannelByPhysicalId);
 
             int currentPhysicalId = nodeData.getCurrentNodePhysicalId();
             if (currentPhysicalId == 0) {
@@ -169,7 +169,7 @@ public class HelloState {
                 HelloGoMessage helloGoMessage = new HelloGoMessage();
                 networker.send(node0Socket, helloGoMessage);
             } else {
-                SocketChannel parentSocketChannel = nodeData.getSocketChannelByPhysicalId().get((currentPhysicalId - 1) / 2);
+                SocketChannel parentSocketChannel = nodeData.getSocketChannelByPhysicalId((currentPhysicalId - 1) / 2);
 
                 HelloCompletedMessage messageHelloCompleted = new HelloCompletedMessage();
                 networker.send(parentSocketChannel, messageHelloCompleted);

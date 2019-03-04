@@ -397,7 +397,7 @@ public abstract class InternalPCJ {
         GroupJoinRequestMessage message = new GroupJoinRequestMessage(
                 notification.getRequestNum(), groupName, commonGroup.getGroupId(), nodeData.getCurrentNodePhysicalId(), globalThreadId);
 
-        SocketChannel groupMasterSocketChannel = nodeData.getSocketChannelByPhysicalId().get(commonGroup.getCommunicationTree().getMasterNode());
+        SocketChannel groupMasterSocketChannel = nodeData.getSocketChannelByPhysicalId(commonGroup.getCommunicationTree().getMasterNode());
 
         networker.send(groupMasterSocketChannel, message);
 

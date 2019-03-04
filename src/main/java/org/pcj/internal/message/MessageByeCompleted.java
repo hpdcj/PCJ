@@ -35,10 +35,10 @@ final public class MessageByeCompleted extends Message {
         NodeData nodeData = InternalPCJ.getNodeData();
         int physicalId = nodeData.getCurrentNodePhysicalId();
         if (physicalId * 2 + 1 < nodeData.getTotalNodeCount()) {
-            InternalPCJ.getNetworker().send(nodeData.getSocketChannelByPhysicalId().get(physicalId * 2 + 1), this);
+            InternalPCJ.getNetworker().send(nodeData.getSocketChannelByPhysicalId(physicalId * 2 + 1), this);
         }
         if (physicalId * 2 + 2 < nodeData.getTotalNodeCount()) {
-            InternalPCJ.getNetworker().send(nodeData.getSocketChannelByPhysicalId().get(physicalId * 2 + 2), this);
+            InternalPCJ.getNetworker().send(nodeData.getSocketChannelByPhysicalId(physicalId * 2 + 2), this);
         }
 
         nodeData.getGlobalWaitObject().signal();

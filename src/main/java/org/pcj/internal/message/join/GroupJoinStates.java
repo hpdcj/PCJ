@@ -111,12 +111,12 @@ public class GroupJoinStates {
 
                 if (nodeData.getCurrentNodePhysicalId() == commonGroup.getCommunicationTree().getMasterNode()) {
                     int requesterPhysicalId = nodeData.getPhysicalId(joinerGlobalThreadId);
-                    socket = nodeData.getSocketChannelByPhysicalId().get(requesterPhysicalId);
+                    socket = nodeData.getSocketChannelByPhysicalId(requesterPhysicalId);
 
                     message = new GroupJoinResponseMessage(requestNum, groupId, joinerGlobalThreadId, commonGroup.getGroupThreadId(joinerGlobalThreadId));
                 } else {
                     int parentId = commonGroup.getCommunicationTree().getParentNode();
-                    socket = nodeData.getSocketChannelByPhysicalId().get(parentId);
+                    socket = nodeData.getSocketChannelByPhysicalId(parentId);
 
                     message = new GroupJoinConfirmMessage(requestNum, groupId, joinerGlobalThreadId, nodeData.getCurrentNodePhysicalId());
                 }

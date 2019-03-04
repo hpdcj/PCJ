@@ -73,7 +73,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
 
         int globalThreadId = super.getGlobalThreadId(threadId);
         int physicalId = InternalPCJ.getNodeData().getPhysicalId(globalThreadId);
-        SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalId);
+        SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId(physicalId);
 
         PeerBarrierMessage message = new PeerBarrierMessage(super.getGroupId(), myThreadId, threadId);
 
@@ -92,7 +92,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
 
         int globalThreadId = super.getGlobalThreadId(threadId);
         int physicalId = InternalPCJ.getNodeData().getPhysicalId(globalThreadId);
-        SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalId);
+        SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId(physicalId);
 
         ValueGetRequestMessage message = new ValueGetRequestMessage(
                 super.getGroupId(), state.getRequestNum(), myThreadId, threadId,
@@ -113,7 +113,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
 
         int globalThreadId = super.getGlobalThreadId(threadId);
         int physicalId = InternalPCJ.getNodeData().getPhysicalId(globalThreadId);
-        SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalId);
+        SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId(physicalId);
 
         ValuePutRequestMessage message = new ValuePutRequestMessage(
                 super.getGroupId(), state.getRequestNum(), myThreadId, threadId,
@@ -138,7 +138,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
                 variable.getDeclaringClass().getName(), variable.name(), indices, newValue);
 
         int physicalMasterId = super.getCommunicationTree().getMasterNode();
-        SocketChannel masterSocket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalMasterId);
+        SocketChannel masterSocket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId(physicalMasterId);
 
         InternalPCJ.getNetworker().send(masterSocket, message);
 
@@ -151,7 +151,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
 
         int globalThreadId = super.getGlobalThreadId(threadId);
         int physicalId = InternalPCJ.getNodeData().getPhysicalId(globalThreadId);
-        SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalId);
+        SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId(physicalId);
 
         AsyncAtRequestMessage<T> message = new AsyncAtRequestMessage<>(
                 super.getGroupId(), state.getRequestNum(), myThreadId,

@@ -83,7 +83,7 @@ public class GroupJoinRequestMessage extends Message {
         GroupJoinStates.State state = states.create(requestNum, requesterGlobalThreadId, childrenNodes.size());
 
         childrenNodes.stream()
-                .map(nodeData.getSocketChannelByPhysicalId()::get)
+                .map(nodeData::getSocketChannelByPhysicalId)
                 .forEach(socket -> InternalPCJ.getNetworker().send(socket, message));
 
         state.processNode(commonGroup);

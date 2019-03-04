@@ -55,7 +55,7 @@ final public class GroupBarrierGoMessage extends Message {
         InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
 
         commonGroup.getCommunicationTree().getChildrenNodes().stream()
-                .map(nodeData.getSocketChannelByPhysicalId()::get)
+                .map(nodeData::getSocketChannelByPhysicalId)
                 .forEach(socket -> InternalPCJ.getNetworker().send(socket, this));
 
         BarrierStates states = commonGroup.getBarrierStates();

@@ -40,11 +40,11 @@ final public class HelloGoMessage extends Message {
 
         int physicalId = nodeData.getCurrentNodePhysicalId();
         if (physicalId * 2 + 1 < nodeData.getTotalNodeCount()) {
-            SocketChannel childSocketChannel = nodeData.getSocketChannelByPhysicalId().get(physicalId * 2 + 1);
+            SocketChannel childSocketChannel = nodeData.getSocketChannelByPhysicalId(physicalId * 2 + 1);
             networker.send(childSocketChannel, this);
         }
         if (physicalId * 2 + 2 < nodeData.getTotalNodeCount()) {
-            SocketChannel childSocketChannel = nodeData.getSocketChannelByPhysicalId().get(physicalId * 2 + 2);
+            SocketChannel childSocketChannel = nodeData.getSocketChannelByPhysicalId(physicalId * 2 + 2);
             networker.send(childSocketChannel, this);
         }
 

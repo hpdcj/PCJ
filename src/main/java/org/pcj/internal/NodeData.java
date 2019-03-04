@@ -41,9 +41,9 @@ final public class NodeData {
         private final Bitmask finishedBitmask;
 
         private final AtomicInteger groupIdCounter;
+
         private final ConcurrentMap<String, Integer> groupsId; // groupName -> groupId
         private final ConcurrentMap<Integer, Integer> groupsMaster; // groupId -> physicalId
-
         public Node0Data() {
             this.finishedBitmask = new Bitmask();
 
@@ -67,8 +67,8 @@ final public class NodeData {
             return groupsMaster.computeIfAbsent(groupId, key -> physicalId);
         }
 
-    }
 
+    }
     public NodeData() {
         this.groupById = new ConcurrentHashMap<>();
         this.socketChannelByPhysicalId = new ConcurrentHashMap<>();
@@ -113,8 +113,12 @@ final public class NodeData {
                        .findFirst().orElse(null);
     }
 
-    public ConcurrentMap<Integer, SocketChannel> getSocketChannelByPhysicalId() {
-        return socketChannelByPhysicalId;
+    public SocketChannel getSocketChannelByPhysicalId(int physicalId) {
+        return socketChannelByPhysicalId.get(physicalId);
+    }
+
+    public void updateSocketChannelByPhysicalId(ConcurrentMap<Integer, SocketChannel> newSocketChannelByPhysicalId) {
+        socketChannelByPhysicalId.putAll(newSocketChannelByPhysicalId);
     }
 
     public int getPhysicalIdBySocketChannel(SocketChannel socketChannel) {
