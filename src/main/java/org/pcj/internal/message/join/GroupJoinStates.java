@@ -109,8 +109,8 @@ public class GroupJoinStates {
                 Message message;
                 int groupId = commonGroup.getGroupId();
 
-                if (nodeData.getPhysicalId() == commonGroup.getCommunicationTree().getMasterNode()) {
-                    int requesterPhysicalId = nodeData.getPhysicalId(joinerGlobalThreadId);
+                if (nodeData.getCurrentNodePhysicalId() == commonGroup.getCommunicationTree().getMasterNode()) {
+                    int requesterPhysicalId = nodeData.getCurrentNodePhysicalId(joinerGlobalThreadId);
                     socket = nodeData.getSocketChannelByPhysicalId().get(requesterPhysicalId);
 
                     message = new GroupJoinResponseMessage(requestNum, groupId, joinerGlobalThreadId, commonGroup.getGroupThreadId(joinerGlobalThreadId));
@@ -118,7 +118,7 @@ public class GroupJoinStates {
                     int parentId = commonGroup.getCommunicationTree().getParentNode();
                     socket = nodeData.getSocketChannelByPhysicalId().get(parentId);
 
-                    message = new GroupJoinConfirmMessage(requestNum, groupId, joinerGlobalThreadId, nodeData.getPhysicalId());
+                    message = new GroupJoinConfirmMessage(requestNum, groupId, joinerGlobalThreadId, nodeData.getCurrentNodePhysicalId());
                 }
 
                 InternalPCJ.getNetworker().send(socket, message);

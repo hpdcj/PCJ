@@ -82,7 +82,6 @@ final public class MessageHello extends Message {
 
         if (threadsLeftToConnect == 0) {
             int nodesConnected = state.getNextPhysicalId() - 1;
-            nodeData.getNode0Data().getHelloBitmask().enlarge(nodesConnected);
             nodeData.getNode0Data().getFinishedBitmask().enlarge(nodesConnected);
 
             LOGGER.finest("Received HELLO from all nodes. Ordering physicalIds.");
@@ -105,23 +104,12 @@ final public class MessageHello extends Message {
                 int oldPhysicalId = sortedPhysicalIds[i];
                 int newPhysicalId = i;
 
-                NodeInfo nodeInfo = nodeInfoByPhysicalId.remove(oldPhysicalId);
-                nodeInfoByPhysicalId.put(newPhysicalId, nodeInfo);
-
-                SocketChannel socketChannel = socketChannelByPhysicalId.remove(oldPhysicalId);
-                socketChannelByPhysicalId.put(newPhysicalId, socketChannel);
-
-                nodeInfo.getThreadIds().forEach(threadId -> nodeData.setPhysicalId(threadId, newPhysicalId));
+                nodeInfoByPhysicalId.put(newPhysicalId, nodeInfoByPhysicalId.remove(oldPhysicalId));
+                socketChannelByPhysicalId.put(newPhysicalId, socketChannelByPhysicalId.remove(oldPhysicalId));
             }
-
-            nodeData.getSocketChannelByPhysicalId().putAll(socketChannelByPhysicalId);
-
-            nodeData.getSocketChannelByPhysicalId()
-                    .forEach((physicalId, socketChannel) -> {
-                        MessageHelloInform helloInform = new MessageHelloInform(physicalId, nodeInfoByPhysicalId);
-
-                        InternalPCJ.getNetworker().send(socketChannel, helloInform);
-                    });
+            
+            MessageHelloInform helloInform = new MessageHelloInform(0, nodeInfoByPhysicalId);
+            InternalPCJ.getNetworker().send(nodeData.getNode0Socket(), helloInform);
         }
     }
 }

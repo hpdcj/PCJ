@@ -13,6 +13,7 @@ import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.pcj.PcjRuntimeException;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
@@ -62,7 +63,7 @@ public class GroupJoinInformMessage extends Message {
         try {
             groupThreadsMap = (Map<Integer, Integer>) in.readObject();
         } catch (Exception ex) {
-            throw new RuntimeException("Unable to read groupThreadsMap", ex);
+            throw new PcjRuntimeException("Unable to read groupThreadsMap", ex);
         }
 
         NodeData nodeData = InternalPCJ.getNodeData();

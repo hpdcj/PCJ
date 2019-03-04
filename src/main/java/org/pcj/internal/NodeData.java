@@ -38,7 +38,6 @@ final public class NodeData {
 
     public static class Node0Data {
 
-        private final Bitmask helloBitmask;
         private final Bitmask finishedBitmask;
 
         private final AtomicInteger groupIdCounter;
@@ -46,7 +45,6 @@ final public class NodeData {
         private final ConcurrentMap<Integer, Integer> groupsMaster; // groupId -> physicalId
 
         public Node0Data() {
-            this.helloBitmask = new Bitmask();
             this.finishedBitmask = new Bitmask();
 
             this.groupIdCounter = new AtomicInteger(1);
@@ -55,10 +53,6 @@ final public class NodeData {
 
             groupsId.put("", 0);
             groupsMaster.put(0, 0);
-        }
-
-        public Bitmask getHelloBitmask() {
-            return helloBitmask;
         }
 
         public Bitmask getFinishedBitmask() {
@@ -136,7 +130,7 @@ final public class NodeData {
         physicalIdByThreadId.put(globalThreadId, physicalId);
     }
 
-    public int getPhysicalId(int globalThreadId) {
+    public int getCurrentNodePhysicalId(int globalThreadId) {
         return physicalIdByThreadId.get(globalThreadId);
     }
 
@@ -155,7 +149,7 @@ final public class NodeData {
         return getPcjThread(globalThreadId);
     }
 
-    public int getPhysicalId() {
+    public int getCurrentNodePhysicalId() {
         return physicalId;
     }
 

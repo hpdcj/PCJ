@@ -123,7 +123,7 @@ public class InternalCommonGroup {
     }
 
     private void updateLocalThreads() {
-        int currentPhysicalId = InternalPCJ.getNodeData().getPhysicalId();
+        int currentPhysicalId = InternalPCJ.getNodeData().getCurrentNodePhysicalId();
         threadsMap.entrySet()
                 .stream()
                 .filter(entry -> entry.getValue() == currentPhysicalId)
@@ -184,11 +184,11 @@ public class InternalCommonGroup {
             threadsMapping.keySet().stream()
                     .sorted()
                     .map(threadsMapping::get)
-                    .map(nodeData::getPhysicalId)
+                    .map(nodeData::getCurrentNodePhysicalId)
                     .forEach(physicalIdsSet::add);
             List<Integer> physicalIds = new ArrayList<>(physicalIdsSet);
 
-            int currentPhysicalId = InternalPCJ.getNodeData().getPhysicalId();
+            int currentPhysicalId = InternalPCJ.getNodeData().getCurrentNodePhysicalId();
             int currentIndex = physicalIds.indexOf(currentPhysicalId);
             if (currentIndex < 0) {
                 return;

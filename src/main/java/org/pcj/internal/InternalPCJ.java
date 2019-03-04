@@ -344,7 +344,7 @@ public abstract class InternalPCJ {
 
     private static void byePhase() throws UncheckedIOException {
         /* Sending BYE message to node0 */
-        MessageBye messageBye = new MessageBye(nodeData.getPhysicalId());
+        MessageBye messageBye = new MessageBye(nodeData.getCurrentNodePhysicalId());
         WaitObject finishedObject = nodeData.getGlobalWaitObject();
         finishedObject.lock();
         try {
@@ -383,7 +383,7 @@ public abstract class InternalPCJ {
             GroupQueryStates groupQueryStates = nodeData.getGroupQueryStates();
             GroupQueryStates.State state = groupQueryStates.create();
 
-            GroupQueryMessage message = new GroupQueryMessage(state.getRequestNum(), nodeData.getPhysicalId(), groupName);
+            GroupQueryMessage message = new GroupQueryMessage(state.getRequestNum(), nodeData.getCurrentNodePhysicalId(), groupName);
 
             networker.send(nodeData.getNode0Socket(), message);
 
@@ -395,7 +395,7 @@ public abstract class InternalPCJ {
         GroupJoinStates.Notification notification = groupJoinStates.createNotification(globalThreadId);
 
         GroupJoinRequestMessage message = new GroupJoinRequestMessage(
-                notification.getRequestNum(), groupName, commonGroup.getGroupId(), nodeData.getPhysicalId(), globalThreadId);
+                notification.getRequestNum(), groupName, commonGroup.getGroupId(), nodeData.getCurrentNodePhysicalId(), globalThreadId);
 
         SocketChannel groupMasterSocketChannel = nodeData.getSocketChannelByPhysicalId().get(commonGroup.getCommunicationTree().getMasterNode());
 

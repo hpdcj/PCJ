@@ -69,7 +69,7 @@ final public class PCJ extends InternalPCJ {
      * @return node identifier
      */
     public static int getNodeId() {
-        return InternalPCJ.getNodeData().getPhysicalId();
+        return InternalPCJ.getNodeData().getCurrentNodePhysicalId();
     }
 
     /**

@@ -81,7 +81,7 @@ public class BarrierStates {
             SocketChannel socket;
             NodeData nodeData = InternalPCJ.getNodeData();
 
-            int physicalId = nodeData.getPhysicalId();
+            int physicalId = nodeData.getCurrentNodePhysicalId();
             if (physicalId == group.getCommunicationTree().getMasterNode()) {
                 socket = nodeData.getSocketChannelByPhysicalId().get(physicalId);
 

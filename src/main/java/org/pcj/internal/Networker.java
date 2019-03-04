@@ -177,7 +177,7 @@ final public class Networker {
                 messageDataInputStream.close();
             } catch (Throwable t) {
                 LOGGER.log(Level.SEVERE, "Exception while processing message " + message
-                        + " by node(" + InternalPCJ.getNodeData().getPhysicalId() + ").", t);
+                        + " by node(" + InternalPCJ.getNodeData().getCurrentNodePhysicalId() + ").", t);
             }
         }
     }

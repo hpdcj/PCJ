@@ -1,5 +1,5 @@
-/* 
- * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+/*
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -10,17 +10,14 @@ package org.pcj.internal.message.hello;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
-import org.pcj.internal.Bitmask;
 import org.pcj.internal.InternalPCJ;
-import org.pcj.internal.NodeData.Node0Data;
+import org.pcj.internal.NodeData;
 import org.pcj.internal.message.Message;
 import org.pcj.internal.message.MessageType;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
 /**
- * Message sent by each node to all nodes with physicalId less than its.
- *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 final public class MessageHelloCompleted extends Message {
@@ -46,17 +43,8 @@ final public class MessageHelloCompleted extends Message {
     public void onReceive(SocketChannel sender, MessageDataInputStream in) throws IOException {
         physicalId = in.readInt();
 
-        Node0Data node0Data = InternalPCJ.getNodeData().getNode0Data();
-        Bitmask bitmask = node0Data.getHelloBitmask();
-        synchronized (bitmask) {
-            bitmask.set(physicalId);
-            if (bitmask.isSet()) {
-                bitmask.clear();
-                MessageHelloGo messageHelloGo = new MessageHelloGo();
-
-                // broadcasting:
-                InternalPCJ.getNetworker().send(InternalPCJ.getNodeData().getNode0Socket(), messageHelloGo);
-            }
-        }
+        NodeData nodeData = InternalPCJ.getNodeData();
+        HelloState state = nodeData.getHelloState();
+        state.processCompletedMessage(physicalId);
     }
 }

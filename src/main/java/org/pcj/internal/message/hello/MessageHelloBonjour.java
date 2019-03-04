@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
@@ -46,11 +46,7 @@ final public class MessageHelloBonjour extends Message {
         physicalId = in.readInt();
 
         NodeData nodeData = InternalPCJ.getNodeData();
-        nodeData.getSocketChannelByPhysicalId().put(physicalId, sender);
-
-        if (nodeData.getSocketChannelByPhysicalId().size() == nodeData.getTotalNodeCount()) {
-            InternalPCJ.getNetworker().send(InternalPCJ.getNodeData().getNode0Socket(),
-                    new MessageHelloCompleted(nodeData.getPhysicalId()));
-        }
+        HelloState state = nodeData.getHelloState();
+        state.processBonjourMessage(physicalId, sender);
     }
 }

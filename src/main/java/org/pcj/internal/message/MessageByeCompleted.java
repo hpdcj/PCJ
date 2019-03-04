@@ -33,7 +33,7 @@ final public class MessageByeCompleted extends Message {
     @Override
     public void onReceive(SocketChannel sender, MessageDataInputStream in) {
         NodeData nodeData = InternalPCJ.getNodeData();
-        int physicalId = nodeData.getPhysicalId();
+        int physicalId = nodeData.getCurrentNodePhysicalId();
         if (physicalId * 2 + 1 < nodeData.getTotalNodeCount()) {
             InternalPCJ.getNetworker().send(nodeData.getSocketChannelByPhysicalId().get(physicalId * 2 + 1), this);
         }

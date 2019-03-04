@@ -11,6 +11,7 @@ package org.pcj.internal.message.hello;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import org.pcj.internal.InternalPCJ;
+import org.pcj.internal.Networker;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.message.Message;
 import org.pcj.internal.message.MessageType;
@@ -29,18 +30,22 @@ final public class MessageHelloGo extends Message {
     }
     
     @Override
-    public void write(MessageDataOutputStream out) throws IOException {
+    public void write(MessageDataOutputStream out) {
     }
 
     @Override
     public void onReceive(SocketChannel sender, MessageDataInputStream in) {
         NodeData nodeData = InternalPCJ.getNodeData();
-        int physicalId = nodeData.getPhysicalId();
+        Networker networker = InternalPCJ.getNetworker();
+
+        int physicalId = nodeData.getCurrentNodePhysicalId();
         if (physicalId * 2 + 1 < nodeData.getTotalNodeCount()) {
-            InternalPCJ.getNetworker().send(nodeData.getSocketChannelByPhysicalId().get(physicalId * 2 + 1), this);
+            SocketChannel childSocketChannel = nodeData.getSocketChannelByPhysicalId().get(physicalId * 2 + 1);
+            networker.send(childSocketChannel, this);
         }
         if (physicalId * 2 + 2 < nodeData.getTotalNodeCount()) {
-            InternalPCJ.getNetworker().send(nodeData.getSocketChannelByPhysicalId().get(physicalId * 2 + 2), this);
+            SocketChannel childSocketChannel = nodeData.getSocketChannelByPhysicalId().get(physicalId * 2 + 2);
+            networker.send(childSocketChannel, this);
         }
 
         nodeData.getHelloState().signalDone();

@@ -125,15 +125,15 @@ public class BroadcastStates {
                 NodeData nodeData = InternalPCJ.getNodeData();
 
                 int globalThreadId = group.getGlobalThreadId(requesterThreadId);
-                int requesterPhysicalId = nodeData.getPhysicalId(globalThreadId);
-                if (requesterPhysicalId != nodeData.getPhysicalId()) { // requester is going to receive response
+                int requesterPhysicalId = nodeData.getCurrentNodePhysicalId(globalThreadId);
+                if (requesterPhysicalId != nodeData.getCurrentNodePhysicalId()) { // requester is going to receive response
                     BroadcastStates.this.remove(requestNum, requesterThreadId);
                 }
 
                 Message message;
                 SocketChannel socket;
 
-                int physicalId = nodeData.getPhysicalId();
+                int physicalId = nodeData.getCurrentNodePhysicalId();
                 if (physicalId != group.getCommunicationTree().getMasterNode()) {
                     int parentId = group.getCommunicationTree().getParentNode();
                     socket = nodeData.getSocketChannelByPhysicalId().get(parentId);
