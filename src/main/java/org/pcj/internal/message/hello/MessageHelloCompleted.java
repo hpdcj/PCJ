@@ -22,29 +22,18 @@ import org.pcj.internal.network.MessageDataOutputStream;
  */
 final public class MessageHelloCompleted extends Message {
 
-    private int physicalId;
-
     public MessageHelloCompleted() {
         super(MessageType.HELLO_COMPLETED);
     }
 
-    public MessageHelloCompleted(int physicalId) {
-        this();
-
-        this.physicalId = physicalId;
-    }
-
     @Override
-    public void write(MessageDataOutputStream out) throws IOException {
-        out.writeInt(physicalId);
+    public void write(MessageDataOutputStream out) {
     }
 
     @Override
     public void onReceive(SocketChannel sender, MessageDataInputStream in) throws IOException {
-        physicalId = in.readInt();
-
         NodeData nodeData = InternalPCJ.getNodeData();
         HelloState state = nodeData.getHelloState();
-        state.processCompletedMessage(physicalId);
+        state.processCompletedMessage();
     }
 }

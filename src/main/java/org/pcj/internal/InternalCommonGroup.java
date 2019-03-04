@@ -184,7 +184,7 @@ public class InternalCommonGroup {
             threadsMapping.keySet().stream()
                     .sorted()
                     .map(threadsMapping::get)
-                    .map(nodeData::getCurrentNodePhysicalId)
+                    .map(nodeData::getPhysicalId)
                     .forEach(physicalIdsSet::add);
             List<Integer> physicalIds = new ArrayList<>(physicalIdsSet);
 

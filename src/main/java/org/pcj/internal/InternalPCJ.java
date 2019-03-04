@@ -261,7 +261,7 @@ public abstract class InternalPCJ {
             }
 
             if (inetAddresses.isEmpty()) {
-                LOGGER.fine("Binding on all interfaces successfuly completed.");
+                LOGGER.fine("Binding on all interfaces successfully completed.");
                 return;
             } else {
                 try {

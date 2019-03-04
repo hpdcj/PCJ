@@ -125,7 +125,7 @@ public class BroadcastStates {
                 NodeData nodeData = InternalPCJ.getNodeData();
 
                 int globalThreadId = group.getGlobalThreadId(requesterThreadId);
-                int requesterPhysicalId = nodeData.getCurrentNodePhysicalId(globalThreadId);
+                int requesterPhysicalId = nodeData.getPhysicalId(globalThreadId);
                 if (requesterPhysicalId != nodeData.getCurrentNodePhysicalId()) { // requester is going to receive response
                     BroadcastStates.this.remove(requestNum, requesterThreadId);
                 }

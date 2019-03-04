@@ -72,7 +72,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         PeerBarrierStates.State state = peerBarrierStates.getOrCreate(threadId);
 
         int globalThreadId = super.getGlobalThreadId(threadId);
-        int physicalId = InternalPCJ.getNodeData().getCurrentNodePhysicalId(globalThreadId);
+        int physicalId = InternalPCJ.getNodeData().getPhysicalId(globalThreadId);
         SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalId);
 
         PeerBarrierMessage message = new PeerBarrierMessage(super.getGroupId(), myThreadId, threadId);
@@ -91,7 +91,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         AsyncGetStates.State<T> state = asyncGetStates.create();
 
         int globalThreadId = super.getGlobalThreadId(threadId);
-        int physicalId = InternalPCJ.getNodeData().getCurrentNodePhysicalId(globalThreadId);
+        int physicalId = InternalPCJ.getNodeData().getPhysicalId(globalThreadId);
         SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalId);
 
         ValueGetRequestMessage message = new ValueGetRequestMessage(
@@ -112,7 +112,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         AsyncPutStates.State state = asyncPutStates.create();
 
         int globalThreadId = super.getGlobalThreadId(threadId);
-        int physicalId = InternalPCJ.getNodeData().getCurrentNodePhysicalId(globalThreadId);
+        int physicalId = InternalPCJ.getNodeData().getPhysicalId(globalThreadId);
         SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalId);
 
         ValuePutRequestMessage message = new ValuePutRequestMessage(
@@ -150,7 +150,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         AsyncAtStates.State<T> state = asyncAtStates.create();
 
         int globalThreadId = super.getGlobalThreadId(threadId);
-        int physicalId = InternalPCJ.getNodeData().getCurrentNodePhysicalId(globalThreadId);
+        int physicalId = InternalPCJ.getNodeData().getPhysicalId(globalThreadId);
         SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId().get(physicalId);
 
         AsyncAtRequestMessage<T> message = new AsyncAtRequestMessage<>(

@@ -76,7 +76,7 @@ public class HelloState {
         int nodesCountDownTree = nodeInfoByPhysicalId.size() - currentPhysicalId;
         if (currentPhysicalId == 0) {
             int childCount = Math.max(0, Math.min(nodesCountDownTree - 1, 2));
-            notificationCount.addAndGet(childCount);
+            notificationCount.addAndGet(childCount + 1);
         } else {
             notificationCount.addAndGet(nodesCountDownTree);
         }
@@ -134,8 +134,6 @@ public class HelloState {
                 .filter(physicalId -> physicalId > 0)
                 .filter(physicalId -> (physicalId - 1) / 2 == currentPhysicalId)
                 .forEach(physicalId -> {
-                    System.out.println("sending inform to: " + physicalId + " from " + currentPhysicalId);
-
                     NodeInfo nodeInfo = nodeInfoByPhysicalId.get(physicalId);
 
                     SocketChannel socketChannel = socketChannelByPhysicalId.computeIfAbsent(physicalId,
@@ -152,7 +150,7 @@ public class HelloState {
         nodeProcessed();
     }
 
-    public void processCompletedMessage(int physicalId) {
+    public void processCompletedMessage() {
         nodeProcessed();
     }
 
@@ -171,7 +169,7 @@ public class HelloState {
                 SocketChannel parentSocketChannel = nodeData.getSocketChannelByPhysicalId().get((currentPhysicalId - 1) / 2);
                 Networker networker = InternalPCJ.getNetworker();
 
-                Message messageHelloCompleted = new MessageHelloCompleted(currentPhysicalId);
+                Message messageHelloCompleted = new MessageHelloCompleted();
                 networker.send(parentSocketChannel, messageHelloCompleted);
             }
 

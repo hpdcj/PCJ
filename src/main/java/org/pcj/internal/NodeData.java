@@ -130,7 +130,7 @@ final public class NodeData {
         physicalIdByThreadId.put(globalThreadId, physicalId);
     }
 
-    public int getCurrentNodePhysicalId(int globalThreadId) {
+    public int getPhysicalId(int globalThreadId) {
         return physicalIdByThreadId.get(globalThreadId);
     }
 

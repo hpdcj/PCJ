@@ -110,7 +110,7 @@ public class GroupJoinStates {
                 int groupId = commonGroup.getGroupId();
 
                 if (nodeData.getCurrentNodePhysicalId() == commonGroup.getCommunicationTree().getMasterNode()) {
-                    int requesterPhysicalId = nodeData.getCurrentNodePhysicalId(joinerGlobalThreadId);
+                    int requesterPhysicalId = nodeData.getPhysicalId(joinerGlobalThreadId);
                     socket = nodeData.getSocketChannelByPhysicalId().get(requesterPhysicalId);
 
                     message = new GroupJoinResponseMessage(requestNum, groupId, joinerGlobalThreadId, commonGroup.getGroupThreadId(joinerGlobalThreadId));
