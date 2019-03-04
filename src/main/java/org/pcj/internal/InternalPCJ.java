@@ -33,7 +33,7 @@ import org.pcj.StartPoint;
 import org.pcj.internal.futures.WaitObject;
 import org.pcj.internal.message.MessageBye;
 import org.pcj.internal.message.hello.HelloState;
-import org.pcj.internal.message.hello.MessageHello;
+import org.pcj.internal.message.hello.HelloMessage;
 import org.pcj.internal.message.join.GroupJoinRequestMessage;
 import org.pcj.internal.message.join.GroupJoinStates;
 import org.pcj.internal.message.join.GroupQueryMessage;
@@ -331,9 +331,9 @@ public abstract class InternalPCJ {
         try {
             HelloState state = nodeData.getHelloState();
 
-            MessageHello messageHello = new MessageHello(port, threadIds.stream().mapToInt(Integer::intValue).toArray());
+            HelloMessage helloMessage = new HelloMessage(port, threadIds.stream().mapToInt(Integer::intValue).toArray());
 
-            networker.send(nodeData.getNode0Socket(), messageHello);
+            networker.send(nodeData.getNode0Socket(), helloMessage);
 
             /* waiting for HELLO_GO */
             state.await();

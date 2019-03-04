@@ -14,11 +14,11 @@ import java.util.Map;
 import java.util.function.Supplier;
 import org.pcj.internal.message.at.AsyncAtRequestMessage;
 import org.pcj.internal.message.at.AsyncAtResponseMessage;
-import org.pcj.internal.message.hello.MessageHello;
-import org.pcj.internal.message.hello.MessageHelloBonjour;
-import org.pcj.internal.message.hello.MessageHelloCompleted;
-import org.pcj.internal.message.hello.MessageHelloGo;
-import org.pcj.internal.message.hello.MessageHelloInform;
+import org.pcj.internal.message.hello.HelloMessage;
+import org.pcj.internal.message.hello.HelloBonjourMessage;
+import org.pcj.internal.message.hello.HelloCompletedMessage;
+import org.pcj.internal.message.hello.HelloGoMessage;
+import org.pcj.internal.message.hello.HelloInformMessage;
 import org.pcj.internal.message.join.GroupQueryAnswerMessage;
 import org.pcj.internal.message.join.GroupJoinConfirmMessage;
 import org.pcj.internal.message.join.GroupJoinInformMessage;
@@ -42,11 +42,11 @@ import org.pcj.internal.message.put.ValuePutResponseMessage;
  */
 public enum MessageType {
 
-    HELLO((byte) 1, MessageHello::new),
-    HELLO_INFORM((byte) 2, MessageHelloInform::new),
-    HELLO_BONJOUR((byte) 3, MessageHelloBonjour::new),
-    HELLO_COMPLETED((byte) 4, MessageHelloCompleted::new),
-    HELLO_GO((byte) 5, MessageHelloGo::new),
+    HELLO((byte) 1, HelloMessage::new),
+    HELLO_INFORM((byte) 2, HelloInformMessage::new),
+    HELLO_BONJOUR((byte) 3, HelloBonjourMessage::new),
+    HELLO_COMPLETED((byte) 4, HelloCompletedMessage::new),
+    HELLO_GO((byte) 5, HelloGoMessage::new),
     BYE((byte) 6, MessageBye::new),
     BYE_COMPLETED((byte) 7, MessageByeCompleted::new),
     GROUP_BARRIER_WAITING((byte) 10, GroupBarrierWaitingMessage::new),

@@ -23,16 +23,16 @@ import org.pcj.internal.network.MessageDataOutputStream;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class MessageHelloInform extends Message {
+final public class HelloInformMessage extends Message {
 
     private int currentPhysicalId;
     private Map<Integer, NodeInfo> nodeInfoByPhysicalId;
 
-    public MessageHelloInform() {
+    public HelloInformMessage() {
         super(MessageType.HELLO_INFORM);
     }
 
-    public MessageHelloInform(int currentPhysicalId, Map<Integer, NodeInfo> nodeInfoByPhysicalId) {
+    public HelloInformMessage(int currentPhysicalId, Map<Integer, NodeInfo> nodeInfoByPhysicalId) {
         this();
 
         this.currentPhysicalId = currentPhysicalId;

@@ -22,15 +22,15 @@ import org.pcj.internal.network.MessageDataOutputStream;
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class MessageHelloBonjour extends Message {
+final public class HelloBonjourMessage extends Message {
 
     private int physicalId;
 
-    public MessageHelloBonjour() {
+    public HelloBonjourMessage() {
         super(MessageType.HELLO_BONJOUR);
     }
 
-    public MessageHelloBonjour(int physicalId) {
+    public HelloBonjourMessage(int physicalId) {
         this();
 
         this.physicalId = physicalId;

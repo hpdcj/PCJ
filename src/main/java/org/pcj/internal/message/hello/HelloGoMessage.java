@@ -23,9 +23,9 @@ import org.pcj.internal.network.MessageDataOutputStream;
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class MessageHelloGo extends Message {
+final public class HelloGoMessage extends Message {
 
-    public MessageHelloGo() {
+    public HelloGoMessage() {
         super(MessageType.HELLO_GO);
     }
     

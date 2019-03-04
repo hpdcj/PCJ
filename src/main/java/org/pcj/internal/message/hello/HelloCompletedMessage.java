@@ -20,9 +20,9 @@ import org.pcj.internal.network.MessageDataOutputStream;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class MessageHelloCompleted extends Message {
+final public class HelloCompletedMessage extends Message {
 
-    public MessageHelloCompleted() {
+    public HelloCompletedMessage() {
         super(MessageType.HELLO_COMPLETED);
     }
 

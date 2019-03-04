@@ -31,16 +31,16 @@ import org.pcj.internal.network.MessageDataOutputStream;
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class MessageHello extends Message {
+final public class HelloMessage extends Message {
 
     private int port;
     private int[] threadIds;
 
-    public MessageHello() {
+    public HelloMessage() {
         super(MessageType.HELLO);
     }
 
-    public MessageHello(int port, int[] threadIds) {
+    public HelloMessage(int port, int[] threadIds) {
         this();
 
         this.port = port;
@@ -107,8 +107,8 @@ final public class MessageHello extends Message {
                 nodeInfoByPhysicalId.put(newPhysicalId, nodeInfoByPhysicalId.remove(oldPhysicalId));
                 socketChannelByPhysicalId.put(newPhysicalId, socketChannelByPhysicalId.remove(oldPhysicalId));
             }
-            
-            MessageHelloInform helloInform = new MessageHelloInform(0, nodeInfoByPhysicalId);
+
+            HelloInformMessage helloInform = new HelloInformMessage(0, nodeInfoByPhysicalId);
             InternalPCJ.getNetworker().send(nodeData.getNode0Socket(), helloInform);
         }
     }

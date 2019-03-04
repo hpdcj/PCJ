@@ -20,7 +20,7 @@ import org.pcj.StartPoint;
  */
 public class HelloTest implements StartPoint {
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
         Level level = Level.INFO;
 //        Level level = Level.FINEST;
         Logger logger = Logger.getLogger("");

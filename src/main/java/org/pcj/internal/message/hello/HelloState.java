@@ -112,7 +112,7 @@ public class HelloState {
     private void connectToLowerNodesAndSendBonjour(int currentPhysicalId, Map<Integer, NodeInfo> nodeInfoByPhysicalId) {
         Networker networker = InternalPCJ.getNetworker();
 
-        MessageHelloBonjour messageHelloBonjour = new MessageHelloBonjour(currentPhysicalId);
+        HelloBonjourMessage helloBonjourMessage = new HelloBonjourMessage(currentPhysicalId);
         nodeInfoByPhysicalId.keySet().stream()
                 .filter(physicalId -> physicalId > 0)
                 .filter(physicalId -> physicalId < currentPhysicalId)
@@ -123,7 +123,7 @@ public class HelloState {
                     SocketChannel socketChannel = socketChannelByPhysicalId.computeIfAbsent(physicalId,
                             key -> connectToNode(nodeInfo.getHostname(), nodeInfo.getPort()));
 
-                    networker.send(socketChannel, messageHelloBonjour);
+                    networker.send(socketChannel, helloBonjourMessage);
                 });
     }
 
@@ -139,7 +139,7 @@ public class HelloState {
                     SocketChannel socketChannel = socketChannelByPhysicalId.computeIfAbsent(physicalId,
                             key -> connectToNode(nodeInfo.getHostname(), nodeInfo.getPort()));
 
-                    Message messageHelloInform = new MessageHelloInform(physicalId, nodeInfoByPhysicalId);
+                    Message messageHelloInform = new HelloInformMessage(physicalId, nodeInfoByPhysicalId);
                     networker.send(socketChannel, messageHelloInform);
                 });
     }
@@ -158,18 +158,20 @@ public class HelloState {
         int leftPhysical = notificationCount.decrementAndGet();
         if (leftPhysical == 0) {
             NodeData nodeData = InternalPCJ.getNodeData();
+            Networker networker = InternalPCJ.getNetworker();
+
             nodeData.getSocketChannelByPhysicalId().putAll(socketChannelByPhysicalId);
 
             int currentPhysicalId = nodeData.getCurrentNodePhysicalId();
             if (currentPhysicalId == 0) {
-                MessageHelloGo messageHelloGo = new MessageHelloGo();
+                SocketChannel node0Socket = nodeData.getNode0Socket();
 
-                InternalPCJ.getNetworker().send(nodeData.getNode0Socket(), messageHelloGo);
+                HelloGoMessage helloGoMessage = new HelloGoMessage();
+                networker.send(node0Socket, helloGoMessage);
             } else {
                 SocketChannel parentSocketChannel = nodeData.getSocketChannelByPhysicalId().get((currentPhysicalId - 1) / 2);
-                Networker networker = InternalPCJ.getNetworker();
 
-                Message messageHelloCompleted = new MessageHelloCompleted();
+                HelloCompletedMessage messageHelloCompleted = new HelloCompletedMessage();
                 networker.send(parentSocketChannel, messageHelloCompleted);
             }
 
