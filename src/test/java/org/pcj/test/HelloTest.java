@@ -68,7 +68,9 @@ public class HelloTest implements StartPoint {
 //                "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019",
         });
 
-        boolean isCurrentJvmNode0 = nodesDescription.isCurrentJvmNode0() | true;
+        boolean testDeploy = true;
+
+        boolean isCurrentJvmNode0 = nodesDescription.isCurrentJvmNode0() | !testDeploy;
 
         long[] time = new long[10];
         for (int i = 0; i < time.length; i++) {
@@ -77,8 +79,11 @@ public class HelloTest implements StartPoint {
             }
 
             long start = System.nanoTime();
-//            PCJ.start(HelloTest.class, nodesDescription);
-            PCJ.deploy(HelloTest.class, nodesDescription);
+            if (testDeploy) {
+                PCJ.deploy(HelloTest.class, nodesDescription);
+            } else {
+                PCJ.start(HelloTest.class, nodesDescription);
+            }
             time[i] = (System.nanoTime() - start);
         }
         if (isCurrentJvmNode0) {

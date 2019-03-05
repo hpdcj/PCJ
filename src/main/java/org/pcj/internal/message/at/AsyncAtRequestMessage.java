@@ -11,7 +11,6 @@ package org.pcj.internal.message.at;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import org.pcj.AsyncTask;
-import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.PcjThread;
@@ -74,7 +73,7 @@ final public class AsyncAtRequestMessage<T> extends Message {
         NodeData nodeData = InternalPCJ.getNodeData();
         PcjThread pcjThread = nodeData.getPcjThread(groupId, requesterThreadId);
 
-        pcjThread.execute(() -> {
+        pcjThread.executeOnAsyncTasksWorkers(() -> {
             AsyncAtResponseMessage asyncAtResponseMessage;
             try {
                 T returnedValue = asyncTask.call();

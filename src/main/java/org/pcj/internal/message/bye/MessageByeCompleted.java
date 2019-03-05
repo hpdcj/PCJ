@@ -11,6 +11,7 @@ package org.pcj.internal.message.bye;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import org.pcj.internal.InternalPCJ;
+import org.pcj.internal.Networker;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.message.Message;
 import org.pcj.internal.message.MessageType;
@@ -35,14 +36,17 @@ final public class MessageByeCompleted extends Message {
     @Override
     public void onReceive(SocketChannel sender, MessageDataInputStream in) {
         NodeData nodeData = InternalPCJ.getNodeData();
+        Networker networker = InternalPCJ.getNetworker();
+
         int physicalId = nodeData.getCurrentNodePhysicalId();
         if (physicalId * 2 + 1 < nodeData.getTotalNodeCount()) {
-            InternalPCJ.getNetworker().send(nodeData.getSocketChannelByPhysicalId(physicalId * 2 + 1), this);
+            networker.send(nodeData.getSocketChannelByPhysicalId(physicalId * 2 + 1), this);
         }
         if (physicalId * 2 + 2 < nodeData.getTotalNodeCount()) {
-            InternalPCJ.getNetworker().send(nodeData.getSocketChannelByPhysicalId(physicalId * 2 + 2), this);
+            networker.send(nodeData.getSocketChannelByPhysicalId(physicalId * 2 + 2), this);
         }
 
-        nodeData.getGlobalWaitObject().signal();
+        ByeState byeState = nodeData.getByeState();
+        byeState.signalDone();
     }
 }

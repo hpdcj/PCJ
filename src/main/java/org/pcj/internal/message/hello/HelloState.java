@@ -21,6 +21,7 @@ import org.pcj.internal.NodeData;
 import org.pcj.internal.NodeInfo;
 import org.pcj.internal.futures.InternalFuture;
 import org.pcj.internal.message.Message;
+import org.pcj.internal.message.bye.ByeState;
 
 public class HelloState {
 
@@ -69,17 +70,20 @@ public class HelloState {
     }
 
     public void processInformMessage(SocketChannel sender, int currentPhysicalId, Map<Integer, NodeInfo> nodeInfoByPhysicalId) {
+        int nodesCount = nodeInfoByPhysicalId.size();
+
         NodeData nodeData = InternalPCJ.getNodeData();
         nodeData.setCurrentNodePhysicalId(currentPhysicalId);
-        nodeData.setTotalNodeCount(nodeInfoByPhysicalId.size());
+        nodeData.setTotalNodeCount(nodesCount);
 
-        int nodesCountDownTree = nodeInfoByPhysicalId.size() - currentPhysicalId;
+        int nodesCountDownTree = nodesCount - currentPhysicalId;
+        int childCount = Math.min(Math.max(nodesCount - currentPhysicalId * 2 - 1, 0), 2);
         if (currentPhysicalId == 0) {
-            int childCount = Math.max(0, Math.min(nodesCountDownTree - 1, 2));
             notificationCount.addAndGet(childCount + 1);
         } else {
             notificationCount.addAndGet(nodesCountDownTree);
         }
+        nodeData.setByeState(new ByeState(childCount));
 
         createThreadsMapping(nodeInfoByPhysicalId);
 
@@ -208,9 +212,6 @@ public class HelloState {
                             String.format("Connecting to %s:%d failed!", hostname, port), ex);
                 }
             } catch (InterruptedException ex) {
-//                LOGGER.log(Level.SEVERE,
-//                        "Interruption occurs while connecting to {0}:{1,number,#}.",
-//                        new Object[]{hostname, port});
                 throw new PcjRuntimeException(
                         String.format("Connecting to %s:%d interrupted!", hostname, port), ex);
             }

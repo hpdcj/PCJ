@@ -1,5 +1,5 @@
-/* 
- * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+/*
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -17,34 +17,34 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.PCJ;
+import org.pcj.PcjRuntimeException;
 import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
 
 /**
  * This class represents PCJ thread.
- *
+ * <p>
  * Thread contains reference to its own local data.
- *
+ * <p>
  * When thread is run deserializer also runs.
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 public class PcjThread extends Thread {
 
-    private final Class<? extends StartPoint> startPointClass;
-    private final PcjThreadGroup pcjThreadGroup;
     private final int threadId;
+    private final PcjThreadGroup pcjThreadGroup;
+    private final Class<? extends StartPoint> startPointClass;
     private final ExecutorService asyncTasksWorkers;
     private Throwable throwable;
 
-    PcjThread(int threadId, Class<? extends StartPoint> startPoint, PcjThreadData threadData) {
+    PcjThread(int threadId, Class<? extends StartPoint> startPointClass, PcjThreadData threadData) {
         super(new PcjThreadGroup("PcjThreadGroup-" + threadId, threadData), "PcjThread-" + threadId);
 
         this.threadId = threadId;
         this.pcjThreadGroup = (PcjThreadGroup) this.getThreadGroup();
-
-        this.startPointClass = startPoint;
+        this.startPointClass = startPointClass;
 
         ThreadFactory threadFactory = new ThreadFactory() {
             private final AtomicInteger counter = new AtomicInteger(0);
@@ -52,7 +52,7 @@ public class PcjThread extends Thread {
             @Override
             public Thread newThread(Runnable runnable) {
                 return new Thread(pcjThreadGroup, runnable,
-                        "PcjThread-" + threadId + "-Task-" + counter.getAndIncrement());
+                        PcjThread.this.getName() + "-Task-" + counter.getAndIncrement());
             }
         };
 
@@ -68,7 +68,7 @@ public class PcjThread extends Thread {
 
         private final PcjThreadData threadData;
 
-        public PcjThreadGroup(String name, PcjThreadData threadData) {
+        private PcjThreadGroup(String name, PcjThreadData threadData) {
             super(name);
             this.threadData = threadData;
         }
@@ -83,22 +83,17 @@ public class PcjThread extends Thread {
         try {
             StartPoint startPoint = getStartPointObject();
 
-            /* be sure that each thread initialized startPoint and storages */
+            /* be sure that each thread' startPoint and storages are initialized */
             PCJ.barrier();
 
-            /* start calculations */
+            /* start execution */
             startPoint.main();
-
-            /* be sure that each thread finishes before continuing */
-            PCJ.barrier();
         } catch (Throwable t) {
             this.throwable = t;
-        } finally {
-            asyncTasksWorkers.shutdown();
         }
     }
 
-    private StartPoint getStartPointObject() throws SecurityException, RuntimeException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchFieldException, NoSuchMethodException {
+    private StartPoint getStartPointObject() throws RuntimeException, InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
         StartPoint startPoint = initializeStorages();
         if (startPoint == null) {
             startPoint = initializeStartPointClass();
@@ -106,7 +101,7 @@ public class PcjThread extends Thread {
         return startPoint;
     }
 
-    private StartPoint initializeStorages() throws IllegalAccessException, NoSuchFieldException, InstantiationException, RuntimeException {
+    private StartPoint initializeStorages() {
         StartPoint startPoint = null;
 
         RegisterStorage[] registerStorages = startPointClass.getAnnotationsByType(RegisterStorage.class);
@@ -115,7 +110,7 @@ public class PcjThread extends Thread {
             Class<? extends Enum<?>> sharedEnumClass = registerStorage.value();
             Storage storageAnnotation = sharedEnumClass.getAnnotation(Storage.class);
             if (storageAnnotation == null) {
-                throw new RuntimeException("Enum is not annotated by @Storage annotation: " + sharedEnumClass.getName());
+                throw new PcjRuntimeException("Enum is not annotated by @Storage annotation: " + sharedEnumClass.getName());
             }
 
             Object object = PCJ.registerStorage(sharedEnumClass);
@@ -135,12 +130,29 @@ public class PcjThread extends Thread {
         return startPoint;
     }
 
-    public int getThreadId() {
+    int getThreadId() {
         return threadId;
     }
 
-    public Throwable getThrowable() {
+    Throwable getThrowable() {
         return throwable;
+    }
+
+    void shutdownThreadPool() {
+        try {
+            asyncTasksWorkers.shutdown();
+            asyncTasksWorkers.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        } catch (InterruptedException e) {
+            throw new PcjRuntimeException("Interrupted exception while shutting down thread pool", e);
+        }
+    }
+
+    public PcjThreadData getThreadData() {
+        return pcjThreadGroup.getThreadData();
+    }
+
+    public void executeOnAsyncTasksWorkers(Runnable runnable) {
+        asyncTasksWorkers.execute(runnable);
     }
 
     private static PcjThreadGroup getPcjThreadGroupForCurrentThread() {
@@ -163,13 +175,5 @@ public class PcjThread extends Thread {
             throw new IllegalStateException("Current thread is not part of PcjThread.");
         }
         return tg.getThreadData();
-    }
-
-    public PcjThreadData getThreadData() {
-        return pcjThreadGroup.getThreadData();
-    }
-
-    public void execute(Runnable runnable) {
-        asyncTasksWorkers.execute(runnable);
     }
 }

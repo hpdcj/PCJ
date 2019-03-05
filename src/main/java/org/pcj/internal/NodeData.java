@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.pcj.internal.futures.WaitObject;
+import org.pcj.internal.message.bye.ByeState;
 import org.pcj.internal.message.hello.HelloState;
 import org.pcj.internal.message.join.GroupJoinStates;
 import org.pcj.internal.message.join.GroupQueryStates;
@@ -27,36 +27,29 @@ final public class NodeData {
     private final ConcurrentMap<Integer, SocketChannel> socketChannelByPhysicalId; // physicalId -> socket
     private final ConcurrentMap<Integer, Integer> physicalIdByThreadId; // threadId -> physicalId
     private final ConcurrentMap<Integer, PcjThread> pcjThreads; // threadId -> pcjThread
-    private final WaitObject globalWaitObject;
     private final GroupQueryStates groupQueryStates;
     private final GroupJoinStates groupJoinStates;
     private SocketChannel node0Socket;
     private Node0Data node0Data;
+    private ByeState byeState;
     private HelloState helloState;
     private int physicalId;
     private int totalNodeCount;
 
     public static class Node0Data {
 
-        private final Bitmask finishedBitmask;
-
         private final AtomicInteger groupIdCounter;
 
         private final ConcurrentMap<String, Integer> groupsId; // groupName -> groupId
         private final ConcurrentMap<Integer, Integer> groupsMaster; // groupId -> physicalId
-        public Node0Data() {
-            this.finishedBitmask = new Bitmask();
 
+        Node0Data() {
             this.groupIdCounter = new AtomicInteger(1);
             this.groupsId = new ConcurrentHashMap<>();
             this.groupsMaster = new ConcurrentHashMap<>();
 
             groupsId.put("", 0);
             groupsMaster.put(0, 0);
-        }
-
-        public Bitmask getFinishedBitmask() {
-            return finishedBitmask;
         }
 
         public int getGroupId(String name) {
@@ -69,13 +62,12 @@ final public class NodeData {
 
 
     }
+
     public NodeData() {
         this.groupById = new ConcurrentHashMap<>();
         this.socketChannelByPhysicalId = new ConcurrentHashMap<>();
         this.physicalIdByThreadId = new ConcurrentHashMap<>();
         this.pcjThreads = new ConcurrentHashMap<>();
-
-        this.globalWaitObject = new WaitObject();
 
         this.groupQueryStates = new GroupQueryStates();
         this.groupJoinStates = new GroupJoinStates();
@@ -85,7 +77,7 @@ final public class NodeData {
         return node0Socket;
     }
 
-    protected void setNode0Socket(SocketChannel node0Socket) {
+    void setNode0Socket(SocketChannel node0Socket) {
         this.node0Socket = node0Socket;
         this.socketChannelByPhysicalId.put(0, node0Socket);
     }
@@ -94,7 +86,7 @@ final public class NodeData {
         return node0Data;
     }
 
-    protected void setNode0Data(Node0Data node0Data) {
+    void setNode0Data(Node0Data node0Data) {
         this.node0Data = node0Data;
     }
 
@@ -107,7 +99,7 @@ final public class NodeData {
         return groupById.get(id);
     }
 
-    public InternalCommonGroup getInternalCommonGroupByName(String name) {
+    InternalCommonGroup getInternalCommonGroupByName(String name) {
         return groupById.values().stream()
                        .filter(groups -> name.equals(groups.getName()))
                        .findFirst().orElse(null);
@@ -127,7 +119,7 @@ final public class NodeData {
                        .filter(entry -> entry.getValue().equals(socketChannel))
                        .map(Map.Entry::getKey)
                        .findAny()
-                       .get();
+                       .orElseThrow(() -> new IllegalStateException("Unknown socket channel: " + socketChannel));
     }
 
     public void setPhysicalId(int globalThreadId, int physicalId) {
@@ -138,7 +130,7 @@ final public class NodeData {
         return physicalIdByThreadId.get(globalThreadId);
     }
 
-    public void putPcjThread(PcjThread pcjThread) {
+    void putPcjThread(PcjThread pcjThread) {
         pcjThreads.putIfAbsent(pcjThread.getThreadId(), pcjThread);
     }
 
@@ -169,18 +161,21 @@ final public class NodeData {
         this.totalNodeCount = totalNodeCount;
     }
 
-    public WaitObject getGlobalWaitObject() {
-        return globalWaitObject;
-    }
-
     public HelloState getHelloState() {
         return helloState;
     }
 
-    public void setHelloState(HelloState helloState) {
+    void setHelloState(HelloState helloState) {
         this.helloState = helloState;
     }
 
+    public ByeState getByeState() {
+        return byeState;
+    }
+
+    public void setByeState(ByeState byeState) {
+        this.byeState = byeState;
+    }
 
     public GroupQueryStates getGroupQueryStates() {
         return groupQueryStates;
