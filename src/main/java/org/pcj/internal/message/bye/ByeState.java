@@ -4,7 +4,6 @@ import java.nio.channels.SocketChannel;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import org.pcj.internal.InternalGroup;
-import org.pcj.internal.InternalNodesDescription;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.Networker;
 import org.pcj.internal.NodeData;
@@ -40,13 +39,13 @@ public class ByeState {
             if (currentPhysicalId == 0) {
                 SocketChannel node0Socket = nodeData.getNode0Socket();
 
-                MessageByeCompleted messageByeCompleted = new MessageByeCompleted();
-                networker.send(node0Socket, messageByeCompleted);
+                ByeCompletedMessage byeCompletedMessage = new ByeCompletedMessage();
+                networker.send(node0Socket, byeCompletedMessage);
             } else {
                 SocketChannel parentSocketChannel = nodeData.getSocketChannelByPhysicalId((currentPhysicalId - 1) / 2);
 
-                MessageBye messageBye = new MessageBye();
-                networker.send(parentSocketChannel, messageBye);
+                ByeMessage byeMessage = new ByeMessage();
+                networker.send(parentSocketChannel, byeMessage);
             }
         }
     }

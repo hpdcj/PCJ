@@ -19,9 +19,9 @@ import org.pcj.internal.network.MessageDataOutputStream;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class MessageBye extends Message {
+final public class ByeMessage extends Message {
 
-    public MessageBye() {
+    public ByeMessage() {
         super(MessageType.BYE);
     }
 

@@ -14,8 +14,8 @@ import java.util.Map;
 import java.util.function.Supplier;
 import org.pcj.internal.message.at.AsyncAtRequestMessage;
 import org.pcj.internal.message.at.AsyncAtResponseMessage;
-import org.pcj.internal.message.bye.MessageBye;
-import org.pcj.internal.message.bye.MessageByeCompleted;
+import org.pcj.internal.message.bye.ByeMessage;
+import org.pcj.internal.message.bye.ByeCompletedMessage;
 import org.pcj.internal.message.hello.HelloMessage;
 import org.pcj.internal.message.hello.HelloBonjourMessage;
 import org.pcj.internal.message.hello.HelloCompletedMessage;
@@ -49,8 +49,8 @@ public enum MessageType {
     HELLO_BONJOUR((byte) 3, HelloBonjourMessage::new),
     HELLO_COMPLETED((byte) 4, HelloCompletedMessage::new),
     HELLO_GO((byte) 5, HelloGoMessage::new),
-    BYE((byte) 6, MessageBye::new),
-    BYE_COMPLETED((byte) 7, MessageByeCompleted::new),
+    BYE((byte) 6, ByeMessage::new),
+    BYE_COMPLETED((byte) 7, ByeCompletedMessage::new),
     GROUP_BARRIER_WAITING((byte) 10, GroupBarrierWaitingMessage::new),
     GROUP_BARRIER_GO((byte) 11, GroupBarrierGoMessage::new),
     PEER_BARRIER((byte) 12, PeerBarrierMessage::new),
