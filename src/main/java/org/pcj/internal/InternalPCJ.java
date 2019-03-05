@@ -23,6 +23,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -131,19 +132,19 @@ public abstract class InternalPCJ {
             }
 
             /* Preparing PcjThreads */
-            Object notifyObject = new Object();
+            Semaphore notificationObject = new Semaphore(0);
 
-            Set<PcjThread> pcjThreads = preparePcjThreads(startPointClass, currentJvm.getThreadIds());
+            Set<PcjThread> pcjThreads = preparePcjThreads(startPointClass, currentJvm.getThreadIds(), notificationObject);
             pcjThreads.forEach(nodeData::putPcjThread);
 
             /* Starting PcjThreads */
             pcjThreads.forEach(PcjThread::start);
 
             /* Waiting for all threads complete */
-            waitForPcjThreadsComplete(pcjThreads);
+            waitForPcjThreadsComplete(pcjThreads, notificationObject);
 
             /* Finishing asyncTaskWorkers */
-            pcjThreads.forEach(PcjThread::shutdownThreadPool);
+            pcjThreads.forEach(PcjThread::shutdownAsyncTasksWorkers);
 
             if (isCurrentJvmNode0) {
                 long timer = (System.nanoTime() - nanoTime) / 1_000_000_000L;
@@ -205,11 +206,12 @@ public abstract class InternalPCJ {
                 } catch (IOException ex) {
                     if (attempt < Configuration.INIT_RETRY_COUNT) {
                         LOGGER.log(Level.WARNING,
-                                "({0,number,#} attempt of {1,number,#}) Binding on port {2,number,#} failed: {3}. Retrying.",
+                                "({0,number,#} attempt of {1,number,#}) Binding on port {2,number,#} of {3} failed: {4}. Retrying.",
                                 new Object[]{
                                         attempt + 1,
                                         Configuration.INIT_RETRY_COUNT + 1,
                                         bindingPort,
+                                        inetAddress,
                                         ex.getMessage()});
                     } else {
                         throw new UncheckedIOException(String.format("Binding on port %s failed!", bindingPort), ex);
@@ -311,14 +313,14 @@ public abstract class InternalPCJ {
         }
     }
 
-    private static Set<PcjThread> preparePcjThreads(Class<? extends StartPoint> startPointClass, Set<Integer> threadIds) {
+    private static Set<PcjThread> preparePcjThreads(Class<? extends StartPoint> startPointClass, Set<Integer> threadIds, Semaphore notificationSemaphore) {
         InternalCommonGroup globalGroup = nodeData.getCommonGroupById(InternalCommonGroup.GLOBAL_GROUP_ID);
         Set<PcjThread> pcjThreads = new HashSet<>();
 
         for (int threadId : threadIds) {
             InternalGroup threadGlobalGroup = new InternalGroup(threadId, globalGroup);
             PcjThreadData pcjThreadData = new PcjThreadData(threadGlobalGroup);
-            PcjThread pcjThread = new PcjThread(threadId, startPointClass, pcjThreadData);
+            PcjThread pcjThread = new PcjThread(threadId, startPointClass, pcjThreadData, notificationSemaphore);
 
             pcjThreads.add(pcjThread);
         }
@@ -326,13 +328,14 @@ public abstract class InternalPCJ {
         return pcjThreads;
     }
 
-    private static void waitForPcjThreadsComplete(Set<PcjThread> pcjThreadsSet) {
+    private static void waitForPcjThreadsComplete(Set<PcjThread> pcjThreadsSet, Semaphore notificationSemaphore) {
         Set<PcjThread> pcjThreads = new HashSet<>(pcjThreadsSet);
-        while (!pcjThreads.isEmpty()) {
-            try {
+        try {
+            while (!pcjThreads.isEmpty()) {
+                /* requires timeout, as thread could release, but is not yet dead (isAlive returns true) */
+                notificationSemaphore.tryAcquire(1, TimeUnit.SECONDS);
                 for (Iterator<PcjThread> it = pcjThreads.iterator(); it.hasNext(); ) {
                     PcjThread pcjThread = it.next();
-                    pcjThread.join(1000);
                     if (!pcjThread.isAlive()) {
                         Throwable t = pcjThread.getThrowable();
                         if (t != null) {
@@ -341,9 +344,10 @@ public abstract class InternalPCJ {
                         it.remove();
                     }
                 }
-            } catch (InterruptedException ex) {
-                throw new PcjRuntimeException("Interruption occurs while waiting for joining PcjThread", ex);
             }
+        } catch (InterruptedException ex) {
+            pcjThreads.forEach(Thread::interrupt);
+            throw new PcjRuntimeException("Interruption occurs while waiting for joining PcjThread", ex);
         }
     }
 

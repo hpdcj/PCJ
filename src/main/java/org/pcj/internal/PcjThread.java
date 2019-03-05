@@ -12,6 +12,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -36,13 +37,15 @@ public class PcjThread extends Thread {
     private final int threadId;
     private final PcjThreadGroup pcjThreadGroup;
     private final Class<? extends StartPoint> startPointClass;
+    private final Semaphore notificationSemaphore;
     private final ExecutorService asyncTasksWorkers;
     private Throwable throwable;
 
-    PcjThread(int threadId, Class<? extends StartPoint> startPointClass, PcjThreadData threadData) {
+    PcjThread(int threadId, Class<? extends StartPoint> startPointClass, PcjThreadData threadData, Semaphore notificationSemaphore) {
         super(new PcjThreadGroup("PcjThreadGroup-" + threadId, threadData), "PcjThread-" + threadId);
 
         this.threadId = threadId;
+        this.notificationSemaphore = notificationSemaphore;
         this.pcjThreadGroup = (PcjThreadGroup) this.getThreadGroup();
         this.startPointClass = startPointClass;
 
@@ -90,6 +93,8 @@ public class PcjThread extends Thread {
             startPoint.main();
         } catch (Throwable t) {
             this.throwable = t;
+        } finally {
+            notificationSemaphore.release();
         }
     }
 
@@ -138,7 +143,7 @@ public class PcjThread extends Thread {
         return throwable;
     }
 
-    void shutdownThreadPool() {
+    void shutdownAsyncTasksWorkers() {
         try {
             asyncTasksWorkers.shutdown();
             asyncTasksWorkers.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
