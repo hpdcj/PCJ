@@ -61,8 +61,8 @@ public class ValuePutResponseMessage extends Message {
         requestNum = in.readInt();
         requesterThreadId = in.readInt();
 
-        boolean exceptionOccurs = in.readBoolean();
-        if (exceptionOccurs) {
+        boolean exceptionOccured = in.readBoolean();
+        if (exceptionOccured) {
             try {
                 exception = (Exception) in.readObject();
             } catch (Exception ex) {

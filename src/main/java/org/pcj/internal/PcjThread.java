@@ -147,8 +147,8 @@ public class PcjThread extends Thread {
         try {
             asyncTasksWorkers.shutdown();
             asyncTasksWorkers.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-        } catch (InterruptedException e) {
-            throw new PcjRuntimeException("Interrupted exception while shutting down thread pool", e);
+        } catch (InterruptedException ex) {
+            throw new PcjRuntimeException("Interrupted exception while shutting down thread pool");
         }
     }
 

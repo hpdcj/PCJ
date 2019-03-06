@@ -205,15 +205,14 @@ public class HelloState {
                     try {
                         Thread.sleep(Configuration.INIT_RETRY_DELAY * 1000 + (int) (Math.random() * 1000));
                     } catch (InterruptedException e) {
-                        LOGGER.log(Level.SEVERE, "Interruption occurs while waiting for connection retry.");
+                        LOGGER.log(Level.SEVERE, "Interruption occured while waiting for connection retry.");
                     }
                 } else {
                     throw new PcjRuntimeException(
                             String.format("Connecting to %s:%d failed!", hostname, port), ex);
                 }
             } catch (InterruptedException ex) {
-                throw new PcjRuntimeException(
-                        String.format("Connecting to %s:%d interrupted!", hostname, port), ex);
+                throw new PcjRuntimeException(String.format("Connecting to %s:%d interrupted!", hostname, port));
             }
         }
         throw new IllegalStateException("Unreachable code.");

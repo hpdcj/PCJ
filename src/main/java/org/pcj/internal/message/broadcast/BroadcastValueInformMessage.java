@@ -64,8 +64,8 @@ final public class BroadcastValueInformMessage extends Message {
         requestNum = in.readInt();
         requesterThreadId = in.readInt();
 
-        boolean exceptionOccurs = in.readBoolean();
-        if (exceptionOccurs) {
+        boolean exceptionOccured = in.readBoolean();
+        if (exceptionOccured) {
             try {
                 exceptions = (Queue<Exception>) in.readObject();
             } catch (Exception ex) {

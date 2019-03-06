@@ -73,9 +73,9 @@ public class AsyncAtResponseMessage extends Message {
         requestNum = in.readInt();
         requesterThreadId = in.readInt();
 
-        boolean exceptionOccurs = in.readBoolean();
+        boolean exceptionOccured = in.readBoolean();
         try {
-            if (!exceptionOccurs) {
+            if (!exceptionOccured) {
                 variableValue = in.readObject();
             } else {
                 exception = (Exception) in.readObject();

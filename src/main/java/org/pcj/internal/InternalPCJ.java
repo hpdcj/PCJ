@@ -226,7 +226,7 @@ public abstract class InternalPCJ {
                 try {
                     Thread.sleep(Configuration.INIT_RETRY_DELAY * 1000 + (int) (Math.random() * 1000));
                 } catch (InterruptedException ex) {
-                    throw new PcjRuntimeException("Interruption occurs while waiting for binding retry.", ex);
+                    throw new PcjRuntimeException("Interruption occured while waiting for binding retry.");
                 }
             }
         }
@@ -238,7 +238,7 @@ public abstract class InternalPCJ {
         timer.setRemoveOnCancelPolicy(true);
         timer.setExecuteExistingDelayedTasksAfterShutdownPolicy(true);
 
-        ScheduledFuture<?> exitTimer = timer.schedule(() -> thread.interrupt(), delay, unit);
+        ScheduledFuture<?> exitTimer = timer.schedule(thread::interrupt, delay, unit);
 
         timer.shutdown();
 
@@ -246,14 +246,14 @@ public abstract class InternalPCJ {
     }
 
     private static SocketChannel connectToNode0(NodeInfo node0, boolean isCurrentJvmNode0) throws PcjRuntimeException {
-        if (isCurrentJvmNode0 == true) {
+        if (isCurrentJvmNode0) {
             return LoopbackSocketChannel.getInstance();
         } else {
             try {
                 LOGGER.fine("Waiting 300-500ms before attempting to connect to node0 to ensure binding completion.");
                 Thread.sleep(300 + (int) (Math.random() * 200));
             } catch (InterruptedException ex) {
-                throw new PcjRuntimeException("Interruption occurs while waiting before attempting to connect to node0.", ex);
+                throw new PcjRuntimeException("Interruption occured while waiting before attempting to connect to node0.");
             }
             for (int attempt = 0; attempt <= Configuration.INIT_RETRY_COUNT; ++attempt) {
                 try {
@@ -280,7 +280,7 @@ public abstract class InternalPCJ {
                         try {
                             Thread.sleep(Configuration.INIT_RETRY_DELAY * 1000 + (int) (Math.random() * 1000));
                         } catch (InterruptedException e) {
-                            throw new PcjRuntimeException("Interruption occurs while waiting for connection retry.", e);
+                            throw new PcjRuntimeException("Interruption occured while waiting for connection retry.");
                         }
                     } else {
                         throw new PcjRuntimeException(String.format("Connecting to node0 (%s:%d) failed!",
@@ -288,9 +288,8 @@ public abstract class InternalPCJ {
                     }
                 } catch (InterruptedException ex) {
                     throw new PcjRuntimeException(
-                            String.format("Interruption occurs while connecting to node0 (%s:%d).",
-                                    node0.getHostname(), node0.getPort()),
-                            ex);
+                            String.format("Interruption occured while connecting to node0 (%s:%d).",
+                                    node0.getHostname(), node0.getPort()));
                 }
             }
         }
@@ -309,7 +308,7 @@ public abstract class InternalPCJ {
             /* waiting for HELLO_GO */
             state.await();
         } catch (InterruptedException ex) {
-            throw new PcjRuntimeException("Interruption occurs while waiting for finish HELLO phase", ex);
+            throw new PcjRuntimeException("Interruption occured while waiting for finish HELLO phase");
         }
     }
 
@@ -347,7 +346,7 @@ public abstract class InternalPCJ {
             }
         } catch (InterruptedException ex) {
             pcjThreads.forEach(Thread::interrupt);
-            throw new PcjRuntimeException("Interruption occurs while waiting for joining PcjThread", ex);
+            throw new PcjRuntimeException("Interruption occured while waiting for joining PcjThread");
         }
     }
 
@@ -358,7 +357,7 @@ public abstract class InternalPCJ {
             /* waiting for BYE_COMPLETED */
             byeState.await();
         } catch (InterruptedException ex) {
-            throw new PcjRuntimeException("Interruption occurs while waiting for MESSAGE_BYE_COMPLETED phase", ex);
+            throw new PcjRuntimeException("Interruption occured while waiting for MESSAGE_BYE_COMPLETED phase");
         }
     }
 
