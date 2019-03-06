@@ -329,18 +329,23 @@ public abstract class InternalPCJ {
 
     private static void waitForPcjThreadsComplete(Set<PcjThread> pcjThreadsSet, Semaphore notificationSemaphore) {
         Set<PcjThread> pcjThreads = new HashSet<>(pcjThreadsSet);
+
         try {
+            int notProcessedFinishedThreads = 0;
             while (!pcjThreads.isEmpty()) {
-                /* requires timeout, as thread could release, but is not yet dead (isAlive returns true) */
-                notificationSemaphore.tryAcquire(1, TimeUnit.SECONDS);
+                if (notProcessedFinishedThreads <= 0) {
+                    notificationSemaphore.acquire();
+                    notProcessedFinishedThreads += notificationSemaphore.drainPermits() + 1;
+                }
                 for (Iterator<PcjThread> it = pcjThreads.iterator(); it.hasNext(); ) {
                     PcjThread pcjThread = it.next();
                     if (!pcjThread.isAlive()) {
                         Throwable t = pcjThread.getThrowable();
                         if (t != null) {
-                            LOGGER.log(Level.SEVERE, "Exception occurs in thread: " + pcjThread.getName(), t);
+                            LOGGER.log(Level.SEVERE, "Exception occured in thread: " + pcjThread.getName(), t);
                         }
                         it.remove();
+                        --notProcessedFinishedThreads;
                     }
                 }
             }
