@@ -226,7 +226,7 @@ public abstract class InternalPCJ {
                 try {
                     Thread.sleep(Configuration.INIT_RETRY_DELAY * 1000 + (int) (Math.random() * 1000));
                 } catch (InterruptedException ex) {
-                    throw new PcjRuntimeException("Interruption occured while waiting for binding retry.");
+                    throw new PcjRuntimeException("Interruption occurred while waiting for binding retry.");
                 }
             }
         }
@@ -253,7 +253,7 @@ public abstract class InternalPCJ {
                 LOGGER.fine("Waiting 300-500ms before attempting to connect to node0 to ensure binding completion.");
                 Thread.sleep(300 + (int) (Math.random() * 200));
             } catch (InterruptedException ex) {
-                throw new PcjRuntimeException("Interruption occured while waiting before attempting to connect to node0.");
+                throw new PcjRuntimeException("Interruption occurred while waiting before attempting to connect to node0.");
             }
             for (int attempt = 0; attempt <= Configuration.INIT_RETRY_COUNT; ++attempt) {
                 try {
@@ -280,7 +280,7 @@ public abstract class InternalPCJ {
                         try {
                             Thread.sleep(Configuration.INIT_RETRY_DELAY * 1000 + (int) (Math.random() * 1000));
                         } catch (InterruptedException e) {
-                            throw new PcjRuntimeException("Interruption occured while waiting for connection retry.");
+                            throw new PcjRuntimeException("Interruption occurred while waiting for connection retry.");
                         }
                     } else {
                         throw new PcjRuntimeException(String.format("Connecting to node0 (%s:%d) failed!",
@@ -288,7 +288,7 @@ public abstract class InternalPCJ {
                     }
                 } catch (InterruptedException ex) {
                     throw new PcjRuntimeException(
-                            String.format("Interruption occured while connecting to node0 (%s:%d).",
+                            String.format("Interruption occurred while connecting to node0 (%s:%d).",
                                     node0.getHostname(), node0.getPort()));
                 }
             }
@@ -308,7 +308,7 @@ public abstract class InternalPCJ {
             /* waiting for HELLO_GO */
             state.await();
         } catch (InterruptedException ex) {
-            throw new PcjRuntimeException("Interruption occured while waiting for finish HELLO phase");
+            throw new PcjRuntimeException("Interruption occurred while waiting for finish HELLO phase");
         }
     }
 
@@ -342,7 +342,7 @@ public abstract class InternalPCJ {
                     if (!pcjThread.isAlive()) {
                         Throwable t = pcjThread.getThrowable();
                         if (t != null) {
-                            LOGGER.log(Level.SEVERE, "Exception occured in thread: " + pcjThread.getName(), t);
+                            LOGGER.log(Level.SEVERE, "Exception occurred in thread: " + pcjThread.getName(), t);
                         }
                         it.remove();
                         --notProcessedFinishedThreads;
@@ -351,7 +351,7 @@ public abstract class InternalPCJ {
             }
         } catch (InterruptedException ex) {
             pcjThreads.forEach(Thread::interrupt);
-            throw new PcjRuntimeException("Interruption occured while waiting for joining PcjThread");
+            throw new PcjRuntimeException("Interruption occurred while waiting for joining PcjThread");
         }
     }
 
@@ -362,7 +362,7 @@ public abstract class InternalPCJ {
             /* waiting for BYE_COMPLETED */
             byeState.await();
         } catch (InterruptedException ex) {
-            throw new PcjRuntimeException("Interruption occured while waiting for MESSAGE_BYE_COMPLETED phase");
+            throw new PcjRuntimeException("Interruption occurred while waiting for MESSAGE_BYE_COMPLETED phase");
         }
     }
 

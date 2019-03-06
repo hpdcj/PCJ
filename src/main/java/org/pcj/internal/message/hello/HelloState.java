@@ -205,7 +205,7 @@ public class HelloState {
                     try {
                         Thread.sleep(Configuration.INIT_RETRY_DELAY * 1000 + (int) (Math.random() * 1000));
                     } catch (InterruptedException e) {
-                        LOGGER.log(Level.SEVERE, "Interruption occured while waiting for connection retry.");
+                        LOGGER.log(Level.SEVERE, "Interruption occurred while waiting for connection retry.");
                     }
                 } else {
                     throw new PcjRuntimeException(
