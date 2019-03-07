@@ -10,6 +10,7 @@ package org.pcj;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.BiFunction;
 import org.pcj.internal.DeployPCJ;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.PcjThread;
@@ -331,6 +332,22 @@ final public class PCJ extends InternalPCJ {
      */
     public static <T> T get(int threadId, Enum<?> variable, int... indices) throws PcjRuntimeException {
         return PCJ.<T>asyncGet(threadId, variable, indices).get();
+    }
+
+    public static <T> PcjFuture<T[]> asyncCollect(Enum<?> variable, int... indices) throws PcjRuntimeException {
+        return null;
+    }
+
+    public static <T> T[] collect(Enum<?> variable, int... indices) throws PcjRuntimeException {
+        return PCJ.<T>asyncCollect(variable, indices).get();
+    }
+
+    public static <T> PcjFuture<T> asyncReduce(BiFunction<T, T, T> function, Enum<?> variable, int... indices) {
+        return null;
+    }
+
+    public static <T> T reduce(BiFunction<T, T, T> function, Enum<?> variable, int... indices) {
+        return PCJ.<T>asyncReduce(function, variable, indices).get();
     }
 
     /**
