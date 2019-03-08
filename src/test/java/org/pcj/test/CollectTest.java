@@ -28,7 +28,7 @@ public class CollectTest implements StartPoint {
         value
     }
 
-    private int value;
+    private Integer value;
 
     public static void main(String[] args) {
         Level level = Level.INFO;

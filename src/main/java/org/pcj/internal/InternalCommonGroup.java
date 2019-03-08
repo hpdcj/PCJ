@@ -20,6 +20,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.internal.message.barrier.BarrierStates;
 import org.pcj.internal.message.broadcast.BroadcastStates;
+import org.pcj.internal.message.collect.CollectStates;
 import org.pcj.internal.message.join.GroupJoinStates;
 
 /**
@@ -41,6 +42,7 @@ public class InternalCommonGroup {
     private final CommunicationTree communicationTree;
     private final BarrierStates barrierStates;
     private final BroadcastStates broadcastStates;
+    private final CollectStates collectStates;
     private final GroupJoinStates groupJoinStates;
 
     public InternalCommonGroup(InternalCommonGroup g) {
@@ -54,6 +56,7 @@ public class InternalCommonGroup {
 
         this.barrierStates = g.barrierStates;
         this.broadcastStates = g.broadcastStates;
+        this.collectStates = g.collectStates;
         this.groupJoinStates = g.groupJoinStates;
     }
 
@@ -68,6 +71,7 @@ public class InternalCommonGroup {
 
         this.barrierStates = new BarrierStates();
         this.broadcastStates = new BroadcastStates();
+        this.collectStates = new CollectStates();
         this.groupJoinStates = new GroupJoinStates();
     }
 
@@ -103,7 +107,7 @@ public class InternalCommonGroup {
                        .orElseThrow(() -> new NoSuchElementException("Global threadId not found: " + globalThreadId));
     }
 
-    final public int addNewThread(int globalThreadId) {
+    final public void addNewThread(int globalThreadId) {
         int groupThreadId;
         do {
             groupThreadId = threadsCounter.getAndIncrement();
@@ -111,8 +115,6 @@ public class InternalCommonGroup {
 
         updateLocalThreads();
         communicationTree.update(threadsMap);
-
-        return groupThreadId;
     }
 
     final public void updateThreadsMap(Map<Integer, Integer> newThreadsMap) { // groupId, globalId
@@ -145,6 +147,10 @@ public class InternalCommonGroup {
         return broadcastStates;
     }
 
+    final public CollectStates getCollectStates() {
+        return collectStates;
+    }
+
     public GroupJoinStates getGroupJoinStates() {
         return groupJoinStates;
     }
@@ -159,7 +165,7 @@ public class InternalCommonGroup {
         private int parentNode;
         private final Set<Integer> childrenNodes;
 
-        public CommunicationTree(int masterNode) {
+        private CommunicationTree(int masterNode) {
             this.masterNode = masterNode;
             this.parentNode = -1;
             this.childrenNodes = new CopyOnWriteArraySet<>();

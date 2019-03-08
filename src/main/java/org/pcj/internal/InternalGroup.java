@@ -17,6 +17,8 @@ import org.pcj.internal.message.at.AsyncAtStates;
 import org.pcj.internal.message.barrier.BarrierStates;
 import org.pcj.internal.message.broadcast.BroadcastStates;
 import org.pcj.internal.message.broadcast.BroadcastValueRequestMessage;
+import org.pcj.internal.message.collect.CollectRequestMessage;
+import org.pcj.internal.message.collect.CollectStates;
 import org.pcj.internal.message.get.AsyncGetStates;
 import org.pcj.internal.message.get.ValueGetRequestMessage;
 import org.pcj.internal.message.peerbarrier.PeerBarrierMessage;
@@ -99,6 +101,28 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
                 variable.getDeclaringClass().getName(), variable.name(), indices);
 
         InternalPCJ.getNetworker().send(socket, message);
+
+        return state.getFuture();
+    }
+
+    @Override
+    public <T> PcjFuture<T[]> asyncCollect(Enum<?> variable, int... indices) {
+
+        String sharedEnumClassName = variable.getDeclaringClass().getName();
+        String variableName = variable.name();
+
+
+        CollectStates states = super.getCollectStates();
+        CollectStates.State<T> state = states.create(myThreadId, this);
+
+        CollectRequestMessage message = new CollectRequestMessage(
+                super.getGroupId(), state.getRequestNum(), myThreadId,
+                sharedEnumClassName, variableName, indices);
+
+        int physicalMasterId = super.getCommunicationTree().getMasterNode();
+        SocketChannel masterSocket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId(physicalMasterId);
+
+        InternalPCJ.getNetworker().send(masterSocket, message);
 
         return state.getFuture();
     }

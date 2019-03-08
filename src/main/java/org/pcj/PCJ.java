@@ -334,10 +334,32 @@ final public class PCJ extends InternalPCJ {
         return PCJ.<T>asyncGet(threadId, variable, indices).get();
     }
 
+    /**
+     * Asynchronous collect operation. Gets value of shared variable from all PCJ Threads
+     * from the group.
+     *
+     * @param <T>      type of value
+     * @param variable variable name
+     * @param indices  (optional) indices for array variable
+     * @return {@link org.pcj.PcjFuture} that will contain shared variable value
+     */
     public static <T> PcjFuture<T[]> asyncCollect(Enum<?> variable, int... indices) throws PcjRuntimeException {
-        return null;
+        return getGlobalGroup().asyncCollect(variable, indices);
     }
 
+    /**
+     * Synchronous collect operation.
+     * <p>
+     * Wrapper for {@code asyncCollect(java.lang.Enum<?>, int...)}. It is
+     * the equivalent to call:
+     *
+     * <blockquote>{@code PCJ.<T>asyncCollect(variable, indices).get();}</blockquote>
+     *
+     * @param <T>      type of value
+     * @param variable variable name
+     * @param indices  (optional) indices for array variable
+     * @return {@link org.pcj.PcjFuture} that will contain shared variable value
+     */
     public static <T> T[] collect(Enum<?> variable, int... indices) throws PcjRuntimeException {
         return PCJ.<T>asyncCollect(variable, indices).get();
     }
@@ -371,7 +393,7 @@ final public class PCJ extends InternalPCJ {
      * Wrapper for {@code asyncPut(T, int, java.lang.Enum<?>, int...)}. It is
      * the equivalent to call:
      *
-     * <blockquote>{@code PCJ.<T>asyncPut(threadId, variable, newValue, indices).get();}</blockquote>
+     * <blockquote>{@code PCJ.<T>asyncPut(newValue, threadId, variable, indices).get();}</blockquote>
      *
      * @param <T>      type of value
      * @param newValue new variable value

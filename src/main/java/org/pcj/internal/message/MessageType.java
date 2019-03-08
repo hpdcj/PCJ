@@ -16,6 +16,9 @@ import org.pcj.internal.message.at.AsyncAtRequestMessage;
 import org.pcj.internal.message.at.AsyncAtResponseMessage;
 import org.pcj.internal.message.bye.ByeMessage;
 import org.pcj.internal.message.bye.ByeCompletedMessage;
+import org.pcj.internal.message.collect.CollectRequestMessage;
+import org.pcj.internal.message.collect.CollectResponseMessage;
+import org.pcj.internal.message.collect.CollectValueMessage;
 import org.pcj.internal.message.hello.HelloMessage;
 import org.pcj.internal.message.hello.HelloBonjourMessage;
 import org.pcj.internal.message.hello.HelloCompletedMessage;
@@ -70,6 +73,9 @@ public enum MessageType {
     VALUE_BROADCAST_BYTES((byte) 37, BroadcastValueBytesMessage::new),
     VALUE_BROADCAST_INFORM((byte) 38, BroadcastValueInformMessage::new),
     VALUE_BROADCAST_RESPONSE((byte) 39, BroadcastValueResponseMessage::new),
+    COLLECT_REQUEST((byte)40, CollectRequestMessage::new),
+    COLLECT_VALUE((byte)41, CollectValueMessage::new),
+    COLLECT_RESPONSE((byte)42, CollectResponseMessage::new),
     UNKNOWN((byte) -1, MessageUnknown::new);
     //    /* **************************************************** */
     private static final Map<Byte, MessageType> map;
