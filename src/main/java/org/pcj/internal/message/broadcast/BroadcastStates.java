@@ -61,7 +61,6 @@ public class BroadcastStates {
     }
 
     public class State {
-
         private final int requestNum;
         private final int requesterThreadId;
         private final AtomicInteger notificationCount;
@@ -90,7 +89,7 @@ public class BroadcastStates {
             return future;
         }
 
-        public void downProcessNode(InternalCommonGroup group, CloneInputStream clonedData, String sharedEnumClassName, String name, int[] indices) {
+        void downProcessNode(InternalCommonGroup group, CloneInputStream clonedData, String sharedEnumClassName, String name, int[] indices) {
             NodeData nodeData = InternalPCJ.getNodeData();
             Set<Integer> threadsId = group.getLocalThreadsId();
             for (int threadId : threadsId) {
@@ -111,8 +110,8 @@ public class BroadcastStates {
             nodeProcessed(group);
         }
 
-        public void upProcessNode(InternalCommonGroup group, Queue<Exception> messageExceptions) {
-            if ((messageExceptions != null) && (messageExceptions.isEmpty() == false)) {
+        void upProcessNode(InternalCommonGroup group, Queue<Exception> messageExceptions) {
+            if ((messageExceptions != null) && (!messageExceptions.isEmpty())) {
                 exceptions.addAll(messageExceptions);
             }
 
@@ -150,7 +149,7 @@ public class BroadcastStates {
         }
 
         public void signal(Queue<Exception> messageExceptions) {
-            if ((messageExceptions != null) && (messageExceptions.isEmpty() == false)) {
+            if ((messageExceptions != null) && (!messageExceptions.isEmpty())) {
                 exceptions.addAll(messageExceptions);
             }
             if (exceptions.isEmpty()) {
