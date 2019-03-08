@@ -106,7 +106,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     }
 
     @Override
-    public <T> PcjFuture<T[]> asyncCollect(Enum<?> variable, int... indices) {
+    public <T> PcjFuture<T> asyncCollect(Enum<?> variable, int... indices) {
 
         String sharedEnumClassName = variable.getDeclaringClass().getName();
         String variableName = variable.name();

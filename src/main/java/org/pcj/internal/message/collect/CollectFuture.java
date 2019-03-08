@@ -17,9 +17,9 @@ import org.pcj.internal.futures.InternalFuture;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public class CollectFuture<T> extends InternalFuture<T[]> implements PcjFuture<T[]> {
+public class CollectFuture<T> extends InternalFuture<T> implements PcjFuture<T> {
 
-    private T[] valuesArray;
+    private T valuesArray;
     private PcjRuntimeException exception;
 
     CollectFuture() {
@@ -31,8 +31,8 @@ public class CollectFuture<T> extends InternalFuture<T[]> implements PcjFuture<T
     }
 
     @SuppressWarnings("unchecked")
-    protected void signalDone(Object[] valuesArray) {
-        this.valuesArray = (T[]) valuesArray;
+    protected void signalDone(Object valuesArray) {
+        this.valuesArray = (T) valuesArray;
         super.signal();
     }
 
@@ -42,7 +42,7 @@ public class CollectFuture<T> extends InternalFuture<T[]> implements PcjFuture<T
     }
 
     @Override
-    public T[] get() throws PcjRuntimeException {
+    public T get() throws PcjRuntimeException {
         try {
             super.await();
         } catch (InterruptedException ex) {
@@ -55,7 +55,7 @@ public class CollectFuture<T> extends InternalFuture<T[]> implements PcjFuture<T
     }
 
     @Override
-    public T[] get(long timeout, TimeUnit unit) throws TimeoutException, PcjRuntimeException {
+    public T get(long timeout, TimeUnit unit) throws TimeoutException, PcjRuntimeException {
         try {
             super.await(timeout, unit);
         } catch (InterruptedException ex) {

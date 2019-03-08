@@ -343,7 +343,7 @@ final public class PCJ extends InternalPCJ {
      * @param indices  (optional) indices for array variable
      * @return {@link org.pcj.PcjFuture} that will contain shared variable value
      */
-    public static <T> PcjFuture<T[]> asyncCollect(Enum<?> variable, int... indices) throws PcjRuntimeException {
+    public static <T> PcjFuture<T> asyncCollect(Enum<?> variable, int... indices) throws PcjRuntimeException {
         return getGlobalGroup().asyncCollect(variable, indices);
     }
 
@@ -360,7 +360,7 @@ final public class PCJ extends InternalPCJ {
      * @param indices  (optional) indices for array variable
      * @return {@link org.pcj.PcjFuture} that will contain shared variable value
      */
-    public static <T> T[] collect(Enum<?> variable, int... indices) throws PcjRuntimeException {
+    public static <T> T collect(Enum<?> variable, int... indices) throws PcjRuntimeException {
         return PCJ.<T>asyncCollect(variable, indices).get();
     }
 

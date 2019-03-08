@@ -84,7 +84,7 @@ public interface Group {
      * @param indices  (optional) indices for array variable
      * @return {@link org.pcj.PcjFuture} that will contain shared variable value
      */
-    <T> PcjFuture<T[]> asyncCollect(Enum<?> variable, int... indices);
+    <T> PcjFuture<T> asyncCollect(Enum<?> variable, int... indices);
 
     /**
      * Asynchronous put operation. Puts value into shared variable to PCJ Thread

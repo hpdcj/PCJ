@@ -57,7 +57,7 @@ public class CollectTest implements StartPoint {
         value[0] = PCJ.myId() + 1;
         PCJ.barrier();
         if (PCJ.myId() == 0) {
-            Integer[] values = PCJ.collect(Communicable.value,0);
+            int[] values = PCJ.collect(Communicable.value,0);
             System.out.println(Arrays.toString(values));
 
             int[][] values2 = PCJ.collect(Communicable.value);

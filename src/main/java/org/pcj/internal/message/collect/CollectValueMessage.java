@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
+ * All rights reserved.
+ *
+ * Licensed under New BSD License (3-clause license).
+ *
+ * See the file "LICENSE" for the full license governing this code.
+ */
 package org.pcj.internal.message.collect;
 
 import java.io.IOException;
@@ -13,7 +21,10 @@ import org.pcj.internal.message.MessageType;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
-public class CollectValueMessage<T> extends Message {
+/**
+ * @author Marek Nowicki (faramir@mat.umk.pl)
+ */
+final public class CollectValueMessage<T> extends Message {
 
     private int groupId;
     private int requestNum;

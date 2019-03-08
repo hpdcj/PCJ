@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
+ * All rights reserved.
+ *
+ * Licensed under New BSD License (3-clause license).
+ *
+ * See the file "LICENSE" for the full license governing this code.
+ */
 package org.pcj.internal.message.collect;
 
 import java.io.IOException;
@@ -12,18 +20,21 @@ import org.pcj.internal.message.MessageType;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
-public class CollectResponseMessage<T> extends Message {
+/**
+ * @author Marek Nowicki (faramir@mat.umk.pl)
+ */
+final public class CollectResponseMessage<T> extends Message {
     private int groupId;
     private int requestNum;
     private int requesterThreadId;
-    private T[] valueArray;
+    private T valueArray;
     private Queue<Exception> exceptions;
 
     public CollectResponseMessage() {
         super(MessageType.COLLECT_RESPONSE);
     }
 
-    CollectResponseMessage(int groupId, T[] valueArray, int requestNum, int requesterThreadId, Queue<Exception> exceptions) {
+    CollectResponseMessage(int groupId, T valueArray, int requestNum, int requesterThreadId, Queue<Exception> exceptions) {
         this();
 
         this.groupId = groupId;
@@ -57,7 +68,7 @@ public class CollectResponseMessage<T> extends Message {
         boolean exceptionOccurred = in.readBoolean();
         try {
             if (!exceptionOccurred) {
-                valueArray = (T[]) in.readObject();
+                valueArray = (T) in.readObject();
             } else {
                 exceptions = (Queue<Exception>) in.readObject();
             }
