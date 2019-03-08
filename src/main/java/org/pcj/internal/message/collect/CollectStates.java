@@ -141,45 +141,14 @@ public class CollectStates {
                 } else {
                     socket = nodeData.getSocketChannelByPhysicalId(requesterPhysicalId);
 
-                    @SuppressWarnings("unchecked")
-                    T valueArray = (T) convertMapToArray(group);
-                    message = new CollectResponseMessage<T>(group.getGroupId(), valueArray, requestNum, requesterThreadId, exceptions);
+                    message = new CollectResponseMessage<T>(group.getGroupId(), valueMap, requestNum, requesterThreadId, exceptions);
                 }
 
                 InternalPCJ.getNetworker().send(socket, message);
             }
         }
 
-        private Object convertMapToArray(InternalCommonGroup group) {
-            Class<?> clazz = getValueClass(group);
-            Class<?> boxedClazz = PrimitiveTypes.makeBoxedFromPrimitive(clazz);
-
-            int size = valueMap.size();
-            Object valueArray = valueMap.entrySet()
-                                        .stream()
-                                        .sorted(Comparator.comparing(Map.Entry::getKey))
-                                        .map(Map.Entry::getValue)
-                                        .toArray(s -> (Object[]) Array.newInstance(boxedClazz, size));
-            if (PrimitiveTypes.isPrimitiveClass(clazz)) {
-                Object primitiveArray = Array.newInstance(clazz, size);
-
-                for (int i = 0; i < size; i++) {
-                    Object t = Array.get(valueArray, i);
-                    if (clazz == double.class) Array.setDouble(primitiveArray, i, (Double) t);
-                    else if (clazz == float.class) Array.setFloat(primitiveArray, i, (Float) t);
-                    else if (clazz == long.class) Array.setLong(primitiveArray, i, (Long) t);
-                    else if (clazz == int.class) Array.setInt(primitiveArray, i, (Integer) t);
-                    else if (clazz == short.class) Array.setShort(primitiveArray, i, (Short) t);
-                    else if (clazz == char.class) Array.setChar(primitiveArray, i, (Character) t);
-                    else if (clazz == byte.class) Array.setByte(primitiveArray, i, (Byte) t);
-                    else if (clazz == boolean.class) Array.setBoolean(primitiveArray, i, (Boolean) t);
-                }
-                valueArray = primitiveArray;
-            }
-            return valueArray;
-        }
-
-        private Class<?> getValueClass(InternalCommonGroup group) {
+        public Class<?> getValueClass(InternalCommonGroup group) {
             NodeData nodeData = InternalPCJ.getNodeData();
             Set<Integer> threadsId = group.getLocalThreadsId();
             return threadsId.stream()
