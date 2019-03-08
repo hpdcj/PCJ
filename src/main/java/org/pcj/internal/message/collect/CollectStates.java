@@ -27,6 +27,7 @@ import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.InternalStorages;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.PcjThread;
+import org.pcj.internal.PrimitiveTypes;
 import org.pcj.internal.message.Message;
 
 /**
@@ -140,13 +141,29 @@ public class CollectStates {
                 } else {
                     socket = nodeData.getSocketChannelByPhysicalId(requesterPhysicalId);
 
+                    Class<?> clazz = getValueClass(group);
+                    Class<?> boxedClazz = PrimitiveTypes.makeBoxedFromPrimitive(clazz);
+
                     @SuppressWarnings("unchecked")
-                    T[] valueArray = (T[]) valueMap.entrySet().stream().sorted(Comparator.comparing(Map.Entry::getKey)).map(Map.Entry::getValue).toArray();
+                    T[] valueArray = (T[]) valueMap.entrySet().stream().sorted(Comparator.comparing(Map.Entry::getKey)).map(Map.Entry::getValue)
+                                                   .toArray(size -> (T[]) Array.newInstance(boxedClazz, size));
                     message = new CollectResponseMessage<>(group.getGroupId(), valueArray, requestNum, requesterThreadId, exceptions);
                 }
 
                 InternalPCJ.getNetworker().send(socket, message);
             }
+        }
+
+        private Class<?> getValueClass(InternalCommonGroup group) {
+            NodeData nodeData = InternalPCJ.getNodeData();
+            Set<Integer> threadsId = group.getLocalThreadsId();
+            return threadsId.stream()
+                           .map(group::getGlobalThreadId)
+                           .map(nodeData::getPcjThread)
+                           .map(pcjThread -> pcjThread.getThreadData().getStorages())
+                           .findAny()
+                           .map(storage -> storage.getClass(this.sharedEnumClassName, this.variableName, this.indices.length))
+                           .get();
         }
 
         private void fillValueMap(InternalCommonGroup group) {

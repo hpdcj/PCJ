@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
@@ -8,29 +8,29 @@
  */
 package org.pcj.internal;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 
 /**
- *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 final public class PrimitiveTypes {
 
-    private static final Set<Class<?>> BOXED_PRIMITIVES = Collections.unmodifiableSet(
-            new HashSet<>(Arrays.asList(
-                    Byte.class, Short.class, Character.class, Integer.class, Long.class,
-                    Float.class, Double.class,
-                    Boolean.class)));
+    private static final Map<Class<?>, Class<?>> PRIMITIVES_BOXED = new HashMap<>(8, 1);
     private static final Map<Class<?>, Function<Object, ?>> CONVERSION_MAP = new HashMap<>(8, 1);
     private static final Map<Class<?>, Object> DEFAULT_VALUE_MAP = new HashMap<>(8, 1);
 
     static {
+        PRIMITIVES_BOXED.put(double.class, Double.class);
+        PRIMITIVES_BOXED.put(float.class, Float.class);
+        PRIMITIVES_BOXED.put(long.class, Long.class);
+        PRIMITIVES_BOXED.put(int.class, Integer.class);
+        PRIMITIVES_BOXED.put(short.class, Short.class);
+        PRIMITIVES_BOXED.put(char.class, Character.class);
+        PRIMITIVES_BOXED.put(byte.class, Byte.class);
+        PRIMITIVES_BOXED.put(boolean.class, Boolean.class);
+
         CONVERSION_MAP.put(double.class, PrimitiveTypes::convertToDouble);
         CONVERSION_MAP.put(float.class, PrimitiveTypes::convertToFloat);
         CONVERSION_MAP.put(long.class, PrimitiveTypes::convertToLong);
@@ -61,7 +61,16 @@ final public class PrimitiveTypes {
     }
 
     public static boolean isBoxedClass(Class<?> clazz) {
-        return BOXED_PRIMITIVES.contains(clazz);
+        return PRIMITIVES_BOXED.containsValue(clazz);
+    }
+
+    public static boolean isPrimitiveClass(Class<?> clazz) {
+        return PRIMITIVES_BOXED.containsKey(clazz);
+    }
+
+    public static Class<?> makeBoxedFromPrimitive(Class<?> clazz) {
+        Class<?> boxed = PRIMITIVES_BOXED.get(clazz);
+        return boxed == null ? clazz : boxed;
     }
 
     public static Object defaultValue(Class<?> clazz) {

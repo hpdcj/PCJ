@@ -16,6 +16,7 @@ import org.pcj.PCJ;
 import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
+import org.pcj.internal.PcjThread;
 
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
@@ -28,7 +29,7 @@ public class CollectTest implements StartPoint {
         value
     }
 
-    private Integer value;
+    private int[] value = new int[1];
 
     public static void main(String[] args) {
         Level level = Level.INFO;
@@ -53,11 +54,14 @@ public class CollectTest implements StartPoint {
 
     @Override
     public void main() {
-        value = PCJ.myId() + 1;
+        value[0] = PCJ.myId() + 1;
         PCJ.barrier();
         if (PCJ.myId() == 0) {
-            Integer[] values = PCJ.<Integer>collect(Communicable.value);
+            Integer[] values = PCJ.collect(Communicable.value,0);
             System.out.println(Arrays.toString(values));
+
+            int[][] values2 = PCJ.collect(Communicable.value);
+            System.out.println(Arrays.deepToString(values2));
         }
     }
 }
