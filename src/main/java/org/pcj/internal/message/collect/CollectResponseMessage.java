@@ -86,7 +86,8 @@ final public class CollectResponseMessage<T> extends Message {
 
         CollectStates states = commonGroup.getCollectStates();
         CollectStates.State<T> state = (CollectStates.State<T>) states.remove(requestNum, requesterThreadId);
-        Class<?> clazz = state.getValueClass(commonGroup);
+
+        Class<?> clazz = state.getValueClass();
 
         @SuppressWarnings("unchecked")
         T valueArray = (T) convertMapToArray(clazz);

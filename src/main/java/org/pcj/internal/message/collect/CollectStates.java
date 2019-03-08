@@ -8,10 +8,8 @@
  */
 package org.pcj.internal.message.collect;
 
-import java.lang.reflect.Array;
 import java.nio.channels.SocketChannel;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -27,7 +25,6 @@ import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.InternalStorages;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.PcjThread;
-import org.pcj.internal.PrimitiveTypes;
 import org.pcj.internal.message.Message;
 
 /**
@@ -148,16 +145,12 @@ public class CollectStates {
             }
         }
 
-        public Class<?> getValueClass(InternalCommonGroup group) {
+        public Class<?> getValueClass() {
             NodeData nodeData = InternalPCJ.getNodeData();
-            Set<Integer> threadsId = group.getLocalThreadsId();
-            return threadsId.stream()
-                           .map(group::getGlobalThreadId)
-                           .map(nodeData::getPcjThread)
-                           .map(pcjThread -> pcjThread.getThreadData().getStorages())
-                           .findAny()
-                           .map(storage -> storage.getClass(this.sharedEnumClassName, this.variableName, this.indices.length))
-                           .get();
+            PcjThread pcjThread = nodeData.getPcjThread(requesterThreadId);
+
+            InternalStorages storages = pcjThread.getThreadData().getStorages();
+            return storages.getClass(this.sharedEnumClassName, this.variableName, this.indices.length);
         }
 
         private void fillValueMap(InternalCommonGroup group) {
