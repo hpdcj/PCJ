@@ -30,9 +30,8 @@ public class ReduceFuture<T> extends InternalFuture<T> implements PcjFuture<T> {
         return super.isSignaled();
     }
 
-    @SuppressWarnings("unchecked")
     protected void signalDone(T value) {
-        this.value = (T) value;
+        this.value = value;
         super.signal();
     }
 

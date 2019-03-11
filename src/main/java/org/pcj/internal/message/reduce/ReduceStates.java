@@ -155,7 +155,6 @@ public class ReduceStates {
             }
         }
 
-        @SuppressWarnings("unchecked")
         private T getValue(InternalCommonGroup group) {
             NodeData nodeData = InternalPCJ.getNodeData();
             Set<Integer> threadsId = group.getLocalThreadsId();
