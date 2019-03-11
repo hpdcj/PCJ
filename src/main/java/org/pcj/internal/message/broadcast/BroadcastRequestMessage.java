@@ -1,4 +1,4 @@
-/*
+/* 
  * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
@@ -23,7 +23,7 @@ import org.pcj.internal.network.MessageDataOutputStream;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class BroadcastValueBytesMessage extends Message {
+final public class BroadcastRequestMessage extends Message {
 
     private int groupId;
     private int requestNum;
@@ -31,13 +31,13 @@ final public class BroadcastValueBytesMessage extends Message {
     private String sharedEnumClassName;
     private String variableName;
     private int[] indices;
-    private CloneInputStream clonedData;
+    private Object newValue;
 
-    public BroadcastValueBytesMessage() {
-        super(MessageType.VALUE_BROADCAST_BYTES);
+    public BroadcastRequestMessage() {
+        super(MessageType.VALUE_BROADCAST_REQUEST);
     }
 
-    public BroadcastValueBytesMessage(int groupId, int requestNum, int requesterThreadId, String storageName, String variableName, int[] indices, CloneInputStream clonedData) {
+    public BroadcastRequestMessage(int groupId, int requestNum, int requesterThreadId, String storageName, String variableName, int[] indices, Object newValue) {
         this();
 
         this.groupId = groupId;
@@ -46,8 +46,7 @@ final public class BroadcastValueBytesMessage extends Message {
         this.sharedEnumClassName = storageName;
         this.variableName = variableName;
         this.indices = indices;
-
-        this.clonedData = clonedData;
+        this.newValue = newValue;
     }
 
     @Override
@@ -58,8 +57,7 @@ final public class BroadcastValueBytesMessage extends Message {
         out.writeString(sharedEnumClassName);
         out.writeString(variableName);
         out.writeIntArray(indices);
-
-        clonedData.writeInto(out);
+        out.writeObject(newValue);
     }
 
     @Override
@@ -72,22 +70,23 @@ final public class BroadcastValueBytesMessage extends Message {
         variableName = in.readString();
         indices = in.readIntArray();
 
-        clonedData = CloneInputStream.readFrom(in);
+        CloneInputStream clonedData = CloneInputStream.clone(in);
 
         NodeData nodeData = InternalPCJ.getNodeData();
         Networker networker = InternalPCJ.getNetworker();
 
-        BroadcastValueBytesMessage broadcastValueBytesMessage
-                = new BroadcastValueBytesMessage(groupId, requestNum, requesterThreadId, sharedEnumClassName, variableName, indices, clonedData);
+        BroadcastBytesMessage broadcastBytesMessage
+                = new BroadcastBytesMessage(groupId, requestNum, requesterThreadId, sharedEnumClassName, variableName, indices, clonedData);
 
         InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
         commonGroup.getCommunicationTree().getChildrenNodes()
                 .stream()
                 .map(nodeData::getSocketChannelByPhysicalId)
-                .forEach(socket -> networker.send(socket, broadcastValueBytesMessage));
+                .forEach(socket -> networker.send(socket, broadcastBytesMessage));
 
         BroadcastStates states = commonGroup.getBroadcastStates();
         BroadcastStates.State state = states.getOrCreate(requestNum, requesterThreadId, commonGroup);
+
         state.downProcessNode(commonGroup, clonedData, sharedEnumClassName, variableName, indices);
     }
 }

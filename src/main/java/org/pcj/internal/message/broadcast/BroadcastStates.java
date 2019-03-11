@@ -137,9 +137,9 @@ public class BroadcastStates {
                     int parentId = group.getCommunicationTree().getParentNode();
                     socket = nodeData.getSocketChannelByPhysicalId(parentId);
 
-                    message = new BroadcastValueInformMessage(group.getGroupId(), requestNum, requesterThreadId, exceptions);
+                    message = new BroadcastInformMessage(group.getGroupId(), requestNum, requesterThreadId, exceptions);
                 } else {
-                    message = new BroadcastValueResponseMessage(group.getGroupId(), requestNum, requesterThreadId, exceptions);
+                    message = new BroadcastResponseMessage(group.getGroupId(), requestNum, requesterThreadId, exceptions);
 
                     socket = nodeData.getSocketChannelByPhysicalId(requesterPhysicalId);
                 }

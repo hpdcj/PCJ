@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
@@ -25,18 +24,18 @@ import org.pcj.internal.network.MessageDataOutputStream;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class BroadcastValueResponseMessage extends Message {
+final public class BroadcastResponseMessage extends Message {
 
     private int groupId;
     private int requestNum;
     private int requesterThreadId;
     private Queue<Exception> exceptions;
 
-    public BroadcastValueResponseMessage() {
+    public BroadcastResponseMessage() {
         super(MessageType.VALUE_BROADCAST_RESPONSE);
     }
 
-    public BroadcastValueResponseMessage(int groupId, int requestNum, int requesterThreadId, Queue<Exception> exceptions) {
+    public BroadcastResponseMessage(int groupId, int requestNum, int requesterThreadId, Queue<Exception> exceptions) {
         this();
 
         this.groupId = groupId;

@@ -75,8 +75,8 @@ public class ValuePutResponseMessage extends Message {
 
         InternalGroup group = pcjThread.getThreadData().getGroupById(groupId);
 
-        AsyncPutStates states = group.getAsyncPutStates();
-        AsyncPutStates.State state = states.remove(requestNum);
+        ValuePutStates states = group.getValuePutStates();
+        ValuePutStates.State state = states.remove(requestNum);
         state.signal(exception);
     }
 

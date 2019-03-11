@@ -17,12 +17,12 @@ import org.pcj.internal.InternalFuture;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public class AsyncGetFuture<T> extends InternalFuture<T> implements PcjFuture<T> {
+public class ValueGetFuture<T> extends InternalFuture<T> implements PcjFuture<T> {
 
     private T variableValue;
     private PcjRuntimeException exception;
 
-    AsyncGetFuture() {
+    ValueGetFuture() {
     }
 
     @Override

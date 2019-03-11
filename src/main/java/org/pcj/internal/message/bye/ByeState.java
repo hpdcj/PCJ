@@ -44,8 +44,8 @@ public class ByeState {
             } else {
                 SocketChannel parentSocketChannel = nodeData.getSocketChannelByPhysicalId((currentPhysicalId - 1) / 2);
 
-                ByeMessage byeMessage = new ByeMessage();
-                networker.send(parentSocketChannel, byeMessage);
+                ByeNotifyMessage byeNotifyMessage = new ByeNotifyMessage();
+                networker.send(parentSocketChannel, byeNotifyMessage);
             }
         }
     }

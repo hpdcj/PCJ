@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
@@ -10,43 +10,37 @@ package org.pcj.internal.message.broadcast;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
-import org.pcj.internal.Networker;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.message.Message;
 import org.pcj.internal.message.MessageType;
-import org.pcj.internal.network.CloneInputStream;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class BroadcastValueRequestMessage extends Message {
+final public class BroadcastInformMessage extends Message {
 
     private int groupId;
     private int requestNum;
     private int requesterThreadId;
-    private String sharedEnumClassName;
-    private String variableName;
-    private int[] indices;
-    private Object newValue;
+    private Queue<Exception> exceptions;
 
-    public BroadcastValueRequestMessage() {
-        super(MessageType.VALUE_BROADCAST_REQUEST);
+    public BroadcastInformMessage() {
+        super(MessageType.VALUE_BROADCAST_INFORM);
     }
 
-    public BroadcastValueRequestMessage(int groupId, int requestNum, int requesterThreadId, String storageName, String variableName, int[] indices, Object newValue) {
+    public BroadcastInformMessage(int groupId, int requestNum, int requesterThreadId, Queue<Exception> exceptions) {
         this();
 
         this.groupId = groupId;
         this.requestNum = requestNum;
         this.requesterThreadId = requesterThreadId;
-        this.sharedEnumClassName = storageName;
-        this.variableName = variableName;
-        this.indices = indices;
-        this.newValue = newValue;
+        this.exceptions = exceptions;
     }
 
     @Override
@@ -54,39 +48,37 @@ final public class BroadcastValueRequestMessage extends Message {
         out.writeInt(groupId);
         out.writeInt(requestNum);
         out.writeInt(requesterThreadId);
-        out.writeString(sharedEnumClassName);
-        out.writeString(variableName);
-        out.writeIntArray(indices);
-        out.writeObject(newValue);
+
+        if ((exceptions != null) && (exceptions.isEmpty() == false)) {
+            out.writeBoolean(true);
+            out.writeObject(exceptions);
+        } else {
+            out.writeBoolean(false);
+        }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void onReceive(SocketChannel sender, MessageDataInputStream in) throws IOException {
         groupId = in.readInt();
         requestNum = in.readInt();
         requesterThreadId = in.readInt();
 
-        sharedEnumClassName = in.readString();
-        variableName = in.readString();
-        indices = in.readIntArray();
-
-        CloneInputStream clonedData = CloneInputStream.clone(in);
+        boolean exceptionOccurred = in.readBoolean();
+        if (exceptionOccurred) {
+            try {
+                exceptions = (Queue<Exception>) in.readObject();
+            } catch (Exception ex) {
+                exceptions = new ConcurrentLinkedDeque<>();
+                exceptions.add(ex);
+            }
+        }
 
         NodeData nodeData = InternalPCJ.getNodeData();
-        Networker networker = InternalPCJ.getNetworker();
-
-        BroadcastValueBytesMessage broadcastValueBytesMessage
-                = new BroadcastValueBytesMessage(groupId, requestNum, requesterThreadId, sharedEnumClassName, variableName, indices, clonedData);
-
         InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
-        commonGroup.getCommunicationTree().getChildrenNodes()
-                .stream()
-                .map(nodeData::getSocketChannelByPhysicalId)
-                .forEach(socket -> networker.send(socket, broadcastValueBytesMessage));
 
         BroadcastStates states = commonGroup.getBroadcastStates();
         BroadcastStates.State state = states.getOrCreate(requestNum, requesterThreadId, commonGroup);
-
-        state.downProcessNode(commonGroup, clonedData, sharedEnumClassName, variableName, indices);
+        state.upProcessNode(commonGroup, exceptions);
     }
 }

@@ -17,11 +17,11 @@ import org.pcj.internal.InternalFuture;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public class AsyncPutFuture extends InternalFuture<Void> implements PcjFuture<Void> {
+public class ValuePutFuture extends InternalFuture<Void> implements PcjFuture<Void> {
 
     private PcjRuntimeException exception;
 
-    AsyncPutFuture() {
+    ValuePutFuture() {
     }
 
     protected void signalDone() {

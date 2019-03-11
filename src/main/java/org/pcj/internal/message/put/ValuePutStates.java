@@ -6,7 +6,7 @@
  *
  * See the file "LICENSE" for the full license governing this code.
  */
-package org.pcj.internal.message.get;
+package org.pcj.internal.message.put;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -17,36 +17,36 @@ import org.pcj.PcjRuntimeException;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public class AsyncGetStates {
+public class ValuePutStates {
     private final AtomicInteger counter;
-    private final ConcurrentMap<Integer, State<?>> stateMap;
+    private final ConcurrentMap<Integer, State> stateMap;
 
-    public AsyncGetStates() {
+    public ValuePutStates() {
         counter = new AtomicInteger(0);
         stateMap = new ConcurrentHashMap<>();
     }
 
-    public <T> State<T> create() {
+    public State create() {
         int requestNum = counter.incrementAndGet();
 
-        AsyncGetFuture<T> future = new AsyncGetFuture<>();
-        State<T> state = new State<>(requestNum, future);
+        ValuePutFuture future = new ValuePutFuture();
+        State state = new State(requestNum, future);
 
         stateMap.put(requestNum, state);
 
         return state;
     }
 
-    public State<?> remove(int requestNum) {
+    public State remove(int requestNum) {
         return stateMap.remove(requestNum);
     }
 
-    public static class State<T> {
+    public static class State {
 
         private final int requestNum;
-        private final AsyncGetFuture<T> future;
+        private final ValuePutFuture future;
 
-        private State(int requestNum, AsyncGetFuture<T> future) {
+        private State(int requestNum, ValuePutFuture future) {
             this.requestNum = requestNum;
 
             this.future = future;
@@ -56,15 +56,15 @@ public class AsyncGetStates {
             return requestNum;
         }
 
-        public PcjFuture<T> getFuture() {
+        public PcjFuture<Void> getFuture() {
             return future;
         }
 
-        public void signal(Object variableValue, Exception exception) {
+        public void signal(Exception exception) {
             if (exception == null) {
-                future.signalDone(variableValue);
+                future.signalDone();
             } else {
-                PcjRuntimeException ex = new PcjRuntimeException("Getting value failed");
+                PcjRuntimeException ex = new PcjRuntimeException("Putting value failed");
                 ex.addSuppressed(exception);
                 future.signalException(ex);
             }

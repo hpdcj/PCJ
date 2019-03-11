@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 import org.pcj.internal.message.at.AsyncAtRequestMessage;
 import org.pcj.internal.message.at.AsyncAtResponseMessage;
-import org.pcj.internal.message.bye.ByeMessage;
+import org.pcj.internal.message.bye.ByeNotifyMessage;
 import org.pcj.internal.message.bye.ByeCompletedMessage;
 import org.pcj.internal.message.collect.CollectRequestMessage;
 import org.pcj.internal.message.collect.CollectResponseMessage;
@@ -31,10 +31,10 @@ import org.pcj.internal.message.join.GroupQueryMessage;
 import org.pcj.internal.message.join.GroupJoinRequestMessage;
 import org.pcj.internal.message.join.GroupJoinResponseMessage;
 import org.pcj.internal.message.peerbarrier.PeerBarrierMessage;
-import org.pcj.internal.message.broadcast.BroadcastValueBytesMessage;
-import org.pcj.internal.message.broadcast.BroadcastValueInformMessage;
-import org.pcj.internal.message.broadcast.BroadcastValueRequestMessage;
-import org.pcj.internal.message.broadcast.BroadcastValueResponseMessage;
+import org.pcj.internal.message.broadcast.BroadcastBytesMessage;
+import org.pcj.internal.message.broadcast.BroadcastInformMessage;
+import org.pcj.internal.message.broadcast.BroadcastRequestMessage;
+import org.pcj.internal.message.broadcast.BroadcastResponseMessage;
 import org.pcj.internal.message.barrier.GroupBarrierGoMessage;
 import org.pcj.internal.message.barrier.GroupBarrierWaitingMessage;
 import org.pcj.internal.message.get.ValueGetRequestMessage;
@@ -52,7 +52,7 @@ public enum MessageType {
     HELLO_BONJOUR((byte) 3, HelloBonjourMessage::new),
     HELLO_COMPLETED((byte) 4, HelloCompletedMessage::new),
     HELLO_GO((byte) 5, HelloGoMessage::new),
-    BYE((byte) 6, ByeMessage::new),
+    BYE((byte) 6, ByeNotifyMessage::new),
     BYE_COMPLETED((byte) 7, ByeCompletedMessage::new),
     GROUP_BARRIER_WAITING((byte) 10, GroupBarrierWaitingMessage::new),
     GROUP_BARRIER_GO((byte) 11, GroupBarrierGoMessage::new),
@@ -69,10 +69,10 @@ public enum MessageType {
     VALUE_PUT_RESPONSE((byte) 33, ValuePutResponseMessage::new),
     ASYNC_AT_REQUEST((byte) 34, AsyncAtRequestMessage::new),
     ASYNC_AT_RESPONSE((byte) 35, AsyncAtResponseMessage::new),
-    VALUE_BROADCAST_REQUEST((byte) 36, BroadcastValueRequestMessage::new),
-    VALUE_BROADCAST_BYTES((byte) 37, BroadcastValueBytesMessage::new),
-    VALUE_BROADCAST_INFORM((byte) 38, BroadcastValueInformMessage::new),
-    VALUE_BROADCAST_RESPONSE((byte) 39, BroadcastValueResponseMessage::new),
+    VALUE_BROADCAST_REQUEST((byte) 36, BroadcastRequestMessage::new),
+    VALUE_BROADCAST_BYTES((byte) 37, BroadcastBytesMessage::new),
+    VALUE_BROADCAST_INFORM((byte) 38, BroadcastInformMessage::new),
+    VALUE_BROADCAST_RESPONSE((byte) 39, BroadcastResponseMessage::new),
     COLLECT_REQUEST((byte)40, CollectRequestMessage::new),
     COLLECT_VALUE((byte)41, CollectValueMessage::new),
     COLLECT_RESPONSE((byte)42, CollectResponseMessage::new),

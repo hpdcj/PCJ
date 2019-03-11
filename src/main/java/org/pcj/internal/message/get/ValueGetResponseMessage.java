@@ -89,8 +89,8 @@ public class ValueGetResponseMessage extends Message {
 
         InternalGroup group = pcjThread.getThreadData().getGroupById(groupId);
 
-        AsyncGetStates states = group.getAsyncGetStates();
-        AsyncGetStates.State<?> state = states.remove(requestNum);
+        ValueGetStates states = group.getValueGetStates();
+        ValueGetStates.State<?> state = states.remove(requestNum);
         state.signal(variableValue, exception);
     }
 }
