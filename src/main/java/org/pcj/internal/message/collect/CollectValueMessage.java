@@ -82,7 +82,7 @@ final public class CollectValueMessage<T> extends Message {
         InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
 
         CollectStates states = commonGroup.getCollectStates();
-        CollectStates.State<T> state = (CollectStates.State<T>) states.getOrCreate(requestNum, requesterThreadId, commonGroup);
+        CollectStates.State<T> state = states.getOrCreate(requestNum, requesterThreadId, commonGroup);
 
         state.upProcessNode(commonGroup, valueMap, exceptions);
     }

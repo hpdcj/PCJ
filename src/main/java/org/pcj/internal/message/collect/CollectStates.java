@@ -8,8 +8,11 @@
  */
 package org.pcj.internal.message.collect;
 
+import java.lang.reflect.Array;
 import java.nio.channels.SocketChannel;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -67,7 +70,7 @@ public class CollectStates {
         private final AtomicInteger notificationCount;
         private final CollectFuture<T> future;
         private final Queue<Exception> exceptions;
-        private final ConcurrentMap<Integer, T> valueMap;
+        private final Map<Integer, T> valueMap;
         private String sharedEnumClassName;
         private String variableName;
         private int[] indices;
@@ -79,7 +82,7 @@ public class CollectStates {
 
             // notification from children and from itself
             notificationCount = new AtomicInteger(childrenCount + 1);
-            valueMap = new ConcurrentHashMap<>();
+            valueMap = Collections.synchronizedMap(new HashMap<>());
             exceptions = new ConcurrentLinkedDeque<>();
         }
 
@@ -124,7 +127,9 @@ public class CollectStates {
                     CollectStates.this.remove(requestNum, requesterThreadId);
                 }
 
-                fillValueMap(group);
+                if (exceptions.isEmpty()) {
+                    fillValueMap(group);
+                }
 
                 Message message;
                 SocketChannel socket;
@@ -138,19 +143,11 @@ public class CollectStates {
                 } else {
                     socket = nodeData.getSocketChannelByPhysicalId(requesterPhysicalId);
 
-                    message = new CollectResponseMessage<T>(group.getGroupId(), valueMap, requestNum, requesterThreadId, exceptions);
+                    message = new CollectResponseMessage<T>(group.getGroupId(), requestNum, requesterThreadId, valueMap, exceptions);
                 }
 
                 InternalPCJ.getNetworker().send(socket, message);
             }
-        }
-
-        public Class<?> getValueClass() {
-            NodeData nodeData = InternalPCJ.getNodeData();
-            PcjThread pcjThread = nodeData.getPcjThread(requesterThreadId);
-
-            InternalStorages storages = pcjThread.getThreadData().getStorages();
-            return storages.getClass(this.sharedEnumClassName, this.variableName, this.indices.length);
         }
 
         private void fillValueMap(InternalCommonGroup group) {
@@ -165,17 +162,38 @@ public class CollectStates {
             }
         }
 
-        public void signal(Object values, Queue<Exception> messageExceptions) {
+        public void signal(Map<Integer, T> valueMap, Queue<Exception> messageExceptions) {
             if ((messageExceptions != null) && (!messageExceptions.isEmpty())) {
-                exceptions.addAll(messageExceptions);
-            }
-            if (exceptions.isEmpty()) {
-                future.signalDone(values);
-            } else {
                 PcjRuntimeException ex = new PcjRuntimeException("Collecting values failed");
-                exceptions.forEach(ex::addSuppressed);
+                messageExceptions.forEach(ex::addSuppressed);
                 future.signalException(ex);
+            } else {
+                Object array = convertMapToArray(valueMap);
+                future.signalDone(array);
             }
+        }
+
+        private Object convertMapToArray(Map<Integer, T> valueMap) {
+            Class<?> clazz = getValueClass();
+//            int size = valueMap.keySet().stream().mapToInt(Integer::intValue).max().orElse(-1) + 1;
+            int size = valueMap.size();
+            Object array = Array.newInstance(clazz, size);
+
+            for (Map.Entry<Integer, T> entry : valueMap.entrySet()) {
+                int index = entry.getKey();
+                T t = entry.getValue();
+
+                Array.set(array, index, t);
+            }
+            return array;
+        }
+
+        private Class<?> getValueClass() {
+            NodeData nodeData = InternalPCJ.getNodeData();
+            PcjThread pcjThread = nodeData.getPcjThread(requesterThreadId);
+
+            InternalStorages storages = pcjThread.getThreadData().getStorages();
+            return storages.getClass(this.sharedEnumClassName, this.variableName, this.indices.length);
         }
     }
 }

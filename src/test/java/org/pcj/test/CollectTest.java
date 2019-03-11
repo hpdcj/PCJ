@@ -8,15 +8,16 @@
  */
 package org.pcj.test;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
+import org.pcj.PcjFuture;
 import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
-import org.pcj.internal.PcjThread;
 
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
@@ -26,10 +27,12 @@ public class CollectTest implements StartPoint {
 
     @Storage(CollectTest.class)
     enum Communicable {
-        value
+        intArray,
+        nullObject
     }
 
-    private int[] value = new int[1];
+    private int[] intArray = new int[1];
+    private Serializable nullObject;
 
     public static void main(String[] args) {
         Level level = Level.INFO;
@@ -54,14 +57,17 @@ public class CollectTest implements StartPoint {
 
     @Override
     public void main() {
-        value[0] = PCJ.myId() + 1;
+        intArray[0] = PCJ.myId() + 1;
         PCJ.barrier();
         if (PCJ.myId() == 0) {
-            int[] values = PCJ.collect(Communicable.value,0);
-            System.out.println(Arrays.toString(values));
+            int[] intSubArray = PCJ.collect(Communicable.intArray,0);
+            System.out.println(Arrays.toString(intSubArray));
 
-            int[][] values2 = PCJ.collect(Communicable.value);
-            System.out.println(Arrays.deepToString(values2));
+            int[][] intArray = PCJ.collect(Communicable.intArray);
+            System.out.println(Arrays.deepToString(intArray));
+
+            PcjFuture<Serializable[]> nullObjectsFuture = PCJ.asyncCollect(Communicable.nullObject);
+            System.out.println(Arrays.deepToString(nullObjectsFuture.get()));
         }
     }
 }

@@ -9,16 +9,13 @@
 package org.pcj.internal.message.collect;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.nio.channels.SocketChannel;
-import java.util.Comparator;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
-import org.pcj.internal.PrimitiveTypes;
 import org.pcj.internal.message.Message;
 import org.pcj.internal.message.MessageType;
 import org.pcj.internal.network.MessageDataInputStream;
@@ -38,7 +35,7 @@ final public class CollectResponseMessage<T> extends Message {
         super(MessageType.COLLECT_RESPONSE);
     }
 
-    CollectResponseMessage(int groupId, Map<Integer, T> valueMap, int requestNum, int requesterThreadId, Queue<Exception> exceptions) {
+    CollectResponseMessage(int groupId, int requestNum, int requesterThreadId, Map<Integer, T> valueMap, Queue<Exception> exceptions) {
         this();
 
         this.groupId = groupId;
@@ -87,38 +84,9 @@ final public class CollectResponseMessage<T> extends Message {
         CollectStates states = commonGroup.getCollectStates();
         CollectStates.State<T> state = (CollectStates.State<T>) states.remove(requestNum, requesterThreadId);
 
-        Class<?> clazz = state.getValueClass();
-        T valueArray = (T) convertMapToArray(clazz);
-
-        state.signal(valueArray, exceptions);
+        state.signal(valueMap, exceptions);
     }
 
-    private Object convertMapToArray(Class<?> clazz) {
-        if (PrimitiveTypes.isPrimitiveClass(clazz)) {
-            int size = valueMap.size();
-            Object primitiveArray = Array.newInstance(clazz, size);
-
-            for (int i = 0; i < size; i++) {
-                T t = valueMap.get(i);
-
-                if (clazz == double.class) Array.setDouble(primitiveArray, i, (Double) t);
-                else if (clazz == float.class) Array.setFloat(primitiveArray, i, (Float) t);
-                else if (clazz == long.class) Array.setLong(primitiveArray, i, (Long) t);
-                else if (clazz == int.class) Array.setInt(primitiveArray, i, (Integer) t);
-                else if (clazz == short.class) Array.setShort(primitiveArray, i, (Short) t);
-                else if (clazz == char.class) Array.setChar(primitiveArray, i, (Character) t);
-                else if (clazz == byte.class) Array.setByte(primitiveArray, i, (Byte) t);
-                else if (clazz == boolean.class) Array.setBoolean(primitiveArray, i, (Boolean) t);
-            }
-            return primitiveArray;
-        } else {
-            return valueMap.entrySet()
-                           .stream()
-                           .sorted(Comparator.comparing(Map.Entry::getKey))
-                           .map(Map.Entry::getValue)
-                           .toArray(size -> (Object[]) Array.newInstance(clazz, size));
-        }
-    }
 
 
 }
