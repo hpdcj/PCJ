@@ -41,6 +41,9 @@ import org.pcj.internal.message.get.ValueGetRequestMessage;
 import org.pcj.internal.message.get.ValueGetResponseMessage;
 import org.pcj.internal.message.put.ValuePutRequestMessage;
 import org.pcj.internal.message.put.ValuePutResponseMessage;
+import org.pcj.internal.message.reduce.ReduceRequestMessage;
+import org.pcj.internal.message.reduce.ReduceResponseMessage;
+import org.pcj.internal.message.reduce.ReduceValueMessage;
 
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
@@ -76,6 +79,9 @@ public enum MessageType {
     COLLECT_REQUEST((byte)40, CollectRequestMessage::new),
     COLLECT_VALUE((byte)41, CollectValueMessage::new),
     COLLECT_RESPONSE((byte)42, CollectResponseMessage::new),
+    REDUCE_REQUEST((byte)43, ReduceRequestMessage::new),
+    REDUCE_VALUE((byte)44, ReduceValueMessage::new),
+    REDUCE_RESPONSE((byte)45, ReduceResponseMessage::new),
     UNKNOWN((byte) -1, MessageUnknown::new);
     //    /* **************************************************** */
     private static final Map<Byte, MessageType> map;

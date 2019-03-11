@@ -119,8 +119,8 @@ final public class Networker {
             String stack = Arrays.stream(ex.getStackTrace())
                                    .filter(st -> st.getClassName().startsWith("org.pcj."))
                                    .map(StackTraceElement::toString)
-                                   .collect(Collectors.joining("\n\t at "));
-            LOGGER.log(Level.SEVERE, "Unable to send " + message + " to " + socket + ". Contains not serializable type: " + ex.getMessage() + "\n\t" + stack);
+                                   .collect(Collectors.joining("\n\tat "));
+            LOGGER.log(Level.SEVERE, "Unable to send message " + message + " to " + socket + " - contains not serializable type: " + ex.getMessage() + "\n\t" + stack);
         } catch (Throwable t) {
             LOGGER.log(Level.SEVERE, "Exception while sending message: " + message + " to " + socket, t);
         }

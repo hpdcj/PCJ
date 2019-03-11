@@ -8,23 +8,27 @@
  */
 package org.pcj.internal;
 
+import java.io.Serializable;
 import java.nio.channels.SocketChannel;
+import java.util.function.BinaryOperator;
 import org.pcj.AsyncTask;
 import org.pcj.Group;
 import org.pcj.PcjFuture;
 import org.pcj.internal.message.at.AsyncAtRequestMessage;
 import org.pcj.internal.message.at.AsyncAtStates;
 import org.pcj.internal.message.barrier.BarrierStates;
-import org.pcj.internal.message.broadcast.BroadcastStates;
 import org.pcj.internal.message.broadcast.BroadcastRequestMessage;
+import org.pcj.internal.message.broadcast.BroadcastStates;
 import org.pcj.internal.message.collect.CollectRequestMessage;
 import org.pcj.internal.message.collect.CollectStates;
-import org.pcj.internal.message.get.ValueGetStates;
 import org.pcj.internal.message.get.ValueGetRequestMessage;
+import org.pcj.internal.message.get.ValueGetStates;
 import org.pcj.internal.message.peerbarrier.PeerBarrierMessage;
 import org.pcj.internal.message.peerbarrier.PeerBarrierStates;
-import org.pcj.internal.message.put.ValuePutStates;
 import org.pcj.internal.message.put.ValuePutRequestMessage;
+import org.pcj.internal.message.put.ValuePutStates;
+import org.pcj.internal.message.reduce.ReduceRequestMessage;
+import org.pcj.internal.message.reduce.ReduceStates;
 
 /**
  * External class that represents group for grouped communication.
@@ -48,7 +52,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         this.valueGetStates = new ValueGetStates();
         this.valuePutStates = new ValuePutStates();
         this.asyncAtStates = new AsyncAtStates();
-        this.peerBarrierStates  = new PeerBarrierStates();
+        this.peerBarrierStates = new PeerBarrierStates();
     }
 
     public int myId() {
@@ -107,10 +111,8 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
 
     @Override
     public <T> PcjFuture<T> asyncCollect(Enum<?> variable, int... indices) {
-
         String sharedEnumClassName = variable.getDeclaringClass().getName();
         String variableName = variable.name();
-
 
         CollectStates states = super.getCollectStates();
         CollectStates.State<T> state = states.create(myThreadId, this);
@@ -118,6 +120,27 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         CollectRequestMessage message = new CollectRequestMessage(
                 super.getGroupId(), state.getRequestNum(), myThreadId,
                 sharedEnumClassName, variableName, indices);
+
+        int physicalMasterId = super.getCommunicationTree().getMasterNode();
+        SocketChannel masterSocket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId(physicalMasterId);
+
+        InternalPCJ.getNetworker().send(masterSocket, message);
+
+        return state.getFuture();
+    }
+
+    @Override
+    public <T, F extends Serializable & BinaryOperator<T>> PcjFuture<T> asyncReduce(F function, Enum<?> variable, int... indices) {
+        String sharedEnumClassName = variable.getDeclaringClass().getName();
+        String variableName = variable.name();
+
+        ReduceStates states = super.getReduceStates();
+        ReduceStates.State<T,F> state = states.create(myThreadId, this);
+
+        ReduceRequestMessage message = new ReduceRequestMessage(
+                super.getGroupId(), state.getRequestNum(), myThreadId,
+                sharedEnumClassName, variableName, indices, function
+        );
 
         int physicalMasterId = super.getCommunicationTree().getMasterNode();
         SocketChannel masterSocket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId(physicalMasterId);

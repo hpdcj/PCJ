@@ -22,6 +22,7 @@ import org.pcj.internal.message.barrier.BarrierStates;
 import org.pcj.internal.message.broadcast.BroadcastStates;
 import org.pcj.internal.message.collect.CollectStates;
 import org.pcj.internal.message.join.GroupJoinStates;
+import org.pcj.internal.message.reduce.ReduceStates;
 
 /**
  * Internal (with common ClassLoader) representation of Group. It contains
@@ -43,6 +44,7 @@ public class InternalCommonGroup {
     private final BarrierStates barrierStates;
     private final BroadcastStates broadcastStates;
     private final CollectStates collectStates;
+    private final ReduceStates reduceStates;
     private final GroupJoinStates groupJoinStates;
 
     public InternalCommonGroup(InternalCommonGroup g) {
@@ -57,6 +59,7 @@ public class InternalCommonGroup {
         this.barrierStates = g.barrierStates;
         this.broadcastStates = g.broadcastStates;
         this.collectStates = g.collectStates;
+        this.reduceStates = g.reduceStates;
         this.groupJoinStates = g.groupJoinStates;
     }
 
@@ -72,6 +75,7 @@ public class InternalCommonGroup {
         this.barrierStates = new BarrierStates();
         this.broadcastStates = new BroadcastStates();
         this.collectStates = new CollectStates();
+        this.reduceStates = new ReduceStates();
         this.groupJoinStates = new GroupJoinStates();
     }
 
@@ -149,6 +153,10 @@ public class InternalCommonGroup {
 
     final public CollectStates getCollectStates() {
         return collectStates;
+    }
+
+    final public ReduceStates getReduceStates() {
+        return reduceStates;
     }
 
     public GroupJoinStates getGroupJoinStates() {

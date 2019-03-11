@@ -255,7 +255,7 @@ public class InternalStorages {
         } else {
             Object array = getArrayElement(value, indices, indices.length - 1);
             if (!array.getClass().isArray()) {
-                throw new ClassCastException("Cannot put value to '" + parent + "." + name + Arrays.toString(indices) + "'.");
+                throw new ClassCastException("Cannot get value to '" + parent + "." + name + Arrays.toString(indices) + "'.");
             } else if (Array.getLength(array) <= indices[indices.length - 1]) {
                 throw new ArrayIndexOutOfBoundsException("Cannot put value to '" + parent + "." + name + Arrays.toString(indices) + "'.");
             }
