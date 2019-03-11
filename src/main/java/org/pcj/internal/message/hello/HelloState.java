@@ -19,7 +19,7 @@ import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.Networker;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.NodeInfo;
-import org.pcj.internal.futures.InternalFuture;
+import org.pcj.internal.InternalFuture;
 import org.pcj.internal.message.Message;
 import org.pcj.internal.message.bye.ByeState;
 

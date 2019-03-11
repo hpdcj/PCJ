@@ -6,7 +6,7 @@
  *
  * See the file "LICENSE" for the full license governing this code.
  */
-package org.pcj.internal.futures;
+package org.pcj.internal;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;

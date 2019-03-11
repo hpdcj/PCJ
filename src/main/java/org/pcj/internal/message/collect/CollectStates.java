@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -175,7 +176,7 @@ public class CollectStates {
 
         private Object convertMapToArray(Map<Integer, T> valueMap) {
             Class<?> clazz = getValueClass();
-//            int size = valueMap.keySet().stream().mapToInt(Integer::intValue).max().orElse(-1) + 1;
+
             int size = valueMap.size();
             Object array = Array.newInstance(clazz, size);
 

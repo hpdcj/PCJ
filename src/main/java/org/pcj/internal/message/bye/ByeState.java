@@ -7,7 +7,7 @@ import org.pcj.internal.InternalGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.Networker;
 import org.pcj.internal.NodeData;
-import org.pcj.internal.futures.InternalFuture;
+import org.pcj.internal.InternalFuture;
 
 public class ByeState {
 
