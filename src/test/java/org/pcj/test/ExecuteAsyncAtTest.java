@@ -41,7 +41,7 @@ public class ExecuteAsyncAtTest implements StartPoint {
 
         NodesDescription nodesDescription = new NodesDescription(new String[]{
                 "localhost",
-                "localhost",});
+                "localhost:8092",});
 
 //        PCJ.start(EasyTest.class, EasyTest.class,
         PCJ.deploy(ExecuteAsyncAtTest.class, nodesDescription);
@@ -50,6 +50,7 @@ public class ExecuteAsyncAtTest implements StartPoint {
     @Override
     public void main() throws Throwable {
         if (PCJ.myId() == 0) {
+            Thread.sleep(1000);
             try {
                 PCJ.asyncAt(1, () -> {
                     PCJ.putLocal(PCJ.myId(), Shared.v);
@@ -64,7 +65,7 @@ public class ExecuteAsyncAtTest implements StartPoint {
                                                      .collect(Collectors.joining("\n")));
             }
         }
-        PCJ.barrier();
+//        PCJ.barrier();
         System.out.println("v = " + v);
     }
 }

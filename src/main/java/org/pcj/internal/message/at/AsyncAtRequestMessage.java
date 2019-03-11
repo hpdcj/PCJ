@@ -71,7 +71,7 @@ final public class AsyncAtRequestMessage<T> extends Message {
         }
 
         NodeData nodeData = InternalPCJ.getNodeData();
-        PcjThread pcjThread = nodeData.getPcjThread(groupId, requesterThreadId);
+        PcjThread pcjThread = nodeData.getPcjThread(groupId, threadId);
 
         pcjThread.executeOnAsyncTasksWorkers(() -> {
             AsyncAtResponseMessage asyncAtResponseMessage;
