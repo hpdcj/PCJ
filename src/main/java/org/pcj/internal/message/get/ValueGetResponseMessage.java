@@ -60,10 +60,10 @@ public class ValueGetResponseMessage extends Message {
         out.writeInt(requestNum);
         out.writeInt(requesterThreadId);
         out.writeBoolean(exception != null);
-        if (exception == null) {
-            out.writeObject(variableValue);
-        } else {
+        if (exception != null) {
             out.writeObject(exception);
+        } else {
+            out.writeObject(variableValue);
         }
     }
 

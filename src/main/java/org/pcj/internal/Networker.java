@@ -9,13 +9,16 @@
 package org.pcj.internal;
 
 import java.io.IOException;
+import java.io.NotSerializableException;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import org.pcj.internal.message.Message;
 import org.pcj.internal.message.MessageType;
 import org.pcj.internal.network.LoopbackMessageBytesStream;
@@ -112,8 +115,14 @@ final public class Networker {
                 }
                 selectorProc.writeMessage(socket, objectBytes);
             }
+        } catch (NotSerializableException ex) {
+            String stack = Arrays.stream(ex.getStackTrace())
+                                   .filter(st -> st.getClassName().startsWith("org.pcj."))
+                                   .map(StackTraceElement::toString)
+                                   .collect(Collectors.joining("\n\t at "));
+            LOGGER.log(Level.SEVERE, "Unable to send " + message + " to " + socket + ". Contains not serializable type: " + ex.getMessage() + "\n\t" + stack);
         } catch (Throwable t) {
-            LOGGER.log(Level.SEVERE, "Exception while sending message", t);
+            LOGGER.log(Level.SEVERE, "Exception while sending message: " + message + " to " + socket, t);
         }
     }
 
