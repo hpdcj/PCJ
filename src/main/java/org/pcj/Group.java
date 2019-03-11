@@ -8,10 +8,6 @@
  */
 package org.pcj;
 
-import java.io.Serializable;
-import java.util.function.BiFunction;
-import java.util.function.BinaryOperator;
-
 /**
  * Class that represents group of PCJ Threads.
  *
@@ -95,11 +91,12 @@ public interface Group {
      * from the group.
      *
      * @param <T>      type of value
+     * @param function reduce function
      * @param variable variable name
      * @param indices  (optional) indices for array variable
      * @return {@link org.pcj.PcjFuture} that will contain shared variable value
      */
-    <T, F extends Serializable& BinaryOperator<T>> PcjFuture<T> asyncReduce(F function, Enum<?> variable, int... indices);
+    <T> PcjFuture<T> asyncReduce(ReduceOperation<T> function, Enum<?> variable, int... indices);
 
     /**
      * Asynchronous put operation. Puts value into shared variable to PCJ Thread

@@ -8,7 +8,6 @@
  */
 package org.pcj.internal.message.reduce;
 
-import java.io.Serializable;
 import java.nio.channels.SocketChannel;
 import java.util.Arrays;
 import java.util.List;
@@ -18,9 +17,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BinaryOperator;
 import org.pcj.PcjFuture;
 import org.pcj.PcjRuntimeException;
+import org.pcj.ReduceOperation;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
@@ -33,18 +32,18 @@ import org.pcj.internal.message.Message;
  */
 public class ReduceStates {
     private final AtomicInteger counter;
-    private final ConcurrentMap<List<Integer>, State<?,?>> stateMap;
+    private final ConcurrentMap<List<Integer>, State<?>> stateMap;
 
     public ReduceStates() {
         counter = new AtomicInteger(0);
         stateMap = new ConcurrentHashMap<>();
     }
 
-    public <T, F extends Serializable& BinaryOperator<T>> State<T,F> create(int threadId, InternalCommonGroup commonGroup) {
+    public <T> State<T> create(int threadId, InternalCommonGroup commonGroup) {
         int requestNum = counter.incrementAndGet();
 
         ReduceFuture<T> future = new ReduceFuture<>();
-        State<T,F> state = new State<>(requestNum, threadId, commonGroup.getCommunicationTree().getChildrenNodes().size(), future);
+        State<T> state = new State<>(requestNum, threadId, commonGroup.getCommunicationTree().getChildrenNodes().size(), future);
 
         stateMap.put(Arrays.asList(requestNum, threadId), state);
 
@@ -52,8 +51,8 @@ public class ReduceStates {
     }
 
     @SuppressWarnings("unchecked")
-    public <T, F extends Serializable& BinaryOperator<T>> State<T,F> getOrCreate(int requestNum, int requesterThreadId, InternalCommonGroup commonGroup) {
-        return (State<T,F>) stateMap.computeIfAbsent(Arrays.asList(requestNum, requesterThreadId),
+    public <T> State<T> getOrCreate(int requestNum, int requesterThreadId, InternalCommonGroup commonGroup) {
+        return (State<T>) stateMap.computeIfAbsent(Arrays.asList(requestNum, requesterThreadId),
                 key -> new State<>(requestNum, requesterThreadId, commonGroup.getCommunicationTree().getChildrenNodes().size()));
     }
 
@@ -61,7 +60,7 @@ public class ReduceStates {
         return stateMap.remove(Arrays.asList(requestNum, threadId));
     }
 
-    public class State<T, F extends Serializable & BinaryOperator<T>> {
+    public class State<T> {
 
         private final int requestNum;
         private final int requesterThreadId;
@@ -72,7 +71,7 @@ public class ReduceStates {
         private String sharedEnumClassName;
         private String variableName;
         private int[] indices;
-        private BinaryOperator<T> function;
+        private ReduceOperation<T> function;
 
         private State(int requestNum, int requesterThreadId, int childrenCount, ReduceFuture<T> future) {
             this.requestNum = requestNum;
@@ -97,7 +96,7 @@ public class ReduceStates {
             return future;
         }
 
-        void downProcessNode(InternalCommonGroup group, String sharedEnumClassName, String variableName, int[] indices, F function) {
+        void downProcessNode(InternalCommonGroup group, String sharedEnumClassName, String variableName, int[] indices, ReduceOperation<T> function) {
             this.sharedEnumClassName = sharedEnumClassName;
             this.variableName = variableName;
             this.indices = indices;

@@ -70,7 +70,7 @@ final public class CollectRequestMessage extends Message {
         InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
 
         CollectStates states = commonGroup.getCollectStates();
-        CollectStates.State state = states.getOrCreate(requestNum, requesterThreadId, commonGroup);
+        CollectStates.State<?> state = states.getOrCreate(requestNum, requesterThreadId, commonGroup);
 
         Networker networker = InternalPCJ.getNetworker();
         commonGroup.getCommunicationTree().getChildrenNodes()

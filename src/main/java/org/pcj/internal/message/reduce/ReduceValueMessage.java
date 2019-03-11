@@ -26,7 +26,7 @@ import org.pcj.internal.network.MessageDataOutputStream;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class ReduceValueMessage<T, F extends Serializable & BinaryOperator<T>> extends Message {
+final public class ReduceValueMessage<T> extends Message {
 
     private int groupId;
     private int requestNum;
@@ -84,7 +84,7 @@ final public class ReduceValueMessage<T, F extends Serializable & BinaryOperator
         InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
 
         ReduceStates states = commonGroup.getReduceStates();
-        ReduceStates.State<T,F> state = states.getOrCreate(requestNum, requesterThreadId, commonGroup);
+        ReduceStates.State<T> state = states.getOrCreate(requestNum, requesterThreadId, commonGroup);
 
         state.upProcessNode(commonGroup, value, exceptions);
     }

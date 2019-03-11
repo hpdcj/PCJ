@@ -8,14 +8,11 @@
  */
 package org.pcj.test;
 
-import java.io.Serializable;
 import java.util.Arrays;
-import java.util.function.BinaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
-import org.pcj.PcjFuture;
 import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
@@ -28,10 +25,12 @@ public class ReduceTest implements StartPoint {
 
     @Storage(ReduceTest.class)
     enum Communicable {
-        intArray,
+        intValue,
+        doubleArray
     }
 
-    private int intArray;
+    private int intValue;
+    private double[] doubleArray = new double[1];
 
     public static void main(String[] args) {
         Level level = Level.INFO;
@@ -56,11 +55,15 @@ public class ReduceTest implements StartPoint {
 
     @Override
     public void main() {
-        intArray = PCJ.myId() + 1;
+        intValue = PCJ.myId() + 1;
+        doubleArray[0] = 1.0 / PCJ.threadCount();
         PCJ.barrier();
         if (PCJ.myId() == 0) {
-            int intValueReduced = PCJ.reduce((Serializable& BinaryOperator<Integer>)Integer::sum, Communicable.intArray);
+            int intValueReduced = PCJ.reduce(Integer::sum, Communicable.intValue);
             System.out.println(intValueReduced);
+
+            double doubleArrayReduced = PCJ.reduce(Double::sum, Communicable.doubleArray, 0);
+            System.out.println(doubleArrayReduced);
         }
     }
 }

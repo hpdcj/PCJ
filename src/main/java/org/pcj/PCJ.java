@@ -8,10 +8,8 @@
  */
 package org.pcj;
 
-import java.io.Serializable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.BinaryOperator;
 import org.pcj.internal.DeployPCJ;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.PcjThread;
@@ -370,11 +368,12 @@ final public class PCJ extends InternalPCJ {
      * from the group.
      *
      * @param <T>      type of value
+     * @param function reduce function
      * @param variable variable name
      * @param indices  (optional) indices for array variable
      * @return {@link org.pcj.PcjFuture} that will contain shared variable value
      */
-    public static <T, F extends Serializable & BinaryOperator<T>> PcjFuture<T> asyncReduce(F function, Enum<?> variable, int... indices) {
+    public static <T> PcjFuture<T> asyncReduce(ReduceOperation<T> function, Enum<?> variable, int... indices) {
         return getGlobalGroup().asyncReduce(function, variable, indices);
     }
 
@@ -387,12 +386,13 @@ final public class PCJ extends InternalPCJ {
      * <blockquote>{@code PCJ.<T>asyncReduce(function, variable, indices).get();}</blockquote>
      *
      * @param <T>      type of value
+     * @param function reduce function
      * @param variable variable name
      * @param indices  (optional) indices for array variable
      * @return {@link org.pcj.PcjFuture} that will contain shared variable value
      */
-    public static <T, F extends Serializable & BinaryOperator<T>> T reduce(F function, Enum<?> variable, int... indices) {
-        return PCJ.<T, F>asyncReduce(function, variable, indices).get();
+    public static <T> T reduce(ReduceOperation<T> function, Enum<?> variable, int... indices) {
+        return PCJ.<T>asyncReduce(function, variable, indices).get();
     }
 
     /**

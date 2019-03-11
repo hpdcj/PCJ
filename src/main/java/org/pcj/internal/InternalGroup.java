@@ -8,12 +8,11 @@
  */
 package org.pcj.internal;
 
-import java.io.Serializable;
 import java.nio.channels.SocketChannel;
-import java.util.function.BinaryOperator;
 import org.pcj.AsyncTask;
 import org.pcj.Group;
 import org.pcj.PcjFuture;
+import org.pcj.ReduceOperation;
 import org.pcj.internal.message.at.AsyncAtRequestMessage;
 import org.pcj.internal.message.at.AsyncAtStates;
 import org.pcj.internal.message.barrier.BarrierStates;
@@ -130,14 +129,14 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     }
 
     @Override
-    public <T, F extends Serializable & BinaryOperator<T>> PcjFuture<T> asyncReduce(F function, Enum<?> variable, int... indices) {
+    public <T> PcjFuture<T> asyncReduce(ReduceOperation<T> function, Enum<?> variable, int... indices) {
         String sharedEnumClassName = variable.getDeclaringClass().getName();
         String variableName = variable.name();
 
         ReduceStates states = super.getReduceStates();
-        ReduceStates.State<T,F> state = states.create(myThreadId, this);
+        ReduceStates.State<T> state = states.create(myThreadId, this);
 
-        ReduceRequestMessage message = new ReduceRequestMessage(
+        ReduceRequestMessage<T> message = new ReduceRequestMessage<>(
                 super.getGroupId(), state.getRequestNum(), myThreadId,
                 sharedEnumClassName, variableName, indices, function
         );
