@@ -28,8 +28,6 @@ import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ScheduledFuture;
@@ -348,8 +346,8 @@ public abstract class InternalPCJ {
         InternalCommonGroup globalGroup = nodeData.getCommonGroupById(InternalCommonGroup.GLOBAL_GROUP_ID);
         Map<Integer, PcjThread> pcjThreads = new HashMap<>();
 
-        int minWorkerCount = allNodesThreadCount;
-        int maxWorkerCount = allNodesThreadCount*2;
+        int minWorkerCount = 0;
+        int maxWorkerCount = allNodesThreadCount * 2;
         if (Configuration.ASYNC_WORKERS_MIN_COUNT >= 0) {
             minWorkerCount = Configuration.ASYNC_WORKERS_MIN_COUNT;
         }
@@ -365,10 +363,92 @@ public abstract class InternalPCJ {
             InternalGroup threadGlobalGroup = new InternalGroup(threadId, globalGroup);
             PcjThreadData pcjThreadData = new PcjThreadData(threadGlobalGroup);
             PcjThread.PcjThreadGroup pcjThreadGroup = PcjThread.createPcjThreadGroup(threadId, pcjThreadData);
+
+            class BQ extends AbstractQueue<Runnable> implements BlockingQueue<Runnable>, RejectedExecutionHandler {
+
+                private final BlockingQueue<Runnable> queue;
+
+                public BQ(BlockingQueue<Runnable> blockingQueue) {
+                    queue = blockingQueue;
+                }
+
+                @Override
+                public Iterator<Runnable> iterator() {
+                    return queue.iterator();
+                }
+
+                @Override
+                public int size() {
+                    return queue.size();
+                }
+
+                @Override
+                public boolean offer(Runnable runnable) {
+                    return false;
+                }
+
+                @Override
+                public void put(Runnable runnable) throws InterruptedException {
+                    queue.put(runnable);
+                }
+
+                @Override
+                public boolean offer(Runnable runnable, long timeout, TimeUnit unit) throws InterruptedException {
+                    return false;
+                }
+
+                @Override
+                public Runnable take() throws InterruptedException {
+                    return queue.take();
+                }
+
+                @Override
+                public Runnable poll(long timeout, TimeUnit unit) throws InterruptedException {
+                    return queue.poll(timeout, unit);
+                }
+
+                @Override
+                public int remainingCapacity() {
+                    return queue.remainingCapacity();
+                }
+
+                @Override
+                public int drainTo(Collection<? super Runnable> c) {
+                    return queue.drainTo(c);
+                }
+
+                @Override
+                public int drainTo(Collection<? super Runnable> c, int maxElements) {
+                    return queue.drainTo(c, maxElements);
+                }
+
+                @Override
+                public Runnable poll() {
+                    return queue.poll();
+                }
+
+                @Override
+                public Runnable peek() {
+                    return queue.peek();
+                }
+
+                @Override
+                public void rejectedExecution(Runnable r, ThreadPoolExecutor e) {
+                    if (!e.isShutdown()) {
+                        try {
+                            queue.add(r);
+                        } catch (Exception ex) {
+                            throw new RejectedExecutionException("Task " + r.toString() + " rejected from " + e.toString());
+                        }
+                    }
+                }
+            }
+
+            BQ bq = new BQ(new ArrayBlockingQueue<>(Configuration.ASYNC_WORKERS_QUEUE_SIZE));
             ExecutorService asyncTasksWorkers = new ThreadPoolExecutor(
                     minWorkerCount, maxWorkerCount,
                     Configuration.ASYNC_WORKERS_KEEPALIVE, TimeUnit.SECONDS,
-                    new LinkedBlockingQueue<>(),
+                    bq,
                     new ThreadFactory() {
                         private final AtomicInteger counter = new AtomicInteger(0);
 
@@ -378,8 +458,10 @@ public abstract class InternalPCJ {
                                     "PcjThread-" + threadId + "-Task-" + counter.getAndIncrement());
                         }
                     },
-                    new ThreadPoolExecutor.AbortPolicy()
-                    );
+                    bq
+//            new ThreadPoolExecutor.AbortPolicy()
+            );
+
 
             PcjThread pcjThread = new PcjThread(startPointClass, threadId, pcjThreadGroup, asyncTasksWorkers, notificationSemaphore);
 

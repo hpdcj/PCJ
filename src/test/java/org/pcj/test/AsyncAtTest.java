@@ -53,8 +53,9 @@ public class AsyncAtTest implements StartPoint {
             for (int i = 0; i < 20; ++i) {
                 PCJ.asyncAt(1, () -> {
                     System.out.println("Hello World from "+Thread.currentThread().getName());
-                    Thread.sleep(1000);
+//                    Thread.sleep(200);
                 });
+                Thread.sleep(500);
             }
             Thread.sleep(1000);
             try {
