@@ -143,6 +143,9 @@ public abstract class InternalPCJ {
             /* Waiting for all threads complete */
             waitForPcjThreadsComplete(pcjThreads, notificationObject);
 
+            /* finishing */
+            byePhase();
+
             /* Finishing asyncTaskWorkers */
             pcjThreads.forEach(PcjThread::shutdownAsyncTasksWorkers);
 
@@ -163,9 +166,6 @@ public abstract class InternalPCJ {
                                 h, m, s
                         });
             }
-
-            /* finishing */
-            byePhase();
         } finally {
             networker.shutdown();
         }
