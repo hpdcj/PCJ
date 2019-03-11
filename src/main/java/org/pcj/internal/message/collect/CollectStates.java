@@ -15,7 +15,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -129,7 +128,11 @@ public class CollectStates {
                 }
 
                 if (exceptions.isEmpty()) {
-                    fillValueMap(group);
+                    try {
+                        fillValueMap(group);
+                    } catch (Exception ex) {
+                        exceptions.add(ex);
+                    }
                 }
 
                 Message message;

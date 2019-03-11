@@ -126,14 +126,16 @@ public class ReduceStates {
                     ReduceStates.this.remove(requestNum, requesterThreadId);
                 }
 
-                T reducedValue;
+                T reducedValue = null;
                 if (exceptions.isEmpty()) {
-                    reducedValue = getValue(group);
-                    for (T value : receivedValues) {
-                        reducedValue = function.apply(reducedValue, value);
+                    try {
+                        reducedValue = getValue(group);
+                        for (T value : receivedValues) {
+                            reducedValue = function.apply(reducedValue, value);
+                        }
+                    } catch (Exception ex) {
+                        exceptions.add(ex);
                     }
-                } else {
-                    reducedValue = null;
                 }
 
                 Message message;
