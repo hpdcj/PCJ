@@ -9,12 +9,9 @@
 package org.pcj.internal.message.reduce;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.nio.channels.SocketChannel;
-import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.function.BinaryOperator;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
