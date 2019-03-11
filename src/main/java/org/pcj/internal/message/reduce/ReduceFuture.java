@@ -19,7 +19,7 @@ import org.pcj.internal.InternalFuture;
  */
 public class ReduceFuture<T> extends InternalFuture<T> implements PcjFuture<T> {
 
-    private T valuesArray;
+    private T value;
     private PcjRuntimeException exception;
 
     ReduceFuture() {
@@ -31,8 +31,8 @@ public class ReduceFuture<T> extends InternalFuture<T> implements PcjFuture<T> {
     }
 
     @SuppressWarnings("unchecked")
-    protected void signalDone(Object valuesArray) {
-        this.valuesArray = (T) valuesArray;
+    protected void signalDone(T value) {
+        this.value = (T) value;
         super.signal();
     }
 
@@ -51,7 +51,7 @@ public class ReduceFuture<T> extends InternalFuture<T> implements PcjFuture<T> {
         if (exception != null) {
             throw exception;
         }
-        return valuesArray;
+        return value;
     }
 
     @Override
@@ -64,6 +64,6 @@ public class ReduceFuture<T> extends InternalFuture<T> implements PcjFuture<T> {
         if (exception != null) {
             throw exception;
         }
-        return valuesArray;
+        return value;
     }
 }

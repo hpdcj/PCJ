@@ -26,11 +26,13 @@ public class ReduceTest implements StartPoint {
     @Storage(ReduceTest.class)
     enum Communicable {
         intValue,
-        doubleArray
+        doubleArray,
+        string
     }
 
     private int intValue;
     private double[] doubleArray = new double[1];
+    private String string;
 
     public static void main(String[] args) {
         Level level = Level.INFO;
@@ -57,6 +59,7 @@ public class ReduceTest implements StartPoint {
     public void main() {
         intValue = PCJ.myId() + 1;
         doubleArray[0] = 1.0 / PCJ.threadCount();
+        string = Integer.toString(PCJ.myId());
         PCJ.barrier();
         if (PCJ.myId() == 0) {
             int intValueReduced = PCJ.reduce(Integer::sum, Communicable.intValue);
@@ -64,6 +67,9 @@ public class ReduceTest implements StartPoint {
 
             double doubleArrayReduced = PCJ.reduce(Double::sum, Communicable.doubleArray, 0);
             System.out.println(doubleArrayReduced);
+
+            String stringReduced = PCJ.reduce((a, b) -> (a + " " + b), Communicable.string);
+            System.out.println(stringReduced);
         }
     }
 }

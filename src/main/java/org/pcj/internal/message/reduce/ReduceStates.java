@@ -22,9 +22,9 @@ import org.pcj.PcjRuntimeException;
 import org.pcj.ReduceOperation;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
+import org.pcj.internal.InternalStorages;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.PcjThread;
-import org.pcj.internal.PcjThreadData;
 import org.pcj.internal.message.Message;
 
 /**
@@ -128,11 +128,10 @@ public class ReduceStates {
 
                 T reducedValue;
                 if (exceptions.isEmpty()) {
-                    reducedValue = receivedValues.stream().reduce(getValue(group), function);
-//                    reducedValue = getValue(group);
-//                    for (T value : receivedValues) {
-//                        reducedValue = function.apply(reducedValue, value);
-//                    }
+                    reducedValue = getValue(group);
+                    for (T value : receivedValues) {
+                        reducedValue = function.apply(reducedValue, value);
+                    }
                 } else {
                     reducedValue = null;
                 }
@@ -161,30 +160,22 @@ public class ReduceStates {
             NodeData nodeData = InternalPCJ.getNodeData();
             Set<Integer> threadsId = group.getLocalThreadsId();
 
-            return threadsId.stream()
-                           .map(group::getGlobalThreadId)
-                           .map(nodeData::getPcjThread)
-                           .map(PcjThread::getThreadData)
-                           .map(PcjThreadData::getStorages)
-                           .map(storage -> (T) storage.get(this.sharedEnumClassName, this.variableName, this.indices))
-                           .reduce(function)
-                           .get();
-//            boolean foundAny = false;
-//            T reducedValue = null;
-//            for (int threadId : threadsId) {
-//                int globalThreadId = group.getGlobalThreadId(threadId);
-//                PcjThread pcjThread = nodeData.getPcjThread(globalThreadId);
-//                InternalStorages storage = pcjThread.getThreadData().getStorages();
-//
-//                T value = storage.get(this.sharedEnumClassName, this.variableName, this.indices);
-//                if (!foundAny) {
-//                    foundAny = true;
-//                    reducedValue = value;
-//                } else {
-//                    reducedValue = function.apply(reducedValue, value);
-//                }
-//            }
-//            return reducedValue;
+            boolean foundAny = false;
+            T reducedValue = null;
+            for (int threadId : threadsId) {
+                int globalThreadId = group.getGlobalThreadId(threadId);
+                PcjThread pcjThread = nodeData.getPcjThread(globalThreadId);
+                InternalStorages storage = pcjThread.getThreadData().getStorages();
+
+                T value = storage.get(this.sharedEnumClassName, this.variableName, this.indices);
+                if (!foundAny) {
+                    foundAny = true;
+                    reducedValue = value;
+                } else {
+                    reducedValue = function.apply(reducedValue, value);
+                }
+            }
+            return reducedValue;
         }
 
         public void signal(T value, Queue<Exception> messageExceptions) {
