@@ -22,10 +22,10 @@ import org.pcj.Storage;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-@RegisterStorage(ExecuteAsyncAtTest.Shared.class)
-public class ExecuteAsyncAtTest implements StartPoint {
+@RegisterStorage(AsyncAtTest.Shared.class)
+public class AsyncAtTest implements StartPoint {
 
-    @Storage(ExecuteAsyncAtTest.class)
+    @Storage(AsyncAtTest.class)
     enum Shared {
         v
     }
@@ -44,12 +44,18 @@ public class ExecuteAsyncAtTest implements StartPoint {
                 "localhost:8092",});
 
 //        PCJ.start(EasyTest.class, EasyTest.class,
-        PCJ.deploy(ExecuteAsyncAtTest.class, nodesDescription);
+        PCJ.deploy(AsyncAtTest.class, nodesDescription);
     }
 
     @Override
     public void main() throws Throwable {
         if (PCJ.myId() == 0) {
+            for (int i = 0; i < 20; ++i) {
+                PCJ.asyncAt(1, () -> {
+                    System.out.println("Hello World from "+Thread.currentThread().getName());
+                    Thread.sleep(1000);
+                });
+            }
             Thread.sleep(1000);
             try {
                 PCJ.asyncAt(1, () -> {

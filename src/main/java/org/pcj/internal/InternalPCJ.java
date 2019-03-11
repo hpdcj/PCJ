@@ -14,17 +14,31 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.nio.channels.SocketChannel;
+import java.util.AbstractQueue;
 import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -134,20 +148,20 @@ public abstract class InternalPCJ {
             /* Preparing PcjThreads */
             Semaphore notificationObject = new Semaphore(0);
 
-            Set<PcjThread> pcjThreads = preparePcjThreads(startPointClass, currentJvm.getThreadIds(), notificationObject);
-            pcjThreads.forEach(nodeData::putPcjThread);
+            Map<Integer, PcjThread> pcjThreads = preparePcjThreads(startPointClass, allNodesThreadCount, currentJvm.getThreadIds(), notificationObject);
+            nodeData.updatePcjThreads(pcjThreads);
 
             /* Starting PcjThreads */
-            pcjThreads.forEach(PcjThread::start);
+            pcjThreads.values().forEach(PcjThread::start);
 
             /* Waiting for all threads complete */
-            waitForPcjThreadsComplete(pcjThreads, notificationObject);
+            waitForPcjThreadsComplete(pcjThreads.values(), notificationObject);
 
             /* finishing */
             byePhase();
 
             /* Finishing asyncTaskWorkers */
-            pcjThreads.forEach(PcjThread::shutdownAsyncTasksWorkers);
+            pcjThreads.values().stream().map(PcjThread::getAsyncWorkers).forEach(PcjThread.AsyncWorkers::shutdown);
 
             if (isCurrentJvmNode0) {
                 long timer = (System.nanoTime() - nanoTime) / 1_000_000_000L;
@@ -174,13 +188,31 @@ public abstract class InternalPCJ {
     private static Networker prepareNetworker(NodeInfo currentJvm) {
         int minWorkerCount = currentJvm.getThreadIds().size() + 1;
         int maxWorkerCount = currentJvm.getThreadIds().size() + 1;
-        if (Configuration.WORKERS_MIN_COUNT >= 0) {
-            minWorkerCount = Configuration.WORKERS_MIN_COUNT;
+        if (Configuration.NET_WORKERS_MIN_COUNT >= 0) {
+            minWorkerCount = Configuration.NET_WORKERS_MIN_COUNT;
         }
-        if (Configuration.WORKERS_MAX_COUNT > 0) {
-            maxWorkerCount = Configuration.WORKERS_MAX_COUNT;
+        if (Configuration.NET_WORKERS_MAX_COUNT > 0) {
+            maxWorkerCount = Configuration.NET_WORKERS_MAX_COUNT;
         }
-        return new Networker(minWorkerCount, Math.max(minWorkerCount, maxWorkerCount));
+        maxWorkerCount = Math.max(minWorkerCount, maxWorkerCount);
+
+        ExecutorService workers = new ThreadPoolExecutor(
+                minWorkerCount, maxWorkerCount,
+                Configuration.NET_WORKERS_KEEPALIVE, TimeUnit.SECONDS,
+                new ArrayBlockingQueue<>(Configuration.NET_WORKERS_QUEUE_SIZE),
+                new ThreadFactory() {
+                    private final AtomicInteger counter = new AtomicInteger(0);
+
+                    @Override
+                    public Thread newThread(Runnable r) {
+                        return new Thread(r, "Networker-Worker-" + counter.getAndIncrement());
+                    }
+                },
+                new ThreadPoolExecutor.CallerRunsPolicy());
+
+        LOGGER.log(Level.FINE, "Creating Networker with {0,number,#}-{1,number,#} {1,choice,1#worker|1<workers}",
+                new Object[]{minWorkerCount, maxWorkerCount});
+        return new Networker(workers);
     }
 
     private static Queue<InetAddress> getHostAllNetworkInferfaces() throws UncheckedIOException {
@@ -312,22 +344,52 @@ public abstract class InternalPCJ {
         }
     }
 
-    private static Set<PcjThread> preparePcjThreads(Class<? extends StartPoint> startPointClass, Set<Integer> threadIds, Semaphore notificationSemaphore) {
+    private static Map<Integer, PcjThread> preparePcjThreads(Class<? extends StartPoint> startPointClass, int allNodesThreadCount, Set<Integer> threadIds, Semaphore notificationSemaphore) {
         InternalCommonGroup globalGroup = nodeData.getCommonGroupById(InternalCommonGroup.GLOBAL_GROUP_ID);
-        Set<PcjThread> pcjThreads = new HashSet<>();
+        Map<Integer, PcjThread> pcjThreads = new HashMap<>();
+
+        int minWorkerCount = allNodesThreadCount;
+        int maxWorkerCount = allNodesThreadCount*2;
+        if (Configuration.ASYNC_WORKERS_MIN_COUNT >= 0) {
+            minWorkerCount = Configuration.ASYNC_WORKERS_MIN_COUNT;
+        }
+        if (Configuration.ASYNC_WORKERS_MAX_COUNT > 0) {
+            maxWorkerCount = Configuration.ASYNC_WORKERS_MAX_COUNT;
+        }
+        maxWorkerCount = Math.max(minWorkerCount, maxWorkerCount);
+
+        LOGGER.log(Level.FINE, "Creating PcjThreads with {0,number,#}-{1,number,#} asyncWorker{1,choice,1#|1<s}",
+                new Object[]{minWorkerCount, maxWorkerCount});
 
         for (int threadId : threadIds) {
             InternalGroup threadGlobalGroup = new InternalGroup(threadId, globalGroup);
             PcjThreadData pcjThreadData = new PcjThreadData(threadGlobalGroup);
-            PcjThread pcjThread = new PcjThread(threadId, startPointClass, pcjThreadData, notificationSemaphore);
+            PcjThread.PcjThreadGroup pcjThreadGroup = PcjThread.createPcjThreadGroup(threadId, pcjThreadData);
+            ExecutorService asyncTasksWorkers = new ThreadPoolExecutor(
+                    minWorkerCount, maxWorkerCount,
+                    Configuration.ASYNC_WORKERS_KEEPALIVE, TimeUnit.SECONDS,
+                    new LinkedBlockingQueue<>(),
+                    new ThreadFactory() {
+                        private final AtomicInteger counter = new AtomicInteger(0);
 
-            pcjThreads.add(pcjThread);
+                        @Override
+                        public Thread newThread(Runnable runnable) {
+                            return new Thread(pcjThreadGroup, runnable,
+                                    "PcjThread-" + threadId + "-Task-" + counter.getAndIncrement());
+                        }
+                    },
+                    new ThreadPoolExecutor.AbortPolicy()
+                    );
+
+            PcjThread pcjThread = new PcjThread(startPointClass, threadId, pcjThreadGroup, asyncTasksWorkers, notificationSemaphore);
+
+            pcjThreads.put(threadId, pcjThread);
         }
 
         return pcjThreads;
     }
 
-    private static void waitForPcjThreadsComplete(Set<PcjThread> pcjThreadsSet, Semaphore notificationSemaphore) {
+    private static void waitForPcjThreadsComplete(Collection<PcjThread> pcjThreadsSet, Semaphore notificationSemaphore) {
         Set<PcjThread> pcjThreads = new HashSet<>(pcjThreadsSet);
 
         try {

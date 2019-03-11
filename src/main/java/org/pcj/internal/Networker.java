@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
@@ -13,12 +13,7 @@ import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.pcj.internal.message.Message;
@@ -45,28 +40,9 @@ final public class Networker {
     private final Thread selectorProcThread;
     private final ExecutorService workers;
 
-    protected Networker(int minWorkerCount, int maxWorkerCount) {
-        LOGGER.log(Level.FINE, "Networker with {0,number,#}-{1,number,#} {1,choice,1#worker|1<workers}",
-                new Object[]{minWorkerCount, maxWorkerCount});
-
-        ThreadFactory threadFactory = new ThreadFactory() {
-            private final AtomicInteger counter = new AtomicInteger(0);
-
-            @Override
-            public Thread newThread(Runnable r) {
-                return new Thread(r, "Worker-" + counter.getAndIncrement());
-            }
-        };
-
-        this.workers = new ThreadPoolExecutor(
-                minWorkerCount, maxWorkerCount,
-                Configuration.WORKERS_KEEPALIVE, TimeUnit.SECONDS,
-                new ArrayBlockingQueue<>(Configuration.WORKERS_QUEUE_SIZE),
-                threadFactory,
-                new ThreadPoolExecutor.CallerRunsPolicy());
-
+    protected Networker(ExecutorService workers) {
+        this.workers = workers;
         this.selectorProc = new SelectorProc();
-
         this.selectorProcThread = new Thread(selectorProc, "SelectorProc");
         this.selectorProcThread.setDaemon(true);
     }
@@ -177,7 +153,7 @@ final public class Networker {
                 messageDataInputStream.close();
             } catch (Throwable t) {
                 LOGGER.log(Level.SEVERE, "Exception while processing message " + message
-                        + " by node(" + InternalPCJ.getNodeData().getCurrentNodePhysicalId() + ").", t);
+                                                 + " by node(" + InternalPCJ.getNodeData().getCurrentNodePhysicalId() + ").", t);
             }
         }
     }

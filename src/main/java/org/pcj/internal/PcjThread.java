@@ -11,12 +11,8 @@ package org.pcj.internal;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.PCJ;
 import org.pcj.PcjRuntimeException;
 import org.pcj.RegisterStorage;
@@ -34,40 +30,26 @@ import org.pcj.Storage;
  */
 public class PcjThread extends Thread {
 
-    private final int threadId;
     private final PcjThreadGroup pcjThreadGroup;
     private final Class<? extends StartPoint> startPointClass;
+    private final AsyncWorkers asyncWorkers;
     private final Semaphore notificationSemaphore;
-    private final ExecutorService asyncTasksWorkers;
     private Throwable throwable;
 
-    PcjThread(int threadId, Class<? extends StartPoint> startPointClass, PcjThreadData threadData, Semaphore notificationSemaphore) {
-        super(new PcjThreadGroup("PcjThreadGroup-" + threadId, threadData), "PcjThread-" + threadId);
+    PcjThread(Class<? extends StartPoint> startPointClass,
+              int threadId,
+              PcjThreadGroup pcjThreadGroup,
+              ExecutorService asyncTasksWorkers,
+              Semaphore notificationSemaphore) {
+        super(pcjThreadGroup, "PcjThread-" + threadId);
 
-        this.threadId = threadId;
-        this.notificationSemaphore = notificationSemaphore;
-        this.pcjThreadGroup = (PcjThreadGroup) this.getThreadGroup();
         this.startPointClass = startPointClass;
-
-        ThreadFactory threadFactory = new ThreadFactory() {
-            private final AtomicInteger counter = new AtomicInteger(0);
-
-            @Override
-            public Thread newThread(Runnable runnable) {
-                return new Thread(pcjThreadGroup, runnable,
-                        PcjThread.this.getName() + "-Task-" + counter.getAndIncrement());
-            }
-        };
-
-        this.asyncTasksWorkers = new ThreadPoolExecutor(0, Integer.MAX_VALUE,
-                60L, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>(),
-                threadFactory
-        );
-
+        this.pcjThreadGroup = pcjThreadGroup;
+        this.asyncWorkers = new AsyncWorkers(asyncTasksWorkers);
+        this.notificationSemaphore = notificationSemaphore;
     }
 
-    private static class PcjThreadGroup extends ThreadGroup {
+    static class PcjThreadGroup extends ThreadGroup {
 
         private final PcjThreadData threadData;
 
@@ -79,6 +61,31 @@ public class PcjThread extends Thread {
         public PcjThreadData getThreadData() {
             return threadData;
         }
+    }
+
+    public static class AsyncWorkers {
+        private final ExecutorService asyncTasksWorkers;
+
+        private AsyncWorkers(ExecutorService asyncTasksWorkers) {
+            this.asyncTasksWorkers = asyncTasksWorkers;
+        }
+
+        public void execute(Runnable runnable) {
+            asyncTasksWorkers.execute(runnable);
+        }
+
+        void shutdown() {
+            try {
+                asyncTasksWorkers.shutdown();
+                asyncTasksWorkers.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+            } catch (InterruptedException ex) {
+                throw new PcjRuntimeException("Interrupted exception while shutting down thread pool");
+            }
+        }
+    }
+
+    static PcjThreadGroup createPcjThreadGroup(int threadId, PcjThreadData pcjThreadData) {
+        return new PcjThreadGroup("PcjThreadGroup-" + threadId, pcjThreadData);
     }
 
     @Override
@@ -135,29 +142,16 @@ public class PcjThread extends Thread {
         return startPoint;
     }
 
-    int getThreadId() {
-        return threadId;
-    }
-
     Throwable getThrowable() {
         return throwable;
-    }
-
-    void shutdownAsyncTasksWorkers() {
-        try {
-            asyncTasksWorkers.shutdown();
-            asyncTasksWorkers.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-        } catch (InterruptedException ex) {
-            throw new PcjRuntimeException("Interrupted exception while shutting down thread pool");
-        }
     }
 
     public PcjThreadData getThreadData() {
         return pcjThreadGroup.getThreadData();
     }
 
-    public void executeOnAsyncTasksWorkers(Runnable runnable) {
-        asyncTasksWorkers.execute(runnable);
+    public AsyncWorkers getAsyncWorkers(){
+        return asyncWorkers;
     }
 
     private static PcjThreadGroup getPcjThreadGroupForCurrentThread() {

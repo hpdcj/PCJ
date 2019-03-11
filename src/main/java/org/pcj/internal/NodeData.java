@@ -130,8 +130,8 @@ final public class NodeData {
         return physicalIdByThreadId.get(globalThreadId);
     }
 
-    void putPcjThread(PcjThread pcjThread) {
-        pcjThreads.putIfAbsent(pcjThread.getThreadId(), pcjThread);
+    void updatePcjThreads(Map<Integer, PcjThread> pcjThreadMap) {
+        pcjThreads.putAll(pcjThreadMap);
     }
 
     public PcjThread getPcjThread(int globalThreadId) {
