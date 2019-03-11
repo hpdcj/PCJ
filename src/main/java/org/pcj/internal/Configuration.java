@@ -53,11 +53,11 @@ final public class Configuration {
      */
     final public static int BUFFER_POOL_SIZE;
     /**
-     * pcj.net.workers.min  (int) default: node.threadCount + 1
+     * pcj.net.workers.min  (int) default: 0
      */
     final public static int NET_WORKERS_MIN_COUNT;
     /**
-     * pcj.net.workers.max (int) default: node.threadCount + 1
+     * pcj.net.workers.max (int) default: available processors
      */
     final public static int NET_WORKERS_MAX_COUNT;
     /**
@@ -65,15 +65,20 @@ final public class Configuration {
      */
     final public static int NET_WORKERS_KEEPALIVE;
     /**
-     * pcj.net.workers.queuesize (int) default: 1024
+     * pcj.net.workers.queuesize (int) default: 0
+     * <ul>
+     * <li> = 0 - synchronous queue</li>
+     * <li> &gt; 0 - bounded queue</li>
+     * <li> &lt; 0 - unbounded queue</li>
+     * </ul>
      */
     final public static int NET_WORKERS_QUEUE_SIZE;
     /**
-     * pcj.async.workers.min  (int) default: totalThreadCount
+     * pcj.async.workers.min  (int) default: available processors
      */
     final public static int ASYNC_WORKERS_MIN_COUNT;
     /**
-     * pcj.async.workers.max (int) default: totalThreadCount
+     * pcj.async.workers.max (int) default: available processors
      */
     final public static int ASYNC_WORKERS_MAX_COUNT;
     /**
@@ -81,7 +86,12 @@ final public class Configuration {
      */
     final public static int ASYNC_WORKERS_KEEPALIVE;
     /**
-     * pcj.async.workers.queuesize (int) default: 1024
+     * pcj.async.workers.queuesize (int) default: -1
+     * <ul>
+     * <li> = 0 - synchronous queue</li>
+     * <li> &gt; 0 - bounded queue</li>
+     * <li> &lt; 0 - unbounded queue</li>
+     * </ul>
      */
     final public static int ASYNC_WORKERS_QUEUE_SIZE;
 
@@ -93,14 +103,14 @@ final public class Configuration {
         INIT_MAXTIME = getPropertyInt("pcj.init.maxtime", Math.max(30, (INIT_RETRY_COUNT + 1) * INIT_RETRY_DELAY));
         BUFFER_CHUNK_SIZE = getPropertyInt("pcj.buffer.chunksize", 8 * 1024);
         BUFFER_POOL_SIZE = getPropertyInt("pcj.buffer.poolsize", 1024);
-        NET_WORKERS_MIN_COUNT = getPropertyInt("pcj.net.workers.min", -1);
-        NET_WORKERS_MAX_COUNT = getPropertyInt("pcj.net.workers.max", -1);
+        NET_WORKERS_MIN_COUNT = getPropertyInt("pcj.net.workers.min", 0);
+        NET_WORKERS_MAX_COUNT = getPropertyInt("pcj.net.workers.max", Runtime.getRuntime().availableProcessors());
         NET_WORKERS_KEEPALIVE = getPropertyInt("pcj.net.workers.keepalive", 60);
-        NET_WORKERS_QUEUE_SIZE = getPropertyInt("pcj.net.workers.queuesize", 1024);
-        ASYNC_WORKERS_MIN_COUNT = getPropertyInt("pcj.async.workers.min", -1);
-        ASYNC_WORKERS_MAX_COUNT = getPropertyInt("pcj.async.workers.max", -1);
+        NET_WORKERS_QUEUE_SIZE = getPropertyInt("pcj.net.workers.queuesize", 0);
+        ASYNC_WORKERS_MIN_COUNT = getPropertyInt("pcj.async.workers.min", Runtime.getRuntime().availableProcessors());
+        ASYNC_WORKERS_MAX_COUNT = getPropertyInt("pcj.async.workers.max", Runtime.getRuntime().availableProcessors());
         ASYNC_WORKERS_KEEPALIVE = getPropertyInt("pcj.async.workers.keepalive", 60);
-        ASYNC_WORKERS_QUEUE_SIZE = getPropertyInt("pcj.async.workers.queuesize", 1024);
+        ASYNC_WORKERS_QUEUE_SIZE = getPropertyInt("pcj.async.workers.queuesize", -1);
 
         LOGGER.log(Level.CONFIG, "pcj.port:                     {0,number,#}", DEFAULT_PORT);
         LOGGER.log(Level.CONFIG, "pcj.init.backlog:             {0,number,#}", INIT_BACKLOG_COUNT);

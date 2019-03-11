@@ -14,7 +14,6 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.nio.channels.SocketChannel;
-import java.util.AbstractQueue;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
@@ -28,11 +27,11 @@ import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -146,7 +145,7 @@ public abstract class InternalPCJ {
             /* Preparing PcjThreads */
             Semaphore notificationObject = new Semaphore(0);
 
-            Map<Integer, PcjThread> pcjThreads = preparePcjThreads(startPointClass, allNodesThreadCount, currentJvm.getThreadIds(), notificationObject);
+            Map<Integer, PcjThread> pcjThreads = preparePcjThreads(startPointClass, currentJvm.getThreadIds(), notificationObject);
             nodeData.updatePcjThreads(pcjThreads);
 
             /* Starting PcjThreads */
@@ -184,20 +183,19 @@ public abstract class InternalPCJ {
     }
 
     private static Networker prepareNetworker(NodeInfo currentJvm) {
-        int minWorkerCount = currentJvm.getThreadIds().size() + 1;
-        int maxWorkerCount = currentJvm.getThreadIds().size() + 1;
-        if (Configuration.NET_WORKERS_MIN_COUNT >= 0) {
-            minWorkerCount = Configuration.NET_WORKERS_MIN_COUNT;
+        BlockingQueue<Runnable> blockingQueue;
+        if (Configuration.NET_WORKERS_QUEUE_SIZE > 0) {
+            blockingQueue = new ArrayBlockingQueue<>(Configuration.NET_WORKERS_QUEUE_SIZE);
+        } else if (Configuration.NET_WORKERS_QUEUE_SIZE == 0) {
+            blockingQueue = new SynchronousQueue<>();
+        } else {
+            blockingQueue = new LinkedBlockingQueue<>();
         }
-        if (Configuration.NET_WORKERS_MAX_COUNT > 0) {
-            maxWorkerCount = Configuration.NET_WORKERS_MAX_COUNT;
-        }
-        maxWorkerCount = Math.max(minWorkerCount, maxWorkerCount);
 
         ExecutorService workers = new ThreadPoolExecutor(
-                minWorkerCount, maxWorkerCount,
+                Configuration.NET_WORKERS_MIN_COUNT, Configuration.NET_WORKERS_MAX_COUNT,
                 Configuration.NET_WORKERS_KEEPALIVE, TimeUnit.SECONDS,
-                new ArrayBlockingQueue<>(Configuration.NET_WORKERS_QUEUE_SIZE),
+                blockingQueue,
                 new ThreadFactory() {
                     private final AtomicInteger counter = new AtomicInteger(0);
 
@@ -208,8 +206,6 @@ public abstract class InternalPCJ {
                 },
                 new ThreadPoolExecutor.CallerRunsPolicy());
 
-        LOGGER.log(Level.FINE, "Creating Networker with {0,number,#}-{1,number,#} {1,choice,1#worker|1<workers}",
-                new Object[]{minWorkerCount, maxWorkerCount});
         return new Networker(workers);
     }
 
@@ -342,113 +338,28 @@ public abstract class InternalPCJ {
         }
     }
 
-    private static Map<Integer, PcjThread> preparePcjThreads(Class<? extends StartPoint> startPointClass, int allNodesThreadCount, Set<Integer> threadIds, Semaphore notificationSemaphore) {
+    private static Map<Integer, PcjThread> preparePcjThreads(Class<? extends StartPoint> startPointClass, Set<Integer> threadIds, Semaphore notificationSemaphore) {
         InternalCommonGroup globalGroup = nodeData.getCommonGroupById(InternalCommonGroup.GLOBAL_GROUP_ID);
         Map<Integer, PcjThread> pcjThreads = new HashMap<>();
-
-        int minWorkerCount = 0;
-        int maxWorkerCount = allNodesThreadCount * 2;
-        if (Configuration.ASYNC_WORKERS_MIN_COUNT >= 0) {
-            minWorkerCount = Configuration.ASYNC_WORKERS_MIN_COUNT;
-        }
-        if (Configuration.ASYNC_WORKERS_MAX_COUNT > 0) {
-            maxWorkerCount = Configuration.ASYNC_WORKERS_MAX_COUNT;
-        }
-        maxWorkerCount = Math.max(minWorkerCount, maxWorkerCount);
-
-        LOGGER.log(Level.FINE, "Creating PcjThreads with {0,number,#}-{1,number,#} asyncWorker{1,choice,1#|1<s}",
-                new Object[]{minWorkerCount, maxWorkerCount});
 
         for (int threadId : threadIds) {
             InternalGroup threadGlobalGroup = new InternalGroup(threadId, globalGroup);
             PcjThreadData pcjThreadData = new PcjThreadData(threadGlobalGroup);
             PcjThread.PcjThreadGroup pcjThreadGroup = PcjThread.createPcjThreadGroup(threadId, pcjThreadData);
 
-            class BQ extends AbstractQueue<Runnable> implements BlockingQueue<Runnable>, RejectedExecutionHandler {
-
-                private final BlockingQueue<Runnable> queue;
-
-                public BQ(BlockingQueue<Runnable> blockingQueue) {
-                    queue = blockingQueue;
-                }
-
-                @Override
-                public Iterator<Runnable> iterator() {
-                    return queue.iterator();
-                }
-
-                @Override
-                public int size() {
-                    return queue.size();
-                }
-
-                @Override
-                public boolean offer(Runnable runnable) {
-                    return false;
-                }
-
-                @Override
-                public void put(Runnable runnable) throws InterruptedException {
-                    queue.put(runnable);
-                }
-
-                @Override
-                public boolean offer(Runnable runnable, long timeout, TimeUnit unit) throws InterruptedException {
-                    return false;
-                }
-
-                @Override
-                public Runnable take() throws InterruptedException {
-                    return queue.take();
-                }
-
-                @Override
-                public Runnable poll(long timeout, TimeUnit unit) throws InterruptedException {
-                    return queue.poll(timeout, unit);
-                }
-
-                @Override
-                public int remainingCapacity() {
-                    return queue.remainingCapacity();
-                }
-
-                @Override
-                public int drainTo(Collection<? super Runnable> c) {
-                    return queue.drainTo(c);
-                }
-
-                @Override
-                public int drainTo(Collection<? super Runnable> c, int maxElements) {
-                    return queue.drainTo(c, maxElements);
-                }
-
-                @Override
-                public Runnable poll() {
-                    return queue.poll();
-                }
-
-                @Override
-                public Runnable peek() {
-                    return queue.peek();
-                }
-
-                @Override
-                public void rejectedExecution(Runnable r, ThreadPoolExecutor e) {
-                    if (!e.isShutdown()) {
-                        try {
-                            queue.add(r);
-                        } catch (Exception ex) {
-                            throw new RejectedExecutionException("Task " + r.toString() + " rejected from " + e.toString());
-                        }
-                    }
-                }
+            BlockingQueue<Runnable> blockingQueue;
+            if (Configuration.ASYNC_WORKERS_QUEUE_SIZE > 0) {
+                blockingQueue = new ArrayBlockingQueue<>(Configuration.ASYNC_WORKERS_QUEUE_SIZE);
+            } else if (Configuration.ASYNC_WORKERS_QUEUE_SIZE == 0) {
+                blockingQueue = new SynchronousQueue<>();
+            } else {
+                blockingQueue = new LinkedBlockingQueue<>();
             }
 
-            BQ bq = new BQ(new ArrayBlockingQueue<>(Configuration.ASYNC_WORKERS_QUEUE_SIZE));
             ExecutorService asyncTasksWorkers = new ThreadPoolExecutor(
-                    minWorkerCount, maxWorkerCount,
+                    Configuration.ASYNC_WORKERS_MIN_COUNT, Configuration.ASYNC_WORKERS_MAX_COUNT,
                     Configuration.ASYNC_WORKERS_KEEPALIVE, TimeUnit.SECONDS,
-                    bq,
+                    blockingQueue,
                     new ThreadFactory() {
                         private final AtomicInteger counter = new AtomicInteger(0);
 
@@ -458,8 +369,7 @@ public abstract class InternalPCJ {
                                     "PcjThread-" + threadId + "-Task-" + counter.getAndIncrement());
                         }
                     },
-                    bq
-//            new ThreadPoolExecutor.AbortPolicy()
+                    new ThreadPoolExecutor.AbortPolicy()
             );
 
 

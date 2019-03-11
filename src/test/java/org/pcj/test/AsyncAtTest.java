@@ -9,11 +9,14 @@
 package org.pcj.test;
 
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
+import org.pcj.PcjFuture;
 import org.pcj.PcjRuntimeException;
 import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
@@ -50,18 +53,19 @@ public class AsyncAtTest implements StartPoint {
     @Override
     public void main() throws Throwable {
         if (PCJ.myId() == 0) {
+            Set<PcjFuture<?>> futures = new HashSet<>();
+
             for (int i = 0; i < 20; ++i) {
-                PCJ.asyncAt(1, () -> {
+                futures.add(PCJ.asyncAt(1, () -> {
                     System.out.println("Hello World from "+Thread.currentThread().getName());
-//                    Thread.sleep(200);
-                });
-                Thread.sleep(500);
+                    Thread.sleep(500);
+                }));
             }
             Thread.sleep(1000);
             try {
                 PCJ.asyncAt(1, () -> {
                     PCJ.putLocal(PCJ.myId(), Shared.v);
-                    // v = PCJ.myId; // throws java.io.NotSerializableException: org.pcj.test.ExecuteAsyncAtTest
+                    // v = PCJ.myId(); // throws java.io.NotSerializableException: org.pcj.test.ExecuteAsyncAtTest
                     System.out.println("output: " + PCJ.myId());
                     throw new RuntimeException("rzucony wyjatek");
                 }).get();
@@ -71,8 +75,9 @@ public class AsyncAtTest implements StartPoint {
                                                      .map(e -> "\t * " + e.toString())
                                                      .collect(Collectors.joining("\n")));
             }
+            futures.forEach(PcjFuture::get);
         }
-//        PCJ.barrier();
+        PCJ.barrier();
         System.out.println("v = " + v);
     }
 }
