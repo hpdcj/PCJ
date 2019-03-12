@@ -43,10 +43,10 @@ final public class Networker {
     private final Thread selectorProcThread;
     private final ExecutorService workers;
 
-    protected Networker(ExecutorService workers) {
+    protected Networker(ThreadGroup threadGroup, ExecutorService workers) {
         this.workers = workers;
         this.selectorProc = new SelectorProc();
-        this.selectorProcThread = new Thread(selectorProc, "SelectorProc");
+        this.selectorProcThread = new Thread(threadGroup, selectorProc, "SelectorProc");
         this.selectorProcThread.setDaemon(true);
     }
 
@@ -77,21 +77,23 @@ final public class Networker {
     }
 
     void shutdown() {
-        while (true) {
-            try {
-                Thread.sleep(10);
-                selectorProc.closeAllSockets();
-                break;
-            } catch (IOException ex) {
-                LOGGER.log(Level.FINEST, "Exception while closing sockets: {0}", ex.getMessage());
-            } catch (InterruptedException ex) {
-                LOGGER.log(Level.FINEST, "Interrupted while shutting down. Force shutdown.");
-                break;
+        try {
+            while (true) {
+                try {
+                    Thread.sleep(10);
+                    selectorProc.closeAllSockets();
+                    break;
+                } catch (IOException ex) {
+                    LOGGER.log(Level.FINEST, "Exception while closing sockets: {0}", ex.getMessage());
+                } catch (InterruptedException ex) {
+                    LOGGER.log(Level.FINEST, "Interrupted while shutting down. Force shutdown.");
+                    break;
+                }
             }
+        } finally {
+            selectorProcThread.interrupt();
+            workers.shutdownNow();
         }
-
-        selectorProcThread.interrupt();
-        workers.shutdownNow();
     }
 
     public void send(SocketChannel socket, Message message) {

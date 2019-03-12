@@ -36,7 +36,13 @@ public class AsyncAtTest implements StartPoint {
     private int v = -1;
 
     public static void main(String[] args) throws InterruptedException {
+//        System.setProperty("pcj.async.workers.min", "2");
+//        System.setProperty("pcj.async.workers.max", "3");
+//        System.setProperty("pcj.async.workers.keepalive", "1");
+//        System.setProperty("pcj.async.workers.queuesize", "2");
+
         Level level = Level.INFO;
+//        Level level = Level.CONFIG;
 //        Level level = Level.FINEST;
         Logger logger = Logger.getLogger("");
         Arrays.stream(logger.getHandlers()).forEach(handler -> handler.setLevel(level));
@@ -52,16 +58,29 @@ public class AsyncAtTest implements StartPoint {
 
     @Override
     public void main() throws Throwable {
-        if (PCJ.myId() == 0) {
+        if (PCJ.myId() == 1) {
             Set<PcjFuture<?>> futures = new HashSet<>();
 
-            for (int i = 0; i < 20; ++i) {
-                futures.add(PCJ.asyncAt(1, () -> {
-                    System.out.println("Hello World from "+Thread.currentThread().getName());
+            for (int i = 1; i <= 20; ++i) {
+                futures.add(PCJ.asyncAt(0, () -> {
+                    System.out.println("Hello World from " + Thread.currentThread().getName());
                     Thread.sleep(500);
                 }));
+//                if (i % 4 == 0 || i % 3 == 0) {
+//                    Thread.sleep(1000);
+//                }
             }
-            Thread.sleep(1000);
+            futures.forEach(future -> {
+                try {
+                    future.get();
+                } catch (PcjRuntimeException ex) {
+                    System.out.println("Exception: " + ex.getMessage() + " -> " + Arrays.stream(ex.getSuppressed()).map(Throwable::getMessage).collect(Collectors.joining(", ")));
+                }
+            });
+
+
+        }
+        if (PCJ.myId() == 0) {
             try {
                 PCJ.asyncAt(1, () -> {
                     PCJ.putLocal(PCJ.myId(), Shared.v);
@@ -75,7 +94,6 @@ public class AsyncAtTest implements StartPoint {
                                                      .map(e -> "\t * " + e.toString())
                                                      .collect(Collectors.joining("\n")));
             }
-            futures.forEach(PcjFuture::get);
         }
         PCJ.barrier();
         System.out.println("v = " + v);

@@ -32,10 +32,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -101,7 +99,7 @@ public abstract class InternalPCJ {
             LOGGER.log(Level.INFO, "PCJ version {0}", PCJ_VERSION);
         }
 
-        networker = prepareNetworker(currentJvm);
+        networker = prepareNetworker();
         networker.startup();
         try {
             /* Prepare initial data */
@@ -182,7 +180,7 @@ public abstract class InternalPCJ {
         }
     }
 
-    private static Networker prepareNetworker(NodeInfo currentJvm) {
+    private static Networker prepareNetworker() {
         BlockingQueue<Runnable> blockingQueue;
         if (Configuration.NET_WORKERS_QUEUE_SIZE > 0) {
             blockingQueue = new ArrayBlockingQueue<>(Configuration.NET_WORKERS_QUEUE_SIZE);
@@ -192,21 +190,16 @@ public abstract class InternalPCJ {
             blockingQueue = new LinkedBlockingQueue<>();
         }
 
-        ExecutorService workers = new ThreadPoolExecutor(
-                Configuration.NET_WORKERS_MIN_COUNT, Configuration.NET_WORKERS_MAX_COUNT,
-                Configuration.NET_WORKERS_KEEPALIVE, TimeUnit.SECONDS,
-                blockingQueue,
-                new ThreadFactory() {
-                    private final AtomicInteger counter = new AtomicInteger(0);
+        ThreadGroup threadGroup = new ThreadGroup("NetworkerGroup");
 
-                    @Override
-                    public Thread newThread(Runnable r) {
-                        return new Thread(r, "Networker-Worker-" + counter.getAndIncrement());
-                    }
-                },
+        ExecutorService workers = new WorkerPoolExecutor(
+                Configuration.NET_WORKERS_MIN_COUNT, Configuration.NET_WORKERS_MAX_COUNT,
+                Configuration.NET_WORKERS_KEEPALIVE,
+                threadGroup, "Networker-Worker-",
+                blockingQueue,
                 new ThreadPoolExecutor.CallerRunsPolicy());
 
-        return new Networker(workers);
+        return new Networker(threadGroup, workers);
     }
 
     private static Queue<InetAddress> getHostAllNetworkInferfaces() throws UncheckedIOException {
@@ -356,21 +349,12 @@ public abstract class InternalPCJ {
                 blockingQueue = new LinkedBlockingQueue<>();
             }
 
-            ExecutorService asyncTasksWorkers = new ThreadPoolExecutor(
+            ExecutorService asyncTasksWorkers = new WorkerPoolExecutor(
                     Configuration.ASYNC_WORKERS_MIN_COUNT, Configuration.ASYNC_WORKERS_MAX_COUNT,
-                    Configuration.ASYNC_WORKERS_KEEPALIVE, TimeUnit.SECONDS,
+                    Configuration.ASYNC_WORKERS_KEEPALIVE,
+                    pcjThreadGroup, "PcjThread-" + threadId + "-Task-",
                     blockingQueue,
-                    new ThreadFactory() {
-                        private final AtomicInteger counter = new AtomicInteger(0);
-
-                        @Override
-                        public Thread newThread(Runnable runnable) {
-                            return new Thread(pcjThreadGroup, runnable,
-                                    "PcjThread-" + threadId + "-Task-" + counter.getAndIncrement());
-                        }
-                    },
-                    new ThreadPoolExecutor.AbortPolicy()
-            );
+                    new ThreadPoolExecutor.AbortPolicy());
 
 
             PcjThread pcjThread = new PcjThread(startPointClass, threadId, pcjThreadGroup, asyncTasksWorkers, notificationSemaphore);

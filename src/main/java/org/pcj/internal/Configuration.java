@@ -74,7 +74,7 @@ final public class Configuration {
      */
     final public static int NET_WORKERS_QUEUE_SIZE;
     /**
-     * pcj.async.workers.min  (int) default: available processors
+     * pcj.async.workers.min  (int) default: 0
      */
     final public static int ASYNC_WORKERS_MIN_COUNT;
     /**
@@ -107,7 +107,7 @@ final public class Configuration {
         NET_WORKERS_MAX_COUNT = getPropertyInt("pcj.net.workers.max", Runtime.getRuntime().availableProcessors());
         NET_WORKERS_KEEPALIVE = getPropertyInt("pcj.net.workers.keepalive", 60);
         NET_WORKERS_QUEUE_SIZE = getPropertyInt("pcj.net.workers.queuesize", 0);
-        ASYNC_WORKERS_MIN_COUNT = getPropertyInt("pcj.async.workers.min", Runtime.getRuntime().availableProcessors());
+        ASYNC_WORKERS_MIN_COUNT = getPropertyInt("pcj.async.workers.min", 0);
         ASYNC_WORKERS_MAX_COUNT = getPropertyInt("pcj.async.workers.max", Runtime.getRuntime().availableProcessors());
         ASYNC_WORKERS_KEEPALIVE = getPropertyInt("pcj.async.workers.keepalive", 60);
         ASYNC_WORKERS_QUEUE_SIZE = getPropertyInt("pcj.async.workers.queuesize", -1);
