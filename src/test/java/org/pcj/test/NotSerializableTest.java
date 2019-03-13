@@ -11,6 +11,7 @@ package org.pcj.test;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.pcj.AsyncTask;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
 import org.pcj.PcjRuntimeException;
@@ -43,7 +44,6 @@ public class NotSerializableTest implements StartPoint {
         NodesDescription nodesDescription = new NodesDescription(new String[]{
                 "localhost"});
 
-//        PCJ.start(EasyTest.class, EasyTest.class,
         PCJ.deploy(NotSerializableTest.class, nodesDescription);
     }
 
@@ -51,13 +51,16 @@ public class NotSerializableTest implements StartPoint {
         try {
             System.out.print(method + ": ");
             r.run();
-            System.out.println("ERROR");
+            throw new IllegalStateException("Not throwing exception");
         } catch (PcjRuntimeException ex) {
             if (exceptionMessage.equals(ex.getMessage())) System.out.println("OK");
             else {
-                System.out.println("ERROR");
+                System.out.println("ERROR: wrong exception message");
                 ex.printStackTrace();
             }
+        } catch (Throwable ex) {
+            System.out.print("ERROR: ");
+            ex.printStackTrace();
         }
     }
 
@@ -66,66 +69,32 @@ public class NotSerializableTest implements StartPoint {
         check("PCJ.get", "Getting value failed", () -> {
             object = new Object();
             PCJ.get(0, Shared.object);
-            throw new IllegalStateException("PCJ.get should throw an exception!");
         });
 
-        try {
+        check("PCJ.put", "Putting value failed", () -> {
+            object = new Object();
             PCJ.put(new Object(), 0, Shared.object);
-            throw new IllegalStateException("PCJ.put should throw an exception!");
-        } catch (PcjRuntimeException ex) {
-            String message = ex.getMessage();
-            if ("Putting value failed".equals(message)) System.out.println("OK: " + message);
-            else throw new IllegalStateException(ex);
-        }
+        });
 
-        try {
+        check("PCJ.broadcast", "Broadcasting value failed", () -> {
             PCJ.broadcast(new Object(), Shared.object);
-            throw new IllegalStateException("PCJ.broadcast should throw an exception!");
-        } catch (PcjRuntimeException ex) {
-            String message = ex.getMessage();
-            if ("Broadcasting value failed".equals(message)) System.out.println("OK: " + message);
-            else throw new IllegalStateException(ex);
-        }
+        });
 
-        try {
+        check("PCJ.collect", "Collecting values failed", () -> {
             PCJ.collect(Shared.object);
-            throw new IllegalStateException("PCJ.collect should throw an exception!");
-        } catch (PcjRuntimeException ex) {
-            String message = ex.getMessage();
-            if ("Collecting values failed".equals(message)) System.out.println("OK: " + message);
-            else throw new IllegalStateException(ex);
-        }
+        });
 
-        try {
+        check("PCJ.reduce", "Reducing values failed", () -> {
             PCJ.reduce((a, b) -> false, Shared.object);
-            throw new IllegalStateException("PCJ.reduce should throw an exception!");
-        } catch (PcjRuntimeException ex) {
-            String message = ex.getMessage();
-            if ("Reducing values failed".equals(message)) System.out.println("OK: " + message);
-            else throw new IllegalStateException(ex);
-        }
+        });
 
-        try {
-            PCJ.at(0, () -> {
-                return new Object();
-            });
-            throw new IllegalStateException("PCJ.at(return) should throw an exception!");
-        } catch (PcjRuntimeException ex) {
-            String message = ex.getMessage();
-            if ("Asynchronous execution failed".equals(message)) System.out.println("OK: " + message);
-            else throw new IllegalStateException(ex);
-        }
+        check("PCJ.at(return)", "Asynchronous execution failed", () -> {
+            PCJ.at(0, (AsyncTask<Object>) Object::new);
+        });
 
-        try {
+        check("PCJ.at", "Asynchronous execution failed", () -> {
             Object o = new Object();
-            PCJ.at(0, () -> {
-                System.out.println(o.getClass());
-            });
-            throw new IllegalStateException("PCJ.at should throw an exception!");
-        } catch (PcjRuntimeException ex) {
-            String message = ex.getMessage();
-            if ("Asynchronous execution failed".equals(message)) System.out.println("OK: " + message);
-            else throw new IllegalStateException(ex);
-        }
+            PCJ.at(0, () -> System.out.println(o.getClass()));
+        });
     }
 }
