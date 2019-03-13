@@ -1,5 +1,5 @@
-/* 
- * Copyright (c) 2011-2017, PCJ Library, Marek Nowicki
+/*
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -9,19 +9,19 @@
 package org.pcj.internal.network;
 
 import java.nio.ByteBuffer;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- *
  * @author faramir
  */
 public class ByteBufferPool {
 
-    private final ConcurrentLinkedDeque<ByteBuffer> pool;
+    private final Queue<ByteBuffer> pool;
     private final int byteBufferChunkSize;
-    
+
     public ByteBufferPool(int maxSize, int byteBufferChunkSize) {
-        this.pool = new ConcurrentLinkedDeque<>();
+        this.pool = new ConcurrentLinkedQueue<>();
         this.byteBufferChunkSize = byteBufferChunkSize;
         for (int i = 0; i < maxSize; ++i) {
             pool.offer(ByteBuffer.allocateDirect(byteBufferChunkSize));
