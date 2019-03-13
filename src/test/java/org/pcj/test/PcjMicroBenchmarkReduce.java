@@ -8,7 +8,6 @@
  */
 package org.pcj.test;
 
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,7 +32,7 @@ import org.pcj.Storage;
 @RegisterStorage(PcjMicroBenchmarkReduce.Vars.class)
 public class PcjMicroBenchmarkReduce implements StartPoint {
 
-    private static final int NUMBER_OF_TESTS = 100;
+    private static final int NUMBER_OF_TESTS = 20;
     private static final int REPEAT_TEST_TIMES = 100;
 
     @Storage(PcjMicroBenchmarkReduce.class)
@@ -58,6 +57,7 @@ public class PcjMicroBenchmarkReduce implements StartPoint {
             });
         }
 
+//        PCJ.start(PcjMicroBenchmarkReduce.class, nodesDescription);
         PCJ.deploy(PcjMicroBenchmarkReduce.class, nodesDescription);
     }
 
@@ -91,7 +91,7 @@ public class PcjMicroBenchmarkReduce implements StartPoint {
             times = new ArrayList<>();
         }
 
-        public void test(double expectedValue) {
+        public long test(double expectedValue) {
 
             double value = Double.NaN;
 
@@ -99,11 +99,13 @@ public class PcjMicroBenchmarkReduce implements StartPoint {
             for (int i = 0; i < REPEAT_TEST_TIMES; ++i) {
                 value = method.get();
             }
-            times.add((System.nanoTime() - start) / REPEAT_TEST_TIMES);
+            long elapsed = System.nanoTime() - start;
+            times.add(elapsed / REPEAT_TEST_TIMES);
 
             if (PCJ.myId() == 0 && !equalsDouble(expectedValue, value)) {
                 System.err.println("Verification failed: " + value + " != " + expectedValue + " for " + name);
             }
+            return elapsed;
         }
 
         private static boolean equalsDouble(double d1, double d2) {
@@ -136,6 +138,9 @@ public class PcjMicroBenchmarkReduce implements StartPoint {
         };
 
         for (int i = 0; i < NUMBER_OF_TESTS; ++i) {
+            if (PCJ.myId() == 0) {
+                System.err.println("------ " + (i + 1) + " of " + NUMBER_OF_TESTS + " ------");
+            }
             double expectedValue = calculateExpectedValue();
             value = r.nextDouble();
             PCJ.barrier();
@@ -146,17 +151,17 @@ public class PcjMicroBenchmarkReduce implements StartPoint {
                 }
                 PCJ.barrier();
 
-                benchmark.test(expectedValue);
+                long elapsed = benchmark.test(expectedValue);
+                if (PCJ.myId() == 0) {
+                    System.err.println(benchmark.name + "\t" + elapsed);
+                }
             }
 
             PCJ.barrier();
         }
         if (PCJ.myId() == 0) {
             for (Benchmark benchmark : benchmarks) {
-                System.out.println(benchmark);
-            }
-            for (Benchmark benchmark : benchmarks) {
-                System.err.println(benchmark.name + Arrays.toString(benchmark.times.stream().mapToLong(Long::longValue).toArray()));
+                System.out.println(PCJ.getNodeCount() + "\t" + PCJ.threadCount() + "\t" + benchmark);
             }
         }
     }
