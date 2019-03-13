@@ -11,7 +11,7 @@ package org.pcj.internal.message.broadcast;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
@@ -69,7 +69,7 @@ final public class BroadcastInformMessage extends Message {
             try {
                 exceptions = (Queue<Exception>) in.readObject();
             } catch (Exception ex) {
-                exceptions = new ConcurrentLinkedDeque<>();
+                exceptions = new ConcurrentLinkedQueue<>();
                 exceptions.add(ex);
             }
         }

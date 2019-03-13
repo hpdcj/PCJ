@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.PcjFuture;
@@ -83,7 +83,7 @@ public class CollectStates {
             // notification from children and from itself
             notificationCount = new AtomicInteger(childrenCount + 1);
             valueMap = Collections.synchronizedMap(new HashMap<>());
-            exceptions = new ConcurrentLinkedDeque<>();
+            exceptions = new ConcurrentLinkedQueue<>();
         }
 
         private State(int requestNum, int requesterThreadId, int childrenCount) {
@@ -147,10 +147,15 @@ public class CollectStates {
                 } else {
                     socket = nodeData.getSocketChannelByPhysicalId(requesterPhysicalId);
 
-                    message = new CollectResponseMessage<T>(group.getGroupId(), requestNum, requesterThreadId, valueMap, exceptions);
+                    message = new CollectResponseMessage<>(group.getGroupId(), requestNum, requesterThreadId, valueMap, exceptions);
                 }
 
-                InternalPCJ.getNetworker().send(socket, message);
+                try {
+                    InternalPCJ.getNetworker().send(socket, message);
+                } catch (Exception ex) {
+                    exceptions.add(ex);
+                    InternalPCJ.getNetworker().send(socket, message);
+                }
             }
         }
 

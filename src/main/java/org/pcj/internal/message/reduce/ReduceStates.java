@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.PcjFuture;
@@ -80,8 +80,8 @@ public class ReduceStates {
 
             // notification from children and from itself
             notificationCount = new AtomicInteger(childrenCount + 1);
-            receivedValues = new ConcurrentLinkedDeque<>();
-            exceptions = new ConcurrentLinkedDeque<>();
+            receivedValues = new ConcurrentLinkedQueue<>();
+            exceptions = new ConcurrentLinkedQueue<>();
         }
 
         private State(int requestNum, int requesterThreadId, int childrenCount) {
@@ -153,7 +153,12 @@ public class ReduceStates {
                     message = new ReduceResponseMessage<>(group.getGroupId(), requestNum, requesterThreadId, reducedValue, exceptions);
                 }
 
-                InternalPCJ.getNetworker().send(socket, message);
+                try {
+                    InternalPCJ.getNetworker().send(socket, message);
+                } catch (Exception ex) {
+                    exceptions.add(ex);
+                    InternalPCJ.getNetworker().send(socket, message);
+                }
             }
         }
 
@@ -181,7 +186,7 @@ public class ReduceStates {
 
         public void signal(T value, Queue<Exception> messageExceptions) {
             if ((messageExceptions != null) && (!messageExceptions.isEmpty())) {
-                PcjRuntimeException ex = new PcjRuntimeException("Collecting values failed");
+                PcjRuntimeException ex = new PcjRuntimeException("Reducing values failed");
                 messageExceptions.forEach(ex::addSuppressed);
                 future.signalException(ex);
             } else {

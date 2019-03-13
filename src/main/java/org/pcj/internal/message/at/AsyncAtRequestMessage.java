@@ -75,15 +75,15 @@ final public class AsyncAtRequestMessage<T> extends Message {
 
         try {
             pcjThread.getAsyncWorkers().execute(() -> {
-                AsyncAtResponseMessage asyncAtResponseMessage;
                 try {
                     T returnedValue = asyncTask.call();
 
-                    asyncAtResponseMessage = new AsyncAtResponseMessage(groupId, requestNum, requesterThreadId, returnedValue);
+                    AsyncAtResponseMessage asyncAtResponseMessage = new AsyncAtResponseMessage(groupId, requestNum, requesterThreadId, returnedValue);
+                    InternalPCJ.getNetworker().send(sender, asyncAtResponseMessage);
                 } catch (Exception ex) {
-                    asyncAtResponseMessage = new AsyncAtResponseMessage(groupId, requestNum, requesterThreadId, ex);
+                    AsyncAtResponseMessage asyncAtResponseMessage = new AsyncAtResponseMessage(groupId, requestNum, requesterThreadId, ex);
+                    InternalPCJ.getNetworker().send(sender, asyncAtResponseMessage);
                 }
-                InternalPCJ.getNetworker().send(sender, asyncAtResponseMessage);
             });
         } catch (Exception ex) {
             AsyncAtResponseMessage asyncAtResponseMessage = new AsyncAtResponseMessage(groupId, requestNum, requesterThreadId, ex);

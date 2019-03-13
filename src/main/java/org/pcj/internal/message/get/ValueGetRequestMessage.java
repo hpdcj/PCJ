@@ -10,8 +10,10 @@ package org.pcj.internal.message.get;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
+import org.pcj.PcjRuntimeException;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.InternalStorages;
+import org.pcj.internal.Networker;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.PcjThread;
 import org.pcj.internal.message.Message;
@@ -74,14 +76,15 @@ public class ValueGetRequestMessage extends Message {
 
         InternalStorages storage = pcjThread.getThreadData().getStorages();
 
-        ValueGetResponseMessage valueGetResponseMessage;
+        Networker networker = InternalPCJ.getNetworker();
         try {
             Object variableValue = storage.get(sharedEnumClassName, name, indices);
-            valueGetResponseMessage = new ValueGetResponseMessage(groupId, requestNum, requesterThreadId, variableValue);
-        } catch (Exception ex) {
-            valueGetResponseMessage = new ValueGetResponseMessage(groupId, requestNum, requesterThreadId, ex);
-        }
 
-        InternalPCJ.getNetworker().send(sender, valueGetResponseMessage);
+            ValueGetResponseMessage valueGetResponseMessage = new ValueGetResponseMessage(groupId, requestNum, requesterThreadId, variableValue);
+            networker.send(sender, valueGetResponseMessage);
+        } catch (Exception ex) {
+            ValueGetResponseMessage valueGetResponseMessage = new ValueGetResponseMessage(groupId, requestNum, requesterThreadId, ex);
+            networker.send(sender, valueGetResponseMessage);
+        }
     }
 }

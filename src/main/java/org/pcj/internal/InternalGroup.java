@@ -8,10 +8,16 @@
  */
 package org.pcj.internal;
 
+import java.io.NotSerializableException;
 import java.nio.channels.SocketChannel;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import org.pcj.AsyncTask;
 import org.pcj.Group;
 import org.pcj.PcjFuture;
+import org.pcj.PcjRuntimeException;
 import org.pcj.ReduceOperation;
 import org.pcj.internal.message.at.AsyncAtRequestMessage;
 import org.pcj.internal.message.at.AsyncAtStates;
@@ -165,7 +171,11 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
                 super.getGroupId(), state.getRequestNum(), myThreadId, threadId,
                 variable.getDeclaringClass().getName(), variable.name(), indices, newValue);
 
-        InternalPCJ.getNetworker().send(socket, message);
+        try {
+            InternalPCJ.getNetworker().send(socket, message);
+        } catch (PcjRuntimeException ex) {
+            state.signal(ex);
+        }
 
         return state.getFuture();
     }
@@ -186,7 +196,13 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
         int physicalMasterId = super.getCommunicationTree().getMasterNode();
         SocketChannel masterSocket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId(physicalMasterId);
 
-        InternalPCJ.getNetworker().send(masterSocket, message);
+        try {
+            InternalPCJ.getNetworker().send(masterSocket, message);
+        } catch (PcjRuntimeException ex) {
+            Queue<Exception> queue = new ConcurrentLinkedQueue<>();
+            queue.add(ex);
+            state.signal(queue);
+        }
 
         return state.getFuture();
     }
@@ -203,7 +219,11 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
                 super.getGroupId(), state.getRequestNum(), myThreadId,
                 threadId, asyncTask);
 
-        InternalPCJ.getNetworker().send(socket, message);
+        try {
+            InternalPCJ.getNetworker().send(socket, message);
+        } catch (PcjRuntimeException ex) {
+            state.signal(null, ex);
+        }
 
         return state.getFuture();
     }
