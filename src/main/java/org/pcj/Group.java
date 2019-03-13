@@ -134,4 +134,15 @@ public interface Group {
      * @return {@link org.pcj.PcjFuture}&lt;{@link java.lang.Void}&gt;
      */
     <T> PcjFuture<Void> asyncBroadcast(T newValue, Enum<?> variable, int... indices);
+
+    /**
+     * This function will be removed.
+     *
+     * @return name of the group
+     * @deprecated use {@link #getName()} instead
+     */
+    @Deprecated
+    default String getGroupName() {
+        return getName();
+    }
 }
