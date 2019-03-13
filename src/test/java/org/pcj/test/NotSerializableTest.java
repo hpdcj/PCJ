@@ -9,11 +9,13 @@
 package org.pcj.test;
 
 import java.util.Arrays;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.pcj.AsyncTask;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
+import org.pcj.PcjFuture;
 import org.pcj.PcjRuntimeException;
 import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
@@ -47,10 +49,18 @@ public class NotSerializableTest implements StartPoint {
         PCJ.deploy(NotSerializableTest.class, nodesDescription);
     }
 
-    private void check(String method, String exceptionMessage, Runnable r) {
+    private void check(String method, String exceptionMessage, Supplier<? extends PcjFuture<?>> r) {
+        System.out.print(method + ": ");
+        PcjFuture<?> future;
         try {
-            System.out.print(method + ": ");
-            r.run();
+            future = r.get();
+        } catch (Throwable ex) {
+            System.out.print("ERROR when calling: ");
+            ex.printStackTrace();
+            return;
+        }
+        try {
+            future.get();
             throw new IllegalStateException("Not throwing exception");
         } catch (PcjRuntimeException ex) {
             if (exceptionMessage.equals(ex.getMessage())) System.out.println("OK");
@@ -66,35 +76,31 @@ public class NotSerializableTest implements StartPoint {
 
     @Override
     public void main() {
-        check("PCJ.get", "Getting value failed", () -> {
-            object = new Object();
-            PCJ.get(0, Shared.object);
-        });
+        check("PCJ.asyncGet", "Getting value failed",
+                () -> {
+                    object = new Object();
+                    return PCJ.asyncGet(0, Shared.object);
+                });
 
-        check("PCJ.put", "Putting value failed", () -> {
-            object = new Object();
-            PCJ.put(new Object(), 0, Shared.object);
-        });
+        check("PCJ.asyncPut", "Putting value failed",
+                () -> PCJ.asyncPut(new Object(), 0, Shared.object));
 
-        check("PCJ.broadcast", "Broadcasting value failed", () -> {
-            PCJ.broadcast(new Object(), Shared.object);
-        });
+        check("PCJ.asyncBroadcast", "Broadcasting value failed",
+                () -> PCJ.asyncBroadcast(new Object(), Shared.object));
 
-        check("PCJ.collect", "Collecting values failed", () -> {
-            PCJ.collect(Shared.object);
-        });
+        check("PCJ.asyncCollect", "Collecting values failed",
+                () -> PCJ.asyncCollect(Shared.object));
 
-        check("PCJ.reduce", "Reducing values failed", () -> {
-            PCJ.reduce((a, b) -> false, Shared.object);
-        });
+        check("PCJ.asyncReduce", "Reducing values failed",
+                () -> PCJ.asyncReduce((a, b) -> false, Shared.object));
 
-        check("PCJ.at(return)", "Asynchronous execution failed", () -> {
-            PCJ.at(0, (AsyncTask<Object>) Object::new);
-        });
+        check("PCJ.asyncAt(return)", "Asynchronous execution failed",
+                () -> PCJ.asyncAt(0, (AsyncTask<Object>) Object::new));
 
-        check("PCJ.at", "Asynchronous execution failed", () -> {
-            Object o = new Object();
-            PCJ.at(0, () -> System.out.println(o.getClass()));
-        });
+        check("PCJ.asyncAt", "Asynchronous execution failed",
+                () -> {
+                    Object o = new Object();
+                    return PCJ.asyncAt(0, () -> System.out.println(o.getClass()));
+                });
     }
 }
