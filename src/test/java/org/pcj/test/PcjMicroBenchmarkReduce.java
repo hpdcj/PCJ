@@ -10,6 +10,7 @@ package org.pcj.test;
 
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -32,6 +33,9 @@ import org.pcj.Storage;
 @RegisterStorage(PcjMicroBenchmarkReduce.Vars.class)
 public class PcjMicroBenchmarkReduce implements StartPoint {
 
+    private static final int NUMBER_OF_TESTS = 100;
+    private static final int REPEAT_TEST_TIMES = 100;
+
     @Storage(PcjMicroBenchmarkReduce.class)
     enum Vars {
         value,
@@ -50,15 +54,6 @@ public class PcjMicroBenchmarkReduce implements StartPoint {
             nodesDescription = new NodesDescription(args[0]);
         } else {
             nodesDescription = new NodesDescription(new String[]{
-                    "localhost",
-                    "localhost",
-                    "localhost",
-                    "localhost",
-                    "localhost",
-                    "localhost",
-                    "localhost",
-                    "localhost",
-                    "localhost",
                     "localhost",
             });
         }
@@ -84,6 +79,46 @@ public class PcjMicroBenchmarkReduce implements StartPoint {
         return null;
     }
 
+    private static class Benchmark {
+        private final String name;
+        private final Supplier<Double> method;
+        private final List<Long> times;
+
+        private Benchmark(String name, Supplier<Double> method) {
+            this.name = name;
+            this.method = method;
+
+            times = new ArrayList<>();
+        }
+
+        public void test(double expectedValue) {
+
+            double value = Double.NaN;
+
+            long start = System.nanoTime();
+            for (int i = 0; i < REPEAT_TEST_TIMES; ++i) {
+                value = method.get();
+            }
+            times.add((System.nanoTime() - start) / REPEAT_TEST_TIMES);
+
+            if (PCJ.myId() == 0 && !equalsDouble(expectedValue, value)) {
+                System.err.println("Verification failed: " + value + " != " + expectedValue + " for " + name);
+            }
+        }
+
+        private static boolean equalsDouble(double d1, double d2) {
+            return Math.abs(d1 - d2) / Math.max(Math.abs(d1), Math.abs(d2)) < 1e-8;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%-11s = %.7f",
+                    name,
+                    times.stream().mapToLong(Long::longValue).min().orElse(0) / 1e9
+            );
+        }
+    }
+
     @Override
     public void main() {
         Locale.setDefault(Locale.ENGLISH);
@@ -91,39 +126,38 @@ public class PcjMicroBenchmarkReduce implements StartPoint {
 
         Random r = new Random(PCJ.myId());
 
-        long pcjGetTime = Long.MAX_VALUE;
-        long pcjAsyncGetTime = Long.MAX_VALUE;
-        long pcjPutTime = Long.MAX_VALUE;
-        long pcjTreePutTime = Long.MAX_VALUE;
-        long pcjCollectTime = Long.MAX_VALUE;
-        long pcjReduceTime = Long.MAX_VALUE;
+        Benchmark[] benchmarks = new Benchmark[]{
+                new Benchmark("pcjGet", this::pcjGet),
+                new Benchmark("pcjAsyncGet", this::pcjAsyncGet),
+                new Benchmark("pcjPut", this::pcjPut),
+                new Benchmark("pcjTreePut", this::pcjTreePut),
+                new Benchmark("pcjCollect", this::pcjCollect),
+                new Benchmark("pcjReduce", this::pcjReduce),
+        };
 
-        for (int i = 0; i < 200; ++i) {
+        for (int i = 0; i < NUMBER_OF_TESTS; ++i) {
             double expectedValue = calculateExpectedValue();
             value = r.nextDouble();
             PCJ.barrier();
 
-            pcjGetTime = Math.min(pcjGetTime, checkTime("pcjGet", this::pcjGet, expectedValue));
+            for (Benchmark benchmark : benchmarks) {
+                for (Vars var : Vars.values()) {
+                    PCJ.monitor(var);
+                }
+                PCJ.barrier();
 
-            pcjAsyncGetTime = Math.min(pcjAsyncGetTime, checkTime("pcjAsyncGet", this::pcjAsyncGet, expectedValue));
-
-            pcjPutTime = Math.min(pcjPutTime, checkTime("pcjPut", this::pcjPut, expectedValue));
-
-            pcjTreePutTime = Math.min(pcjTreePutTime, checkTime("pcjTreePut", this::pcjTreePut, expectedValue));
-
-            pcjCollectTime = Math.min(pcjCollectTime, checkTime("pcjCollect", this::pcjCollect, expectedValue));
-
-            pcjReduceTime = Math.min(pcjReduceTime, checkTime("pcjReduce", this::pcjReduce, expectedValue));
+                benchmark.test(expectedValue);
+            }
 
             PCJ.barrier();
         }
         if (PCJ.myId() == 0) {
-            System.out.printf("pcjGet =      %.7f%n", pcjGetTime / 1e9);
-            System.out.printf("pcjAsyncGet = %.7f%n", pcjAsyncGetTime / 1e9);
-            System.out.printf("pcjPut =      %.7f%n", pcjPutTime / 1e9);
-            System.out.printf("pcjTreePut =  %.7f%n", pcjTreePutTime / 1e9);
-            System.out.printf("pcjCollect =  %.7f%n", pcjCollectTime / 1e9);
-            System.out.printf("pcjReduce =   %.7f%n", pcjReduceTime / 1e9);
+            for (Benchmark benchmark : benchmarks) {
+                System.out.println(benchmark);
+            }
+            for (Benchmark benchmark : benchmarks) {
+                System.err.println(benchmark.name + Arrays.toString(benchmark.times.stream().mapToLong(Long::longValue).toArray()));
+            }
         }
     }
 
@@ -186,29 +220,5 @@ public class PcjMicroBenchmarkReduce implements StartPoint {
             return PCJ.reduce(Double::sum, Vars.value);
         }
         return 0;
-    }
-
-    private long checkTime(String name, Supplier<Double> method, double expectedValue) {
-        double value = Double.NaN;
-
-        for (Vars var : Vars.values()) {
-            PCJ.monitor(var);
-        }
-        PCJ.barrier();
-
-        long start = System.nanoTime();
-        for (int i = 0; i < 100; ++i) {
-            value = method.get();
-        }
-        long elapsed = System.nanoTime() - start;
-
-        if (PCJ.myId() == 0 && !equalsDouble(expectedValue, value)) {
-            System.err.println("Verification failed: " + value + " != " + expectedValue + " for " + name);
-        }
-        return elapsed;
-    }
-
-    private static boolean equalsDouble(double d1, double d2) {
-        return Math.abs(d1 - d2) / Math.max(Math.abs(d1), Math.abs(d2)) < 1e-8;
     }
 }
