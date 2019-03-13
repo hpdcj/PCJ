@@ -27,7 +27,6 @@ import org.pcj.Storage;
 @RegisterStorage(NotSerializableTest.Shared.class)
 public class NotSerializableTest implements StartPoint {
 
-
     @Storage(NotSerializableTest.class)
     enum Shared {
         object;
