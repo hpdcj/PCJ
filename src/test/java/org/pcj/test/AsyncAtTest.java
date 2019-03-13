@@ -36,10 +36,10 @@ public class AsyncAtTest implements StartPoint {
     private int v = -1;
 
     public static void main(String[] args) throws InterruptedException {
-//        System.setProperty("pcj.async.workers.min", "2");
-//        System.setProperty("pcj.async.workers.max", "3");
-//        System.setProperty("pcj.async.workers.keepalive", "1");
-//        System.setProperty("pcj.async.workers.queuesize", "2");
+        System.setProperty("pcj.async.workers.min", "2");
+        System.setProperty("pcj.async.workers.max", "3");
+        System.setProperty("pcj.async.workers.keepalive", "1");
+        System.setProperty("pcj.async.workers.queuesize", "-1");
 
         Level level = Level.INFO;
 //        Level level = Level.CONFIG;
@@ -66,9 +66,9 @@ public class AsyncAtTest implements StartPoint {
                     System.out.println("Hello World from " + Thread.currentThread().getName());
                     Thread.sleep(500);
                 }));
-//                if (i % 4 == 0 || i % 3 == 0) {
-//                    Thread.sleep(1000);
-//                }
+                if (i % 3 == 0 || i % 4 == 0) {
+                    Thread.sleep(600);
+                }
             }
             futures.forEach(future -> {
                 try {

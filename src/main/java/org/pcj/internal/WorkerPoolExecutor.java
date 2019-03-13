@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * This is modified version of {@link ThreadPoolExecutor}.
  * <p>
  * This class adds another strategy of queuing. It holds corePoolSize threads and, if necessary, make new threads
- * to maximumPoolSize limit. If limit is reached, it adds tasks to the blocking queue.
+ * to maximumPoolSize limit. If limit is reached, it adds tasks to the work queue.
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
