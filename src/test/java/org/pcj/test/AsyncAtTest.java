@@ -36,8 +36,7 @@ public class AsyncAtTest implements StartPoint {
     private int v = -1;
 
     public static void main(String[] args) throws InterruptedException {
-        System.setProperty("pcj.async.workers.min", "2");
-        System.setProperty("pcj.async.workers.max", "3");
+        System.setProperty("pcj.async.workers.count", "3");
         System.setProperty("pcj.async.workers.keepalive", "1");
         System.setProperty("pcj.async.workers.queuesize", "-1");
 

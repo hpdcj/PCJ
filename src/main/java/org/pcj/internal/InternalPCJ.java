@@ -193,8 +193,7 @@ public abstract class InternalPCJ {
         ThreadGroup threadGroup = new ThreadGroup("NetworkerGroup");
 
         ExecutorService workers = new WorkerPoolExecutor(
-                Configuration.NET_WORKERS_MIN_COUNT, Configuration.NET_WORKERS_MAX_COUNT,
-                Configuration.NET_WORKERS_KEEPALIVE,
+                Configuration.NET_WORKERS_COUNT,
                 threadGroup, "Networker-Worker-",
                 blockingQueue,
                 new ThreadPoolExecutor.CallerRunsPolicy());
@@ -350,8 +349,7 @@ public abstract class InternalPCJ {
             }
 
             ExecutorService asyncTasksWorkers = new WorkerPoolExecutor(
-                    Configuration.ASYNC_WORKERS_MIN_COUNT, Configuration.ASYNC_WORKERS_MAX_COUNT,
-                    Configuration.ASYNC_WORKERS_KEEPALIVE,
+                    Configuration.ASYNC_WORKERS_COUNT,
                     pcjThreadGroup, "PcjThread-" + threadId + "-Task-",
                     blockingQueue,
                     new ThreadPoolExecutor.AbortPolicy());

@@ -67,8 +67,8 @@ final public class Networker {
 
     private void waitForConnectionEstablished(SocketChannel socket) throws InterruptedException, IOException {
         synchronized (socket) {
-            while (socket.isConnected() == false) {
-                if (socket.isConnectionPending() == false) {
+            while (!socket.isConnected()) {
+                if (!socket.isConnectionPending()) {
                     throw new IOException("Unable to connect to " + socket.getRemoteAddress());
                 }
                 socket.wait(100);
@@ -106,7 +106,7 @@ final public class Networker {
                 if (LOGGER.isLoggable(Level.FINEST)) {
                     LOGGER.log(Level.FINEST, "Locally processing message {0}", message.getType());
                 }
-                workers.submit(new WorkerTask(socket, message, loopbackMessageBytesStream.getMessageDataInputStream()));
+                workers.execute(new WorkerTask(socket, message, loopbackMessageBytesStream.getMessageDataInputStream()));
             } else {
                 MessageBytesOutputStream objectBytes = new MessageBytesOutputStream(message);
                 objectBytes.writeMessage();
@@ -142,7 +142,7 @@ final public class Networker {
             LOGGER.log(Level.FINEST, "Received message {0} from {1}", new Object[]{message.getType(), socket});
         }
 
-        workers.submit(new WorkerTask(socket, message, messageDataInputStream));
+        workers.execute(new WorkerTask(socket, message, messageDataInputStream));
     }
 
     private static class WorkerTask implements Runnable {
