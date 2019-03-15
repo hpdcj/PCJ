@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.pcj.internal.message.alive.AliveState;
 import org.pcj.internal.message.bye.ByeState;
 import org.pcj.internal.message.hello.HelloState;
 import org.pcj.internal.message.join.GroupJoinStates;
@@ -31,8 +32,9 @@ final public class NodeData {
     private final GroupJoinStates groupJoinStates;
     private SocketChannel node0Socket;
     private Node0Data node0Data;
-    private ByeState byeState;
     private HelloState helloState;
+    private AliveState aliveState;
+    private ByeState byeState;
     private int physicalId;
     private int totalNodeCount;
 
@@ -69,6 +71,7 @@ final public class NodeData {
         this.physicalIdByThreadId = new ConcurrentHashMap<>();
         this.pcjThreads = new ConcurrentHashMap<>();
 
+        this.aliveState = new AliveState();
         this.groupQueryStates = new GroupQueryStates();
         this.groupJoinStates = new GroupJoinStates();
     }
@@ -167,6 +170,10 @@ final public class NodeData {
 
     void setHelloState(HelloState helloState) {
         this.helloState = helloState;
+    }
+
+    public AliveState getAliveState() {
+        return aliveState;
     }
 
     public ByeState getByeState() {
