@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
+ * All rights reserved.
+ *
+ * Licensed under New BSD License (3-clause license).
+ *
+ * See the file "LICENSE" for the full license governing this code.
+ */
 package org.pcj.internal.message.peerbarrier;
 
 import java.util.concurrent.TimeUnit;
@@ -6,6 +14,9 @@ import org.pcj.PcjFuture;
 import org.pcj.PcjRuntimeException;
 import org.pcj.internal.InternalFuture;
 
+/*
+ * @author Marek Nowicki (faramir@mat.umk.pl)
+ */
 public class PeerBarrierFuture extends InternalFuture<Void> implements PcjFuture<Void> {
 
     PeerBarrierFuture() {

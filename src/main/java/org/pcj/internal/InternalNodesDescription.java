@@ -17,6 +17,9 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/*
+ * @author Marek Nowicki (faramir@mat.umk.pl)
+ */
 public abstract class InternalNodesDescription {
 
     private static final String CURRENT_JVM_HOSTNAME = "";

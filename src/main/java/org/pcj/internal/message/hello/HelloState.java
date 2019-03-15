@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
+ * All rights reserved.
+ *
+ * Licensed under New BSD License (3-clause license).
+ *
+ * See the file "LICENSE" for the full license governing this code.
+ */
 package org.pcj.internal.message.hello;
 
 import java.io.IOException;
@@ -23,6 +31,9 @@ import org.pcj.internal.InternalFuture;
 import org.pcj.internal.message.Message;
 import org.pcj.internal.message.bye.ByeState;
 
+/*
+ * @author Marek Nowicki (faramir@mat.umk.pl)
+ */
 public class HelloState {
 
     private static final Logger LOGGER = Logger.getLogger(HelloState.class.getName());

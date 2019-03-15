@@ -19,6 +19,9 @@ import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.message.Message;
 
+/*
+ * @author Marek Nowicki (faramir@mat.umk.pl)
+ */
 public class BarrierStates {
     private final ConcurrentMap<Integer, AtomicInteger> counterMap;
     private final ConcurrentMap<Integer, State> stateMap;
