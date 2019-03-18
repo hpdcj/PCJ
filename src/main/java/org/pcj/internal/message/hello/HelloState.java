@@ -16,18 +16,20 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.pcj.PcjRuntimeException;
 import org.pcj.internal.Configuration;
 import org.pcj.internal.InternalCommonGroup;
+import org.pcj.internal.InternalFuture;
 import org.pcj.internal.InternalGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.Networker;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.NodeInfo;
-import org.pcj.internal.InternalFuture;
 import org.pcj.internal.message.Message;
 import org.pcj.internal.message.bye.ByeState;
 
@@ -56,8 +58,8 @@ public class HelloState {
         this.notificationCount = new AtomicInteger(0);
     }
 
-    public void await() throws InterruptedException {
-        future.get();
+    public void await(long timeoutSeconds) throws InterruptedException, TimeoutException {
+        future.await(timeoutSeconds);
     }
 
     public void signalDone() {
@@ -234,8 +236,8 @@ public class HelloState {
             super.signal();
         }
 
-        private void get() throws InterruptedException {
-            super.await();
+        private void await(long timeoutSeconds) throws InterruptedException, TimeoutException {
+            super.await(timeoutSeconds, TimeUnit.SECONDS);
         }
     }
 }

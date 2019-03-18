@@ -28,12 +28,10 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -115,16 +113,12 @@ public abstract class InternalPCJ {
             /* Binding on all interfaces */
             bindOnAllNetworkInterfaces(inetAddresses, currentJvm.getPort());
 
-            ScheduledFuture<?> helloTimeoutTimer = scheduleInterruptTimer(Thread.currentThread(), Configuration.INIT_MAXTIME, TimeUnit.SECONDS);
-
             /* connecting to node0 */
             SocketChannel node0Socket = connectToNode0(node0, isCurrentJvmNode0);
             nodeData.setNode0Socket(node0Socket);
 
             /* send HELLO message */
             helloPhase(currentJvm.getPort(), currentJvm.getThreadIds());
-
-            helloTimeoutTimer.cancel(true);
 
             nodeData.setHelloState(null);
 
@@ -251,18 +245,6 @@ public abstract class InternalPCJ {
         throw new IllegalStateException("Unreachable code.");
     }
 
-    private static ScheduledFuture<?> scheduleInterruptTimer(Thread thread, long delay, TimeUnit unit) {
-        ScheduledThreadPoolExecutor timer = new ScheduledThreadPoolExecutor(1);
-        timer.setRemoveOnCancelPolicy(true);
-        timer.setExecuteExistingDelayedTasksAfterShutdownPolicy(true);
-
-        ScheduledFuture<?> exitTimer = timer.schedule(thread::interrupt, delay, unit);
-
-        timer.shutdown();
-
-        return exitTimer;
-    }
-
     private static SocketChannel connectToNode0(NodeInfo node0, boolean isCurrentJvmNode0) throws PcjRuntimeException {
         if (isCurrentJvmNode0) {
             return LoopbackSocketChannel.getInstance();
@@ -324,9 +306,11 @@ public abstract class InternalPCJ {
             networker.send(nodeData.getNode0Socket(), helloMessage);
 
             /* waiting for HELLO_GO */
-            state.await();
+            state.await(Configuration.INIT_MAXTIME);
         } catch (InterruptedException ex) {
             throw new PcjRuntimeException("Interruption occurred while waiting for finish HELLO phase");
+        } catch (TimeoutException e) {
+            throw new PcjRuntimeException("Timeout occurred while waiting for finish HELLO phase");
         }
     }
 
