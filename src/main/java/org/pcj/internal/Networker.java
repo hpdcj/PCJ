@@ -9,8 +9,10 @@
 package org.pcj.internal;
 
 import java.io.IOException;
+import java.io.NotSerializableException;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.ExecutorService;
@@ -115,7 +117,7 @@ final public class Networker {
                 }
                 selectorProc.writeMessage(socket, objectBytes);
             }
-        } catch (IOException ex) {
+        } catch (ClosedChannelException | NotSerializableException ex) {
             throw new PcjRuntimeException(ex);
         } catch (Throwable t) {
             LOGGER.log(Level.SEVERE, "Exception while sending message: " + message + " to " + socket, t);

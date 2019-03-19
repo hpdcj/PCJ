@@ -132,9 +132,9 @@ public class SelectorProc implements Runnable {
         return socket;
     }
 
-    public void writeMessage(SocketChannel socket, MessageBytesOutputStream objectBytes) throws IOException {
+    public void writeMessage(SocketChannel socket, MessageBytesOutputStream objectBytes) throws ClosedChannelException {
         if (!socket.isConnected()) {
-            throw new IOException(socket.toString());
+            throw new ClosedChannelException();
         }
         Queue<MessageBytesOutputStream> queue = writeMap.get(socket);
         queue.add(objectBytes);
