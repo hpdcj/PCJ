@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
@@ -17,12 +17,12 @@ import org.pcj.internal.Configuration;
 import org.pcj.internal.message.Message;
 
 /**
- *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 public class MessageBytesOutputStream implements AutoCloseable {
 
     private static final ByteBufferPool BYTE_BUFFER_POOL = new ByteBufferPool(Configuration.BUFFER_POOL_SIZE, Configuration.BUFFER_CHUNK_SIZE);
+    private static final ByteBuffer[] EMPTY_BYTE_BUFFER_ARRAY = new ByteBuffer[0];
     private final Message message;
     private final MessageOutputStream messageOutputStream;
     private final MessageDataOutputStream messageDataOutputStream;
@@ -51,14 +51,14 @@ public class MessageBytesOutputStream implements AutoCloseable {
         }
 
         public void revalidate() {
-            while (offset<array.length && array[offset].hasRemaining() == false) {
+            while (offset < array.length && !array[offset].hasRemaining()) {
                 BYTE_BUFFER_POOL.give(array[offset]);
                 ++offset;
             }
         }
     }
 
-    public MessageBytesOutputStream(Message message) throws IOException {
+    public MessageBytesOutputStream(Message message) {
         this.message = message;
 
         this.messageOutputStream = new MessageOutputStream(Configuration.BUFFER_CHUNK_SIZE);
@@ -82,7 +82,7 @@ public class MessageBytesOutputStream implements AutoCloseable {
     @Override
     public void close() throws IOException {
         messageOutputStream.close();
-        byteBufferArray = new ByteBufferArray(messageOutputStream.queue.stream().toArray(ByteBuffer[]::new));
+        byteBufferArray = new ByteBufferArray(messageOutputStream.queue.toArray(EMPTY_BYTE_BUFFER_ARRAY));
 
     }
 
@@ -93,7 +93,7 @@ public class MessageBytesOutputStream implements AutoCloseable {
     private static class MessageOutputStream extends OutputStream {
 
         private static final int HEADER_SIZE = Integer.BYTES;
-        private static final int LAST_CHUNK_BIT = (int) (1 << (Integer.SIZE - 1));
+        private static final int LAST_CHUNK_BIT = (1 << (Integer.SIZE - 1));
         private final int chunkSize;
         private final Queue<ByteBuffer> queue;
         volatile private boolean closed;
@@ -136,7 +136,7 @@ public class MessageBytesOutputStream implements AutoCloseable {
         }
 
         @Override
-        public void close() throws IOException {
+        public void close() {
             closed = true;
             flush(0);
             currentByteBuffer = null;
@@ -148,7 +148,7 @@ public class MessageBytesOutputStream implements AutoCloseable {
 
         @Override
         public void write(int b) {
-            if (currentByteBuffer.hasRemaining() == false) {
+            if (!currentByteBuffer.hasRemaining()) {
                 flush();
             }
             currentByteBuffer.put((byte) b);

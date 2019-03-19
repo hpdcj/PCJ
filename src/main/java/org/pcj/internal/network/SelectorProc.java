@@ -45,7 +45,7 @@ public class SelectorProc implements Runnable {
         private final SelectableChannel channel;
         private final int interestOps;
 
-        public InterestChange(SelectableChannel channel, int interestOps) {
+        private InterestChange(SelectableChannel channel, int interestOps) {
             this.channel = channel;
             this.interestOps = interestOps;
         }
@@ -215,7 +215,7 @@ public class SelectorProc implements Runnable {
                     if ((readyOps & SelectionKey.OP_READ) != 0) {
                         SocketChannel socket = (SocketChannel) key.channel();
 
-                        if (opRead(socket) == false) {
+                        if (!opRead(socket)) {
                             key.cancel();
                             socket.close();
                         }
@@ -224,7 +224,7 @@ public class SelectorProc implements Runnable {
                     if ((readyOps & SelectionKey.OP_WRITE) != 0) {
                         SocketChannel socket = (SocketChannel) key.channel();
 
-                        if (opWrite(socket) == false) {
+                        if (!opWrite(socket)) {
                             key.interestOps(SelectionKey.OP_READ);
                         }
                     }
@@ -236,7 +236,7 @@ public class SelectorProc implements Runnable {
         }
     }
 
-    private void opAccept(ServerSocketChannel serverSocket) throws ClosedChannelException, IOException {
+    private void opAccept(ServerSocketChannel serverSocket) throws IOException {
         SocketChannel socket = serverSocket.accept();
 
         initializeSocketChannel(socket);
@@ -252,9 +252,9 @@ public class SelectorProc implements Runnable {
         }
     }
 
-    private void opConnect(SocketChannel socket) throws IOException, ClosedChannelException {
+    private void opConnect(SocketChannel socket) {
         try {
-            if (socket.finishConnect() == true) {
+            if (socket.finishConnect()) {
                 socket.register(selector, SelectionKey.OP_READ);
                 if (LOGGER.isLoggable(Level.FINER)) {
                     LOGGER.log(Level.FINER, "Connected: {0}", socket);
@@ -307,24 +307,20 @@ public class SelectorProc implements Runnable {
     private boolean opWrite(SocketChannel socket) throws IOException {
         Queue<MessageBytesOutputStream> queue = writeMap.get(socket);
 
-        while (!queue.isEmpty()) {
-            MessageBytesOutputStream messageBytes = queue.peek();
-
-            MessageBytesOutputStream.ByteBufferArray byteBuffersArray = messageBytes.getByteBufferArray();
-            if (socket.isOpen()) {
-                socket.write(byteBuffersArray.getArray(), byteBuffersArray.getOffset(), byteBuffersArray.getRemainingLength());
-                byteBuffersArray.revalidate();
-
-                if (byteBuffersArray.getRemainingLength() == 0) {
-                    queue.poll();
-                }
-
-                return true;
-            } else {
-                return false;
-            }
+        if (queue.isEmpty() || !socket.isOpen()) {
+            return false;
         }
 
-        return false;
+        MessageBytesOutputStream messageBytes = queue.peek();
+        MessageBytesOutputStream.ByteBufferArray byteBuffersArray = messageBytes.getByteBufferArray();
+
+        socket.write(byteBuffersArray.getArray(), byteBuffersArray.getOffset(), byteBuffersArray.getRemainingLength());
+        byteBuffersArray.revalidate();
+
+        if (byteBuffersArray.getRemainingLength() == 0) {
+            queue.poll();
+        }
+
+        return true;
     }
 }
