@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
+import org.pcj.internal.message.alive.AbortMessage;
 import org.pcj.internal.message.alive.AliveMessage;
 import org.pcj.internal.message.at.AsyncAtRequestMessage;
 import org.pcj.internal.message.at.AsyncAtResponseMessage;
@@ -57,8 +58,9 @@ public enum MessageType {
     HELLO_COMPLETED((byte) 4, HelloCompletedMessage::new),
     HELLO_GO((byte) 5, HelloGoMessage::new),
     ALIVE((byte) 6, AliveMessage::new),
-    BYE((byte) 7, ByeNotifyMessage::new),
-    BYE_COMPLETED((byte) 8, ByeCompletedMessage::new),
+    ABORT((byte) 7, AbortMessage::new),
+    BYE((byte) 8, ByeNotifyMessage::new),
+    BYE_COMPLETED((byte) 9, ByeCompletedMessage::new),
     GROUP_BARRIER_WAITING((byte) 10, GroupBarrierWaitingMessage::new),
     GROUP_BARRIER_GO((byte) 11, GroupBarrierGoMessage::new),
     PEER_BARRIER((byte) 12, PeerBarrierMessage::new),

@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
@@ -133,6 +133,9 @@ public class SelectorProc implements Runnable {
     }
 
     public void writeMessage(SocketChannel socket, MessageBytesOutputStream objectBytes) throws IOException {
+        if (!socket.isConnected()) {
+            throw new IOException(socket.toString());
+        }
         Queue<MessageBytesOutputStream> queue = writeMap.get(socket);
         queue.add(objectBytes);
         changeInterestOps(socket, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
@@ -145,7 +148,7 @@ public class SelectorProc implements Runnable {
             }
         }
 
-        if (interestChanges.isEmpty() == false) {
+        if (!interestChanges.isEmpty()) {
             throw new IOException("There is something in selector' interest changes queue.");
         }
 
@@ -163,7 +166,7 @@ public class SelectorProc implements Runnable {
 
     @Override
     public void run() {
-        for (;;) {
+        for (; ; ) {
             try {
                 InterestChange interestChange;
                 while ((interestChange = interestChanges.poll()) != null) {

@@ -19,47 +19,47 @@ import java.util.logging.Logger;
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class Configuration {
+public final class Configuration {
 
     private static final Logger LOGGER = Logger.getLogger(Configuration.class.getName());
     /**
      * pcj.port (int) default: 8091
      */
-    final public static int DEFAULT_PORT;
+    public static final int DEFAULT_PORT;
     /**
      * pcj.init.backlog (int) default: 4096
      */
-    final public static int INIT_BACKLOG_COUNT;
+    public static final int INIT_BACKLOG_COUNT;
     /**
      * pcj.init.retry.count (int) default: 3
      */
-    final public static int INIT_RETRY_COUNT;
+    public static final int INIT_RETRY_COUNT;
     /**
      * pcj.init.retry.delay (int in seconds) default: 5
      */
-    final public static int INIT_RETRY_DELAY;
+    public static final int INIT_RETRY_DELAY;
     /**
      * pcj.init.maxtime (int in seconds) default:
      * <p>
      * <tt>max(30, (pcj.init.retry.count + 1) * pcj.init.retry.delay)</tt>
      */
-    final public static int INIT_MAXTIME;
+    public static final int INIT_MAXTIME;
     /**
      * pcj.buffer.chunksize (int) default: 8*1024
      */
-    final public static int BUFFER_CHUNK_SIZE;
+    public static final int BUFFER_CHUNK_SIZE;
     /**
      * pcj.buffer.poolsize (int) default: 1024
      */
-    final public static int BUFFER_POOL_SIZE;
+    public static final int BUFFER_POOL_SIZE;
     /**
      * pcj.net.workers.count (int) default: available processors
      */
-    final public static int NET_WORKERS_COUNT;
+    public static final int NET_WORKERS_COUNT;
     /**
      * pcj.net.workers.keepalive (int in seconds) default: 60
      */
-    final public static int NET_WORKERS_KEEPALIVE;
+    public static final int NET_WORKERS_KEEPALIVE;
     /**
      * pcj.net.workers.queuesize (int) default: 0
      * <ul>
@@ -68,15 +68,15 @@ final public class Configuration {
      * <li> &lt; 0 - unbounded queue</li>
      * </ul>
      */
-    final public static int NET_WORKERS_QUEUE_SIZE;
+    public static final int NET_WORKERS_QUEUE_SIZE;
     /**
      * pcj.async.workers.count (int) default: available processors
      */
-    final public static int ASYNC_WORKERS_COUNT;
+    public static final int ASYNC_WORKERS_COUNT;
     /**
      * pcj.async.workers.keepalive (int in seconds) default: 60
      */
-    final public static int ASYNC_WORKERS_KEEPALIVE;
+    public static final int ASYNC_WORKERS_KEEPALIVE;
     /**
      * pcj.async.workers.queuesize (int) default: -1
      * <ul>
@@ -85,7 +85,16 @@ final public class Configuration {
      * <li> &lt; 0 - unbounded queue</li>
      * </ul>
      */
-    final public static int ASYNC_WORKERS_QUEUE_SIZE;
+    public static final int ASYNC_WORKERS_QUEUE_SIZE;
+
+    /**
+     * pcj.alive.heartbeat (int in seconds) default: 20
+     */
+    public static final int ALIVE_HEARTBEAT;
+    /**
+     * pcj.alive.timeout (int in seconds) default: 60
+     */
+    public static final int ALIVE_TIMEOUT;
 
     static {
         DEFAULT_PORT = getPropertyInt("pcj.port", 8091);
@@ -101,6 +110,8 @@ final public class Configuration {
         ASYNC_WORKERS_COUNT = getPropertyInt("pcj.async.workers.count", Runtime.getRuntime().availableProcessors());
         ASYNC_WORKERS_KEEPALIVE = getPropertyInt("pcj.async.workers.keepalive", 60);
         ASYNC_WORKERS_QUEUE_SIZE = getPropertyInt("pcj.async.workers.queuesize", -1);
+        ALIVE_HEARTBEAT = getPropertyInt("pcj.alive.heartbeat", 20);
+        ALIVE_TIMEOUT = getPropertyInt("pcj.alive.timeout", 60);
 
         LOGGER.log(Level.CONFIG, "pcj.port:                     {0,number,#}", DEFAULT_PORT);
         LOGGER.log(Level.CONFIG, "pcj.init.backlog:             {0,number,#}", INIT_BACKLOG_COUNT);
@@ -115,6 +126,8 @@ final public class Configuration {
         LOGGER.log(Level.CONFIG, "pcj.async.workers.count:      {0,number,#}", ASYNC_WORKERS_COUNT);
         LOGGER.log(Level.CONFIG, "pcj.async.workers.keepalive:  {0,number,#}", ASYNC_WORKERS_KEEPALIVE);
         LOGGER.log(Level.CONFIG, "pcj.async.workers.queuesize:  {0,number,#}", ASYNC_WORKERS_QUEUE_SIZE);
+        LOGGER.log(Level.CONFIG, "pcj.alive.heartbeat:          {0,number,#}", ALIVE_HEARTBEAT);
+        LOGGER.log(Level.CONFIG, "pcj.alive.timeout:            {0,number,#}", ALIVE_TIMEOUT);
     }
 
     private static int getPropertyInt(String name, int defaultValue) {

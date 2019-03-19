@@ -39,6 +39,7 @@ import org.pcj.NodesDescription;
 import org.pcj.PcjFuture;
 import org.pcj.PcjRuntimeException;
 import org.pcj.StartPoint;
+import org.pcj.internal.message.alive.AliveState;
 import org.pcj.internal.message.bye.ByeState;
 import org.pcj.internal.message.hello.HelloMessage;
 import org.pcj.internal.message.hello.HelloState;
@@ -122,10 +123,8 @@ public abstract class InternalPCJ {
 
             nodeData.setHelloState(null);
 
-            long nanoTime = Long.MIN_VALUE;
             /* Starting execution */
             if (isCurrentJvmNode0) {
-                nanoTime = System.nanoTime();
                 LOGGER.log(Level.INFO, "Starting {0}"
                                                + " with {1,number,#} {1,choice,1#thread|1<threads}"
                                                + " (on {2,number,#} {2,choice,1#node|1<nodes})...",
@@ -133,40 +132,59 @@ public abstract class InternalPCJ {
                                 nodeData.getCommonGroupById(InternalCommonGroup.GLOBAL_GROUP_ID).threadCount(),
                                 nodeData.getTotalNodeCount(),});
             }
+            long nanoTime = System.nanoTime();
 
-            /* Preparing PcjThreads */
-            Semaphore notificationObject = new Semaphore(0);
+            Map<Integer, PcjThread> pcjThreads = null;
+            AliveState aliveState = nodeData.getAliveState();
+            try {
+                aliveState.start(Thread.currentThread());
 
-            Map<Integer, PcjThread> pcjThreads = preparePcjThreads(startPointClass, currentJvm.getThreadIds(), notificationObject);
-            nodeData.updatePcjThreads(pcjThreads);
+                /* Preparing PcjThreads */
+                Semaphore notificationObject = new Semaphore(0);
 
-            /* Starting PcjThreads */
-            pcjThreads.values().forEach(PcjThread::start);
+                pcjThreads = preparePcjThreads(startPointClass, currentJvm.getThreadIds(), notificationObject);
+                nodeData.updatePcjThreads(pcjThreads);
 
-            /* Waiting for all threads complete */
-            waitForPcjThreadsComplete(pcjThreads.values(), notificationObject);
+                /* Starting PcjThreads */
+                pcjThreads.values().forEach(PcjThread::start);
 
-            /* finishing */
-            byePhase();
+                /* Waiting for all threads complete */
+                waitForPcjThreadsComplete(pcjThreads.values(), notificationObject);
 
-            /* Finishing asyncTaskWorkers */
-            pcjThreads.values().stream().map(PcjThread::getAsyncWorkers).forEach(PcjThread.AsyncWorkers::shutdown);
+                if (!Thread.interrupted()) {
+                    /* finishing */
+                    byePhase();
+                }
+            } catch (InterruptedException ex) {
+                pcjThreads.values().forEach(Thread::interrupt);
+            } finally {
+                aliveState.stop();
+
+                /* Finishing asyncTaskWorkers */
+                if (pcjThreads != null) {
+                    pcjThreads.values().stream().map(PcjThread::getAsyncWorkers).forEach(PcjThread.AsyncWorkers::shutdown);
+                }
+            }
 
             if (isCurrentJvmNode0) {
-                long timer = (System.nanoTime() - nanoTime) / 1_000_000_000L;
+                long timerNano = (System.nanoTime() - nanoTime);
+                long ms = (timerNano / 1_000_000) % 1000;
+
+                long timer = timerNano / 1_000_000_000L;
                 long h = timer / (60 * 60);
                 long m = (timer / 60) % 60;
                 long s = (timer % 60);
 
-                LOGGER.log(Level.INFO, "Completed {0}"
-                                               + " with {1,number,#} {1,choice,1#thread|1<threads}"
-                                               + " (on {2,number,#} {2,choice,1#node|1<nodes})"
-                                               + " after {3,number,#}h {4,number,#}m {5,number,#}s.",
+                LOGGER.log(Level.INFO, "{0} {1}"
+                                               + " with {2,number,#} {2,choice,1#thread|1<threads}"
+                                               + " (on {3,number,#} {3,choice,1#node|1<nodes})"
+                                               + " after {4,number,#}h {5,number,#}m {6,number,#}s {7,number,#}ms.",
                         new Object[]{
+                                !aliveState.isAborted() ? "Completed" : "Aborted",
                                 startPointClass.getName(),
                                 nodeData.getCommonGroupById(InternalCommonGroup.GLOBAL_GROUP_ID).threadCount(),
                                 nodeData.getTotalNodeCount(),
-                                h, m, s
+                                h, m, s, ms
                         });
             }
         } finally {
@@ -347,31 +365,30 @@ public abstract class InternalPCJ {
         return pcjThreads;
     }
 
-    private static void waitForPcjThreadsComplete(Collection<PcjThread> pcjThreadsSet, Semaphore notificationSemaphore) {
+    private static void waitForPcjThreadsComplete(Collection<PcjThread> pcjThreadsSet, Semaphore notificationSemaphore) throws InterruptedException {
         Set<PcjThread> pcjThreads = new HashSet<>(pcjThreadsSet);
 
-        try {
-            int notProcessedFinishedThreads = 0;
-            while (!pcjThreads.isEmpty()) {
-                if (notProcessedFinishedThreads <= 0) {
-                    notificationSemaphore.acquire();
-                    notProcessedFinishedThreads += notificationSemaphore.drainPermits() + 1;
-                }
-                for (Iterator<PcjThread> it = pcjThreads.iterator(); it.hasNext(); ) {
-                    PcjThread pcjThread = it.next();
-                    if (!pcjThread.isAlive()) {
-                        Throwable t = pcjThread.getThrowable();
-                        if (t != null) {
-                            LOGGER.log(Level.SEVERE, "Exception occurred in thread: " + pcjThread.getName(), t);
-                        }
-                        it.remove();
-                        --notProcessedFinishedThreads;
+        int notProcessedFinishedThreads = 0;
+        while (!pcjThreads.isEmpty()) {
+            if (notProcessedFinishedThreads <= 0) {
+                notificationSemaphore.acquire();
+                notProcessedFinishedThreads += notificationSemaphore.drainPermits() + 1;
+            }
+            for (Iterator<PcjThread> it = pcjThreads.iterator(); it.hasNext(); ) {
+                PcjThread pcjThread = it.next();
+                if (!pcjThread.isAlive()) {
+                    Throwable t = pcjThread.getThrowable();
+                    if (t != null) {
+                        LOGGER.log(Level.SEVERE, "Exception occurred in thread: " + pcjThread.getName(), t);
+
+                        AliveState aliveState = nodeData.getAliveState();
+                        aliveState.nodeAborted();
+                        return;
                     }
+                    it.remove();
+                    --notProcessedFinishedThreads;
                 }
             }
-        } catch (InterruptedException ex) {
-            pcjThreads.forEach(Thread::interrupt);
-            throw new PcjRuntimeException("Interruption occurred while waiting for joining PcjThread");
         }
     }
 
