@@ -379,7 +379,9 @@ public abstract class InternalPCJ {
                 if (!pcjThread.isAlive()) {
                     Throwable t = pcjThread.getThrowable();
                     if (t != null) {
-                        LOGGER.log(Level.SEVERE, "Exception occurred in thread: " + pcjThread.getName(), t);
+                        LOGGER.log(Level.SEVERE, "Exception occurred in thread: " + pcjThread.getName()
+                                                         + " (node: " + nodeData.getCurrentNodePhysicalId() + ")",
+                                t);
 
                         AliveState aliveState = nodeData.getAliveState();
                         aliveState.nodeAborted();

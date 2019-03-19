@@ -18,6 +18,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.pcj.PcjRuntimeException;
@@ -36,7 +37,7 @@ public class AliveState {
     private final ScheduledExecutorService scheduledExecutorService;
     private final AliveMessage aliveMessage;
     private final AbortMessage abortMessage;
-    private volatile boolean aborted;
+    private final AtomicBoolean aborted;
     private Thread mainThread;
 
     public AliveState() {
@@ -46,7 +47,7 @@ public class AliveState {
         aliveMessage = new AliveMessage();
         abortMessage = new AbortMessage();
 
-        aborted = false;
+        aborted = new AtomicBoolean(false);
     }
 
     public void start(Thread mainThread) {
@@ -107,10 +108,12 @@ public class AliveState {
             LocalDateTime lastNotification = nodeLastNotificationMap.get(socketChannel);
 
             int physicalId = nodeData.getPhysicalIdBySocketChannel(socketChannel);
+            int currentPhysicalId = nodeData.getCurrentNodePhysicalId();
 
-            LOGGER.log(Level.SEVERE, "No AliveMessage from {0} in last {1} seconds.",
+            LOGGER.log(Level.SEVERE, "No AliveMessage from {0} to {1} in last {2} seconds.",
                     new Object[]{
                             physicalId,
+                            currentPhysicalId,
                             ChronoUnit.SECONDS.between(lastNotification, now)
                     });
 
@@ -133,11 +136,16 @@ public class AliveState {
     }
 
     private void abort() {
-        aborted = true;
+        boolean previouslyAborted;
+        do {
+            previouslyAborted = aborted.get();
+        } while (!aborted.compareAndSet(previouslyAborted, true));
 
-        sendAbortMessage();
+        if (!previouslyAborted) {
+            sendAbortMessage();
 
-        mainThread.interrupt();
+            mainThread.interrupt();
+        }
     }
 
     private void sendAliveMessage() {
@@ -155,9 +163,13 @@ public class AliveState {
             try {
                 networker.send(socketChannel, message);
             } catch (PcjRuntimeException ex) {
-                int physicalId = InternalPCJ.getNodeData().getPhysicalIdBySocketChannel(socketChannel);
-                LOGGER.log(Level.SEVERE, "Unable to send {0} to {1}",
-                        new Object[]{message.getClass().getSimpleName(), physicalId});
+                NodeData nodeData = InternalPCJ.getNodeData();
+                int currentPhysicalId = nodeData.getCurrentNodePhysicalId();
+                int physicalId = nodeData.getPhysicalIdBySocketChannel(socketChannel);
+                LOGGER.log(Level.SEVERE, "Unable to send {0} from {1} to {2}",
+                        new Object[]{message.getClass().getSimpleName(),
+                                currentPhysicalId,
+                                physicalId});
 
                 nodeAborted(socketChannel);
             }
@@ -165,6 +177,6 @@ public class AliveState {
     }
 
     public boolean isAborted() {
-        return aborted;
+        return aborted.get();
     }
 }

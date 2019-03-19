@@ -23,8 +23,8 @@ public class AliveTest implements StartPoint {
     public static void main(String[] args) {
         // -Dpcj.alive.timeout=3 -Dpcj.alive.heartbeat=1
 
-        Level level = Level.INFO;
-//        Level level = Level.FINEST;
+//        Level level = Level.INFO;
+        Level level = Level.CONFIG;
         Logger logger = Logger.getLogger("");
         Arrays.stream(logger.getHandlers()).forEach(handler -> handler.setLevel(level));
         logger.setLevel(level);
@@ -46,8 +46,12 @@ public class AliveTest implements StartPoint {
     @Override
     public void main() throws InterruptedException {
         if (PCJ.myId() == 0) {
-            Thread.sleep(10_000);
+            Thread.sleep(5_000);
             throw new RuntimeException("Abort");
+        }
+        if (PCJ.myId() == 1) {
+            Thread.sleep(4_000);
+            System.exit(0);
         }
         PCJ.barrier();
     }
