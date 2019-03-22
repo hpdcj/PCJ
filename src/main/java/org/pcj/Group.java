@@ -111,6 +111,8 @@ public interface Group {
      */
     <T> PcjFuture<Void> asyncPut(T newValue, int threadId, Enum<?> variable, int... indices);
 
+    <T> PcjFuture<Void> asyncAccumulate(ReduceOperation<T> function, T newValue, int threadId, Enum<?> variable, int... indices);
+
     /**
      * Asynchronous execution operation. Executes associated function on
      * specified thread and returns value.

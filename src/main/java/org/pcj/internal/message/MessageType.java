@@ -12,6 +12,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
+import org.pcj.internal.message.accumulate.ValueAccumulateRequestMessage;
+import org.pcj.internal.message.accumulate.ValueAccumulateResponseMessage;
 import org.pcj.internal.message.alive.AbortMessage;
 import org.pcj.internal.message.alive.AliveMessage;
 import org.pcj.internal.message.at.AsyncAtRequestMessage;
@@ -74,8 +76,8 @@ public enum MessageType {
     VALUE_GET_RESPONSE((byte) 31, ValueGetResponseMessage::new),
     VALUE_PUT_REQUEST((byte) 32, ValuePutRequestMessage::new),
     VALUE_PUT_RESPONSE((byte) 33, ValuePutResponseMessage::new),
-    ASYNC_AT_REQUEST((byte) 34, AsyncAtRequestMessage::new),
-    ASYNC_AT_RESPONSE((byte) 35, AsyncAtResponseMessage::new),
+    VALUE_ACCUMULATE_REQUEST((byte) 34, ValueAccumulateRequestMessage::new),
+    VALUE_ACCUMULATE_RESPONSE((byte) 35, ValueAccumulateResponseMessage::new),
     VALUE_BROADCAST_REQUEST((byte) 36, BroadcastRequestMessage::new),
     VALUE_BROADCAST_BYTES((byte) 37, BroadcastBytesMessage::new),
     VALUE_BROADCAST_INFORM((byte) 38, BroadcastInformMessage::new),
@@ -86,6 +88,8 @@ public enum MessageType {
     REDUCE_REQUEST((byte) 43, ReduceRequestMessage::new),
     REDUCE_VALUE((byte) 44, ReduceValueMessage::new),
     REDUCE_RESPONSE((byte) 45, ReduceResponseMessage::new),
+    ASYNC_AT_REQUEST((byte) 46, AsyncAtRequestMessage::new),
+    ASYNC_AT_RESPONSE((byte) 47, AsyncAtResponseMessage::new),
     UNKNOWN((byte) -1, MessageUnknown::new);
     //    /* **************************************************** */
     private static final Map<Byte, MessageType> map;

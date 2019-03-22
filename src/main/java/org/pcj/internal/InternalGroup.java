@@ -19,6 +19,8 @@ import org.pcj.Group;
 import org.pcj.PcjFuture;
 import org.pcj.PcjRuntimeException;
 import org.pcj.ReduceOperation;
+import org.pcj.internal.message.accumulate.ValueAccumulateRequestMessage;
+import org.pcj.internal.message.accumulate.ValueAccumulateStates;
 import org.pcj.internal.message.at.AsyncAtRequestMessage;
 import org.pcj.internal.message.at.AsyncAtStates;
 import org.pcj.internal.message.barrier.BarrierStates;
@@ -45,6 +47,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
     private final int myThreadId;
     private final ValueGetStates valueGetStates;
     private final ValuePutStates valuePutStates;
+    private final ValueAccumulateStates valueAccumulateStates;
     private final AsyncAtStates asyncAtStates;
     private final PeerBarrierStates peerBarrierStates;
 
@@ -56,6 +59,7 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
 
         this.valueGetStates = new ValueGetStates();
         this.valuePutStates = new ValuePutStates();
+        this.valueAccumulateStates = new ValueAccumulateStates();
         this.asyncAtStates = new AsyncAtStates();
         this.peerBarrierStates = new PeerBarrierStates();
     }
@@ -182,6 +186,31 @@ final public class InternalGroup extends InternalCommonGroup implements Group {
 
     public ValuePutStates getValuePutStates() {
         return valuePutStates;
+    }
+
+    @Override
+    public <T> PcjFuture<Void> asyncAccumulate(ReduceOperation<T> function, T newValue, int threadId, Enum<?> variable, int... indices) {
+        ValueAccumulateStates.State state = valueAccumulateStates.create();
+
+        int globalThreadId = super.getGlobalThreadId(threadId);
+        int physicalId = InternalPCJ.getNodeData().getPhysicalId(globalThreadId);
+        SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId(physicalId);
+
+        ValueAccumulateRequestMessage<T> message = new ValueAccumulateRequestMessage<>(
+                super.getGroupId(), state.getRequestNum(), myThreadId, threadId,
+                variable.getDeclaringClass().getName(), variable.name(), indices, function, newValue);
+
+        try {
+            InternalPCJ.getNetworker().send(socket, message);
+        } catch (PcjRuntimeException ex) {
+            state.signal(ex);
+        }
+
+        return state.getFuture();
+    }
+
+    public ValueAccumulateStates getValueAccumulateStates() {
+        return valueAccumulateStates;
     }
 
     @Override

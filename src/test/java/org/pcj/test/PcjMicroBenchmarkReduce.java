@@ -38,11 +38,13 @@ public class PcjMicroBenchmarkReduce implements StartPoint {
     @Storage(PcjMicroBenchmarkReduce.class)
     enum Vars {
         value,
+        reducedValue,
         valueArray,
-        treeArray
+        treeArray,
     }
 
     private double value;
+    private double reducedValue;
     private double[] valueArray = PCJ.myId() == 0 ? new double[PCJ.threadCount()] : null;
     private double[] treeArray = new double[2];
     private List<Random> expectedRandomList = null;
@@ -67,7 +69,7 @@ public class PcjMicroBenchmarkReduce implements StartPoint {
                            .mapToDouble(Random::nextDouble)
                            .sum();
         }
-        return 0;
+        return Double.NaN;
     }
 
     private List<Random> prepareRandomList() {
@@ -114,7 +116,7 @@ public class PcjMicroBenchmarkReduce implements StartPoint {
 
         @Override
         public String toString() {
-            return String.format("%-11s = %.7f",
+            return String.format("%-14s =\t%.7f",
                     name,
                     times.stream().mapToLong(Long::longValue).min().orElse(0) / 1e9
             );
@@ -132,6 +134,7 @@ public class PcjMicroBenchmarkReduce implements StartPoint {
                 new Benchmark("pcjGet", this::pcjGet),
                 new Benchmark("pcjAsyncGet", this::pcjAsyncGet),
                 new Benchmark("pcjPut", this::pcjPut),
+                new Benchmark("pcjAccumulate", this::pcjAccumulate),
                 new Benchmark("pcjTreePut", this::pcjTreePut),
                 new Benchmark("pcjCollect", this::pcjCollect),
                 new Benchmark("pcjReduce", this::pcjReduce),
@@ -149,6 +152,7 @@ public class PcjMicroBenchmarkReduce implements StartPoint {
                 for (Vars var : Vars.values()) {
                     PCJ.monitor(var);
                 }
+                reducedValue = 0.0;
                 PCJ.barrier();
 
                 long elapsed = benchmark.test(expectedValue);
@@ -175,7 +179,7 @@ public class PcjMicroBenchmarkReduce implements StartPoint {
             }
             return sum;
         }
-        return 0;
+        return Double.NaN;
     }
 
     private double pcjAsyncGet() {
@@ -186,7 +190,7 @@ public class PcjMicroBenchmarkReduce implements StartPoint {
             }
             return futures.stream().mapToDouble(PcjFuture::get).sum();
         }
-        return 0;
+        return Double.NaN;
     }
 
     private double pcjPut() {
@@ -196,7 +200,19 @@ public class PcjMicroBenchmarkReduce implements StartPoint {
 
             return Arrays.stream(valueArray).sum();
         }
-        return 0;
+        return Double.NaN;
+    }
+
+    private double pcjAccumulate() {
+        PCJ.accumulate(Double::sum, value, 0, Vars.reducedValue);
+        if (PCJ.myId() == 0) {
+            PCJ.waitFor(Vars.reducedValue, PCJ.threadCount());
+
+            double copy = reducedValue;
+            reducedValue = 0.0;
+            return copy;
+        }
+        return Double.NaN;
     }
 
     private double pcjTreePut() {
@@ -209,7 +225,7 @@ public class PcjMicroBenchmarkReduce implements StartPoint {
         if (PCJ.myId() == 0) {
             return value + Arrays.stream(treeArray).limit(childCount).sum();
         }
-        return 0;
+        return Double.NaN;
     }
 
     private double pcjCollect() {
@@ -217,13 +233,13 @@ public class PcjMicroBenchmarkReduce implements StartPoint {
             double[] values = PCJ.collect(Vars.value);
             return Arrays.stream(values).sum();
         }
-        return 0;
+        return Double.NaN;
     }
 
     private double pcjReduce() {
         if (PCJ.myId() == 0) {
             return PCJ.reduce(Double::sum, Vars.value);
         }
-        return 0;
+        return Double.NaN;
     }
 }

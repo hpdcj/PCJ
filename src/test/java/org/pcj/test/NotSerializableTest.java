@@ -84,6 +84,10 @@ public class NotSerializableTest implements StartPoint {
         check("PCJ.asyncPut", "Putting value failed",
                 () -> PCJ.asyncPut(new Object(), 0, Shared.object));
 
+
+        check("PCJ.asyncAccumulate", "Accumulating value failed",
+                () -> PCJ.asyncAccumulate((a, b) -> false, new Object(), 0, Shared.object));
+
         check("PCJ.asyncBroadcast", "Broadcasting value failed",
                 () -> PCJ.asyncBroadcast(new Object(), Shared.object));
 

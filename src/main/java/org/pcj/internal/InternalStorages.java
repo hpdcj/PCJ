@@ -20,11 +20,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.pcj.PcjRuntimeException;
+import org.pcj.ReduceOperation;
 import org.pcj.Storage;
 
 /**
@@ -34,26 +35,23 @@ import org.pcj.Storage;
  */
 public class InternalStorages {
 
-    private class StorageField {
+    private static class StorageField {
 
         private final Field field;
-        private final AtomicInteger modificationCount;
         private final Object storageObject;
+        private final Semaphore modificationCounter;
 
         StorageField(Field field, Object storageObject) {
             this.field = field;
-            this.modificationCount = new AtomicInteger(0);
             this.storageObject = storageObject;
 
             field.setAccessible(true);
+
+            this.modificationCounter = new Semaphore(0);
         }
 
         Class<?> getType() {
             return field.getType();
-        }
-
-        AtomicInteger getModificationCount() {
-            return modificationCount;
         }
 
         Object getValue() {
@@ -70,6 +68,28 @@ public class InternalStorages {
             } catch (IllegalAccessException ex) {
                 throw new RuntimeException("Cannot set value to storage", ex);
             }
+        }
+
+        void incrementModificationCounter() {
+            modificationCounter.release();
+        }
+
+        int resetModificationCounter() {
+            return modificationCounter.drainPermits();
+        }
+
+        void decrementModificationCounter(int count) throws InterruptedException {
+            modificationCounter.acquire(count);
+        }
+
+        void decrementModificationCounter(int count, long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
+            if (!modificationCounter.tryAcquire(count, timeout, unit)) {
+                throw new TimeoutException();
+            }
+        }
+
+        int getModificationCounter() {
+            return modificationCounter.availablePermits();
         }
     }
 
@@ -129,7 +149,7 @@ public class InternalStorages {
 
         Optional<String> notFoundName = Arrays.stream(storageEnumClass.getEnumConstants())
                                                 .map(Enum::name)
-                                                .filter(enumName -> fieldNames.contains(enumName) == false)
+                                                .filter(enumName -> !fieldNames.contains(enumName))
                                                 .findFirst();
         if (notFoundName.isPresent()) {
             throw new NoSuchFieldException("Field not found in " + storageClassName + ": " + notFoundName.get());
@@ -200,11 +220,6 @@ public class InternalStorages {
         return enumToStorageMap.get(sharedEnumClassName);
     }
 
-
-    final public Class<?> getClass(Enum<?> variable, int depth) throws ArrayIndexOutOfBoundsException {
-        return getClass0(getParent(variable), variable.name(), depth);
-    }
-
     final public Class<?> getClass(String sharedEnumClassName, String name, int depth) throws ArrayIndexOutOfBoundsException {
         return getClass0(getParent(sharedEnumClassName), name, depth);
     }
@@ -244,24 +259,94 @@ public class InternalStorages {
     private <T> T get0(String parent, String name, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException {
         ConcurrentMap<String, StorageField> storage = sharedObjectsMap.get(parent);
 
-        StorageField storageField = storage.get(name);
-        if (storageField == null) {
+        StorageField field = storage.get(name);
+        if (field == null) {
             throw new IllegalArgumentException("Variable not found: " + parent + "." + name);
         }
-        Object value = storageField.getValue();
 
         if (indices.length == 0) {
-            return (T) value;
+            return (T) field.getValue();
         } else {
-            Object array = getArrayElement(value, indices, indices.length - 1);
-            if (!array.getClass().isArray()) {
-                throw new ClassCastException("Cannot get value to '" + parent + "." + name + Arrays.toString(indices) + "'.");
+            Object array = getArrayElement(field.getValue(), indices, indices.length - 1);
+            if (array == null) {
+                throw new NullPointerException("Cannot get value from: " + parent + "." + name + Arrays.toString(indices));
+            } else if (!array.getClass().isArray()) {
+                throw new ClassCastException("Cannot get value from " + parent + "." + name + Arrays.toString(indices));
             } else if (Array.getLength(array) <= indices[indices.length - 1]) {
-                throw new ArrayIndexOutOfBoundsException("Cannot put value to '" + parent + "." + name + Arrays.toString(indices) + "'.");
+                throw new ArrayIndexOutOfBoundsException("Cannot get value from " + parent + "." + name + Arrays.toString(indices));
             }
 
             return (T) Array.get(array, indices[indices.length - 1]);
         }
+    }
+
+    /**
+     * Accumulates new value of variable to InternalStorages into the array, or as
+     * variable value if indices omitted
+     *
+     * @param function accumulate function
+     * @param value    new value of variable
+     * @param variable name of shared variable
+     * @param indices  (optional) indices into the array
+     * @throws ClassCastException             there is more indices than variable dimension
+     *                                        or value cannot be assigned to the variable
+     * @throws ArrayIndexOutOfBoundsException one of indices is out of bound
+     */
+    final public <T> void accumulate(ReduceOperation<T> function, T value, Enum<?> variable, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
+        accumulate0(function, value, getParent(variable), variable.name(), indices);
+    }
+
+    final public <T> void accumulate(ReduceOperation<T> function, T value, String sharedEnumClassName, String name, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
+        accumulate0(function, value, getParent(sharedEnumClassName), name, indices);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> void accumulate0(ReduceOperation<T> function, T value, String parent, String name, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException {
+        ConcurrentMap<String, StorageField> storage = sharedObjectsMap.get(parent);
+
+        StorageField field = storage.get(name);
+        if (field == null) {
+            throw new IllegalArgumentException("Variable not found: " + parent + "." + name);
+        }
+
+        Class<?> targetClass = getFieldClass(field, indices.length);
+
+        Class<?> fromClass = getValueClass(value);
+
+        if (!isAssignableFrom(targetClass, fromClass)) {
+            throw new ClassCastException("Cannot cast " + fromClass.getName()
+                                                 + " to the type of variable "
+                                                 + "'" + parent + "." + name + (indices.length == 0 ? "" : Arrays.toString(indices)) + "'"
+                                                 + ": " + targetClass);
+        }
+
+        Object newValue = value;
+        if (targetClass.isPrimitive()) {
+            newValue = PrimitiveTypes.convert(targetClass, value);
+        } else if (PrimitiveTypes.isBoxedClass(targetClass) && value != null) {
+            newValue = PrimitiveTypes.convert(targetClass, value);
+        }
+
+        if (indices.length == 0) {
+            synchronized (field) {
+                field.setValue(function.apply((T) field.getValue(), (T) newValue));
+            }
+        } else {
+            Object array = getArrayElement(field.getValue(), indices, indices.length - 1);
+            if (array == null) {
+                throw new NullPointerException("Cannot get value from: " + parent + "." + name + Arrays.toString(indices));
+            } else if (!array.getClass().isArray()) {
+                throw new ClassCastException("Cannot get value from " + parent + "." + name + Arrays.toString(indices));
+            } else if (Array.getLength(array) <= indices[indices.length - 1]) {
+                throw new ArrayIndexOutOfBoundsException("Cannot get value from " + parent + "." + name + Arrays.toString(indices));
+            }
+
+            synchronized (field) {
+                Array.set(array, indices[indices.length - 1],
+                        function.apply((T) Array.get(array, indices[indices.length - 1]), (T) newValue));
+            }
+        }
+        field.incrementModificationCounter();
     }
 
     private Object getArrayElement(Object array, int[] indices, int length) throws ArrayIndexOutOfBoundsException, IllegalArgumentException, ClassCastException {
@@ -323,29 +408,21 @@ public class InternalStorages {
         }
 
         if (indices.length == 0) {
-            synchronized (field) {
-                field.setValue(newValue);
-                field.getModificationCount().incrementAndGet();
-                field.notifyAll();
-            }
+            field.setValue(newValue);
         } else {
             Object array = getArrayElement(field.getValue(), indices, indices.length - 1);
 
             if (array == null) {
-                throw new NullPointerException("Cannot put value to: " + parent + "." + name);
+                throw new NullPointerException("Cannot put value to: " + parent + "." + name + Arrays.toString(indices));
             } else if (!array.getClass().isArray()) {
                 throw new ClassCastException("Cannot put value to " + parent + "." + name + Arrays.toString(indices));
             } else if (Array.getLength(array) <= indices[indices.length - 1]) {
                 throw new ArrayIndexOutOfBoundsException("Cannot put value to " + parent + "." + name + Arrays.toString(indices));
             }
 
-            synchronized (field) {
-                Array.set(array, indices[indices.length - 1], newValue);
-                field.getModificationCount().incrementAndGet();
-                field.notifyAll();
-            }
+            Array.set(array, indices[indices.length - 1], newValue);
         }
-
+        field.incrementModificationCounter();
     }
 
     private Class<?> getFieldClass(StorageField field, int depth) {
@@ -431,7 +508,7 @@ public class InternalStorages {
         if (field == null) {
             throw new IllegalArgumentException("Variable not found: " + parent + "." + name);
         }
-        return field.getModificationCount().getAndSet(0);
+        return field.resetModificationCounter();
     }
 
     /**
@@ -458,25 +535,14 @@ public class InternalStorages {
             throw new IllegalArgumentException("Variable not found: " + parent + "." + name);
         }
 
-        AtomicInteger modificationCount = field.getModificationCount();
-        if (count == 0) {
-            return modificationCount.get();
-        }
-
-        int v;
-        do {
-            synchronized (field) {
-                while ((v = modificationCount.get()) < count) {
-                    try {
-                        field.wait();
-                    } catch (InterruptedException ex) {
-                        throw new PcjRuntimeException(ex);
-                    }
-                }
+        if (count > 0) {
+            try {
+                field.decrementModificationCounter(count);
+            } catch (InterruptedException ex) {
+                throw new PcjRuntimeException(ex);
             }
-        } while (!modificationCount.compareAndSet(v, v - count));
-
-        return modificationCount.get();
+        }
+        return field.getModificationCounter();
     }
 
     /**
@@ -504,31 +570,13 @@ public class InternalStorages {
             throw new IllegalArgumentException("Variable not found: " + parent + "." + name);
         }
 
-        AtomicInteger modificationCount = field.getModificationCount();
-        if (count == 0) {
-            return modificationCount.get();
-        }
-        long nanosTimeout = unit.toNanos(timeout);
-        final long deadline = System.nanoTime() + nanosTimeout;
-
-        int v;
-        do {
-
-            synchronized (field) {
-                while ((v = modificationCount.get()) < count) {
-                    if (nanosTimeout <= 0L) {
-                        throw new TimeoutException();
-                    }
-                    try {
-                        field.wait(nanosTimeout / 1_000_000, (int) (nanosTimeout % 1_000_000));
-                    } catch (InterruptedException ex) {
-                        throw new PcjRuntimeException(ex);
-                    }
-                    nanosTimeout = deadline - System.nanoTime();
-                }
+        if (count > 0) {
+            try {
+                field.decrementModificationCounter(count, timeout, unit);
+            } catch (InterruptedException ex) {
+                throw new PcjRuntimeException(ex);
             }
-        } while (modificationCount.compareAndSet(v, v - count) == false);
-
-        return modificationCount.get();
+        }
+        return field.getModificationCounter();
     }
 }

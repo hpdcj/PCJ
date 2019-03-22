@@ -430,6 +430,15 @@ final public class PCJ extends InternalPCJ {
         PCJ.<T>asyncPut(newValue, threadId, variable, indices).get();
     }
 
+    public static <T> PcjFuture<Void> asyncAccumulate(ReduceOperation<T> function,T newValue, int threadId, Enum<?> variable, int... indices) {
+        return getGlobalGroup().asyncAccumulate(function, newValue, threadId, variable, indices);
+    }
+
+
+    public static <T> void accumulate(ReduceOperation<T> function, T newValue, int threadId, Enum<?> variable, int... indices) throws PcjRuntimeException {
+        PCJ.<T>asyncAccumulate(function, newValue, threadId, variable, indices).get();
+    }
+
     /**
      * Asynchronous broadcast operation. Broadcasts value into shared variable
      * of all PCJ Threads from the global group.
