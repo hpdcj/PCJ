@@ -11,6 +11,7 @@ package org.pcj.internal;
 import java.io.IOException;
 import java.io.NotSerializableException;
 import java.io.UncheckedIOException;
+import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
@@ -115,14 +116,14 @@ final public class Networker {
                 } catch (IOException ex) {
                     if (attempt < Configuration.INIT_RETRY_COUNT) {
                         LOGGER.log(Level.WARNING,
-                                "[{0}] ({1,number,#} attempt of {2,number,#}) Binding on port {3,number,#} of {4} failed: {5}. Retrying.",
+                                "[{0}] ({1,number,#} attempt of {2,number,#}) Binding on {3}:{4,number,#} failed: {5}. Retrying.",
                                 new Object[]{
                                         currentHostName,
                                         attempt + 1,
                                         Configuration.INIT_RETRY_COUNT + 1,
-                                        port,
                                         inetAddress,
-                                        ex.getMessage()});
+                                        port,
+                                        ex});
                     } else {
                         throw new UncheckedIOException(String.format("[%s] Binding on port %s failed!", currentHostName, port), ex);
                     }
@@ -171,7 +172,7 @@ final public class Networker {
                                         Configuration.INIT_RETRY_COUNT + 1,
                                         hostname,
                                         port,
-                                        ex.getMessage()});
+                                        ex});
 
                         Thread.sleep(Configuration.INIT_RETRY_DELAY * 1000 + (int) (Math.random() * 1000));
                     } else {
@@ -195,7 +196,7 @@ final public class Networker {
         synchronized (socket) {
             while (!socket.isConnected()) {
                 if (!socket.isConnectionPending()) {
-                    throw new IOException(String.format("[%s] Unable to connect to %s", currentHostName, socket.getRemoteAddress()));
+                    throw new ConnectException();
                 }
                 socket.wait(100);
             }
