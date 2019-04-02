@@ -49,57 +49,57 @@ final public class LoopbackSocketChannel extends SocketChannel {
     }
 
     @Override
-    public int read(ByteBuffer dst) throws IOException {
+    public int read(ByteBuffer dst) throws IllegalStateException {
         throw new IllegalStateException("Not supported");
     }
 
     @Override
-    public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
+    public long read(ByteBuffer[] dsts, int offset, int length) throws IllegalStateException {
         throw new IllegalStateException("Not supported");
     }
 
     @Override
-    public int write(ByteBuffer src) throws IOException {
+    public int write(ByteBuffer src) throws IllegalStateException {
         throw new IllegalStateException("Not supported");
     }
 
     @Override
-    public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
+    public long write(ByteBuffer[] srcs, int offset, int length) throws IllegalStateException {
         throw new IllegalStateException("Not supported");
     }
 
     @Override
-    public SocketChannel bind(SocketAddress local) throws IOException {
+    public SocketChannel bind(SocketAddress local) throws IllegalStateException {
         throw new IllegalStateException("Not supported");
     }
 
     @Override
-    public boolean connect(SocketAddress remote) throws IOException {
+    public boolean connect(SocketAddress remote) throws IllegalStateException {
         throw new IllegalStateException("Not supported");
     }
 
     @Override
-    public boolean isConnectionPending() {
+    public boolean isConnectionPending()throws IllegalStateException {
         throw new IllegalStateException("Not supported");
     }
 
     @Override
-    public boolean isConnected() {
+    public boolean isConnected() throws IllegalStateException {
         throw new IllegalStateException("Not supported");
     }
 
     @Override
-    public boolean finishConnect() throws IOException {
+    public boolean finishConnect() throws IllegalStateException {
         throw new IllegalStateException("Not supported");
     }
 
     @Override
-    public SocketChannel shutdownInput() throws IOException {
+    public SocketChannel shutdownInput() throws IllegalStateException {
         throw new IllegalStateException("Not supported");
     }
 
     @Override
-    public SocketChannel shutdownOutput() throws IOException {
+    public SocketChannel shutdownOutput() {
         return this;
     }
 
@@ -109,12 +109,12 @@ final public class LoopbackSocketChannel extends SocketChannel {
     }
 
     @Override
-    public SocketAddress getLocalAddress() throws IOException {
+    public SocketAddress getLocalAddress() {
         return loopbackSocketAddress;
     }
 
     @Override
-    public SocketAddress getRemoteAddress() throws IOException {
+    public SocketAddress getRemoteAddress() {
         return loopbackSocketAddress;
     }
 
@@ -124,22 +124,22 @@ final public class LoopbackSocketChannel extends SocketChannel {
     }
 
     @Override
-    public <T> T getOption(SocketOption<T> name) throws IOException {
+    public <T> T getOption(SocketOption<T> name) throws IllegalStateException {
         throw new IllegalStateException("Not supported");
     }
 
     @Override
-    public <T> SocketChannel setOption(SocketOption<T> name, T value) throws IOException {
+    public <T> SocketChannel setOption(SocketOption<T> name, T value) throws IllegalStateException {
         throw new IllegalStateException("Not supported");
     }
 
     @Override
-    protected void implCloseSelectableChannel() throws IOException {
+    protected void implCloseSelectableChannel() throws IllegalStateException {
         throw new IllegalStateException("Not supported");
     }
 
     @Override
-    protected void implConfigureBlocking(boolean block) throws IOException {
+    protected void implConfigureBlocking(boolean block) throws IllegalStateException {
         throw new IllegalStateException("Not supported");
     }
 

@@ -253,25 +253,17 @@ public class SelectorProc implements Runnable {
     }
 
     private void opConnect(SocketChannel socket) {
-        try {
-            if (socket.finishConnect()) {
-                socket.register(selector, SelectionKey.OP_READ);
-                if (LOGGER.isLoggable(Level.FINER)) {
+        synchronized (socket) {
+            try {
+                if (socket.finishConnect()) {
+                    socket.register(selector, SelectionKey.OP_READ);
+
                     LOGGER.log(Level.FINER, "Connected: {0}", socket);
                 }
-
-                synchronized (socket) {
-                    socket.notifyAll();
-                }
-            }
-        } catch (IOException ex) {
-            if (LOGGER.isLoggable(Level.FINER)) {
+            } catch (IOException ex) {
                 LOGGER.log(Level.FINER, "Connection failed: {0}", ex.getLocalizedMessage());
             }
-
-            synchronized (socket) {
-                socket.notifyAll();
-            }
+            socket.notifyAll();
         }
     }
 

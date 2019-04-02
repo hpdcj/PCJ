@@ -12,9 +12,14 @@ import java.io.IOException;
 import java.io.NotSerializableException;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayDeque;
+import java.util.Iterator;
+import java.util.Objects;
+import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -42,6 +47,7 @@ final public class Networker {
     private final SelectorProc selectorProc;
     private final Thread selectorProcThread;
     private final ExecutorService workers;
+    private String currentHostName;
 
     protected Networker(ThreadGroup threadGroup, ExecutorService workers) {
         this.workers = workers;
@@ -50,16 +56,115 @@ final public class Networker {
         this.selectorProcThread.setDaemon(true);
     }
 
-    void startup() {
+    void setupAndBind(Queue<InetAddress> interfacesAddresses, int port) {
         selectorProcThread.start();
 
+        currentHostName = String.format("%s:%d", guessCurrentHostName(interfacesAddresses), port);
+        tryToBind(interfacesAddresses, port);
     }
 
-    ServerSocketChannel bind(InetAddress hostAddress, int port, int backlog) throws IOException {
+    private static String guessCurrentHostName(Queue<InetAddress> interfacesAddresses) {
+        InetAddress localHost = null;
+        try {
+
+            localHost = InetAddress.getLocalHost();
+            if (!localHost.isLoopbackAddress()) {
+                return localHost.getHostName();
+            }
+        } catch (UnknownHostException e) {
+            // skip exception, try another method
+        }
+        for (InetAddress inetAddress : interfacesAddresses) {
+            if (!inetAddress.isLoopbackAddress()) {
+                return inetAddress.getHostName();
+            }
+        }
+        return localHost == null ? "*unknown*" : localHost.getHostName();
+    }
+
+    private void tryToBind(Queue<InetAddress> interfacesAddresses, int port) {
+        Queue<InetAddress> inetAddresses = new ArrayDeque<>(interfacesAddresses);
+        for (int attempt = 0; attempt <= Configuration.INIT_RETRY_COUNT; ++attempt) {
+            for (Iterator<InetAddress> it = inetAddresses.iterator(); it.hasNext(); ) {
+                InetAddress inetAddress = it.next();
+
+                try {
+                    bind(inetAddress, port, Configuration.INIT_BACKLOG_COUNT);
+                    it.remove();
+                } catch (IOException ex) {
+                    if (attempt < Configuration.INIT_RETRY_COUNT) {
+                        LOGGER.log(Level.WARNING,
+                                "[{0}] ({1,number,#} attempt of {2,number,#}) Binding on port {3,number,#} of {4} failed: {5}. Retrying.",
+                                new Object[]{
+                                        currentHostName,
+                                        attempt + 1,
+                                        Configuration.INIT_RETRY_COUNT + 1,
+                                        port,
+                                        inetAddress,
+                                        ex.getMessage()});
+                    } else {
+                        throw new UncheckedIOException(String.format("[%s] Binding on port %s failed!", currentHostName, port), ex);
+                    }
+                }
+            }
+
+            if (inetAddresses.isEmpty()) {
+                LOGGER.log(Level.FINE, "[{0}] Binding on all interfaces successfully completed.", currentHostName);
+                return;
+            } else {
+                try {
+                    Thread.sleep(Configuration.INIT_RETRY_DELAY * 1000 + (int) (Math.random() * 1000));
+                } catch (InterruptedException ex) {
+                    throw new PcjRuntimeException(String.format("[%s] Interruption occurred while waiting for binding retry.", currentHostName));
+                }
+            }
+        }
+        throw new IllegalStateException(String.format("[%s] Unreachable code.", currentHostName));
+    }
+
+    private ServerSocketChannel bind(InetAddress hostAddress, int port, int backlog) throws IOException {
         return selectorProc.bind(hostAddress, port, backlog);
     }
 
-    public SocketChannel connectTo(InetAddress hostAddress, int port) throws IOException, InterruptedException {
+    public SocketChannel tryToConnectTo(String hostname, int port) {
+        try {
+            for (int attempt = 0; attempt <= Configuration.INIT_RETRY_COUNT; ++attempt) {
+                try {
+                    LOGGER.log(Level.FINE, "[{0}] Connecting to: {1}:{2,number,#}",
+                            new Object[]{currentHostName, hostname, port});
+
+                    InetAddress inetAddressNode0 = InetAddress.getByName(hostname);
+                    SocketChannel socket = connectTo(inetAddressNode0, port);
+
+                    LOGGER.log(Level.FINER, "[{0}] Connected to {1}:{2,number,#}: {3}",
+                            new Object[]{currentHostName, hostname, port, Objects.toString(socket)});
+
+                    return socket;
+                } catch (IOException ex) {
+                    if (attempt < Configuration.INIT_RETRY_COUNT) {
+                        LOGGER.log(Level.WARNING,
+                                "[{0}] ({1,number,#} attempt of {2,number,#}) Connecting to {3}:{4,number,#} failed: {5}. Retrying.",
+                                new Object[]{
+                                        currentHostName,
+                                        attempt + 1,
+                                        Configuration.INIT_RETRY_COUNT + 1,
+                                        hostname,
+                                        port,
+                                        ex.getMessage()});
+
+                        Thread.sleep(Configuration.INIT_RETRY_DELAY * 1000 + (int) (Math.random() * 1000));
+                    } else {
+                        throw new PcjRuntimeException(String.format("[%s] Connecting to %s:%d failed!", currentHostName, hostname, port), ex);
+                    }
+                }
+            }
+        } catch (InterruptedException ex) {
+            throw new PcjRuntimeException(String.format("[%s] Connecting to %s:%d interrupted!", currentHostName, hostname, port));
+        }
+        throw new IllegalStateException(String.format("[%s] Unreachable code.", currentHostName));
+    }
+
+    private SocketChannel connectTo(InetAddress hostAddress, int port) throws IOException, InterruptedException {
         SocketChannel socket = selectorProc.connectTo(hostAddress, port);
         waitForConnectionEstablished(socket);
         return socket;
@@ -69,7 +174,7 @@ final public class Networker {
         synchronized (socket) {
             while (!socket.isConnected()) {
                 if (!socket.isConnectionPending()) {
-                    throw new IOException("Unable to connect to " + socket.getRemoteAddress());
+                    throw new IOException(String.format("[%s] Unable to connect to %s", currentHostName, socket.getRemoteAddress()));
                 }
                 socket.wait(100);
             }
@@ -84,9 +189,10 @@ final public class Networker {
                     selectorProc.closeAllSockets();
                     break;
                 } catch (IOException ex) {
-                    LOGGER.log(Level.FINEST, "Exception while closing sockets: {0}", ex.getMessage());
+                    LOGGER.log(Level.FINEST, "[{0}] Exception while closing sockets: {1}",
+                            new Object[]{currentHostName, ex.getMessage()});
                 } catch (InterruptedException ex) {
-                    LOGGER.log(Level.FINEST, "Interrupted while shutting down. Force shutdown.");
+                    LOGGER.log(Level.FINEST, "[{0}] Interrupted while shutting down. Force shutdown.", currentHostName);
                     break;
                 }
             }
@@ -104,7 +210,8 @@ final public class Networker {
                 loopbackMessageBytesStream.close();
 
                 if (LOGGER.isLoggable(Level.FINEST)) {
-                    LOGGER.log(Level.FINEST, "Locally processing message {0}", message.getType());
+                    LOGGER.log(Level.FINEST, "[{0}] Locally processing message {1}",
+                            new Object[]{currentHostName, message.getType()});
                 }
                 workers.execute(new WorkerTask(socket, message, loopbackMessageBytesStream.getMessageDataInputStream()));
             } else {
@@ -113,14 +220,17 @@ final public class Networker {
                 objectBytes.close();
 
                 if (LOGGER.isLoggable(Level.FINEST)) {
-                    LOGGER.log(Level.FINEST, "Sending message {0} to {1}", new Object[]{message.getType(), socket});
+                    LOGGER.log(Level.FINEST, "[{0}] Sending message {1} to {2}",
+                            new Object[]{currentHostName, message.getType(), socket});
                 }
                 selectorProc.writeMessage(socket, objectBytes);
             }
         } catch (ClosedChannelException | NotSerializableException ex) {
             throw new PcjRuntimeException(ex);
-        } catch (Throwable t) {
-            LOGGER.log(Level.SEVERE, "Exception while sending message: " + message + " to " + socket, t);
+        } catch (Throwable throwable) {
+            LOGGER.log(Level.SEVERE,
+                    String.format("[%s] Exception while sending message: {1} to {2}%s to %s", currentHostName, message, socket),
+                    throwable);
         }
     }
 
@@ -135,7 +245,8 @@ final public class Networker {
         }
 
         if (LOGGER.isLoggable(Level.FINEST)) {
-            LOGGER.log(Level.FINEST, "Received message {0} from {1}", new Object[]{message.getType(), socket});
+            LOGGER.log(Level.FINEST, "[{0}] Received message {1} from {2}",
+                    new Object[]{currentHostName, message.getType(), socket});
         }
 
         workers.execute(new WorkerTask(socket, message, messageDataInputStream));
@@ -158,9 +269,10 @@ final public class Networker {
             try {
                 message.onReceive(socket, messageDataInputStream);
                 messageDataInputStream.close();
-            } catch (Throwable t) {
-                LOGGER.log(Level.SEVERE, "Exception while processing message " + message
-                                                 + " by node(" + InternalPCJ.getNodeData().getCurrentNodePhysicalId() + ").", t);
+            } catch (Throwable throwable) {
+                LOGGER.log(Level.SEVERE,
+                        String.format("Exception while processing message %s by node(%d).", message, InternalPCJ.getNodeData().getCurrentNodePhysicalId()),
+                        throwable);
             }
         }
     }

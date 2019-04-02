@@ -8,7 +8,6 @@
  */
 package org.pcj.internal;
 
-import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -21,7 +20,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -98,22 +96,19 @@ public abstract class InternalPCJ {
             LOGGER.log(Level.INFO, "PCJ version {0}", PCJ_VERSION);
         }
 
+        /* Prepare initial data */
+        nodeData = new NodeData();
+        nodeData.setHelloState(new HelloState(allNodesThreadCount));
+        if (isCurrentJvmNode0) {
+            nodeData.setNode0Data(new NodeData.Node0Data());
+        }
+
+        /* Getting all interfaces */
+        Queue<InetAddress> inetAddresses = getHostAllNetworkInferfaces();
+
         networker = prepareNetworker();
-        networker.startup();
+        networker.setupAndBind(inetAddresses, currentJvm.getPort());
         try {
-            /* Prepare initial data */
-            nodeData = new NodeData();
-            nodeData.setHelloState(new HelloState(allNodesThreadCount));
-            if (isCurrentJvmNode0) {
-                nodeData.setNode0Data(new NodeData.Node0Data());
-            }
-
-            /* Getting all interfaces */
-            Queue<InetAddress> inetAddresses = getHostAllNetworkInferfaces();
-
-            /* Binding on all interfaces */
-            bindOnAllNetworkInterfaces(inetAddresses, currentJvm.getPort());
-
             /* connecting to node0 */
             SocketChannel node0Socket = connectToNode0(node0, isCurrentJvmNode0);
             nodeData.setNode0Socket(node0Socket);
@@ -225,94 +220,19 @@ public abstract class InternalPCJ {
         }
     }
 
-    private static void bindOnAllNetworkInterfaces(Queue<InetAddress> inetAddresses, int bindingPort) throws UncheckedIOException {
-        for (int attempt = 0; attempt <= Configuration.INIT_RETRY_COUNT; ++attempt) {
-            for (Iterator<InetAddress> it = inetAddresses.iterator(); it.hasNext(); ) {
-                InetAddress inetAddress = it.next();
-
-                try {
-                    networker.bind(inetAddress, bindingPort, Configuration.INIT_BACKLOG_COUNT);
-                    it.remove();
-                } catch (IOException ex) {
-                    if (attempt < Configuration.INIT_RETRY_COUNT) {
-                        LOGGER.log(Level.WARNING,
-                                "({0,number,#} attempt of {1,number,#}) Binding on port {2,number,#} of {3} failed: {4}. Retrying.",
-                                new Object[]{
-                                        attempt + 1,
-                                        Configuration.INIT_RETRY_COUNT + 1,
-                                        bindingPort,
-                                        inetAddress,
-                                        ex.getMessage()});
-                    } else {
-                        throw new UncheckedIOException(String.format("Binding on port %s failed!", bindingPort), ex);
-                    }
-                }
-            }
-
-            if (inetAddresses.isEmpty()) {
-                LOGGER.fine("Binding on all interfaces successfully completed.");
-                return;
-            } else {
-                try {
-                    Thread.sleep(Configuration.INIT_RETRY_DELAY * 1000 + (int) (Math.random() * 1000));
-                } catch (InterruptedException ex) {
-                    throw new PcjRuntimeException("Interruption occurred while waiting for binding retry.");
-                }
-            }
-        }
-        throw new IllegalStateException("Unreachable code.");
-    }
-
     private static SocketChannel connectToNode0(NodeInfo node0, boolean isCurrentJvmNode0) throws PcjRuntimeException {
         if (isCurrentJvmNode0) {
             return LoopbackSocketChannel.getInstance();
-        } else {
-            try {
-                LOGGER.fine("Waiting 300-500ms before attempting to connect to node0 to ensure binding completion.");
-                Thread.sleep(300 + (int) (Math.random() * 200));
-            } catch (InterruptedException ex) {
-                throw new PcjRuntimeException("Interruption occurred while waiting before attempting to connect to node0.");
-            }
-            for (int attempt = 0; attempt <= Configuration.INIT_RETRY_COUNT; ++attempt) {
-                try {
-                    if (LOGGER.isLoggable(Level.FINE)) {
-                        LOGGER.log(Level.FINE, "Connecting to node0 ({0}:{1,number,#})...",
-                                new Object[]{node0.getHostname(), node0.getPort()});
-                    }
-
-                    InetAddress inetAddressNode0 = InetAddress.getByName(node0.getHostname());
-                    SocketChannel node0Socket = networker.connectTo(inetAddressNode0, node0.getPort());
-
-                    if (LOGGER.isLoggable(Level.FINER)) {
-                        LOGGER.log(Level.FINER, "Connected to node0 ({0}:{1,number,#}): {2}",
-                                new Object[]{node0.getHostname(), node0.getPort(), Objects.toString(node0Socket)});
-                    }
-
-                    return node0Socket;
-                } catch (IOException ex) {
-                    if (attempt < Configuration.INIT_RETRY_COUNT) {
-                        LOGGER.log(Level.WARNING,
-                                "({0,number,#} attempt of {1,number,#}) Connecting to node0 ({2}:{3,number,#}) failed: {4}. Retrying.",
-                                new Object[]{attempt + 1, Configuration.INIT_RETRY_COUNT + 1,
-                                        node0.getHostname(), node0.getPort(), ex.getMessage()});
-                        try {
-                            Thread.sleep(Configuration.INIT_RETRY_DELAY * 1000 + (int) (Math.random() * 1000));
-                        } catch (InterruptedException e) {
-                            throw new PcjRuntimeException("Interruption occurred while waiting for connection retry.");
-                        }
-                    } else {
-                        throw new PcjRuntimeException(String.format("Connecting to node0 (%s:%d) failed!",
-                                node0.getHostname(), node0.getPort()), ex);
-                    }
-                } catch (InterruptedException ex) {
-                    throw new PcjRuntimeException(
-                            String.format("Interruption occurred while connecting to node0 (%s:%d).",
-                                    node0.getHostname(), node0.getPort()));
-                }
-            }
         }
-        throw new IllegalStateException("Unreachable code.");
 
+        try {
+            LOGGER.fine("Waiting 300-500ms before attempting to connect to node0 to ensure binding completion.");
+            Thread.sleep(300 + (int) (Math.random() * 200));
+        } catch (InterruptedException ex) {
+            throw new PcjRuntimeException("Interruption occurred while waiting before attempting to connect to node0.");
+        }
+
+        return networker.tryToConnectTo(node0.getHostname(), node0.getPort());
     }
 
     private static void helloPhase(int port, Set<Integer> threadIds) throws UncheckedIOException {

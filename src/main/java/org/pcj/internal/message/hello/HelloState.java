@@ -138,7 +138,7 @@ public class HelloState {
                     NodeInfo nodeInfo = nodeInfoByPhysicalId.get(physicalId);
 
                     SocketChannel socketChannel = socketChannelByPhysicalId.computeIfAbsent(physicalId,
-                            key -> connectToNode(nodeInfo.getHostname(), nodeInfo.getPort()));
+                            key -> networker.tryToConnectTo(nodeInfo.getHostname(), nodeInfo.getPort()));
 
                     networker.send(socketChannel, helloBonjourMessage);
                 });
@@ -154,7 +154,7 @@ public class HelloState {
                     NodeInfo nodeInfo = nodeInfoByPhysicalId.get(physicalId);
 
                     SocketChannel socketChannel = socketChannelByPhysicalId.computeIfAbsent(physicalId,
-                            key -> connectToNode(nodeInfo.getHostname(), nodeInfo.getPort()));
+                            key -> networker.tryToConnectTo(nodeInfo.getHostname(), nodeInfo.getPort()));
 
                     Message messageHelloInform = new HelloInformMessage(physicalId, nodeInfoByPhysicalId);
                     networker.send(socketChannel, messageHelloInform);
@@ -193,42 +193,6 @@ public class HelloState {
             }
 
         }
-    }
-
-    private SocketChannel connectToNode(String hostname, int port) throws PcjRuntimeException {
-        for (int attempt = 0; attempt <= Configuration.INIT_RETRY_COUNT; ++attempt) {
-            try {
-                if (LOGGER.isLoggable(Level.FINE)) {
-                    LOGGER.log(Level.FINE, "Connecting to: {0}:{1,number,#}",
-                            new Object[]{hostname, port});
-                }
-                InetAddress inetAddressNode0 = InetAddress.getByName(hostname);
-                SocketChannel socket = InternalPCJ.getNetworker().connectTo(inetAddressNode0, port);
-                if (LOGGER.isLoggable(Level.FINER)) {
-                    LOGGER.log(Level.FINER, "Connected to {0}:{1,number,#}: {2}",
-                            new Object[]{hostname, port, Objects.toString(socket)});
-                }
-                return socket;
-            } catch (IOException ex) {
-                if (attempt < Configuration.INIT_RETRY_COUNT) {
-                    LOGGER.log(Level.WARNING,
-                            "({0,number,#} attempt of {1,number,#}) Connecting to {2}:{3,number,#} failed: {4}. Retrying.",
-                            new Object[]{attempt + 1, Configuration.INIT_RETRY_COUNT + 1, hostname, port, ex.getMessage()});
-
-                    try {
-                        Thread.sleep(Configuration.INIT_RETRY_DELAY * 1000 + (int) (Math.random() * 1000));
-                    } catch (InterruptedException e) {
-                        LOGGER.log(Level.SEVERE, "Interruption occurred while waiting for connection retry.");
-                    }
-                } else {
-                    throw new PcjRuntimeException(
-                            String.format("Connecting to %s:%d failed!", hostname, port), ex);
-                }
-            } catch (InterruptedException ex) {
-                throw new PcjRuntimeException(String.format("Connecting to %s:%d interrupted!", hostname, port));
-            }
-        }
-        throw new IllegalStateException("Unreachable code.");
     }
 
     public static class HelloFuture extends InternalFuture<InternalGroup> {
