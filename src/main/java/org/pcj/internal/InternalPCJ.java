@@ -9,18 +9,12 @@
 package org.pcj.internal;
 
 import java.io.UncheckedIOException;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayDeque;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -32,7 +26,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import org.pcj.NodesDescription;
 import org.pcj.PcjFuture;
 import org.pcj.PcjRuntimeException;
@@ -103,11 +96,8 @@ public abstract class InternalPCJ {
             nodeData.setNode0Data(new NodeData.Node0Data());
         }
 
-        /* Getting all interfaces */
-        Queue<InetAddress> inetAddresses = getHostAllNetworkInferfaces();
-
         networker = prepareNetworker();
-        networker.setupAndBind(inetAddresses, currentJvm.getPort());
+        networker.setupAndBind(currentJvm.getPort());
         try {
             /* connecting to node0 */
             SocketChannel node0Socket = connectToNode0(node0, isCurrentJvmNode0);
@@ -206,18 +196,6 @@ public abstract class InternalPCJ {
                 new ThreadPoolExecutor.CallerRunsPolicy());
 
         return new Networker(threadGroup, workers);
-    }
-
-    private static Queue<InetAddress> getHostAllNetworkInferfaces() throws UncheckedIOException {
-        try {
-            return Collections.list(NetworkInterface.getNetworkInterfaces()).stream()
-                           .flatMap(iface -> Collections.list(iface.getInetAddresses()).stream())
-                           .distinct()
-                           .collect(Collectors.toCollection(ArrayDeque::new));
-        } catch (SocketException ex) {
-            LOGGER.log(Level.SEVERE, "Unable to get network interfaces", ex);
-            throw new UncheckedIOException(ex);
-        }
     }
 
     private static SocketChannel connectToNode0(NodeInfo node0, boolean isCurrentJvmNode0) throws PcjRuntimeException {

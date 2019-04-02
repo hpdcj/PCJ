@@ -12,17 +12,21 @@ import java.io.IOException;
 import java.io.NotSerializableException;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayDeque;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import org.pcj.PcjRuntimeException;
 import org.pcj.internal.message.Message;
 import org.pcj.internal.message.MessageType;
@@ -56,17 +60,32 @@ final public class Networker {
         this.selectorProcThread.setDaemon(true);
     }
 
-    void setupAndBind(Queue<InetAddress> interfacesAddresses, int port) {
+    void setupAndBind(int port) {
         selectorProcThread.start();
 
-        currentHostName = String.format("%s:%d", guessCurrentHostName(interfacesAddresses), port);
+        Queue<InetAddress> interfacesAddresses = getHostAllNetworkInterfaces();
+        String hostname = guessCurrentHostName(interfacesAddresses);
+        if (hostname == null) hostname = "*unknown*";
+
+        currentHostName = String.format("%s:%d", hostname, port);
         tryToBind(interfacesAddresses, port);
+    }
+
+    private static Queue<InetAddress> getHostAllNetworkInterfaces() throws UncheckedIOException {
+        try {
+            return Collections.list(NetworkInterface.getNetworkInterfaces()).stream()
+                           .flatMap(iface -> Collections.list(iface.getInetAddresses()).stream())
+                           .distinct()
+                           .collect(Collectors.toCollection(ArrayDeque::new));
+        } catch (SocketException ex) {
+            LOGGER.log(Level.SEVERE, "Unable to get network interfaces", ex);
+            throw new UncheckedIOException(ex);
+        }
     }
 
     private static String guessCurrentHostName(Queue<InetAddress> interfacesAddresses) {
         InetAddress localHost = null;
         try {
-
             localHost = InetAddress.getLocalHost();
             if (!localHost.isLoopbackAddress()) {
                 return localHost.getHostName();
@@ -74,12 +93,14 @@ final public class Networker {
         } catch (UnknownHostException e) {
             // skip exception, try another method
         }
+
         for (InetAddress inetAddress : interfacesAddresses) {
             if (!inetAddress.isLoopbackAddress()) {
                 return inetAddress.getHostName();
             }
         }
-        return localHost == null ? "*unknown*" : localHost.getHostName();
+
+        return localHost == null ? null : localHost.getHostName();
     }
 
     private void tryToBind(Queue<InetAddress> interfacesAddresses, int port) {
