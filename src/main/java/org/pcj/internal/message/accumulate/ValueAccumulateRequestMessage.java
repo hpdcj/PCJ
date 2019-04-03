@@ -62,7 +62,12 @@ final public class ValueAccumulateRequestMessage<T> extends Message {
         out.writeString(sharedEnumClassName);
         out.writeString(name);
         out.writeIntArray(indices);
-        out.writeObject(function);
+        if (function instanceof ReduceOperation.PredefinedReduceOperation) {
+            out.write(((ReduceOperation.PredefinedReduceOperation<T>) function).getId());
+        } else {
+            out.writeByte((byte) -1);
+            out.writeObject(function);
+        }
         out.writeObject(newValue);
     }
 
@@ -84,7 +89,11 @@ final public class ValueAccumulateRequestMessage<T> extends Message {
 
         ValueAccumulateResponseMessage valueAccumulateResponseMessage = new ValueAccumulateResponseMessage(groupId, requestNum, requesterThreadId);
         try {
-            function = (ReduceOperation<T>) in.readObject();
+            byte predefined = in.readByte();
+            function = ReduceOperation.PredefinedReduceOperation.Predefined.getReduceOperation(predefined);
+            if (function == null) {
+                function = (ReduceOperation<T>) in.readObject();
+            }
             newValue = (T) in.readObject();
             storage.accumulate(function, newValue, sharedEnumClassName, name, indices);
         } catch (Exception ex) {

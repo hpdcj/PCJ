@@ -13,6 +13,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
+import org.pcj.ReduceOperation;
 import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
@@ -48,7 +49,7 @@ public class AccumulateTest implements StartPoint {
 
     @Override
     public void main() throws Throwable {
-        PCJ.accumulate(Integer::sum, PCJ.myId() + 1, 0, Shared.v);
+        PCJ.accumulate(ReduceOperation.Predefined.SUM_INT, PCJ.myId() + 1, 0, Shared.v);
         PCJ.barrier();
         System.out.println(PCJ.myId() + "> v = " + v);
     }
