@@ -22,6 +22,7 @@ import java.util.stream.IntStream;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
 import org.pcj.PcjFuture;
+import org.pcj.ReduceOperation;
 import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
@@ -135,9 +136,11 @@ public class PcjMicroBenchmarkReduce implements StartPoint {
                 new Benchmark("pcjAsyncGet", this::pcjAsyncGet),
                 new Benchmark("pcjPut", this::pcjPut),
                 new Benchmark("pcjAccumulate", this::pcjAccumulate),
+                new Benchmark("pcjAccumulatePredefined", this::pcjAccumulatePredefined),
                 new Benchmark("pcjTreePut", this::pcjTreePut),
                 new Benchmark("pcjCollect", this::pcjCollect),
                 new Benchmark("pcjReduce", this::pcjReduce),
+                new Benchmark("pcjReducePredefined", this::pcjReducePredefined),
         };
 
         for (int i = 0; i < NUMBER_OF_TESTS; ++i) {
@@ -215,6 +218,18 @@ public class PcjMicroBenchmarkReduce implements StartPoint {
         return Double.NaN;
     }
 
+    private double pcjAccumulatePredefined() {
+        PCJ.accumulate(ReduceOperation.Predefined.SUM_DOUBLE, value, 0, Vars.reducedValue);
+        if (PCJ.myId() == 0) {
+            PCJ.waitFor(Vars.reducedValue, PCJ.threadCount());
+
+            double copy = reducedValue;
+            reducedValue = 0.0;
+            return copy;
+        }
+        return Double.NaN;
+    }
+
     private double pcjTreePut() {
         int childCount = Math.min(2, Math.max(0, PCJ.threadCount() - PCJ.myId() * 2 - 1));
         PCJ.waitFor(Vars.treeArray, childCount);
@@ -242,4 +257,12 @@ public class PcjMicroBenchmarkReduce implements StartPoint {
         }
         return Double.NaN;
     }
+
+    private double pcjReducePredefined() {
+        if (PCJ.myId() == 0) {
+            return (double) PCJ.reduce(ReduceOperation.Predefined.SUM_DOUBLE, Vars.value);
+        }
+        return Double.NaN;
+    }
+
 }

@@ -24,29 +24,29 @@ public interface ReduceOperation<T> extends Serializable, BinaryOperator<T> {
         /**
          * {@link Math#min(long, long)}
          */
-        MIN_LONG((ReduceOperation<Long>) Math::min),
-        MIN_INT((ReduceOperation<Integer>) Math::min),
-        MIN_DOUBLE((ReduceOperation<Double>) Math::min),
-        MIN_FLOAT((ReduceOperation<Float>) Math::min),
+        LONG_MIN((ReduceOperation<Long>) Math::min),
+        INT_MIN((ReduceOperation<Integer>) Math::min),
+        DOUBLE_MIN((ReduceOperation<Double>) Math::min),
+        FLOAT_MIN((ReduceOperation<Float>) Math::min),
         // Math.max(long|int|double|float, long|int|double|float) <==> {Long,Integer,Double,Float}.min(...)
-        MAX_LONG((ReduceOperation<Long>) Math::max),
-        MAX_INT((ReduceOperation<Integer>) Math::max),
-        MAX_DOUBLE((ReduceOperation<Double>) Math::max),
-        MAX_FLOAT((ReduceOperation<Float>) Math::max),
+        LONG_MAX((ReduceOperation<Long>) Math::max),
+        INT_MAX((ReduceOperation<Integer>) Math::max),
+        DOUBLE_MAX((ReduceOperation<Double>) Math::max),
+        FLOAT_MAX((ReduceOperation<Float>) Math::max),
         // {Long,Integer,Double,Float}.sum(long|int|double|float, long|int|double|float)
-        SUM_LONG((ReduceOperation<Long>) Long::sum),
+        LONG_SUM((ReduceOperation<Long>) Long::sum),
         /**
          * {@link Integer#sum(int, int)}
          */
-        SUM_INT((ReduceOperation<Integer>) Integer::sum),
-        SUM_DOUBLE((ReduceOperation<Double>) Double::sum),
-        SUM_FLOAT((ReduceOperation<Float>) Float::sum),
+        INT_SUM((ReduceOperation<Integer>) Integer::sum),
+        DOUBLE_SUM((ReduceOperation<Double>) Double::sum),
+        FLOAT_SUM((ReduceOperation<Float>) Float::sum),
         // Math.addExact(long|int, long|int)
-        ADD_LONG((ReduceOperation<Long>) Math::addExact),
-        ADD_INT((ReduceOperation<Integer>) Math::addExact),
+        LONG_ADD((ReduceOperation<Long>) Math::addExact),
+        INT_ADD((ReduceOperation<Integer>) Math::addExact),
         // Math.multiplyExact(long|int, long|int)
-        MUL_LONG((ReduceOperation<Long>) Math::multiplyExact),
-        MUL_INT((ReduceOperation<Integer>) Math::multiplyExact),
+        LONG_MUL((ReduceOperation<Long>) Math::multiplyExact),
+        INT_MUL((ReduceOperation<Integer>) Math::multiplyExact),
         ;
         /* **************************************************** */
 
