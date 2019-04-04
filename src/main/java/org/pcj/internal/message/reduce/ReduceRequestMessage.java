@@ -58,12 +58,7 @@ final public class ReduceRequestMessage<T> extends Message {
         out.writeString(sharedEnumClassName);
         out.writeString(variableName);
         out.writeIntArray(indices);
-        if (function instanceof ReduceOperation.PredefinedReduceOperation) {
-            out.write(((ReduceOperation.PredefinedReduceOperation<T>) function).getId());
-        } else {
-            out.writeByte((byte) -1);
-            out.writeObject(function);
-        }
+        out.writeObject(function);
     }
 
     @SuppressWarnings("unchecked")
@@ -76,14 +71,10 @@ final public class ReduceRequestMessage<T> extends Message {
         sharedEnumClassName = in.readString();
         variableName = in.readString();
         indices = in.readIntArray();
-        byte predefined = in.readByte();
-        function = ReduceOperation.PredefinedReduceOperation.Predefined.getReduceOperation(predefined);
-        if (function == null) {
-            try {
-                function = (ReduceOperation<T>) in.readObject();
-            } catch (ClassNotFoundException e) {
-                throw new PcjRuntimeException(e);
-            }
+        try {
+            function = (ReduceOperation<T>) in.readObject();
+        } catch (ClassNotFoundException e) {
+            throw new PcjRuntimeException(e);
         }
 
         NodeData nodeData = InternalPCJ.getNodeData();

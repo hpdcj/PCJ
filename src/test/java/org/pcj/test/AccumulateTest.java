@@ -49,7 +49,7 @@ public class AccumulateTest implements StartPoint {
 
     @Override
     public void main() throws Throwable {
-        PCJ.accumulate(ReduceOperation.Predefined.SUM_INT, PCJ.myId() + 1, 0, Shared.v);
+        PCJ.accumulate(Integer::sum, PCJ.myId() + 1, 0, Shared.v);
         PCJ.barrier();
         System.out.println(PCJ.myId() + "> v = " + v);
     }
