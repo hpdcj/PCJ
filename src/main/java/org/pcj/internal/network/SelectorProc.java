@@ -40,18 +40,6 @@ import org.pcj.internal.InternalPCJ;
  */
 public class SelectorProc implements Runnable {
 
-    private static class InterestChange {
-
-        private final SelectableChannel channel;
-        private final int interestOps;
-
-        private InterestChange(SelectableChannel channel, int interestOps) {
-            this.channel = channel;
-            this.interestOps = interestOps;
-        }
-
-    }
-
     private static final Logger LOGGER = Logger.getLogger(SelectorProc.class.getName());
     private final Selector selector;
     private final ByteBuffer readBuffer;
@@ -314,5 +302,17 @@ public class SelectorProc implements Runnable {
         }
 
         return true;
+    }
+
+    private static class InterestChange {
+
+        private final SelectableChannel channel;
+        private final int interestOps;
+
+        private InterestChange(SelectableChannel channel, int interestOps) {
+            this.channel = channel;
+            this.interestOps = interestOps;
+        }
+
     }
 }

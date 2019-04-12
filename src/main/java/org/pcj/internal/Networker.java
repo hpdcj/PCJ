@@ -24,7 +24,12 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -52,25 +57,41 @@ final public class Networker {
     private final SelectorProc selectorProc;
     private final Thread selectorProcThread;
     private final ExecutorService workers;
-    private String currentHostName;
+    private final String currentHostName;
 
-    protected Networker(ThreadGroup threadGroup, ExecutorService workers) {
-        this.workers = workers;
-        this.selectorProc = new SelectorProc();
-        this.selectorProcThread = new Thread(threadGroup, selectorProc, "SelectorProc");
-        this.selectorProcThread.setDaemon(true);
-    }
-
-    void setupAndBind(int port) {
-        selectorProcThread.start();
-
+    protected Networker(int port) {
         Queue<InetAddress> interfacesAddresses = getHostAllNetworkInterfaces();
         String hostname = guessCurrentHostName(interfacesAddresses);
         if (hostname == null) hostname = "*unknown*";
 
         currentHostName = String.format("%s:%d", hostname, port);
+
+
+        BlockingQueue<Runnable> blockingQueue;
+        if (Configuration.NET_WORKERS_QUEUE_SIZE > 0) {
+            blockingQueue = new ArrayBlockingQueue<>(Configuration.NET_WORKERS_QUEUE_SIZE);
+        } else if (Configuration.NET_WORKERS_QUEUE_SIZE == 0) {
+            blockingQueue = new SynchronousQueue<>();
+        } else {
+            blockingQueue = new LinkedBlockingQueue<>();
+        }
+
+        ThreadGroup threadGroup = new ThreadGroup("NetworkerGroup");
+
+        workers = new WorkerPoolExecutor(
+                Configuration.NET_WORKERS_COUNT,
+                threadGroup, "Networker-Worker-",
+                blockingQueue,
+                new ThreadPoolExecutor.CallerRunsPolicy());
+
+        selectorProc = new SelectorProc();
+        selectorProcThread = new Thread(threadGroup, selectorProc, "SelectorProc");
+        selectorProcThread.setDaemon(true);
+        selectorProcThread.start();
+
         tryToBind(interfacesAddresses, port);
     }
+
 
     private static Queue<InetAddress> getHostAllNetworkInterfaces() throws UncheckedIOException {
         try {

@@ -96,8 +96,7 @@ public abstract class InternalPCJ {
             nodeData.setNode0Data(new NodeData.Node0Data());
         }
 
-        networker = prepareNetworker();
-        networker.setupAndBind(currentJvm.getPort());
+        networker = new Networker(currentJvm.getPort());
         try {
             /* connecting to node0 */
             SocketChannel node0Socket = connectToNode0(node0, isCurrentJvmNode0);
@@ -175,27 +174,6 @@ public abstract class InternalPCJ {
         } finally {
             networker.shutdown();
         }
-    }
-
-    private static Networker prepareNetworker() {
-        BlockingQueue<Runnable> blockingQueue;
-        if (Configuration.NET_WORKERS_QUEUE_SIZE > 0) {
-            blockingQueue = new ArrayBlockingQueue<>(Configuration.NET_WORKERS_QUEUE_SIZE);
-        } else if (Configuration.NET_WORKERS_QUEUE_SIZE == 0) {
-            blockingQueue = new SynchronousQueue<>();
-        } else {
-            blockingQueue = new LinkedBlockingQueue<>();
-        }
-
-        ThreadGroup threadGroup = new ThreadGroup("NetworkerGroup");
-
-        ExecutorService workers = new WorkerPoolExecutor(
-                Configuration.NET_WORKERS_COUNT,
-                threadGroup, "Networker-Worker-",
-                blockingQueue,
-                new ThreadPoolExecutor.CallerRunsPolicy());
-
-        return new Networker(threadGroup, workers);
     }
 
     private static SocketChannel connectToNode0(NodeInfo node0, boolean isCurrentJvmNode0) throws PcjRuntimeException {
