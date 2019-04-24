@@ -272,7 +272,7 @@ final public class Networker {
             throw new PcjRuntimeException(ex);
         } catch (Throwable throwable) {
             LOGGER.log(Level.SEVERE,
-                    String.format("[%s] Exception while sending message: {1} to {2}%s to %s", currentHostName, message, socket),
+                    String.format("[%s] Exception while sending message: %s to %s", currentHostName, message, socket),
                     throwable);
         }
     }
