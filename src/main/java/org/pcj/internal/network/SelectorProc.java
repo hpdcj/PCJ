@@ -28,12 +28,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.pcj.internal.Configuration;
 import org.pcj.internal.InternalPCJ;
+import org.pcj.internal.WorkerPoolExecutor;
 
 /**
  * Main Runnable class for process all incoming data from network in nonblocking
@@ -50,9 +51,9 @@ public class SelectorProc implements Runnable {
     private final ConcurrentMap<SocketChannel, Queue<MessageBytesOutputStream>> writeMap;
     private final Queue<ServerSocketChannel> serverSocketChannels;
     private final Queue<InterestChange> interestChanges;
-    private final ExecutorService byteBufferThreadExecutor;
+    private final ExecutorService byteBufferWorker;
 
-    public SelectorProc() {
+    public SelectorProc(ThreadGroup threadGroup) {
         try {
             this.selector = Selector.open();
         } catch (IOException ex) {
@@ -65,7 +66,11 @@ public class SelectorProc implements Runnable {
         this.interestChanges = new ConcurrentLinkedQueue<>();
         this.serverSocketChannels = new ConcurrentLinkedQueue<>();
 
-        this.byteBufferThreadExecutor = Executors.newSingleThreadExecutor();
+        this.byteBufferWorker = new WorkerPoolExecutor(
+                1,
+                threadGroup, "SelectorProc-Worker-",
+                new LinkedBlockingQueue<>(),
+                new ThreadPoolExecutor.AbortPolicy());
     }
 
     private void changeInterestOps(SelectableChannel channel, int interestOps) {
@@ -278,7 +283,7 @@ public class SelectorProc implements Runnable {
 
         readBuffer.flip();
         MessageBytesInputStream messageBytes = readMap.get(socket);
-        byteBufferThreadExecutor.submit(new ByteBufferWorker(readBuffer, messageBytes, socket));
+        byteBufferWorker.submit(new ByteBufferWorker(readBuffer, messageBytes, socket));
 
         return true;
     }
@@ -305,6 +310,10 @@ public class SelectorProc implements Runnable {
         }
 
         return true;
+    }
+
+    public void shutdown() {
+        byteBufferWorker.shutdownNow();
     }
 
     private static class InterestChange {

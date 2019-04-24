@@ -84,7 +84,7 @@ final public class Networker {
                 blockingQueue,
                 new ThreadPoolExecutor.CallerRunsPolicy());
 
-        selectorProc = new SelectorProc();
+        selectorProc = new SelectorProc(threadGroup);
         selectorProcThread = new Thread(threadGroup, selectorProc, "SelectorProc");
         selectorProcThread.setDaemon(true);
         selectorProcThread.start();
@@ -240,6 +240,7 @@ final public class Networker {
                 }
             }
         } finally {
+            selectorProc.shutdown();
             selectorProcThread.interrupt();
             workers.shutdownNow();
         }
