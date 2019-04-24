@@ -27,6 +27,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.pcj.internal.Configuration;
@@ -41,25 +44,28 @@ import org.pcj.internal.InternalPCJ;
 public class SelectorProc implements Runnable {
 
     private static final Logger LOGGER = Logger.getLogger(SelectorProc.class.getName());
+    private final ByteBufferPool byteBufferPool;
     private final Selector selector;
-    private final ByteBuffer readBuffer;
     private final ConcurrentMap<SocketChannel, MessageBytesInputStream> readMap;
     private final ConcurrentMap<SocketChannel, Queue<MessageBytesOutputStream>> writeMap;
     private final Queue<ServerSocketChannel> serverSocketChannels;
     private final Queue<InterestChange> interestChanges;
+    private final ExecutorService byteBufferThreadExecutor;
 
     public SelectorProc() {
-        this.readBuffer = ByteBuffer.allocateDirect(Configuration.BUFFER_CHUNK_SIZE);
-        this.writeMap = new ConcurrentHashMap<>();
-        this.readMap = new ConcurrentHashMap<>();
-        this.interestChanges = new ConcurrentLinkedQueue<>();
-        this.serverSocketChannels = new ConcurrentLinkedQueue<>();
-
         try {
             this.selector = Selector.open();
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
+
+        this.byteBufferPool = new ByteBufferPool(Configuration.BUFFER_POOL_SIZE, Configuration.BUFFER_CHUNK_SIZE);
+        this.writeMap = new ConcurrentHashMap<>();
+        this.readMap = new ConcurrentHashMap<>();
+        this.interestChanges = new ConcurrentLinkedQueue<>();
+        this.serverSocketChannels = new ConcurrentLinkedQueue<>();
+
+        this.byteBufferThreadExecutor = Executors.newSingleThreadExecutor();
     }
 
     private void changeInterestOps(SelectableChannel channel, int interestOps) {
@@ -256,42 +262,39 @@ public class SelectorProc implements Runnable {
     }
 
     private boolean opRead(SocketChannel socket) {
-        readBuffer.clear();
+        ByteBuffer readBuffer = byteBufferPool.take();
 
         try {
             int count = socket.read(readBuffer);
             if (count == -1) {
+                returnToPool(readBuffer);
                 return false;
             }
         } catch (IOException ex) {
-            if (LOGGER.isLoggable(Level.FINER)) {
-                LOGGER.log(Level.FINER, "Connection closed: {0} with exception {1}", new Object[]{socket, ex});
-            }
+            returnToPool(readBuffer);
+            LOGGER.log(Level.FINER, "Exception while reading from {0}: {1}", new Object[]{socket, ex});
             return false;
         }
 
         readBuffer.flip();
-
         MessageBytesInputStream messageBytes = readMap.get(socket);
-        while (readBuffer.hasRemaining()) {
-            messageBytes.offerNextBytes(readBuffer);
-            if (messageBytes.hasAllData()) {
-                InternalPCJ.getNetworker().processMessageBytes(socket, messageBytes);
-                messageBytes.prepareForNewMessage();
-            }
-        }
+        byteBufferThreadExecutor.submit(new ByteBufferWorker(readBuffer, messageBytes, socket));
 
         return true;
+    }
+
+    public void returnToPool(ByteBuffer readBuffer) {
+        byteBufferPool.give(readBuffer);
     }
 
     private boolean opWrite(SocketChannel socket) throws IOException {
         Queue<MessageBytesOutputStream> queue = writeMap.get(socket);
 
-        if (queue.isEmpty() || !socket.isOpen()) {
+        MessageBytesOutputStream messageBytes = queue.peek();
+        if (messageBytes == null || !socket.isOpen()) {
             return false;
         }
 
-        MessageBytesOutputStream messageBytes = queue.peek();
         MessageBytesOutputStream.ByteBufferArray byteBuffersArray = messageBytes.getByteBufferArray();
 
         socket.write(byteBuffersArray.getArray(), byteBuffersArray.getOffset(), byteBuffersArray.getRemainingLength());
@@ -314,5 +317,30 @@ public class SelectorProc implements Runnable {
             this.interestOps = interestOps;
         }
 
+    }
+
+    private class ByteBufferWorker implements Runnable {
+        private final ByteBuffer readBuffer;
+        private final MessageBytesInputStream messageBytes;
+        private final SocketChannel socket;
+
+        public ByteBufferWorker(ByteBuffer readBuffer, MessageBytesInputStream messageBytes, SocketChannel socket) {
+            this.readBuffer = readBuffer;
+            this.messageBytes = messageBytes;
+            this.socket = socket;
+        }
+
+        @Override
+        public void run() {
+            while (readBuffer.hasRemaining()) {
+                messageBytes.offerNextBytes(readBuffer);
+                if (messageBytes.hasAllData()) {
+                    InternalPCJ.getNetworker().processMessageBytes(socket, messageBytes);
+                    messageBytes.prepareForNewMessage();
+                }
+            }
+
+            SelectorProc.this.returnToPool(readBuffer);
+        }
     }
 }
