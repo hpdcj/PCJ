@@ -10,6 +10,7 @@ package org.pcj.internal.network;
 
 import java.nio.ByteBuffer;
 import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
@@ -18,20 +19,20 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class ByteBufferPool {
 
     private final Queue<ByteBuffer> pool;
-    private final int byteBufferChunkSize;
+    private final int chunkSize;
 
-    public ByteBufferPool(int maxSize, int byteBufferChunkSize) {
-        this.pool = new ConcurrentLinkedQueue<>();
-        this.byteBufferChunkSize = byteBufferChunkSize;
-        for (int i = 0; i < maxSize; ++i) {
-            pool.offer(ByteBuffer.allocateDirect(byteBufferChunkSize));
+    public ByteBufferPool(int size, int chunkSize) {
+        this.pool = new ArrayBlockingQueue<>(size);
+        this.chunkSize = chunkSize;
+        for (int i = 0; i < size; ++i) {
+            pool.offer(ByteBuffer.allocateDirect(chunkSize));
         }
     }
 
     public ByteBuffer take() {
         ByteBuffer byteBuffer = pool.poll();
         if (byteBuffer == null) {
-            byteBuffer = ByteBuffer.allocate(byteBufferChunkSize);
+            byteBuffer = ByteBuffer.allocate(chunkSize);
         }
         return byteBuffer;
     }
