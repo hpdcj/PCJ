@@ -90,8 +90,7 @@ public class MessageDataOutputStream extends OutputStream {
     }
 
     public void writeDouble(double value) throws IOException {
-        byte[] bytes = longToBytes(Double.doubleToRawLongBits(value));
-        write(bytes, 0, bytes.length);
+        writeLong(Double.doubleToRawLongBits(value));
     }
 
     public void writeDoubleArray(double[] array) throws IOException {
@@ -106,8 +105,7 @@ public class MessageDataOutputStream extends OutputStream {
     }
 
     public void writeFloat(float value) throws IOException {
-        byte[] bytes = intToBytes(Float.floatToRawIntBits(value));
-        output.write(bytes, 0, bytes.length);
+        writeInt(Float.floatToRawIntBits(value));
     }
 
     public void writeFloatArray(float[] array) throws IOException {

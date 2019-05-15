@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
@@ -8,6 +8,7 @@
  */
 package org.pcj.internal.network;
 
+import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,7 +21,9 @@ import java.nio.charset.StandardCharsets;
  */
 public class MessageDataInputStream extends InputStream {
 
-    final private InputStream input;
+    private final InputStream input;
+    private final byte[] intBytes = new byte[Integer.BYTES];
+    private final byte[] longBytes = new byte[Long.BYTES];
     private ObjectInputStream objectInputStream;
 
     public MessageDataInputStream(InputStream input) {
@@ -82,10 +85,12 @@ public class MessageDataInputStream extends InputStream {
     }
 
     public boolean readBoolean() throws IOException {
+        // EOF? input.read() == -1
         return input.read() != 0;
     }
 
     public byte readByte() throws IOException {
+        // EOF? input.read() == -1
         return (byte) input.read();
     }
 
@@ -101,9 +106,7 @@ public class MessageDataInputStream extends InputStream {
     }
 
     public double readDouble() throws IOException {
-        byte[] bytes = new byte[Double.BYTES];
-        readFully(bytes);
-        long longBits = bytesToLong(bytes);
+        long longBits = readLong();
         return Double.longBitsToDouble(longBits);
     }
 
@@ -121,9 +124,7 @@ public class MessageDataInputStream extends InputStream {
     }
 
     public float readFloat() throws IOException {
-        byte[] bytes = new byte[Float.BYTES];
-        readFully(bytes);
-        int intBits = bytesToInt(bytes);
+        int intBits = readInt();
         return Float.intBitsToFloat(intBits);
     }
 
@@ -141,9 +142,8 @@ public class MessageDataInputStream extends InputStream {
     }
 
     public int readInt() throws IOException {
-        byte[] bytes = new byte[Integer.BYTES];
-        readFully(bytes);
-        return bytesToInt(bytes);
+        readFully(intBytes);
+        return bytesToInt(intBytes);
     }
 
     public int[] readIntArray() throws IOException {
@@ -160,9 +160,8 @@ public class MessageDataInputStream extends InputStream {
     }
 
     public long readLong() throws IOException {
-        byte[] bytes = new byte[Long.BYTES];
-        readFully(bytes);
-        return bytesToLong(bytes);
+        readFully(longBytes);
+        return bytesToLong(longBytes);
     }
 
     public long[] readLongArray() throws IOException {
