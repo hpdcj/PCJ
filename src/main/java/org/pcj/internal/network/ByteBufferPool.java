@@ -11,36 +11,63 @@ package org.pcj.internal.network;
 import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * @author faramir
  */
 public class ByteBufferPool {
 
-    private final Queue<ByteBuffer> pool;
+    private final Queue<PooledByteBuffer> pool;
     private final int chunkSize;
 
     public ByteBufferPool(int size, int chunkSize) {
         this.pool = new ArrayBlockingQueue<>(size);
         this.chunkSize = chunkSize;
         for (int i = 0; i < size; ++i) {
-            pool.offer(ByteBuffer.allocateDirect(chunkSize));
+            pool.offer(new DirectPooledByteBuffer(chunkSize));
         }
     }
 
-    public ByteBuffer take() {
-        ByteBuffer byteBuffer = pool.poll();
-        if (byteBuffer == null) {
-            byteBuffer = ByteBuffer.allocate(chunkSize);
+    public PooledByteBuffer take() {
+        PooledByteBuffer pooledByteBuffer = pool.poll();
+        if (pooledByteBuffer != null) {
+            return pooledByteBuffer;
         }
-        return byteBuffer;
+        return new HeapPooledByteBuffer(chunkSize);
     }
 
-    public void give(ByteBuffer byteBuffer) {
-        if (byteBuffer.isDirect()) {
+    public static abstract class PooledByteBuffer {
+        final ByteBuffer byteBuffer;
+
+        private PooledByteBuffer(ByteBuffer byteBuffer) {
+            this.byteBuffer = byteBuffer;
+        }
+
+        public ByteBuffer getByteBuffer() {
+            return byteBuffer;
+        }
+
+        public abstract void returnToPool();
+    }
+
+    final private class DirectPooledByteBuffer extends PooledByteBuffer {
+
+        private DirectPooledByteBuffer(int capacity) {
+            super(ByteBuffer.allocateDirect(capacity));
+        }
+
+        public void returnToPool() {
             byteBuffer.clear();
-            pool.offer(byteBuffer);
+            pool.offer(this);
+        }
+    }
+
+    final public static class HeapPooledByteBuffer extends PooledByteBuffer {
+        public HeapPooledByteBuffer(int capacity) {
+            super(ByteBuffer.allocate(capacity));
+        }
+
+        public void returnToPool() {
         }
     }
 }

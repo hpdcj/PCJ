@@ -267,30 +267,29 @@ public class SelectorProc implements Runnable {
     }
 
     private boolean opRead(SocketChannel socket) {
-        ByteBuffer readBuffer = byteBufferPool.take();
+        ByteBufferPool.PooledByteBuffer pooledByteBuffer = byteBufferPool.take();
+        ByteBuffer readBuffer = pooledByteBuffer.getByteBuffer();
 
         try {
             int count = socket.read(readBuffer);
             if (count == -1) {
-                returnToPool(readBuffer);
+                pooledByteBuffer.returnToPool();
                 return false;
             }
         } catch (IOException ex) {
-            returnToPool(readBuffer);
+            pooledByteBuffer.returnToPool();
             LOGGER.log(Level.FINER, "Exception while reading from {0}: {1}", new Object[]{socket, ex});
             return false;
         }
 
         readBuffer.flip();
+
         MessageBytesInputStream messageBytes = readMap.get(socket);
-        byteBufferWorker.submit(new ByteBufferWorker(readBuffer, messageBytes, socket));
+        byteBufferWorker.submit(new ByteBufferWorker(pooledByteBuffer, messageBytes, socket));
 
         return true;
     }
 
-    public void returnToPool(ByteBuffer readBuffer) {
-        byteBufferPool.give(readBuffer);
-    }
 
     private boolean opWrite(SocketChannel socket) throws IOException {
         Queue<MessageBytesOutputStream> queue = writeMap.get(socket);
@@ -328,19 +327,21 @@ public class SelectorProc implements Runnable {
 
     }
 
-    private class ByteBufferWorker implements Runnable {
-        private final ByteBuffer readBuffer;
+    private static class ByteBufferWorker implements Runnable {
+        private final ByteBufferPool.PooledByteBuffer pooledByteBuffer;
         private final MessageBytesInputStream messageBytes;
         private final SocketChannel socket;
 
-        public ByteBufferWorker(ByteBuffer readBuffer, MessageBytesInputStream messageBytes, SocketChannel socket) {
-            this.readBuffer = readBuffer;
+        public ByteBufferWorker(ByteBufferPool.PooledByteBuffer pooledByteBuffer, MessageBytesInputStream messageBytes, SocketChannel socket) {
+            this.pooledByteBuffer = pooledByteBuffer;
             this.messageBytes = messageBytes;
             this.socket = socket;
         }
 
         @Override
         public void run() {
+            ByteBuffer readBuffer = pooledByteBuffer.getByteBuffer();
+
             while (readBuffer.hasRemaining()) {
                 messageBytes.offerNextBytes(readBuffer);
                 if (messageBytes.hasAllData()) {
@@ -349,7 +350,7 @@ public class SelectorProc implements Runnable {
                 }
             }
 
-            SelectorProc.this.returnToPool(readBuffer);
+            pooledByteBuffer.returnToPool();
         }
     }
 }

@@ -56,7 +56,6 @@ final public class Networker {
     private static final Logger LOGGER = Logger.getLogger(Networker.class.getName());
     private final SelectorProc selectorProc;
     private final Thread selectorProcThread;
-    private final ExecutorService workers;
     private final String currentHostName;
 
     protected Networker(int port) {
@@ -66,23 +65,7 @@ final public class Networker {
 
         currentHostName = String.format("%s:%d", hostname, port);
 
-
-        BlockingQueue<Runnable> blockingQueue;
-        if (Configuration.NET_WORKERS_QUEUE_SIZE > 0) {
-            blockingQueue = new ArrayBlockingQueue<>(Configuration.NET_WORKERS_QUEUE_SIZE);
-        } else if (Configuration.NET_WORKERS_QUEUE_SIZE == 0) {
-            blockingQueue = new SynchronousQueue<>();
-        } else {
-            blockingQueue = new LinkedBlockingQueue<>();
-        }
-
         ThreadGroup threadGroup = new ThreadGroup("NetworkerGroup");
-
-        workers = new WorkerPoolExecutor(
-                Configuration.NET_WORKERS_COUNT,
-                threadGroup, "Networker-Worker-",
-                blockingQueue,
-                new ThreadPoolExecutor.CallerRunsPolicy());
 
         selectorProc = new SelectorProc(threadGroup);
         selectorProcThread = new Thread(threadGroup, selectorProc, "SelectorProc");
@@ -242,7 +225,6 @@ final public class Networker {
         } finally {
             selectorProc.shutdown();
             selectorProcThread.interrupt();
-            workers.shutdownNow();
         }
     }
 
@@ -257,7 +239,7 @@ final public class Networker {
                     LOGGER.log(Level.FINEST, "[{0}] Locally processing message {1}",
                             new Object[]{currentHostName, message.getType()});
                 }
-                workers.execute(new WorkerTask(socket, message, loopbackMessageBytesStream.getMessageDataInputStream()));
+                InternalPCJ.getMessageProc().execute(socket, message, loopbackMessageBytesStream.getMessageDataInputStream());
             } else {
                 MessageBytesOutputStream objectBytes = new MessageBytesOutputStream(message);
                 objectBytes.writeMessage();
@@ -293,31 +275,6 @@ final public class Networker {
                     new Object[]{currentHostName, message.getType(), socket});
         }
 
-        workers.execute(new WorkerTask(socket, message, messageDataInputStream));
-    }
-
-    private static class WorkerTask implements Runnable {
-
-        private final SocketChannel socket;
-        private final Message message;
-        private final MessageDataInputStream messageDataInputStream;
-
-        public WorkerTask(SocketChannel socket, Message message, MessageDataInputStream messageDataInputStream) {
-            this.socket = socket;
-            this.message = message;
-            this.messageDataInputStream = messageDataInputStream;
-        }
-
-        @Override
-        public void run() {
-            try {
-                message.onReceive(socket, messageDataInputStream);
-                messageDataInputStream.close();
-            } catch (Throwable throwable) {
-                LOGGER.log(Level.SEVERE,
-                        String.format("Exception while processing message %s by node(%d).", message, InternalPCJ.getNodeData().getCurrentNodePhysicalId()),
-                        throwable);
-            }
-        }
+        InternalPCJ.getMessageProc().execute(socket, message, messageDataInputStream);
     }
 }

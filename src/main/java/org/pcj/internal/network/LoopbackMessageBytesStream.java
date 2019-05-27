@@ -25,7 +25,7 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
 
     private static final ByteBufferPool BYTE_BUFFER_POOL = new ByteBufferPool(Configuration.BUFFER_POOL_SIZE, Configuration.BUFFER_CHUNK_SIZE);
     private final Message message;
-    private final Queue<ByteBuffer> queue;
+    private final Queue<ByteBufferPool.PooledByteBuffer> queue;
     private final MessageDataOutputStream messageDataOutputStream;
 
     public LoopbackMessageBytesStream(Message message) {
@@ -55,10 +55,10 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
     private static class LoopbackOutputStream extends OutputStream {
 
         private final int chunkSize;
-        private final Queue<ByteBuffer> queue;
-        private ByteBuffer currentByteBuffer;
+        private final Queue<ByteBufferPool.PooledByteBuffer> queue;
+        private ByteBufferPool.PooledByteBuffer currentPooledByteBuffer;
 
-        public LoopbackOutputStream(Queue<ByteBuffer> queue, int chunkSize) {
+        public LoopbackOutputStream(Queue<ByteBufferPool.PooledByteBuffer> queue, int chunkSize) {
             this.chunkSize = chunkSize;
             this.queue = queue;
 
@@ -67,18 +67,19 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
 
         private void allocateBuffer(int size) {
             if (size <= chunkSize) {
-                currentByteBuffer = BYTE_BUFFER_POOL.take();
+                currentPooledByteBuffer = BYTE_BUFFER_POOL.take();
             } else {
-                currentByteBuffer = ByteBuffer.allocate(size);
+                currentPooledByteBuffer = new ByteBufferPool.HeapPooledByteBuffer(size);
             }
         }
 
         private void flush(int size) {
+            ByteBuffer currentByteBuffer = currentPooledByteBuffer.getByteBuffer();
             if (currentByteBuffer.position() <= 0) {
                 return;
             }
             currentByteBuffer.flip();
-            queue.offer(currentByteBuffer);
+            queue.offer(currentPooledByteBuffer);
 
             if (size > 0) {
                 allocateBuffer(size);
@@ -92,19 +93,20 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
 
         @Override
         public void close() throws IOException {
-            if (currentByteBuffer.position() > 0) {
+            if (currentPooledByteBuffer.getByteBuffer().position() > 0) {
                 flush(0);
             }
-            currentByteBuffer = null;
+            currentPooledByteBuffer = null;
         }
 
         public boolean isClosed() {
-            return currentByteBuffer == null && queue.isEmpty();
+            return currentPooledByteBuffer == null && queue.isEmpty();
         }
 
         @Override
         public void write(int b) {
-            if (currentByteBuffer.hasRemaining() == false) {
+            ByteBuffer currentByteBuffer = currentPooledByteBuffer.getByteBuffer();
+            if (!currentByteBuffer.hasRemaining()) {
                 flush();
             }
             currentByteBuffer.put((byte) b);
@@ -117,6 +119,7 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
 
         @Override
         public void write(byte[] b, int off, int len) {
+            ByteBuffer currentByteBuffer = currentPooledByteBuffer.getByteBuffer();
             int remaining = currentByteBuffer.remaining();
             if (remaining < len) {
                 currentByteBuffer.put(b, off, remaining);
@@ -130,33 +133,34 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
 
     private static class LoopbackInputStream extends InputStream {
 
-        private final Queue<ByteBuffer> queue;
+        private final Queue<ByteBufferPool.PooledByteBuffer> queue;
 
-        public LoopbackInputStream(Queue<ByteBuffer> queue) {
+        public LoopbackInputStream(Queue<ByteBufferPool.PooledByteBuffer> queue) {
             this.queue = queue;
         }
 
         @Override
         public void close() {
-            ByteBuffer bb;
+            ByteBufferPool.PooledByteBuffer bb;
             while ((bb = queue.poll()) != null) {
-                BYTE_BUFFER_POOL.give(bb);
+                bb.returnToPool();
             }
         }
 
         @Override
         public int read() {
             while (true) {
-                ByteBuffer byteBuffer = queue.peek();
-                if (byteBuffer == null) {
-
+                ByteBufferPool.PooledByteBuffer pooledByteBuffer = queue.peek();
+                if (pooledByteBuffer== null) {
                     return -1;
-
-                } else if (byteBuffer.hasRemaining() == false) {
-                    BYTE_BUFFER_POOL.give(byteBuffer);
-                    queue.poll();
                 } else {
-                    return byteBuffer.get() & 0xFF;
+                    ByteBuffer byteBuffer = pooledByteBuffer.getByteBuffer();
+                    if (!byteBuffer.hasRemaining()) {
+                        pooledByteBuffer.returnToPool();
+                        queue.poll();
+                    } else {
+                        return byteBuffer.get() & 0xFF;
+                    }
                 }
             }
         }
@@ -174,14 +178,15 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
 
             int bytesRead = 0;
             while (true) {
-                ByteBuffer byteBuffer = queue.peek();
-                if (byteBuffer == null) {
+                ByteBufferPool.PooledByteBuffer pooledByteBuffer = queue.peek();
+                if (pooledByteBuffer == null) {
                     if (bytesRead == 0) {
                         return -1;
                     } else {
                         return bytesRead;
                     }
                 } else {
+                    ByteBuffer byteBuffer = pooledByteBuffer.getByteBuffer();
                     int len = Math.min(byteBuffer.remaining(), length - bytesRead);
 
                     byteBuffer.get(b, offset, len);
@@ -189,8 +194,8 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
                     bytesRead += len;
                     offset += len;
 
-                    if (byteBuffer.hasRemaining() == false) {
-                        BYTE_BUFFER_POOL.give(byteBuffer);
+                    if (!byteBuffer.hasRemaining()) {
+                        pooledByteBuffer.returnToPool();
                         queue.poll();
                     }
 

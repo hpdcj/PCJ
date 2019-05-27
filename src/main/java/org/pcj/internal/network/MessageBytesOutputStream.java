@@ -11,6 +11,7 @@ package org.pcj.internal.network;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import org.pcj.internal.Configuration;
@@ -22,7 +23,7 @@ import org.pcj.internal.message.Message;
 public class MessageBytesOutputStream implements AutoCloseable {
 
     private static final ByteBufferPool BYTE_BUFFER_POOL = new ByteBufferPool(Configuration.BUFFER_POOL_SIZE, Configuration.BUFFER_CHUNK_SIZE);
-    private static final ByteBuffer[] EMPTY_BYTE_BUFFER_ARRAY = new ByteBuffer[0];
+    private static final ByteBufferPool.PooledByteBuffer[] EMPTY_BYTE_BUFFER_ARRAY = new ByteBufferPool.PooledByteBuffer[0];
     private final Message message;
     private final MessageOutputStream messageOutputStream;
     private final MessageDataOutputStream messageDataOutputStream;
@@ -30,11 +31,13 @@ public class MessageBytesOutputStream implements AutoCloseable {
 
     public static class ByteBufferArray {
 
+        private final ByteBufferPool.PooledByteBuffer[] pooledArray;
         private final ByteBuffer[] array;
         private int offset;
 
-        private ByteBufferArray(ByteBuffer[] array) {
-            this.array = array;
+        private ByteBufferArray(ByteBufferPool.PooledByteBuffer[] pooledArray) {
+            this.pooledArray = pooledArray;
+            this.array = Arrays.stream(pooledArray).map(ByteBufferPool.PooledByteBuffer::getByteBuffer).toArray(ByteBuffer[]::new);
             offset = 0;
         }
 
@@ -52,7 +55,7 @@ public class MessageBytesOutputStream implements AutoCloseable {
 
         public void revalidate() {
             while (offset < array.length && !array[offset].hasRemaining()) {
-                BYTE_BUFFER_POOL.give(array[offset]);
+                pooledArray[offset].returnToPool();
                 ++offset;
             }
         }
@@ -95,9 +98,9 @@ public class MessageBytesOutputStream implements AutoCloseable {
         private static final int HEADER_SIZE = Integer.BYTES;
         private static final int LAST_CHUNK_BIT = (1 << (Integer.SIZE - 1));
         private final int chunkSize;
-        private final Queue<ByteBuffer> queue;
+        private final Queue<ByteBufferPool.PooledByteBuffer> queue;
         volatile private boolean closed;
-        volatile private ByteBuffer currentByteBuffer;
+        volatile private ByteBufferPool.PooledByteBuffer currentPooledByteBuffer;
 
         public MessageOutputStream(int chunkSize) {
             this.chunkSize = chunkSize;
@@ -108,22 +111,23 @@ public class MessageBytesOutputStream implements AutoCloseable {
 
         private void allocateBuffer(int size) {
             if (size <= chunkSize) {
-                currentByteBuffer = BYTE_BUFFER_POOL.take();
-//                currentByteBuffer.limit(size);
+                currentPooledByteBuffer = BYTE_BUFFER_POOL.take();
+//                currentPooledByteBuffer.limit(size);
             } else {
-                currentByteBuffer = ByteBuffer.allocate(size);
+                currentPooledByteBuffer = new ByteBufferPool.HeapPooledByteBuffer(size);
             }
-            currentByteBuffer.position(HEADER_SIZE);
+            currentPooledByteBuffer.getByteBuffer().position(HEADER_SIZE);
         }
 
         private void flush(int size) {
+            ByteBuffer currentByteBuffer = currentPooledByteBuffer.getByteBuffer();
             int length = (currentByteBuffer.position() - HEADER_SIZE);
             if (closed) {
                 length = (length | LAST_CHUNK_BIT);
             }
             currentByteBuffer.putInt(0, length);
             currentByteBuffer.flip();
-            queue.offer(currentByteBuffer);
+            queue.offer(currentPooledByteBuffer);
 
             if (size > 0) {
                 allocateBuffer(size);
@@ -139,15 +143,16 @@ public class MessageBytesOutputStream implements AutoCloseable {
         public void close() {
             closed = true;
             flush(0);
-            currentByteBuffer = null;
+            currentPooledByteBuffer = null;
         }
 
         public boolean isClosed() {
-            return currentByteBuffer == null && queue.isEmpty();
+            return currentPooledByteBuffer == null && queue.isEmpty();
         }
 
         @Override
         public void write(int b) {
+            ByteBuffer currentByteBuffer = currentPooledByteBuffer.getByteBuffer();
             if (!currentByteBuffer.hasRemaining()) {
                 flush();
             }
@@ -161,6 +166,7 @@ public class MessageBytesOutputStream implements AutoCloseable {
 
         @Override
         public void write(byte[] b, int off, int len) {
+            ByteBuffer currentByteBuffer = currentPooledByteBuffer.getByteBuffer();
             int remaining = currentByteBuffer.remaining();
             while (remaining < len) {
                 currentByteBuffer.put(b, off, remaining);

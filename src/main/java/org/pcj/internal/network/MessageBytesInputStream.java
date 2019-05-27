@@ -25,7 +25,7 @@ public class MessageBytesInputStream {
     private static final int LAST_CHUNK_BIT = (int) (1 << (Integer.SIZE - 1));
     private final ByteBuffer header;
     private MessageInputStream messageInputStream;
-    private ByteBuffer currentByteBuffer;
+    private ByteBufferPool.PooledByteBuffer currentPooledByteBuffer;
 
     public MessageBytesInputStream() {
         this.header = ByteBuffer.allocate(HEADER_SIZE);
@@ -33,7 +33,7 @@ public class MessageBytesInputStream {
     }
 
     final public void prepareForNewMessage() {
-        currentByteBuffer = null;
+        currentPooledByteBuffer = null;
         /* necessary new MessageInputStream as previous one still has data
         and will be processed by Worker */
         messageInputStream = new MessageInputStream();
@@ -41,19 +41,19 @@ public class MessageBytesInputStream {
 
     private void allocateBuffer(int size) {
         if (size <= Configuration.BUFFER_CHUNK_SIZE) {
-            currentByteBuffer = BYTE_BUFFER_POOL.take();
-            currentByteBuffer.limit(size);
+            currentPooledByteBuffer = BYTE_BUFFER_POOL.take();
+            currentPooledByteBuffer.getByteBuffer().limit(size);
         } else {
-            currentByteBuffer = ByteBuffer.allocate(size);
+            currentPooledByteBuffer = new ByteBufferPool.HeapPooledByteBuffer(size);
         }
     }
 
     public void offerNextBytes(ByteBuffer sourceByteBuffer) {
         while (sourceByteBuffer.hasRemaining()) {
-            if (currentByteBuffer == null) {
+            if (currentPooledByteBuffer == null) {
                 readBuffer(sourceByteBuffer, header);
 
-                if (header.hasRemaining() == false) {
+                if (!header.hasRemaining()) {
                     int lengthWithMarker = header.getInt(0);
                     int length = lengthWithMarker & ~LAST_CHUNK_BIT;
 
@@ -69,15 +69,16 @@ public class MessageBytesInputStream {
                 }
             }
 
-            /* currentByteBuffer can be changed in allocateBuffer() */
-            if (currentByteBuffer != null) {
+            /* currentPooledByteBuffer can be changed in allocateBuffer() */
+            if (currentPooledByteBuffer != null) {
+                ByteBuffer currentByteBuffer = currentPooledByteBuffer.getByteBuffer();
                 readBuffer(sourceByteBuffer, currentByteBuffer);
 
-                if (currentByteBuffer.hasRemaining() == false) {
+                if (!currentByteBuffer.hasRemaining()) {
                     currentByteBuffer.flip();
-                    messageInputStream.offerByteBuffer(currentByteBuffer);
+                    messageInputStream.offerByteBuffer(currentPooledByteBuffer);
 
-                    currentByteBuffer = null;
+                    currentPooledByteBuffer = null;
                 }
             }
 
@@ -100,7 +101,7 @@ public class MessageBytesInputStream {
     }
 
     public boolean hasAllData() {
-        return messageInputStream.isReceivingLastChunk() && currentByteBuffer == null;
+        return messageInputStream.isReceivingLastChunk() && currentPooledByteBuffer == null;
     }
 
     public MessageDataInputStream getMessageDataInputStream() {
@@ -109,7 +110,7 @@ public class MessageBytesInputStream {
 
     private static class MessageInputStream extends InputStream {
 
-        private final Queue<ByteBuffer> queue;
+        private final Queue<ByteBufferPool.PooledByteBuffer> queue;
         private boolean closed;
         private boolean receivingLastChunk;
 
@@ -119,15 +120,15 @@ public class MessageBytesInputStream {
             this.receivingLastChunk = false;
         }
 
-        private boolean offerByteBuffer(ByteBuffer byteBuffer) {
+        private boolean offerByteBuffer(ByteBufferPool.PooledByteBuffer byteBuffer) {
             return queue.offer(byteBuffer);
         }
 
         @Override
         public void close() {
-            ByteBuffer bb;
+            ByteBufferPool.PooledByteBuffer bb;
             while ((bb = queue.poll()) != null) {
-                BYTE_BUFFER_POOL.give(bb);
+                bb.returnToPool();
             }
 
             closed = true;
@@ -140,18 +141,21 @@ public class MessageBytesInputStream {
         @Override
         public int read() {
             while (true) {
-                ByteBuffer byteBuffer = queue.peek();
-                if (byteBuffer == null) {
+                ByteBufferPool.PooledByteBuffer pooledByteBuffer = queue.peek();
+                if (pooledByteBuffer == null) {
                     if (closed) {
                         return -1;
                     } else {
                         throw new IllegalStateException("Stream not closed, but no more data available.");
                     }
-                } else if (byteBuffer.hasRemaining() == false) {
-                    BYTE_BUFFER_POOL.give(byteBuffer);
-                    queue.poll();
                 } else {
-                    return byteBuffer.get() & 0xFF;
+                    ByteBuffer byteBuffer = pooledByteBuffer.getByteBuffer();
+                    if (!byteBuffer.hasRemaining()) {
+                        pooledByteBuffer.returnToPool();
+                        queue.poll();
+                    } else {
+                        return byteBuffer.get() & 0xFF;
+                    }
                 }
             }
         }
@@ -169,8 +173,8 @@ public class MessageBytesInputStream {
 
             int bytesRead = 0;
             while (true) {
-                ByteBuffer byteBuffer = queue.peek();
-                if (byteBuffer == null) {
+                ByteBufferPool.PooledByteBuffer pooledByteBuffer = queue.peek();
+                if (pooledByteBuffer == null) {
                     if (receivingLastChunk) {
                         if (bytesRead == 0) {
                             return -1;
@@ -181,6 +185,7 @@ public class MessageBytesInputStream {
                         throw new IllegalStateException("Stream not closed, but no more data available.");
                     }
                 } else {
+                    ByteBuffer byteBuffer = pooledByteBuffer.getByteBuffer();
                     int len = Math.min(byteBuffer.remaining(), length - bytesRead);
 
                     byteBuffer.get(b, offset, len);
@@ -188,8 +193,8 @@ public class MessageBytesInputStream {
                     bytesRead += len;
                     offset += len;
 
-                    if (byteBuffer.hasRemaining() == false) {
-                        BYTE_BUFFER_POOL.give(byteBuffer);
+                    if (!byteBuffer.hasRemaining()) {
+                        pooledByteBuffer.returnToPool();
                         queue.poll();
                     }
 

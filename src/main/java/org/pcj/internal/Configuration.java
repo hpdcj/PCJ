@@ -53,22 +53,22 @@ public final class Configuration {
      */
     public static final int BUFFER_POOL_SIZE;
     /**
-     * pcj.net.workers.count (int) default: available processors
+     * pcj.msg.workers.count (int) default: available processors
      */
-    public static final int NET_WORKERS_COUNT;
+    public static final int MESSAGE_WORKERS_COUNT;
     /**
-     * pcj.net.workers.keepalive (int in seconds) default: 60
+     * pcj.msg.workers.keepalive (int in seconds) default: 60
      */
-    public static final int NET_WORKERS_KEEPALIVE;
+    public static final int MESSAGE_WORKERS_KEEPALIVE;
     /**
-     * pcj.net.workers.queuesize (int) default: 0
+     * pcj.msg.workers.queuesize (int) default: 0
      * <ul>
      * <li> = 0 - synchronous queue</li>
      * <li> &gt; 0 - bounded queue</li>
      * <li> &lt; 0 - unbounded queue</li>
      * </ul>
      */
-    public static final int NET_WORKERS_QUEUE_SIZE;
+    public static final int MESSAGE_WORKERS_QUEUE_SIZE;
     /**
      * pcj.async.workers.count (int) default: available processors
      */
@@ -104,9 +104,9 @@ public final class Configuration {
         INIT_MAXTIME = getPropertyInt("pcj.init.maxtime", Math.max(30, (INIT_RETRY_COUNT + 1) * INIT_RETRY_DELAY));
         BUFFER_CHUNK_SIZE = getPropertyInt("pcj.buffer.chunksize", 8 * 1024);
         BUFFER_POOL_SIZE = getPropertyInt("pcj.buffer.poolsize", 1024);
-        NET_WORKERS_COUNT = getPropertyInt("pcj.net.workers.count", Runtime.getRuntime().availableProcessors());
-        NET_WORKERS_KEEPALIVE = getPropertyInt("pcj.net.workers.keepalive", 60);
-        NET_WORKERS_QUEUE_SIZE = getPropertyInt("pcj.net.workers.queuesize", 0);
+        MESSAGE_WORKERS_COUNT = getPropertyInt("pcj.msg.workers.count", Runtime.getRuntime().availableProcessors());
+        MESSAGE_WORKERS_KEEPALIVE = getPropertyInt("pcj.msg.workers.keepalive", 60);
+        MESSAGE_WORKERS_QUEUE_SIZE = getPropertyInt("pcj.msg.workers.queuesize", 0);
         ASYNC_WORKERS_COUNT = getPropertyInt("pcj.async.workers.count", Runtime.getRuntime().availableProcessors());
         ASYNC_WORKERS_KEEPALIVE = getPropertyInt("pcj.async.workers.keepalive", 60);
         ASYNC_WORKERS_QUEUE_SIZE = getPropertyInt("pcj.async.workers.queuesize", -1);
@@ -120,9 +120,9 @@ public final class Configuration {
         LOGGER.log(Level.CONFIG, "pcj.init.maxtime:             {0,number,#}", INIT_MAXTIME);
         LOGGER.log(Level.CONFIG, "pcj.buffer.chunksize:         {0,number,#}", BUFFER_CHUNK_SIZE);
         LOGGER.log(Level.CONFIG, "pcj.buffer.poolsize:          {0,number,#}", BUFFER_POOL_SIZE);
-        LOGGER.log(Level.CONFIG, "pcj.net.workers.count:        {0,number,#}", NET_WORKERS_COUNT);
-        LOGGER.log(Level.CONFIG, "pcj.net.workers.keepalive:    {0,number,#}", NET_WORKERS_KEEPALIVE);
-        LOGGER.log(Level.CONFIG, "pcj.net.workers.queuesize:    {0,number,#}", NET_WORKERS_QUEUE_SIZE);
+        LOGGER.log(Level.CONFIG, "pcj.msg.workers.count:        {0,number,#}", MESSAGE_WORKERS_COUNT);
+        LOGGER.log(Level.CONFIG, "pcj.msg.workers.keepalive:    {0,number,#}", MESSAGE_WORKERS_KEEPALIVE);
+        LOGGER.log(Level.CONFIG, "pcj.msg.workers.queuesize:    {0,number,#}", MESSAGE_WORKERS_QUEUE_SIZE);
         LOGGER.log(Level.CONFIG, "pcj.async.workers.count:      {0,number,#}", ASYNC_WORKERS_COUNT);
         LOGGER.log(Level.CONFIG, "pcj.async.workers.keepalive:  {0,number,#}", ASYNC_WORKERS_KEEPALIVE);
         LOGGER.log(Level.CONFIG, "pcj.async.workers.queuesize:  {0,number,#}", ASYNC_WORKERS_QUEUE_SIZE);

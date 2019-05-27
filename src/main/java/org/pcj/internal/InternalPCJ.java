@@ -39,6 +39,7 @@ import org.pcj.internal.message.join.GroupJoinStates;
 import org.pcj.internal.message.join.GroupQueryMessage;
 import org.pcj.internal.message.join.GroupQueryStates;
 import org.pcj.internal.network.LoopbackSocketChannel;
+import org.pcj.internal.network.MessageProc;
 
 /**
  * Internal class for external PCJ class.
@@ -50,6 +51,7 @@ public abstract class InternalPCJ {
     private static final Logger LOGGER = Logger.getLogger(InternalPCJ.class.getName());
     private static final String PCJ_VERSION;
     private static Networker networker;
+    private static MessageProc messageProc;
     private static NodeData nodeData;
 
     static {
@@ -96,6 +98,7 @@ public abstract class InternalPCJ {
             nodeData.setNode0Data(new NodeData.Node0Data());
         }
 
+        messageProc = new MessageProc();
         networker = new Networker(currentJvm.getPort());
         try {
             /* connecting to node0 */
@@ -172,6 +175,7 @@ public abstract class InternalPCJ {
                         });
             }
         } finally {
+            messageProc.shutdown();
             networker.shutdown();
         }
     }
@@ -283,6 +287,10 @@ public abstract class InternalPCJ {
 
     public static Networker getNetworker() {
         return networker;
+    }
+
+    public static MessageProc getMessageProc() {
+        return messageProc;
     }
 
     public static NodeData getNodeData() {
