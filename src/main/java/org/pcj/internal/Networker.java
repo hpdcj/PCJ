@@ -24,23 +24,14 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Queue;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.pcj.PcjRuntimeException;
 import org.pcj.internal.message.Message;
-import org.pcj.internal.message.MessageType;
 import org.pcj.internal.network.LoopbackMessageBytesStream;
 import org.pcj.internal.network.LoopbackSocketChannel;
-import org.pcj.internal.network.MessageBytesInputStream;
 import org.pcj.internal.network.MessageBytesOutputStream;
-import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.SelectorProc;
 
 /**
@@ -74,7 +65,6 @@ final public class Networker {
 
         tryToBind(interfacesAddresses, port);
     }
-
 
     private static Queue<InetAddress> getHostAllNetworkInterfaces() throws UncheckedIOException {
         try {
@@ -238,7 +228,7 @@ final public class Networker {
                     LOGGER.log(Level.FINEST, "[{0}] Locally processing message {1}",
                             new Object[]{currentHostName, message.getType()});
                 }
-                InternalPCJ.getMessageProc().execute(socket, message, loopbackMessageBytesStream.getMessageDataInputStream());
+                InternalPCJ.getMessageProc().executeFromLocal(socket, message, loopbackMessageBytesStream.getMessageDataInputStream());
             } else {
                 MessageBytesOutputStream objectBytes = new MessageBytesOutputStream(message);
                 objectBytes.writeMessage();
@@ -257,23 +247,5 @@ final public class Networker {
                     String.format("[%s] Exception while sending message: %s to %s", currentHostName, message, socket),
                     throwable);
         }
-    }
-
-    public void processMessageBytes(SocketChannel socket, MessageBytesInputStream messageBytes) {
-        MessageDataInputStream messageDataInputStream = messageBytes.getMessageDataInputStream();
-        Message message;
-        try {
-            byte messageType = messageDataInputStream.readByte();
-            message = MessageType.createMessage(messageType);
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
-
-        if (LOGGER.isLoggable(Level.FINEST)) {
-            LOGGER.log(Level.FINEST, "[{0}] Received message {1} from {2}",
-                    new Object[]{currentHostName, message.getType(), socket});
-        }
-
-        InternalPCJ.getMessageProc().execute(socket, message, messageDataInputStream);
     }
 }

@@ -1,8 +1,13 @@
 package org.pcj.internal.network;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
@@ -13,12 +18,16 @@ import org.pcj.internal.Configuration;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.WorkerPoolExecutor;
 import org.pcj.internal.message.Message;
+import org.pcj.internal.message.MessageType;
 
 final public class MessageProc {
     private static final Logger LOGGER = Logger.getLogger(MessageProc.class.getName());
+    private final ConcurrentMap<SocketChannel, MessageBytesInputStream> readMap;
     private ExecutorService workers;
 
     public MessageProc() {
+        this.readMap = new ConcurrentHashMap<>();
+
         BlockingQueue<Runnable> blockingQueue;
         if (Configuration.MESSAGE_WORKERS_QUEUE_SIZE > 0) {
             blockingQueue = new ArrayBlockingQueue<>(Configuration.MESSAGE_WORKERS_QUEUE_SIZE);
@@ -35,20 +44,51 @@ final public class MessageProc {
                 threadGroup, "MessageProc-Worker-",
                 blockingQueue,
                 new ThreadPoolExecutor.CallerRunsPolicy());
+
+        initializeFor(LoopbackSocketChannel.getInstance());
+    }
+
+    public void initializeFor(SocketChannel socketChannel) {
+        readMap.put(socketChannel, new MessageBytesInputStream());
     }
 
     public void shutdown() {
         workers.shutdownNow();
     }
 
-    public void execute(SocketChannel socket, Message message, MessageDataInputStream messageDataInputStream) {
+
+    public void process(SocketChannel socket, ByteBufferPool.PooledByteBuffer pooledByteBuffer) {
+        MessageBytesInputStream messageBytes = readMap.get(socket);
+
+        ByteBuffer readBuffer = pooledByteBuffer.getByteBuffer();
+        while (readBuffer.hasRemaining()) {
+            messageBytes.offerNextBytes(readBuffer);
+            if (messageBytes.hasAllData()) {
+                MessageDataInputStream messageDataInputStream = messageBytes.getMessageDataInputStream();
+                Message message;
+                try {
+                    byte messageType = messageDataInputStream.readByte();
+                    message = MessageType.createMessage(messageType);
+                } catch (IOException ex) {
+                    throw new UncheckedIOException(ex);
+                }
+
+                workers.execute(new WorkerTask(socket, message, messageDataInputStream));
+
+                messageBytes.prepareForNewMessage();
+            }
+        }
+        pooledByteBuffer.returnToPool();
+
+        // dodaje messageBuffer do kolejki wiadomości związanej z sender
+        // sprawdzi czy jest worker przetwarzający wiadomości z sender - jeśli nie ma to startuje -> execute(sender)
+    }
+
+    @Deprecated
+    public void executeFromLocal(SocketChannel socket, Message message, MessageDataInputStream messageDataInputStream) {
         workers.execute(new WorkerTask(socket, message, messageDataInputStream));
     }
-//    public void process(SocketChannel sender, MessageBuffer messageBuffer) {
-//        // dodaje messageBuffer do kolejki wiadomości związanej z sender
-//        // sprawdzi czy jest worker przetwarzający wiadomości z sender - jeśli nie ma to startuje -> execute(sender)
-//    }
-//
+
 //    public void execute(SocketChannel sender) {
 //        // w pętli:
 //        //  sprawdza czy kolejka nie jest pusta
