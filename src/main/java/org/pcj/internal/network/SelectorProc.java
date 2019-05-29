@@ -51,9 +51,8 @@ public class SelectorProc implements Runnable {
     private final ConcurrentMap<SocketChannel, Queue<MessageBytesOutputStream>> writeMap;
     private final Queue<ServerSocketChannel> serverSocketChannels;
     private final Queue<InterestChange> interestChanges;
-    private final ExecutorService byteBufferWorker;
 
-    public SelectorProc(ThreadGroup threadGroup) {
+    public SelectorProc() {
         try {
             this.selector = Selector.open();
         } catch (IOException ex) {
@@ -65,12 +64,6 @@ public class SelectorProc implements Runnable {
         this.readMap = new ConcurrentHashMap<>();
         this.interestChanges = new ConcurrentLinkedQueue<>();
         this.serverSocketChannels = new ConcurrentLinkedQueue<>();
-
-        this.byteBufferWorker = new WorkerPoolExecutor(
-                1,
-                threadGroup, "SelectorProc-Worker-",
-                new LinkedBlockingQueue<>(),
-                new ThreadPoolExecutor.AbortPolicy());
     }
 
     private void changeInterestOps(SelectableChannel channel, int interestOps) {
@@ -277,15 +270,23 @@ public class SelectorProc implements Runnable {
                 return false;
             }
         } catch (IOException ex) {
-            pooledByteBuffer.returnToPool();
             LOGGER.log(Level.FINER, "Exception while reading from {0}: {1}", new Object[]{socket, ex});
+            pooledByteBuffer.returnToPool();
             return false;
         }
 
         readBuffer.flip();
 
         MessageBytesInputStream messageBytes = readMap.get(socket);
-        byteBufferWorker.submit(new ByteBufferWorker(pooledByteBuffer, messageBytes, socket));
+
+        while (readBuffer.hasRemaining()) {
+            messageBytes.offerNextBytes(readBuffer);
+            if (messageBytes.hasAllData()) {
+                InternalPCJ.getNetworker().processMessageBytes(socket, messageBytes);
+                messageBytes.prepareForNewMessage();
+            }
+        }
+        pooledByteBuffer.returnToPool();
 
         return true;
     }
@@ -311,9 +312,6 @@ public class SelectorProc implements Runnable {
         return true;
     }
 
-    public void shutdown() {
-        byteBufferWorker.shutdownNow();
-    }
 
     private static class InterestChange {
 
@@ -325,32 +323,5 @@ public class SelectorProc implements Runnable {
             this.interestOps = interestOps;
         }
 
-    }
-
-    private static class ByteBufferWorker implements Runnable {
-        private final ByteBufferPool.PooledByteBuffer pooledByteBuffer;
-        private final MessageBytesInputStream messageBytes;
-        private final SocketChannel socket;
-
-        public ByteBufferWorker(ByteBufferPool.PooledByteBuffer pooledByteBuffer, MessageBytesInputStream messageBytes, SocketChannel socket) {
-            this.pooledByteBuffer = pooledByteBuffer;
-            this.messageBytes = messageBytes;
-            this.socket = socket;
-        }
-
-        @Override
-        public void run() {
-            ByteBuffer readBuffer = pooledByteBuffer.getByteBuffer();
-
-            while (readBuffer.hasRemaining()) {
-                messageBytes.offerNextBytes(readBuffer);
-                if (messageBytes.hasAllData()) {
-                    InternalPCJ.getNetworker().processMessageBytes(socket, messageBytes);
-                    messageBytes.prepareForNewMessage();
-                }
-            }
-
-            pooledByteBuffer.returnToPool();
-        }
     }
 }

@@ -67,7 +67,7 @@ final public class Networker {
 
         ThreadGroup threadGroup = new ThreadGroup("NetworkerGroup");
 
-        selectorProc = new SelectorProc(threadGroup);
+        selectorProc = new SelectorProc();
         selectorProcThread = new Thread(threadGroup, selectorProc, "SelectorProc");
         selectorProcThread.setDaemon(true);
         selectorProcThread.start();
@@ -223,7 +223,6 @@ final public class Networker {
                 }
             }
         } finally {
-            selectorProc.shutdown();
             selectorProcThread.interrupt();
         }
     }
