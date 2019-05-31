@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
@@ -102,7 +102,10 @@ final public class DeployPCJ {
         for (String jvmArgument : jvmOptions.getInputArguments()) {
             if (jvmArgument.startsWith("-Xdebug")
                     || jvmArgument.startsWith("-Xrunjdwp:transport=")
-                    || jvmArgument.startsWith("-agentpath:")) {
+                    || jvmArgument.startsWith("-agentpath:")
+                    || jvmArgument.startsWith("-agentlib:")
+                    || jvmArgument.startsWith("-javaagent:")
+            ) {
                 continue;
             }
             params.add(jvmArgument);

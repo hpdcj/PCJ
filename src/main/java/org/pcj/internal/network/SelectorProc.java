@@ -27,14 +27,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.pcj.internal.Configuration;
 import org.pcj.internal.InternalPCJ;
-import org.pcj.internal.WorkerPoolExecutor;
 
 /**
  * Main Runnable class for process all incoming data from network in nonblocking
@@ -272,7 +268,6 @@ public class SelectorProc implements Runnable {
             pooledByteBuffer.returnToPool();
             return false;
         }
-
         readBuffer.flip();
 
         InternalPCJ.getMessageProc().process(socket, pooledByteBuffer);
@@ -290,6 +285,7 @@ public class SelectorProc implements Runnable {
         }
 
         MessageBytesOutputStream.ByteBufferArray byteBuffersArray = messageBytes.getByteBufferArray();
+//        System.err.println(InternalPCJ.getNetworker().getCurrentHostName() + " write " + socket.getRemoteAddress() + " " + byteBuffersArray);
 
         socket.write(byteBuffersArray.getArray(), byteBuffersArray.getOffset(), byteBuffersArray.getRemainingLength());
         byteBuffersArray.revalidate();

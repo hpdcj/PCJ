@@ -98,6 +98,10 @@ final public class Networker {
         return localHost == null ? null : localHost.getHostName();
     }
 
+    public String getCurrentHostName() {
+        return currentHostName;
+    }
+
     private void tryToBind(Queue<InetAddress> interfacesAddresses, int port) {
         Queue<InetAddress> inetAddresses = new ArrayDeque<>(interfacesAddresses);
         for (int attempt = 0; attempt <= Configuration.INIT_RETRY_COUNT; ++attempt) {

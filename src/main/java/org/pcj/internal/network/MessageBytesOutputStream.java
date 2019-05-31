@@ -14,7 +14,9 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.stream.Collectors;
 import org.pcj.internal.Configuration;
+import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.message.Message;
 
 /**
@@ -58,6 +60,11 @@ public class MessageBytesOutputStream implements AutoCloseable {
                 pooledArray[offset].returnToPool();
                 ++offset;
             }
+        }
+
+        @Override
+        public String toString() {
+            return Arrays.stream(array).map(Object::toString).collect(Collectors.joining(",", "ByteBufferArray[", "]"));
         }
     }
 
@@ -112,7 +119,6 @@ public class MessageBytesOutputStream implements AutoCloseable {
         private void allocateBuffer(int size) {
             if (size <= chunkSize) {
                 currentPooledByteBuffer = BYTE_BUFFER_POOL.take();
-//                currentPooledByteBuffer.limit(size);
             } else {
                 currentPooledByteBuffer = new ByteBufferPool.HeapPooledByteBuffer(size);
             }
@@ -127,6 +133,7 @@ public class MessageBytesOutputStream implements AutoCloseable {
             }
             currentByteBuffer.putInt(0, length);
             currentByteBuffer.flip();
+//            System.err.println(InternalPCJ.getNetworker().getCurrentHostName() + " offer "+currentPooledByteBuffer+" "+currentPooledByteBuffer.getByteBuffer()+" flush:"+size);
             queue.offer(currentPooledByteBuffer);
 
             if (size > 0) {
@@ -174,6 +181,7 @@ public class MessageBytesOutputStream implements AutoCloseable {
                 off += remaining;
                 flush(Math.max(chunkSize, len));
 
+                currentByteBuffer = currentPooledByteBuffer.getByteBuffer();
                 remaining = currentByteBuffer.remaining();
             }
             currentByteBuffer.put(b, off, len);

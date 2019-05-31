@@ -50,6 +50,7 @@ public abstract class InternalPCJ {
 
     private static final Logger LOGGER = Logger.getLogger(InternalPCJ.class.getName());
     private static final String PCJ_VERSION;
+
     private static Networker networker;
     private static MessageProc messageProc;
     private static NodeData nodeData;

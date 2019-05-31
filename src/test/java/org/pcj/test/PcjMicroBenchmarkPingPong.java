@@ -34,7 +34,8 @@ public class PcjMicroBenchmarkPingPong implements StartPoint {
     @Override
     public void main() {
         int[] transmit = {
-            1, 10, 100, 1024, 2048, 4096, 8192, 16384,
+//            1, 10, 100,
+                1024, 2048, 4096, 8192, 16384,
             32768, 65536, 131072, 262144,
             524288, 1048576, 2097152,
 //            4194304, 8388608, 16777216,

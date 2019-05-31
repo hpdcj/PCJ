@@ -68,6 +68,7 @@ public class ByteBufferPool {
         }
 
         public void returnToPool() {
+            // heap byte buffer, do not return to pool
         }
     }
 }

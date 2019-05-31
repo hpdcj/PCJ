@@ -1,8 +1,6 @@
 package org.pcj.internal.network;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -14,6 +12,7 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.omg.CORBA.UNKNOWN;
 import org.pcj.internal.Configuration;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.WorkerPoolExecutor;
@@ -22,7 +21,7 @@ import org.pcj.internal.message.MessageType;
 
 final public class MessageProc {
     private static final Logger LOGGER = Logger.getLogger(MessageProc.class.getName());
-    private final ConcurrentMap<SocketChannel, MessageBytesInputStream> readMap;
+    private final ConcurrentMap<SocketChannel, MessageInputBytes> readMap;
     private ExecutorService workers;
 
     public MessageProc() {
@@ -49,7 +48,7 @@ final public class MessageProc {
     }
 
     public void initializeFor(SocketChannel socketChannel) {
-        readMap.put(socketChannel, new MessageBytesInputStream());
+        readMap.put(socketChannel, new MessageInputBytes());
     }
 
     public void shutdown() {
@@ -58,63 +57,64 @@ final public class MessageProc {
 
 
     public void process(SocketChannel socket, ByteBufferPool.PooledByteBuffer pooledByteBuffer) {
-        MessageBytesInputStream messageBytes = readMap.get(socket);
+        MessageInputBytes messageBytes = readMap.get(socket);
+        messageBytes.offer(pooledByteBuffer);
 
-        ByteBuffer readBuffer = pooledByteBuffer.getByteBuffer();
-        while (readBuffer.hasRemaining()) {
-            messageBytes.offerNextBytes(readBuffer);
-            if (messageBytes.hasAllData()) {
-                MessageDataInputStream messageDataInputStream = messageBytes.getMessageDataInputStream();
-                Message message;
-                try {
-                    byte messageType = messageDataInputStream.readByte();
-                    message = MessageType.createMessage(messageType);
-                } catch (IOException ex) {
-                    throw new UncheckedIOException(ex);
-                }
-
-                workers.execute(new WorkerTask(socket, message, messageDataInputStream));
-
-                messageBytes.prepareForNewMessage();
-            }
+        if (messageBytes.tryProcessing()) {
+//            System.err.println(InternalPCJ.getNetworker().getCurrentHostName() + " Will process");
+            workers.execute(new MessageWorker(socket, messageBytes));
         }
-        pooledByteBuffer.returnToPool();
-
-        // dodaje messageBuffer do kolejki wiadomości związanej z sender
-        // sprawdzi czy jest worker przetwarzający wiadomości z sender - jeśli nie ma to startuje -> execute(sender)
+//        else System.err.println(InternalPCJ.getNetworker().getCurrentHostName() + " Other processing");
     }
 
     @Deprecated
     public void executeFromLocal(SocketChannel socket, Message message, MessageDataInputStream messageDataInputStream) {
-        workers.execute(new WorkerTask(socket, message, messageDataInputStream));
+        workers.execute(() -> {
+            try {
+                message.onReceive(socket, messageDataInputStream);
+                messageDataInputStream.close();
+            } catch (Throwable throwable) {
+                LOGGER.log(Level.SEVERE,
+                        String.format("Exception while processing message %s by node(%d).", message, InternalPCJ.getNodeData().getCurrentNodePhysicalId()),
+                        throwable);
+            }
+        });
     }
 
-//    public void execute(SocketChannel sender) {
-//        // w pętli:
-//        //  sprawdza czy kolejka nie jest pusta
-//        //    jeśli nie jest to odczytuje typ wiadomości (aktualnie byte)
-//        //    tworzy wiadomość odpowiedniego typu
-//        //    pozwala na przetwarzanie
-//        //    po przetworzeniu powoduje przeczytanie wiadomości do końca
-//    }
+    private static class MessageWorker implements Runnable {
 
-    private static final class WorkerTask implements Runnable {
-
+        private final MessageInputBytes messageBytes;
         private final SocketChannel socket;
-        private final Message message;
-        private final MessageDataInputStream messageDataInputStream;
 
-        public WorkerTask(SocketChannel socket, Message message, MessageDataInputStream messageDataInputStream) {
+        public MessageWorker(SocketChannel socket, MessageInputBytes messageBytes) {
             this.socket = socket;
-            this.message = message;
-            this.messageDataInputStream = messageDataInputStream;
+            this.messageBytes = messageBytes;
         }
 
         @Override
         public void run() {
+            do {
+//                System.err.println(InternalPCJ.getNetworker().getCurrentHostName() + " Processing");
+                try (MessageDataInputStream messageDataInputStream = new MessageDataInputStream(messageBytes.getInputStream())) {
+                    byte messageType = messageDataInputStream.readByte();
+                    Message message = MessageType.createMessage(messageType);
+
+//                    System.err.println(InternalPCJ.getNetworker().getCurrentHostName() + " received from " + socket.getRemoteAddress() + " message " + message);
+
+                    processMessage(messageDataInputStream, message);
+                } catch (IOException e) {
+                    LOGGER.log(Level.SEVERE,
+                            String.format("Exception while reading message type by node(%d).", InternalPCJ.getNodeData().getCurrentNodePhysicalId()),
+                            e);
+                }
+                messageBytes.finishedProcessing();
+            } while (messageBytes.hasMoreData() && messageBytes.tryProcessing());
+//            System.err.println(InternalPCJ.getNetworker().getCurrentHostName() + " Finished:"+messageBytes.hasMoreData());
+        }
+
+        private void processMessage(MessageDataInputStream messageDataInputStream, Message message) {
             try {
                 message.onReceive(socket, messageDataInputStream);
-                messageDataInputStream.close();
             } catch (Throwable throwable) {
                 LOGGER.log(Level.SEVERE,
                         String.format("Exception while processing message %s by node(%d).", message, InternalPCJ.getNodeData().getCurrentNodePhysicalId()),
