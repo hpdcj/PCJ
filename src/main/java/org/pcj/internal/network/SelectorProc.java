@@ -43,7 +43,7 @@ public class SelectorProc implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(SelectorProc.class.getName());
     private final ByteBufferPool byteBufferPool;
     private final Selector selector;
-    private final ConcurrentMap<SocketChannel, Queue<MessageBytesOutputStream>> writeMap;
+    private final ConcurrentMap<SocketChannel, Queue<MessageOutputBytes>> writeMap;
     private final Queue<ServerSocketChannel> serverSocketChannels;
     private final Queue<InterestChange> interestChanges;
 
@@ -118,11 +118,11 @@ public class SelectorProc implements Runnable {
         return socket;
     }
 
-    public void writeMessage(SocketChannel socket, MessageBytesOutputStream objectBytes) throws ClosedChannelException {
+    public void writeMessage(SocketChannel socket, MessageOutputBytes objectBytes) throws ClosedChannelException {
         if (!socket.isConnected()) {
             throw new ClosedChannelException();
         }
-        Queue<MessageBytesOutputStream> queue = writeMap.get(socket);
+        Queue<MessageOutputBytes> queue = writeMap.get(socket);
         queue.add(objectBytes);
         changeInterestOps(socket, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
     }
@@ -277,14 +277,14 @@ public class SelectorProc implements Runnable {
 
 
     private boolean opWrite(SocketChannel socket) throws IOException {
-        Queue<MessageBytesOutputStream> queue = writeMap.get(socket);
+        Queue<MessageOutputBytes> queue = writeMap.get(socket);
 
-        MessageBytesOutputStream messageBytes = queue.peek();
+        MessageOutputBytes messageBytes = queue.peek();
         if (messageBytes == null || !socket.isOpen()) {
             return false;
         }
 
-        MessageBytesOutputStream.ByteBufferArray byteBuffersArray = messageBytes.getByteBufferArray();
+        MessageOutputBytes.ByteBufferArray byteBuffersArray = messageBytes.getByteBufferArray();
 //        System.err.println(InternalPCJ.getNetworker().getCurrentHostName() + " write " + socket.getRemoteAddress() + " " + byteBuffersArray);
 
         socket.write(byteBuffersArray.getArray(), byteBuffersArray.getOffset(), byteBuffersArray.getRemainingLength());

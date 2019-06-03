@@ -12,14 +12,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.pcj.PcjRuntimeException;
-import org.pcj.internal.InternalPCJ;
 
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
@@ -65,7 +60,7 @@ public class MessageInputBytes {
                        || !queue.isEmpty();
     }
 
-    private ByteBufferPool.PooledByteBuffer getCurrentPooledByteBuffer() {
+    private ByteBuffer getCurrentByteBuffer() {
         if (currentPooledByteBuffer == null || !currentPooledByteBuffer.getByteBuffer().hasRemaining()) {
             if (currentPooledByteBuffer != null) {
                 currentPooledByteBuffer.returnToPool();
@@ -76,7 +71,7 @@ public class MessageInputBytes {
                 throw new PcjRuntimeException(e);
             }
         }
-        return currentPooledByteBuffer;
+        return currentPooledByteBuffer.getByteBuffer();
     }
 
     public class ByteBufferInputStream extends InputStream {
@@ -109,8 +104,7 @@ public class MessageInputBytes {
                 readChunkLength();
             }
 
-            ByteBufferPool.PooledByteBuffer pooledByteBuffer = MessageInputBytes.this.getCurrentPooledByteBuffer();
-            ByteBuffer byteBuffer = pooledByteBuffer.getByteBuffer();
+            ByteBuffer byteBuffer = MessageInputBytes.this.getCurrentByteBuffer();
             int b = byteBuffer.get() & 0xFF;
             --remainingLength;
 
@@ -150,8 +144,8 @@ public class MessageInputBytes {
                     readChunkLength();
                 }
 
-                ByteBufferPool.PooledByteBuffer pooledByteBuffer = MessageInputBytes.this.getCurrentPooledByteBuffer();
-                ByteBuffer byteBuffer = pooledByteBuffer.getByteBuffer();
+
+                ByteBuffer byteBuffer = MessageInputBytes.this.getCurrentByteBuffer();
 
                 int len = Math.min(Math.min(byteBuffer.remaining(), length - bytesRead), remainingLength);
                 byteBuffer.get(b, offset, len);
@@ -198,8 +192,8 @@ public class MessageInputBytes {
                 throw new IllegalStateException("Already last chunk");
             }
 
-            ByteBufferPool.PooledByteBuffer pooledByteBuffer = MessageInputBytes.this.getCurrentPooledByteBuffer();
-            ByteBuffer byteBuffer = pooledByteBuffer.getByteBuffer();
+
+            ByteBuffer byteBuffer = MessageInputBytes.this.getCurrentByteBuffer();
 
             while (header.hasRemaining() && byteBuffer.hasRemaining()) {
                 header.put(byteBuffer.get());
@@ -219,8 +213,7 @@ public class MessageInputBytes {
 
         private void skipCurrentChunk() {
             while (remainingLength > 0) {
-                ByteBufferPool.PooledByteBuffer pooledByteBuffer = MessageInputBytes.this.getCurrentPooledByteBuffer();
-                ByteBuffer byteBuffer = pooledByteBuffer.getByteBuffer();
+                ByteBuffer byteBuffer = MessageInputBytes.this.getCurrentByteBuffer();
                 int skip = Math.min(byteBuffer.remaining(), remainingLength);
                 byteBuffer.position(byteBuffer.position() + skip);
                 remainingLength -= skip;

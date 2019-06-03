@@ -31,7 +31,7 @@ import org.pcj.PcjRuntimeException;
 import org.pcj.internal.message.Message;
 import org.pcj.internal.network.LoopbackMessageBytesStream;
 import org.pcj.internal.network.LoopbackSocketChannel;
-import org.pcj.internal.network.MessageBytesOutputStream;
+import org.pcj.internal.network.MessageOutputBytes;
 import org.pcj.internal.network.SelectorProc;
 
 /**
@@ -234,7 +234,7 @@ final public class Networker {
                 }
                 InternalPCJ.getMessageProc().executeFromLocal(socket, message, loopbackMessageBytesStream.getMessageDataInputStream());
             } else {
-                MessageBytesOutputStream objectBytes = new MessageBytesOutputStream(message);
+                MessageOutputBytes objectBytes = new MessageOutputBytes(message);
                 objectBytes.writeMessage();
                 objectBytes.close();
 

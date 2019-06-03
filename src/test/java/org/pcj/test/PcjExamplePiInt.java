@@ -1,16 +1,13 @@
-/* 
+/*
  * Copyright (c) 2016, Marek Nowicki
  * All rights reserved.
- * 
+ *
  * Licensed under New BSD License (3-clause license).
- * 
+ *
  * See the file "LICENSE" for the full license governing this code.
  */
 package org.pcj.test;
 
-import java.util.Arrays;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.pcj.NodesDescription;
 import org.pcj.PCJ;
 import org.pcj.PcjFuture;
@@ -41,7 +38,7 @@ public class PcjExamplePiInt implements StartPoint {
     public void main() throws Throwable {
         double pi = 0.0;
         long time = System.currentTimeMillis();
-        for (int i = 0; i < 10; ++i) {
+        for (int i = 1; i < 1000; ++i) {
             pi = calc(1000000);
         }
         time = System.currentTimeMillis() - time;
@@ -60,8 +57,9 @@ public class PcjExamplePiInt implements StartPoint {
         }
         sum = sum * w;
 
-        PCJ.barrier();
+        PcjFuture<Void> barrier = PCJ.asyncBarrier();
         if (PCJ.myId() == 0) {
+            barrier.get();
             PcjFuture[] data = new PcjFuture[PCJ.threadCount()];
             for (int i = 1; i < PCJ.threadCount(); ++i) {
                 data[i] = PCJ.asyncGet(i, SharedEnum.sum);
@@ -77,16 +75,12 @@ public class PcjExamplePiInt implements StartPoint {
     }
 
     public static void main(String[] args) {
-//        Level level = Level.FINEST;
-//        Logger.getLogger("").setLevel(level);
-//        Arrays.stream(Logger.getLogger("").getHandlers()).forEach(handler -> handler.setLevel(level));
-
         PCJ.deploy(PcjExamplePiInt.class,
                 new NodesDescription(
                         new String[]{
-                            "localhost:8091",
-//                            "localhost:8092",
-//                            "localhost:8092",
-                            "localhost:8093",}));
+                                "localhost:8091",
+                                "localhost:8092",
+                                "localhost:8092",
+                                "localhost:8093",}));
     }
 }
