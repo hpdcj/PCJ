@@ -12,7 +12,6 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.omg.CORBA.UNKNOWN;
 import org.pcj.internal.Configuration;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.WorkerPoolExecutor;
@@ -61,10 +60,8 @@ final public class MessageProc {
         messageBytes.offer(pooledByteBuffer);
 
         if (messageBytes.tryProcessing()) {
-//            System.err.println(InternalPCJ.getNetworker().getCurrentHostName() + " Will process");
             workers.execute(new MessageWorker(socket, messageBytes));
         }
-//        else System.err.println(InternalPCJ.getNetworker().getCurrentHostName() + " Other processing");
     }
 
     @Deprecated
@@ -94,12 +91,9 @@ final public class MessageProc {
         @Override
         public void run() {
             do {
-//                System.err.println(InternalPCJ.getNetworker().getCurrentHostName() + " Processing");
                 try (MessageDataInputStream messageDataInputStream = new MessageDataInputStream(messageBytes.getInputStream())) {
                     byte messageType = messageDataInputStream.readByte();
                     Message message = MessageType.createMessage(messageType);
-
-//                    System.err.println(InternalPCJ.getNetworker().getCurrentHostName() + " received from " + socket.getRemoteAddress() + " message " + message);
 
                     processMessage(messageDataInputStream, message);
                 } catch (IOException e) {
@@ -109,7 +103,6 @@ final public class MessageProc {
                 }
                 messageBytes.finishedProcessing();
             } while (messageBytes.hasMoreData() && messageBytes.tryProcessing());
-//            System.err.println(InternalPCJ.getNetworker().getCurrentHostName() + " Finished:"+messageBytes.hasMoreData());
         }
 
         private void processMessage(MessageDataInputStream messageDataInputStream, Message message) {

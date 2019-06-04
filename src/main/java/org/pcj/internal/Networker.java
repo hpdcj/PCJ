@@ -234,15 +234,15 @@ final public class Networker {
                 }
                 InternalPCJ.getMessageProc().executeFromLocal(socket, message, loopbackMessageBytesStream.getMessageDataInputStream());
             } else {
-                MessageOutputBytes objectBytes = new MessageOutputBytes(message);
-                objectBytes.writeMessage();
-                objectBytes.close();
-
                 if (LOGGER.isLoggable(Level.FINEST)) {
                     LOGGER.log(Level.FINEST, "[{0}] Sending message {1} to {2}",
                             new Object[]{currentHostName, message.getType(), socket});
                 }
-                selectorProc.writeMessage(socket, objectBytes);
+
+                MessageOutputBytes messageOutputBytes = new MessageOutputBytes();
+                selectorProc.addToWriteQueue(socket, messageOutputBytes);
+
+                messageOutputBytes.writeMessage(message);
             }
         } catch (ClosedChannelException | NotSerializableException ex) {
             throw new PcjRuntimeException(ex);

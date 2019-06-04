@@ -11,10 +11,8 @@ package org.pcj.internal.network;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.stream.Collectors;
 import org.pcj.internal.Configuration;
 import org.pcj.internal.message.Message;
 
@@ -25,40 +23,30 @@ public class MessageOutputBytes {
 
     private static final ByteBufferPool BYTE_BUFFER_POOL = new ByteBufferPool(Configuration.BUFFER_POOL_SIZE, Configuration.BUFFER_CHUNK_SIZE);
     private static final ByteBufferPool.PooledByteBuffer[] EMPTY_BYTE_BUFFER_ARRAY = new ByteBufferPool.PooledByteBuffer[0];
-    private final Message message;
     private final MessageOutputStream messageOutputStream;
-    private ByteBufferArray byteBufferArray;
 
-    public MessageOutputBytes(Message message) {
-        this.message = message;
-
-        this.messageOutputStream = new MessageOutputStream();
+    public MessageOutputBytes() {
+        messageOutputStream = new MessageOutputStream();
     }
 
-    public void writeMessage() throws IOException {
-        MessageDataOutputStream messageDataOutputStream = new MessageDataOutputStream(this.messageOutputStream);
-        messageDataOutputStream.writeByte(message.getType().getId());
-        message.write(messageDataOutputStream);
+    public void writeMessage(Message message) throws IOException {
+        try (MessageDataOutputStream messageDataOutputStream = new MessageDataOutputStream(messageOutputStream)) {
+            messageDataOutputStream.writeByte(message.getType().getId());
+            message.write(messageDataOutputStream);
+        }
     }
 
-    public void close() {
-        messageOutputStream.close();
-        byteBufferArray = new ByteBufferArray(messageOutputStream.queue.toArray(EMPTY_BYTE_BUFFER_ARRAY));
-
-    }
-
-    public ByteBufferArray getByteBufferArray() {
-        return byteBufferArray;
+    ByteBufferArray getByteBufferArray() {
+        return new ByteBufferArray(messageOutputStream);
     }
 
     private static class MessageOutputStream extends OutputStream {
 
         private static final int HEADER_SIZE = Integer.BYTES;
-
         private static final int LAST_CHUNK_BIT = (1 << (Integer.SIZE - 1));
         private final Queue<ByteBufferPool.PooledByteBuffer> queue;
-        private boolean closed;
         private ByteBufferPool.PooledByteBuffer currentPooledByteBuffer;
+        private boolean closed;
 
         public MessageOutputStream() {
             this.queue = new ConcurrentLinkedQueue<>();
@@ -67,15 +55,15 @@ public class MessageOutputBytes {
 
         @Override
         public void close() {
+            offerCurrentByteBuffer(true);
             closed = true;
-            offerCurrentByteBuffer();
         }
 
         @Override
         public void write(int b) {
             ByteBuffer currentByteBuffer = getCurrentByteBuffer();
             if (!currentByteBuffer.hasRemaining()) {
-                offerCurrentByteBuffer();
+                offerCurrentByteBuffer(false);
                 currentByteBuffer = getNextByteBuffer();
             }
 
@@ -95,7 +83,7 @@ public class MessageOutputBytes {
             while (remaining < len) {
                 currentByteBuffer.put(b, off, remaining);
 
-                offerCurrentByteBuffer();
+                offerCurrentByteBuffer(false);
                 currentByteBuffer = getNextByteBuffer();
 
                 len -= remaining;
@@ -120,10 +108,10 @@ public class MessageOutputBytes {
             return currentPooledByteBuffer.getByteBuffer();
         }
 
-        private void offerCurrentByteBuffer() {
+        private void offerCurrentByteBuffer(boolean lastChunk) {
             ByteBuffer currentByteBuffer = currentPooledByteBuffer.getByteBuffer();
             int length = (currentByteBuffer.position() - HEADER_SIZE);
-            if (closed) {
+            if (lastChunk) {
                 length = (length | LAST_CHUNK_BIT);
             }
             currentByteBuffer.putInt(0, length);
@@ -134,18 +122,21 @@ public class MessageOutputBytes {
     }
 
     public static class ByteBufferArray {
-
-        private final ByteBufferPool.PooledByteBuffer[] pooledArray;
-        private final ByteBuffer[] array;
+        private final MessageOutputStream messageOutputStream;
+        private ByteBuffer[] array;
         private int offset;
 
-        private ByteBufferArray(ByteBufferPool.PooledByteBuffer[] pooledArray) {
-            this.pooledArray = pooledArray;
-            this.array = Arrays.stream(pooledArray).map(ByteBufferPool.PooledByteBuffer::getByteBuffer).toArray(ByteBuffer[]::new);
-            offset = 0;
+        public ByteBufferArray(MessageOutputStream messageOutputStream) {
+            this.messageOutputStream = messageOutputStream;
+
+            this.array = new ByteBuffer[0];
         }
 
         public ByteBuffer[] getArray() {
+            if (offset == array.length) {
+                array = messageOutputStream.queue.stream().map(ByteBufferPool.PooledByteBuffer::getByteBuffer).toArray(ByteBuffer[]::new);
+                offset = 0;
+            }
             return array;
         }
 
@@ -159,35 +150,13 @@ public class MessageOutputBytes {
 
         public void revalidate() {
             while (offset < array.length && !array[offset].hasRemaining()) {
-                pooledArray[offset].returnToPool();
+                messageOutputStream.queue.remove().returnToPool();
                 ++offset;
             }
         }
 
-        @Override
-        public String toString() {
-            return Arrays.stream(array).map(Object::toString).collect(Collectors.joining(",", "ByteBufferArray[", "]"));
+        public boolean hasMoreData() {
+            return offset < array.length || !messageOutputStream.closed || !messageOutputStream.queue.isEmpty();
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

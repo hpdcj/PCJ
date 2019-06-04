@@ -118,12 +118,12 @@ public class SelectorProc implements Runnable {
         return socket;
     }
 
-    public void writeMessage(SocketChannel socket, MessageOutputBytes objectBytes) throws ClosedChannelException {
+    public void addToWriteQueue(SocketChannel socket, MessageOutputBytes messageOutputBytes) throws ClosedChannelException {
         if (!socket.isConnected()) {
             throw new ClosedChannelException();
         }
         Queue<MessageOutputBytes> queue = writeMap.get(socket);
-        queue.add(objectBytes);
+        queue.add(messageOutputBytes);
         changeInterestOps(socket, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
     }
 
@@ -285,18 +285,22 @@ public class SelectorProc implements Runnable {
         }
 
         MessageOutputBytes.ByteBufferArray byteBuffersArray = messageBytes.getByteBufferArray();
-//        System.err.println(InternalPCJ.getNetworker().getCurrentHostName() + " write " + socket.getRemoteAddress() + " " + byteBuffersArray);
 
-        socket.write(byteBuffersArray.getArray(), byteBuffersArray.getOffset(), byteBuffersArray.getRemainingLength());
+        ByteBuffer[] array = byteBuffersArray.getArray();
+        int offset = byteBuffersArray.getOffset();
+        int length = byteBuffersArray.getRemainingLength();
+
+        socket.write(array, offset, length);
+
         byteBuffersArray.revalidate();
 
-        if (byteBuffersArray.getRemainingLength() == 0) {
+        if (!byteBuffersArray.hasMoreData()) {
             queue.poll();
+            return !queue.isEmpty();
         }
 
         return true;
     }
-
 
     private static class InterestChange {
 
