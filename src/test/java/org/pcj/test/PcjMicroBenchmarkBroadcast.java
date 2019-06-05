@@ -59,7 +59,7 @@ public class PcjMicroBenchmarkBroadcast implements StartPoint {
 
             PCJ.barrier();
 
-            int ntimes = 5/*00*/;
+            int ntimes = 100;
 
             long time = System.nanoTime();
 
@@ -86,11 +86,11 @@ public class PcjMicroBenchmarkBroadcast implements StartPoint {
     }
 
     public static void main(String[] args) {
-        Level level = Level.CONFIG;
+//        Level level = Level.CONFIG;
 //        Level level = Level.FINEST;
-        Logger logger = Logger.getLogger("");
-        Arrays.stream(logger.getHandlers()).forEach(handler -> handler.setLevel(level));
-        logger.setLevel(level);
+//        Logger logger = Logger.getLogger("");
+//        Arrays.stream(logger.getHandlers()).forEach(handler -> handler.setLevel(level));
+//        logger.setLevel(level);
 
         String nodesDescription = "nodes.uniq";
         if (args.length > 0) {
@@ -105,7 +105,7 @@ public class PcjMicroBenchmarkBroadcast implements StartPoint {
 
         //        int[] threads = {1, 4, 16};
         int maxNodes = 2;
-        int[] threads = {60};
+        int[] threads = {4};
         // run.jvmargs=-Xmx64m
 
         String[] nodesUniq = new String[maxNodes * Arrays.stream(threads).max().orElse(1)];
