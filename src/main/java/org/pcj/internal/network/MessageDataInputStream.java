@@ -20,7 +20,6 @@ import java.nio.charset.StandardCharsets;
 public class MessageDataInputStream extends InputStream {
 
     private final InputStream input;
-    private final byte[] intBytes = new byte[Integer.BYTES];
     private final byte[] longBytes = new byte[Long.BYTES];
     private ObjectInputStream objectInputStream;
 
@@ -52,22 +51,15 @@ public class MessageDataInputStream extends InputStream {
         input.close();
     }
 
-    private int bytesToInt(byte[] bytes) {
-        return (((int) (bytes[0] & 0xff) << 24)
-                        | ((int) (bytes[1] & 0xff) << 16)
-                        | ((int) (bytes[2] & 0xff) << 8)
-                        | ((int) (bytes[3] & 0xff)));
-    }
-
     private long bytesToLong(byte[] bytes) {
-        return (((long) (bytes[0] & 0xff) << 56)
-                        | ((long) (bytes[1] & 0xff) << 48)
-                        | ((long) (bytes[2] & 0xff) << 40)
-                        | ((long) (bytes[3] & 0xff) << 32)
-                        | ((long) (bytes[4] & 0xff) << 24)
-                        | ((long) (bytes[5] & 0xff) << 16)
-                        | ((long) (bytes[6] & 0xff) << 8)
-                        | ((long) (bytes[7] & 0xff)));
+        return (((long) (bytes[0] & 0xFF) << 56)
+                        | ((long) (bytes[1] & 0xFF) << 48)
+                        | ((long) (bytes[2] & 0xFF) << 40)
+                        | ((long) (bytes[3] & 0xFF) << 32)
+                        | ((long) (bytes[4] & 0xFF) << 24)
+                        | ((long) (bytes[5] & 0xFF) << 16)
+                        | ((long) (bytes[6] & 0xFF) << 8)
+                        | ((long) (bytes[7] & 0xFF)));
     }
 
     public void readFully(byte[] b) throws IOException {
@@ -84,7 +76,7 @@ public class MessageDataInputStream extends InputStream {
 
     public boolean readBoolean() throws IOException {
         int b = input.read();
-        if (b < 0) {
+        if (b == -1) {
             throw new EOFException("Unexpectedly reached end of stream.");
         }
         return b != 0;
@@ -92,10 +84,10 @@ public class MessageDataInputStream extends InputStream {
 
     public byte readByte() throws IOException {
         int b = input.read();
-        if (b < 0) {
+        if (b == -1) {
             throw new EOFException("Unexpectedly reached end of stream.");
         }
-        return (byte) b;
+        return (byte) (b & 0xFF);
     }
 
     public byte[] readByteArray() throws IOException {
@@ -146,8 +138,15 @@ public class MessageDataInputStream extends InputStream {
     }
 
     public int readInt() throws IOException {
-        readFully(intBytes);
-        return bytesToInt(intBytes);
+        int byte0 = read();
+        int byte1 = read();
+        int byte2 = read();
+        int byte3 = read();
+
+        if ((byte0 | byte1 | byte2 | byte3) == -1) {
+            throw new EOFException("Unexpectedly reached end of stream.");
+        }
+        return (byte0 << 24) | (byte1 << 16) | (byte2 << 8) | byte3;
     }
 
     public int[] readIntArray() throws IOException {

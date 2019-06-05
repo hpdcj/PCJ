@@ -49,10 +49,10 @@ public class MessageDataOutputStream extends OutputStream {
     private byte[] intToBytes(int value) {
         byte[] temp = new byte[Integer.BYTES];
 
-        temp[0] = (byte) ((value >> 24) & 0xff);
-        temp[1] = (byte) ((value >> 16) & 0xff);
-        temp[2] = (byte) ((value >> 8) & 0xff);
-        temp[3] = (byte) (value & 0xff);
+        temp[0] = (byte) ((value >> 24) & 0xFF);
+        temp[1] = (byte) ((value >> 16) & 0xFF);
+        temp[2] = (byte) ((value >> 8) & 0xFF);
+        temp[3] = (byte) (value & 0xFF);
 
         return temp;
     }
@@ -60,14 +60,14 @@ public class MessageDataOutputStream extends OutputStream {
     private byte[] longToBytes(long value) {
         byte[] temp = new byte[Long.BYTES];
 
-        temp[0] = (byte) ((value >> 56) & 0xff);
-        temp[1] = (byte) ((value >> 48) & 0xff);
-        temp[2] = (byte) ((value >> 40) & 0xff);
-        temp[3] = (byte) ((value >> 32) & 0xff);
-        temp[4] = (byte) ((value >> 24) & 0xff);
-        temp[5] = (byte) ((value >> 16) & 0xff);
-        temp[6] = (byte) ((value >> 8) & 0xff);
-        temp[7] = (byte) (value & 0xff);
+        temp[0] = (byte) ((value >> 56) & 0xFF);
+        temp[1] = (byte) ((value >> 48) & 0xFF);
+        temp[2] = (byte) ((value >> 40) & 0xFF);
+        temp[3] = (byte) ((value >> 32) & 0xFF);
+        temp[4] = (byte) ((value >> 24) & 0xFF);
+        temp[5] = (byte) ((value >> 16) & 0xFF);
+        temp[6] = (byte) ((value >> 8) & 0xFF);
+        temp[7] = (byte) (value & 0xFF);
 
         return temp;
     }
