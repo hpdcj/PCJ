@@ -22,6 +22,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,7 +46,7 @@ public class SelectorProc implements Runnable {
     private final Selector selector;
     private final ConcurrentMap<SocketChannel, Queue<MessageOutputBytes>> writeMap;
     private final Queue<ServerSocketChannel> serverSocketChannels;
-    private final Queue<InterestChange> interestChanges;
+    private final ConcurrentMap<SelectableChannel, Integer> interestChanges;
 
     public SelectorProc() {
         try {
@@ -56,12 +57,12 @@ public class SelectorProc implements Runnable {
 
         this.byteBufferPool = new ByteBufferPool(Configuration.BUFFER_POOL_SIZE, Configuration.BUFFER_CHUNK_SIZE);
         this.writeMap = new ConcurrentHashMap<>();
-        this.interestChanges = new ConcurrentLinkedQueue<>();
+        this.interestChanges = new ConcurrentHashMap<>();
         this.serverSocketChannels = new ConcurrentLinkedQueue<>();
     }
 
     private void changeInterestOps(SelectableChannel channel, int interestOps) {
-        interestChanges.add(new InterestChange(channel, interestOps));
+        interestChanges.compute(channel, (k, v) -> (v == null) ? interestOps : (v | interestOps));
         selector.wakeup();
     }
 
@@ -154,10 +155,13 @@ public class SelectorProc implements Runnable {
     public void run() {
         for (; ; ) {
             try {
-                InterestChange interestChange;
-                while ((interestChange = interestChanges.poll()) != null) {
-                    SelectableChannel channel = interestChange.channel;
-                    channel.register(selector, interestChange.interestOps);
+                Iterator<Map.Entry<SelectableChannel, Integer>> it = interestChanges.entrySet().iterator();
+                while (it.hasNext()) {
+                    Map.Entry<SelectableChannel, Integer> entry = it.next();
+                    it.remove();
+                    SelectableChannel channel = entry.getKey();
+                    int ops = entry.getValue();
+                    channel.register(selector, ops);
                 }
 
                 if (Thread.interrupted()) {
@@ -275,7 +279,6 @@ public class SelectorProc implements Runnable {
         return true;
     }
 
-
     private boolean opWrite(SocketChannel socket) throws IOException {
         Queue<MessageOutputBytes> queue = writeMap.get(socket);
 
@@ -300,17 +303,5 @@ public class SelectorProc implements Runnable {
         }
 
         return true;
-    }
-
-    private static class InterestChange {
-
-        private final SelectableChannel channel;
-        private final int interestOps;
-
-        private InterestChange(SelectableChannel channel, int interestOps) {
-            this.channel = channel;
-            this.interestOps = interestOps;
-        }
-
     }
 }
