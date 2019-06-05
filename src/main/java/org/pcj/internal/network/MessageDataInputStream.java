@@ -83,13 +83,19 @@ public class MessageDataInputStream extends InputStream {
     }
 
     public boolean readBoolean() throws IOException {
-        // EOF? input.read() == -1
-        return input.read() != 0;
+        int b = input.read();
+        if (b < 0) {
+            throw new EOFException("Unexpectedly reached end of stream.");
+        }
+        return b != 0;
     }
 
     public byte readByte() throws IOException {
-        // EOF? input.read() == -1
-        return (byte) input.read();
+        int b = input.read();
+        if (b < 0) {
+            throw new EOFException("Unexpectedly reached end of stream.");
+        }
+        return (byte) b;
     }
 
     public byte[] readByteArray() throws IOException {
