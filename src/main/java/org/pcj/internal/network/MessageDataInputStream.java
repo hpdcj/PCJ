@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 public class MessageDataInputStream extends InputStream {
 
     private final InputStream input;
+    private final byte[] intBytes = new byte[Integer.BYTES];
     private final byte[] longBytes = new byte[Long.BYTES];
     private ObjectInputStream objectInputStream;
 
@@ -49,6 +50,13 @@ public class MessageDataInputStream extends InputStream {
             objectInputStream.close();
         }
         input.close();
+    }
+
+    private int bytesToInt(byte[] bytes) {
+        return (((int) (bytes[0] & 0xFF) << 24)
+                        | ((int) (bytes[1] & 0xFF) << 16)
+                        | ((int) (bytes[2] & 0xFF) << 8)
+                        | ((int) (bytes[3] & 0xFF)));
     }
 
     private long bytesToLong(byte[] bytes) {
@@ -138,15 +146,8 @@ public class MessageDataInputStream extends InputStream {
     }
 
     public int readInt() throws IOException {
-        int byte0 = read();
-        int byte1 = read();
-        int byte2 = read();
-        int byte3 = read();
-
-        if ((byte0 | byte1 | byte2 | byte3) == -1) {
-            throw new EOFException("Unexpectedly reached end of stream.");
-        }
-        return (byte0 << 24) | (byte1 << 16) | (byte2 << 8) | byte3;
+        readFully(intBytes);
+        return bytesToInt(intBytes);
     }
 
     public int[] readIntArray() throws IOException {
