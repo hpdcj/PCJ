@@ -126,6 +126,7 @@ public class LoopbackMessageBytesStream implements AutoCloseable {
                 len -= remaining;
                 off += remaining;
                 flush(Math.max(chunkSize, len));
+                currentByteBuffer = currentPooledByteBuffer.getByteBuffer();
             }
             currentByteBuffer.put(b, off, len);
         }
