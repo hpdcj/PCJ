@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.pcj.PcjRuntimeException;
 import org.pcj.internal.message.Message;
-import org.pcj.internal.network.LoopbackMessageBytesStream;
+import org.pcj.internal.network.LoopbackMessageBytes;
 import org.pcj.internal.network.LoopbackSocketChannel;
 import org.pcj.internal.network.MessageOutputBytes;
 import org.pcj.internal.network.SelectorProc;
@@ -45,9 +45,10 @@ import org.pcj.internal.network.SelectorProc;
 final public class Networker {
 
     private static final Logger LOGGER = Logger.getLogger(Networker.class.getName());
+    private final String currentHostName;
     private final SelectorProc selectorProc;
     private final Thread selectorProcThread;
-    private final String currentHostName;
+//    private final LoopbackMessageBytes loopbackMessageBytes;
 
     protected Networker(int port) {
         Queue<InetAddress> interfacesAddresses = getHostAllNetworkInterfaces();
@@ -64,6 +65,8 @@ final public class Networker {
         selectorProcThread.start();
 
         tryToBind(interfacesAddresses, port);
+
+//        loopbackMessageBytes = new LoopbackMessageBytes();
     }
 
     private static Queue<InetAddress> getHostAllNetworkInterfaces() throws UncheckedIOException {
@@ -224,7 +227,7 @@ final public class Networker {
     public void send(SocketChannel socket, Message message) {
         try {
             if (socket instanceof LoopbackSocketChannel) {
-                LoopbackMessageBytesStream loopbackMessageBytesStream = new LoopbackMessageBytesStream(message);
+                LoopbackMessageBytes loopbackMessageBytesStream = new LoopbackMessageBytes(message);
                 loopbackMessageBytesStream.writeMessage();
                 loopbackMessageBytesStream.close();
 

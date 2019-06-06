@@ -21,18 +21,18 @@ import org.pcj.internal.message.Message;
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public class LoopbackMessageBytesStream implements AutoCloseable {
+public class LoopbackMessageBytes implements AutoCloseable {
 
     private static final ByteBufferPool BYTE_BUFFER_POOL = new ByteBufferPool(Configuration.BUFFER_POOL_SIZE, Configuration.BUFFER_CHUNK_SIZE);
     private final Message message;
     private final Queue<ByteBufferPool.PooledByteBuffer> queue;
     private final MessageDataOutputStream messageDataOutputStream;
 
-    public LoopbackMessageBytesStream(Message message) {
+    public LoopbackMessageBytes(Message message) {
         this(message, Configuration.BUFFER_CHUNK_SIZE);
     }
 
-    public LoopbackMessageBytesStream(Message message, int chunkSize) {
+    public LoopbackMessageBytes(Message message, int chunkSize) {
         this.message = message;
 
         this.queue = new ConcurrentLinkedQueue<>();

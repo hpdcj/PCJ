@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
@@ -20,12 +18,9 @@ import org.pcj.internal.message.MessageType;
 
 final public class MessageProc {
     private static final Logger LOGGER = Logger.getLogger(MessageProc.class.getName());
-    private final ConcurrentMap<SocketChannel, MessageInputBytes> readMap;
     private ExecutorService workers;
 
     public MessageProc() {
-        this.readMap = new ConcurrentHashMap<>();
-
         BlockingQueue<Runnable> blockingQueue;
         if (Configuration.MESSAGE_WORKERS_QUEUE_SIZE > 0) {
             blockingQueue = new ArrayBlockingQueue<>(Configuration.MESSAGE_WORKERS_QUEUE_SIZE);
@@ -42,25 +37,15 @@ final public class MessageProc {
                 threadGroup, "MessageProc-Worker-",
                 blockingQueue,
                 new ThreadPoolExecutor.CallerRunsPolicy());
-
-        initializeFor(LoopbackSocketChannel.getInstance());
-    }
-
-    public void initializeFor(SocketChannel socketChannel) {
-        readMap.put(socketChannel, new MessageInputBytes());
     }
 
     public void shutdown() {
         workers.shutdownNow();
     }
 
-
-    public void process(SocketChannel socket, ByteBufferPool.PooledByteBuffer pooledByteBuffer) {
-        MessageInputBytes messageBytes = readMap.get(socket);
-        messageBytes.offer(pooledByteBuffer);
-
-        if (messageBytes.tryProcessing()) {
-            workers.execute(new MessageWorker(socket, messageBytes));
+    public void process(SocketChannel socket, MessageInputBytes messageInputBytes) {
+        if (messageInputBytes.tryProcessing()) {
+            workers.execute(new MessageWorker(socket, messageInputBytes));
         }
     }
 

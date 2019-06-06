@@ -44,6 +44,7 @@ public class SelectorProc implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(SelectorProc.class.getName());
     private final ByteBufferPool byteBufferPool;
     private final Selector selector;
+    private final ConcurrentMap<SocketChannel, MessageInputBytes> readMap;
     private final ConcurrentMap<SocketChannel, Queue<MessageOutputBytes>> writeMap;
     private final Queue<ServerSocketChannel> serverSocketChannels;
     private final ConcurrentMap<SelectableChannel, Integer> interestChanges;
@@ -56,6 +57,7 @@ public class SelectorProc implements Runnable {
         }
 
         this.byteBufferPool = new ByteBufferPool(Configuration.BUFFER_POOL_SIZE, Configuration.BUFFER_CHUNK_SIZE);
+        this.readMap = new ConcurrentHashMap<>();
         this.writeMap = new ConcurrentHashMap<>();
         this.interestChanges = new ConcurrentHashMap<>();
         this.serverSocketChannels = new ConcurrentLinkedQueue<>();
@@ -76,7 +78,7 @@ public class SelectorProc implements Runnable {
         socketChannel.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
         socketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
 
-        InternalPCJ.getMessageProc().initializeFor(socketChannel);
+        readMap.put(socketChannel, new MessageInputBytes());
         writeMap.put(socketChannel, new ConcurrentLinkedQueue<>());
     }
 
@@ -274,7 +276,10 @@ public class SelectorProc implements Runnable {
         }
         readBuffer.flip();
 
-        InternalPCJ.getMessageProc().process(socket, pooledByteBuffer);
+        MessageInputBytes messageInputBytes = readMap.get(socket);
+        messageInputBytes.offer(pooledByteBuffer);
+
+        InternalPCJ.getMessageProc().process(socket, messageInputBytes);
 
         return true;
     }
