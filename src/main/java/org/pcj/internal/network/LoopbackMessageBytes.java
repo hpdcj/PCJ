@@ -72,12 +72,12 @@ public class LoopbackMessageBytes implements MessageInputBytes {
 
         private static final ByteBufferPool BYTE_BUFFER_POOL = new ByteBufferPool(Configuration.BUFFER_POOL_SIZE, Configuration.BUFFER_CHUNK_SIZE);
         private final BlockingQueue<ByteBufferPool.PooledByteBuffer> queue;
-        private final LoopbackInputStream inputStream;
+        private final LoopbackInputStream loopbackInputStream;
         private ByteBufferPool.PooledByteBuffer currentPooledByteBuffer;
 
-        LoopbackOutputStream() {
+        private LoopbackOutputStream() {
             this.queue = new LinkedBlockingQueue<>();
-            this.inputStream = new LoopbackInputStream(queue);
+            this.loopbackInputStream = new LoopbackInputStream(queue);
             this.currentPooledByteBuffer = null;
         }
 
@@ -93,7 +93,7 @@ public class LoopbackMessageBytes implements MessageInputBytes {
         public void close() {
             offerCurrentByteBuffer();
 
-            inputStream.outputStreamClosed = true;
+            loopbackInputStream.setAllDataArrived();
         }
 
         @Override
@@ -151,21 +151,29 @@ public class LoopbackMessageBytes implements MessageInputBytes {
             queue.offer(currentPooledByteBuffer);
         }
 
-        LoopbackInputStream getInputStream() {
-            return inputStream;
+        private LoopbackInputStream getInputStream() {
+            return loopbackInputStream;
         }
     }
 
-    public static class LoopbackInputStream extends InputStream {
+    private static class LoopbackInputStream extends InputStream {
         private final BlockingQueue<ByteBufferPool.PooledByteBuffer> queue;
-        public boolean outputStreamClosed;
         private ByteBufferPool.PooledByteBuffer currentPooledByteBuffer;
         private volatile boolean closed;
+        boolean allDataArrived;
 
-        LoopbackInputStream(BlockingQueue<ByteBufferPool.PooledByteBuffer> queue) {
+        private LoopbackInputStream(BlockingQueue<ByteBufferPool.PooledByteBuffer> queue) {
             this.queue = queue;
             this.closed = false;
-            this.outputStreamClosed = false;
+            this.allDataArrived = false;
+        }
+
+        private void setAllDataArrived() {
+            this.allDataArrived = true;
+        }
+
+        private boolean isClosed() {
+            return closed;
         }
 
         private ByteBuffer getCurrentByteBuffer() {
@@ -188,7 +196,7 @@ public class LoopbackMessageBytes implements MessageInputBytes {
                 throw new IOException("Stream Closed");
             }
 
-            if (isReceivingLastChunk()) {
+            if (isEndOfData()) {
                 return -1;
             }
 
@@ -219,7 +227,7 @@ public class LoopbackMessageBytes implements MessageInputBytes {
 
             int bytesRead = 0;
             while (true) {
-                if (isReceivingLastChunk()) {
+                if (isEndOfData()) {
                     if (bytesRead == 0) {
                         return -1;
                     } else {
@@ -242,6 +250,12 @@ public class LoopbackMessageBytes implements MessageInputBytes {
 
         }
 
+        private boolean isEndOfData() {
+            return allDataArrived
+                           && (currentPooledByteBuffer == null || !currentPooledByteBuffer.getByteBuffer().hasRemaining())
+                           && queue.isEmpty();
+        }
+
         @Override
         public void close() {
             if (closed) {
@@ -249,18 +263,13 @@ public class LoopbackMessageBytes implements MessageInputBytes {
             }
             closed = true;
 
-            queue.forEach(ByteBufferPool.PooledByteBuffer::returnToPool);
+            ByteBufferPool.PooledByteBuffer bb;
+            while ((bb = queue.poll()) != null) {
+                bb.returnToPool();
+            }
+
             currentPooledByteBuffer.returnToPool();
             currentPooledByteBuffer = null;
-        }
-
-        private boolean isReceivingLastChunk() {
-            return (currentPooledByteBuffer==null || !currentPooledByteBuffer.getByteBuffer().hasRemaining())
-                           && outputStreamClosed && queue.isEmpty();
-        }
-
-        private boolean isClosed() {
-            return closed;
         }
     }
 }
