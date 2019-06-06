@@ -19,13 +19,13 @@ import org.pcj.internal.message.Message;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public class MessageOutputBytes {
+public class RemoteMessageOutputBytes {
 
     private static final ByteBufferPool BYTE_BUFFER_POOL = new ByteBufferPool(Configuration.BUFFER_POOL_SIZE, Configuration.BUFFER_CHUNK_SIZE);
     private static final ByteBufferPool.PooledByteBuffer[] EMPTY_BYTE_BUFFER_ARRAY = new ByteBufferPool.PooledByteBuffer[0];
     private final MessageOutputStream messageOutputStream;
 
-    public MessageOutputBytes() {
+    public RemoteMessageOutputBytes() {
         messageOutputStream = new MessageOutputStream();
     }
 

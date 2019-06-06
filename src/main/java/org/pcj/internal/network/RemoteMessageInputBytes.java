@@ -19,7 +19,7 @@ import org.pcj.PcjRuntimeException;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public class MessageInputBytes {
+public class RemoteMessageInputBytes {
     private static final int HEADER_SIZE = Integer.BYTES;
     private static final int LAST_CHUNK_BIT = (1 << (Integer.SIZE - 1));
     private static final int LENGTH_MASK = ~LAST_CHUNK_BIT;
@@ -29,7 +29,7 @@ public class MessageInputBytes {
     private final AtomicBoolean processing;
     private ByteBufferPool.PooledByteBuffer currentPooledByteBuffer;
 
-    public MessageInputBytes() {
+    public RemoteMessageInputBytes() {
         this.header = ByteBuffer.allocate(HEADER_SIZE);
         this.queue = new LinkedBlockingQueue<>();
         this.processing = new AtomicBoolean(false);
@@ -104,7 +104,7 @@ public class MessageInputBytes {
                 readChunkLength();
             }
 
-            ByteBuffer byteBuffer = MessageInputBytes.this.getCurrentByteBuffer();
+            ByteBuffer byteBuffer = RemoteMessageInputBytes.this.getCurrentByteBuffer();
             int b = byteBuffer.get() & 0xFF;
             --remainingLength;
 
@@ -145,7 +145,7 @@ public class MessageInputBytes {
                 }
 
 
-                ByteBuffer byteBuffer = MessageInputBytes.this.getCurrentByteBuffer();
+                ByteBuffer byteBuffer = RemoteMessageInputBytes.this.getCurrentByteBuffer();
 
                 int len = Math.min(Math.min(byteBuffer.remaining(), length - bytesRead), remainingLength);
                 byteBuffer.get(b, offset, len);
@@ -193,7 +193,7 @@ public class MessageInputBytes {
             }
 
 
-            ByteBuffer byteBuffer = MessageInputBytes.this.getCurrentByteBuffer();
+            ByteBuffer byteBuffer = RemoteMessageInputBytes.this.getCurrentByteBuffer();
 
             while (header.hasRemaining() && byteBuffer.hasRemaining()) {
                 header.put(byteBuffer.get());
@@ -213,7 +213,7 @@ public class MessageInputBytes {
 
         private void skipCurrentChunk() {
             while (remainingLength > 0) {
-                ByteBuffer byteBuffer = MessageInputBytes.this.getCurrentByteBuffer();
+                ByteBuffer byteBuffer = RemoteMessageInputBytes.this.getCurrentByteBuffer();
                 int skip = Math.min(byteBuffer.remaining(), remainingLength);
                 byteBuffer.position(byteBuffer.position() + skip);
                 remainingLength -= skip;

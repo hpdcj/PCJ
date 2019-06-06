@@ -31,7 +31,7 @@ import org.pcj.PcjRuntimeException;
 import org.pcj.internal.message.Message;
 import org.pcj.internal.network.LoopbackMessageBytes;
 import org.pcj.internal.network.LoopbackSocketChannel;
-import org.pcj.internal.network.MessageOutputBytes;
+import org.pcj.internal.network.RemoteMessageOutputBytes;
 import org.pcj.internal.network.SelectorProc;
 
 /**
@@ -242,10 +242,10 @@ final public class Networker {
                             new Object[]{currentHostName, message.getType(), socket});
                 }
 
-                MessageOutputBytes messageOutputBytes = new MessageOutputBytes();
-                selectorProc.addToWriteQueue(socket, messageOutputBytes);
+                RemoteMessageOutputBytes remoteMessageOutputBytes = new RemoteMessageOutputBytes();
+                selectorProc.addToWriteQueue(socket, remoteMessageOutputBytes);
 
-                messageOutputBytes.writeMessage(message);
+                remoteMessageOutputBytes.writeMessage(message);
             }
         } catch (ClosedChannelException | NotSerializableException ex) {
             throw new PcjRuntimeException(ex);

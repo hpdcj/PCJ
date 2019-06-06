@@ -43,9 +43,9 @@ final public class MessageProc {
         workers.shutdownNow();
     }
 
-    public void process(SocketChannel socket, MessageInputBytes messageInputBytes) {
-        if (messageInputBytes.tryProcessing()) {
-            workers.execute(new MessageWorker(socket, messageInputBytes));
+    public void process(SocketChannel socket, RemoteMessageInputBytes remoteMessageInputBytes) {
+        if (remoteMessageInputBytes.tryProcessing()) {
+            workers.execute(new MessageWorker(socket, remoteMessageInputBytes));
         }
     }
 
@@ -65,10 +65,10 @@ final public class MessageProc {
 
     private static class MessageWorker implements Runnable {
 
-        private final MessageInputBytes messageBytes;
+        private final RemoteMessageInputBytes messageBytes;
         private final SocketChannel socket;
 
-        public MessageWorker(SocketChannel socket, MessageInputBytes messageBytes) {
+        public MessageWorker(SocketChannel socket, RemoteMessageInputBytes messageBytes) {
             this.socket = socket;
             this.messageBytes = messageBytes;
         }

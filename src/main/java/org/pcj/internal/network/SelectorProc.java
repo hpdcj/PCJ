@@ -44,8 +44,8 @@ public class SelectorProc implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(SelectorProc.class.getName());
     private final ByteBufferPool byteBufferPool;
     private final Selector selector;
-    private final ConcurrentMap<SocketChannel, MessageInputBytes> readMap;
-    private final ConcurrentMap<SocketChannel, Queue<MessageOutputBytes>> writeMap;
+    private final ConcurrentMap<SocketChannel, RemoteMessageInputBytes> readMap;
+    private final ConcurrentMap<SocketChannel, Queue<RemoteMessageOutputBytes>> writeMap;
     private final Queue<ServerSocketChannel> serverSocketChannels;
     private final ConcurrentMap<SelectableChannel, Integer> interestChanges;
 
@@ -78,7 +78,7 @@ public class SelectorProc implements Runnable {
         socketChannel.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
         socketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
 
-        readMap.put(socketChannel, new MessageInputBytes());
+        readMap.put(socketChannel, new RemoteMessageInputBytes());
         writeMap.put(socketChannel, new ConcurrentLinkedQueue<>());
     }
 
@@ -121,12 +121,12 @@ public class SelectorProc implements Runnable {
         return socket;
     }
 
-    public void addToWriteQueue(SocketChannel socket, MessageOutputBytes messageOutputBytes) throws ClosedChannelException {
+    public void addToWriteQueue(SocketChannel socket, RemoteMessageOutputBytes remoteMessageOutputBytes) throws ClosedChannelException {
         if (!socket.isConnected()) {
             throw new ClosedChannelException();
         }
-        Queue<MessageOutputBytes> queue = writeMap.get(socket);
-        queue.add(messageOutputBytes);
+        Queue<RemoteMessageOutputBytes> queue = writeMap.get(socket);
+        queue.add(remoteMessageOutputBytes);
         changeInterestOps(socket, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
     }
 
@@ -276,23 +276,23 @@ public class SelectorProc implements Runnable {
         }
         readBuffer.flip();
 
-        MessageInputBytes messageInputBytes = readMap.get(socket);
-        messageInputBytes.offer(pooledByteBuffer);
+        RemoteMessageInputBytes remoteMessageInputBytes = readMap.get(socket);
+        remoteMessageInputBytes.offer(pooledByteBuffer);
 
-        InternalPCJ.getMessageProc().process(socket, messageInputBytes);
+        InternalPCJ.getMessageProc().process(socket, remoteMessageInputBytes);
 
         return true;
     }
 
     private boolean opWrite(SocketChannel socket) throws IOException {
-        Queue<MessageOutputBytes> queue = writeMap.get(socket);
+        Queue<RemoteMessageOutputBytes> queue = writeMap.get(socket);
 
-        MessageOutputBytes messageBytes = queue.peek();
+        RemoteMessageOutputBytes messageBytes = queue.peek();
         if (messageBytes == null || !socket.isOpen()) {
             return false;
         }
 
-        MessageOutputBytes.ByteBufferArray byteBuffersArray = messageBytes.getByteBufferArray();
+        RemoteMessageOutputBytes.ByteBufferArray byteBuffersArray = messageBytes.getByteBufferArray();
 
         ByteBuffer[] array = byteBuffersArray.getArray();
         int offset = byteBuffersArray.getOffset();
