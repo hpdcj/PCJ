@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -13,22 +13,22 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.BiConsumer;
 import org.pcj.internal.Configuration;
 import org.pcj.internal.message.Message;
 
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public class RemoteMessageOutputBytes {
+public class RemoteMessageOutputBytes implements MessageOutputBytes {
 
-    private static final ByteBufferPool BYTE_BUFFER_POOL = new ByteBufferPool(Configuration.BUFFER_POOL_SIZE, Configuration.BUFFER_CHUNK_SIZE);
-    private static final ByteBufferPool.PooledByteBuffer[] EMPTY_BYTE_BUFFER_ARRAY = new ByteBufferPool.PooledByteBuffer[0];
     private final MessageOutputStream messageOutputStream;
 
     public RemoteMessageOutputBytes() {
         messageOutputStream = new MessageOutputStream();
     }
 
+    @Override
     public void writeMessage(Message message) throws IOException {
         try (MessageDataOutputStream messageDataOutputStream = new MessageDataOutputStream(messageOutputStream)) {
             messageDataOutputStream.writeByte(message.getType().getId());
@@ -42,6 +42,7 @@ public class RemoteMessageOutputBytes {
 
     private static class MessageOutputStream extends OutputStream {
 
+        private static final ByteBufferPool BYTE_BUFFER_POOL = new ByteBufferPool(Configuration.BUFFER_POOL_SIZE, Configuration.BUFFER_CHUNK_SIZE);
         private static final int HEADER_SIZE = Integer.BYTES;
         private static final int LAST_CHUNK_BIT = (1 << (Integer.SIZE - 1));
         private final Queue<ByteBufferPool.PooledByteBuffer> queue;
@@ -110,12 +111,13 @@ public class RemoteMessageOutputBytes {
 
         private void offerCurrentByteBuffer(boolean lastChunk) {
             ByteBuffer currentByteBuffer = currentPooledByteBuffer.getByteBuffer();
-            int length = (currentByteBuffer.position() - HEADER_SIZE);
+            currentByteBuffer.flip();
+
+            int length = (currentByteBuffer.limit() - HEADER_SIZE);
             if (lastChunk) {
                 length = (length | LAST_CHUNK_BIT);
             }
             currentByteBuffer.putInt(0, length);
-            currentByteBuffer.flip();
 
             queue.offer(currentPooledByteBuffer);
         }

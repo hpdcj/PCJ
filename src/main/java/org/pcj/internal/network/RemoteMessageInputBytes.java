@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -19,18 +19,13 @@ import org.pcj.PcjRuntimeException;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public class RemoteMessageInputBytes {
-    private static final int HEADER_SIZE = Integer.BYTES;
-    private static final int LAST_CHUNK_BIT = (1 << (Integer.SIZE - 1));
-    private static final int LENGTH_MASK = ~LAST_CHUNK_BIT;
-    private final ByteBufferInputStream inputStream;
-    private final ByteBuffer header;
-    private final BlockingQueue<ByteBufferPool.PooledByteBuffer> queue;
+public class RemoteMessageInputBytes implements MessageInputBytes {
     private final AtomicBoolean processing;
+    private final ByteBufferInputStream inputStream;
+    private final BlockingQueue<ByteBufferPool.PooledByteBuffer> queue;
     private ByteBufferPool.PooledByteBuffer currentPooledByteBuffer;
 
     public RemoteMessageInputBytes() {
-        this.header = ByteBuffer.allocate(HEADER_SIZE);
         this.queue = new LinkedBlockingQueue<>();
         this.processing = new AtomicBoolean(false);
         this.inputStream = new ByteBufferInputStream();
@@ -40,6 +35,7 @@ public class RemoteMessageInputBytes {
         queue.offer(byteBuffer);
     }
 
+    @Override
     public InputStream getInputStream() {
         if (inputStream.isClosed()) {
             inputStream.prepareForNewMessage();
@@ -47,40 +43,33 @@ public class RemoteMessageInputBytes {
         return inputStream;
     }
 
+    @Override
     public boolean tryProcessing() {
         return processing.compareAndSet(false, true);
     }
 
+    @Override
     public void finishedProcessing() {
         processing.set(false);
     }
 
+    @Override
     public boolean hasMoreData() {
         return (currentPooledByteBuffer != null && currentPooledByteBuffer.getByteBuffer().hasRemaining())
                        || !queue.isEmpty();
     }
 
-    private ByteBuffer getCurrentByteBuffer() {
-        if (currentPooledByteBuffer == null || !currentPooledByteBuffer.getByteBuffer().hasRemaining()) {
-            if (currentPooledByteBuffer != null) {
-                currentPooledByteBuffer.returnToPool();
-            }
-            try {
-                currentPooledByteBuffer = queue.take();
-            } catch (InterruptedException e) {
-                throw new PcjRuntimeException(e);
-            }
-        }
-        return currentPooledByteBuffer.getByteBuffer();
-    }
-
     public class ByteBufferInputStream extends InputStream {
+        private static final int HEADER_SIZE = Integer.BYTES;
+        private static final int LAST_CHUNK_BIT = (1 << (Integer.SIZE - 1));
+        private static final int LENGTH_MASK = ~LAST_CHUNK_BIT;
+        private final ByteBuffer header;
         private int remainingLength;
         private boolean receivingLastChunk;
-
         private volatile boolean closed;
 
         public ByteBufferInputStream() {
+            this.header = ByteBuffer.allocate(HEADER_SIZE);
             prepareForNewMessage();
         }
 
@@ -88,6 +77,20 @@ public class RemoteMessageInputBytes {
             this.remainingLength = 0;
             this.receivingLastChunk = false;
             this.closed = false;
+        }
+
+        private ByteBuffer getCurrentByteBuffer() {
+            if (currentPooledByteBuffer == null || !currentPooledByteBuffer.getByteBuffer().hasRemaining()) {
+                if (currentPooledByteBuffer != null) {
+                    currentPooledByteBuffer.returnToPool();
+                }
+                try {
+                    currentPooledByteBuffer = queue.take();
+                } catch (InterruptedException e) {
+                    throw new PcjRuntimeException(e);
+                }
+            }
+            return currentPooledByteBuffer.getByteBuffer();
         }
 
         @Override
@@ -104,7 +107,7 @@ public class RemoteMessageInputBytes {
                 readChunkLength();
             }
 
-            ByteBuffer byteBuffer = RemoteMessageInputBytes.this.getCurrentByteBuffer();
+            ByteBuffer byteBuffer = getCurrentByteBuffer();
             int b = byteBuffer.get() & 0xFF;
             --remainingLength;
 
@@ -144,8 +147,7 @@ public class RemoteMessageInputBytes {
                     readChunkLength();
                 }
 
-
-                ByteBuffer byteBuffer = RemoteMessageInputBytes.this.getCurrentByteBuffer();
+                ByteBuffer byteBuffer = getCurrentByteBuffer();
 
                 int len = Math.min(Math.min(byteBuffer.remaining(), length - bytesRead), remainingLength);
                 byteBuffer.get(b, offset, len);
@@ -193,7 +195,7 @@ public class RemoteMessageInputBytes {
             }
 
 
-            ByteBuffer byteBuffer = RemoteMessageInputBytes.this.getCurrentByteBuffer();
+            ByteBuffer byteBuffer = getCurrentByteBuffer();
 
             while (header.hasRemaining() && byteBuffer.hasRemaining()) {
                 header.put(byteBuffer.get());
@@ -213,12 +215,11 @@ public class RemoteMessageInputBytes {
 
         private void skipCurrentChunk() {
             while (remainingLength > 0) {
-                ByteBuffer byteBuffer = RemoteMessageInputBytes.this.getCurrentByteBuffer();
+                ByteBuffer byteBuffer = getCurrentByteBuffer();
                 int skip = Math.min(byteBuffer.remaining(), remainingLength);
                 byteBuffer.position(byteBuffer.position() + skip);
                 remainingLength -= skip;
             }
         }
-
     }
 }

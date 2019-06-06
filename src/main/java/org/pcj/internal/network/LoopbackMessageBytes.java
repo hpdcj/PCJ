@@ -1,5 +1,5 @@
-/* 
- * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+/*
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -12,103 +12,98 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.pcj.PcjRuntimeException;
 import org.pcj.internal.Configuration;
 import org.pcj.internal.message.Message;
 
 /**
- *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public class LoopbackMessageBytes implements AutoCloseable {
+public class LoopbackMessageBytes implements MessageInputBytes {
 
-    private static final ByteBufferPool BYTE_BUFFER_POOL = new ByteBufferPool(Configuration.BUFFER_POOL_SIZE, Configuration.BUFFER_CHUNK_SIZE);
-    private final Message message;
-    private final Queue<ByteBufferPool.PooledByteBuffer> queue;
-    private final MessageDataOutputStream messageDataOutputStream;
+    private final BlockingQueue<LoopbackOutputStream> queue;
+    private final AtomicBoolean processing;
+    private LoopbackInputStream currentInputStream;
 
-    public LoopbackMessageBytes(Message message) {
-        this(message, Configuration.BUFFER_CHUNK_SIZE);
+    public LoopbackMessageBytes() {
+        queue = new LinkedBlockingQueue<>();
+        processing = new AtomicBoolean(false);
     }
 
-    public LoopbackMessageBytes(Message message, int chunkSize) {
-        this.message = message;
+    public LoopbackOutputStream prepareForNewMessage() {
+        LoopbackOutputStream loopbackOutputStream = new LoopbackOutputStream();
+        queue.add(loopbackOutputStream);
 
-        this.queue = new ConcurrentLinkedQueue<>();
-        this.messageDataOutputStream = new MessageDataOutputStream(new LoopbackOutputStream(queue, chunkSize));
-    }
-
-    public void writeMessage() throws IOException {
-        message.write(messageDataOutputStream);
+        return loopbackOutputStream;
     }
 
     @Override
-    public void close() throws IOException {
-        messageDataOutputStream.close();
+    public InputStream getInputStream() {
+        if (currentInputStream == null || currentInputStream.isClosed()) {
+            try {
+                LoopbackOutputStream loopbackOutputStream = queue.take();
+                currentInputStream = loopbackOutputStream.getInputStream();
+            } catch (InterruptedException e) {
+                throw new PcjRuntimeException(e);
+            }
+        }
+        return currentInputStream;
     }
 
-    public MessageDataInputStream getMessageDataInputStream() {
-        return new MessageDataInputStream(new LoopbackInputStream(queue));
+    @Override
+    public boolean tryProcessing() {
+        return processing.compareAndSet(false, true);
     }
 
-    private static class LoopbackOutputStream extends OutputStream {
+    @Override
+    public void finishedProcessing() {
+        processing.set(false);
+    }
 
-        private final int chunkSize;
-        private final Queue<ByteBufferPool.PooledByteBuffer> queue;
+    @Override
+    public boolean hasMoreData() {
+        return !queue.isEmpty();
+    }
+
+    public static class LoopbackOutputStream extends OutputStream implements MessageOutputBytes {
+
+        private static final ByteBufferPool BYTE_BUFFER_POOL = new ByteBufferPool(Configuration.BUFFER_POOL_SIZE, Configuration.BUFFER_CHUNK_SIZE);
+        private final BlockingQueue<ByteBufferPool.PooledByteBuffer> queue;
+        private final LoopbackInputStream inputStream;
         private ByteBufferPool.PooledByteBuffer currentPooledByteBuffer;
 
-        public LoopbackOutputStream(Queue<ByteBufferPool.PooledByteBuffer> queue, int chunkSize) {
-            this.chunkSize = chunkSize;
-            this.queue = queue;
-
-            allocateBuffer(chunkSize);
+        LoopbackOutputStream() {
+            this.queue = new LinkedBlockingQueue<>();
+            this.inputStream = new LoopbackInputStream(queue);
+            this.currentPooledByteBuffer = null;
         }
 
-        private void allocateBuffer(int size) {
-            if (size <= chunkSize) {
-                currentPooledByteBuffer = BYTE_BUFFER_POOL.take();
-            } else {
-                currentPooledByteBuffer = new ByteBufferPool.HeapPooledByteBuffer(size);
-            }
-        }
-
-        private void flush(int size) {
-            ByteBuffer currentByteBuffer = currentPooledByteBuffer.getByteBuffer();
-            if (currentByteBuffer.position() <= 0) {
-                return;
-            }
-            currentByteBuffer.flip();
-            queue.offer(currentPooledByteBuffer);
-
-            if (size > 0) {
-                allocateBuffer(size);
+        @Override
+        public void writeMessage(Message message) throws IOException {
+            try (MessageDataOutputStream messageDataOutputStream = new MessageDataOutputStream(this)) {
+                messageDataOutputStream.writeByte(message.getType().getId());
+                message.write(messageDataOutputStream);
             }
         }
 
         @Override
-        public void flush() {
-            flush(chunkSize);
-        }
+        public void close() {
+            offerCurrentByteBuffer();
 
-        @Override
-        public void close() throws IOException {
-            if (currentPooledByteBuffer.getByteBuffer().position() > 0) {
-                flush(0);
-            }
-            currentPooledByteBuffer = null;
-        }
-
-        public boolean isClosed() {
-            return currentPooledByteBuffer == null && queue.isEmpty();
+            inputStream.outputStreamClosed = true;
         }
 
         @Override
         public void write(int b) {
-            ByteBuffer currentByteBuffer = currentPooledByteBuffer.getByteBuffer();
+            ByteBuffer currentByteBuffer = getCurrentByteBuffer();
             if (!currentByteBuffer.hasRemaining()) {
-                flush();
+                offerCurrentByteBuffer();
+                currentByteBuffer = getNextByteBuffer();
             }
+
             currentByteBuffer.put((byte) b);
         }
 
@@ -119,92 +114,153 @@ public class LoopbackMessageBytes implements AutoCloseable {
 
         @Override
         public void write(byte[] b, int off, int len) {
-            ByteBuffer currentByteBuffer = currentPooledByteBuffer.getByteBuffer();
+            ByteBuffer currentByteBuffer = getCurrentByteBuffer();
+
             int remaining = currentByteBuffer.remaining();
-            if (remaining < len) {
+            while (remaining < len) {
                 currentByteBuffer.put(b, off, remaining);
+
+                offerCurrentByteBuffer();
+                currentByteBuffer = getNextByteBuffer();
+
                 len -= remaining;
                 off += remaining;
-                flush(Math.max(chunkSize, len));
-                currentByteBuffer = currentPooledByteBuffer.getByteBuffer();
+
+                remaining = currentByteBuffer.remaining();
             }
             currentByteBuffer.put(b, off, len);
         }
+
+        private ByteBuffer getCurrentByteBuffer() {
+            if (currentPooledByteBuffer != null) {
+                return currentPooledByteBuffer.getByteBuffer();
+            }
+
+            return getNextByteBuffer();
+        }
+
+        private ByteBuffer getNextByteBuffer() {
+            currentPooledByteBuffer = BYTE_BUFFER_POOL.take();
+            return currentPooledByteBuffer.getByteBuffer();
+        }
+
+        private void offerCurrentByteBuffer() {
+            ByteBuffer currentByteBuffer = currentPooledByteBuffer.getByteBuffer();
+            currentByteBuffer.flip();
+
+            queue.offer(currentPooledByteBuffer);
+        }
+
+        LoopbackInputStream getInputStream() {
+            return inputStream;
+        }
     }
 
-    private static class LoopbackInputStream extends InputStream {
+    public static class LoopbackInputStream extends InputStream {
+        private final BlockingQueue<ByteBufferPool.PooledByteBuffer> queue;
+        public boolean outputStreamClosed;
+        private ByteBufferPool.PooledByteBuffer currentPooledByteBuffer;
+        private volatile boolean closed;
 
-        private final Queue<ByteBufferPool.PooledByteBuffer> queue;
-
-        public LoopbackInputStream(Queue<ByteBufferPool.PooledByteBuffer> queue) {
+        LoopbackInputStream(BlockingQueue<ByteBufferPool.PooledByteBuffer> queue) {
             this.queue = queue;
+            this.closed = false;
+            this.outputStreamClosed = false;
         }
 
-        @Override
-        public void close() {
-            ByteBufferPool.PooledByteBuffer bb;
-            while ((bb = queue.poll()) != null) {
-                bb.returnToPool();
-            }
-        }
-
-        @Override
-        public int read() {
-            while (true) {
-                ByteBufferPool.PooledByteBuffer pooledByteBuffer = queue.peek();
-                if (pooledByteBuffer== null) {
-                    return -1;
-                } else {
-                    ByteBuffer byteBuffer = pooledByteBuffer.getByteBuffer();
-                    if (!byteBuffer.hasRemaining()) {
-                        pooledByteBuffer.returnToPool();
-                        queue.poll();
-                    } else {
-                        return byteBuffer.get() & 0xFF;
-                    }
+        private ByteBuffer getCurrentByteBuffer() {
+            if (currentPooledByteBuffer == null || !currentPooledByteBuffer.getByteBuffer().hasRemaining()) {
+                if (currentPooledByteBuffer != null) {
+                    currentPooledByteBuffer.returnToPool();
+                }
+                try {
+                    currentPooledByteBuffer = queue.take();
+                } catch (InterruptedException e) {
+                    throw new PcjRuntimeException(e);
                 }
             }
+            return currentPooledByteBuffer.getByteBuffer();
         }
 
         @Override
-        public int read(byte[] b) {
+        public int read() throws IOException {
+            if (closed) {
+                throw new IOException("Stream Closed");
+            }
+
+            if (isReceivingLastChunk()) {
+                return -1;
+            }
+
+
+            ByteBuffer byteBuffer = getCurrentByteBuffer();
+
+            return byteBuffer.get() & 0xFF;
+        }
+
+        @Override
+        public int read(byte[] b) throws IOException {
             return read(b, 0, b.length);
         }
 
         @Override
-        public int read(byte[] b, int offset, int length) {
-            if (length == 0) {
+        public int read(byte[] b, int offset, int length) throws IOException {
+            if (closed) {
+                throw new IOException("Stream Closed");
+            }
+
+            if (b == null) {
+                throw new NullPointerException();
+            } else if (offset < 0 || length < 0 || length > b.length - offset) {
+                throw new IndexOutOfBoundsException();
+            } else if (length == 0) {
                 return 0;
             }
 
             int bytesRead = 0;
             while (true) {
-                ByteBufferPool.PooledByteBuffer pooledByteBuffer = queue.peek();
-                if (pooledByteBuffer == null) {
+                if (isReceivingLastChunk()) {
                     if (bytesRead == 0) {
                         return -1;
                     } else {
                         return bytesRead;
                     }
-                } else {
-                    ByteBuffer byteBuffer = pooledByteBuffer.getByteBuffer();
-                    int len = Math.min(byteBuffer.remaining(), length - bytesRead);
+                }
 
-                    byteBuffer.get(b, offset, len);
+                ByteBuffer byteBuffer = getCurrentByteBuffer();
 
-                    bytesRead += len;
-                    offset += len;
+                int len = Math.min(byteBuffer.remaining(), length - bytesRead);
+                byteBuffer.get(b, offset, len);
 
-                    if (!byteBuffer.hasRemaining()) {
-                        pooledByteBuffer.returnToPool();
-                        queue.poll();
-                    }
+                bytesRead += len;
+                offset += len;
 
-                    if (bytesRead == length) {
-                        return length;
-                    }
+                if (bytesRead == length) {
+                    return bytesRead;
                 }
             }
+
+        }
+
+        @Override
+        public void close() {
+            if (closed) {
+                return;
+            }
+            closed = true;
+
+            queue.forEach(ByteBufferPool.PooledByteBuffer::returnToPool);
+            currentPooledByteBuffer.returnToPool();
+            currentPooledByteBuffer = null;
+        }
+
+        private boolean isReceivingLastChunk() {
+            return (currentPooledByteBuffer==null || !currentPooledByteBuffer.getByteBuffer().hasRemaining())
+                           && outputStreamClosed && queue.isEmpty();
+        }
+
+        private boolean isClosed() {
+            return closed;
         }
     }
 }

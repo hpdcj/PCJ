@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -31,6 +31,7 @@ import org.pcj.PcjRuntimeException;
 import org.pcj.internal.message.Message;
 import org.pcj.internal.network.LoopbackMessageBytes;
 import org.pcj.internal.network.LoopbackSocketChannel;
+import org.pcj.internal.network.MessageInputBytes;
 import org.pcj.internal.network.RemoteMessageOutputBytes;
 import org.pcj.internal.network.SelectorProc;
 
@@ -48,7 +49,7 @@ final public class Networker {
     private final String currentHostName;
     private final SelectorProc selectorProc;
     private final Thread selectorProcThread;
-//    private final LoopbackMessageBytes loopbackMessageBytes;
+    private final LoopbackMessageBytes loopbackMessageBytes;
 
     protected Networker(int port) {
         Queue<InetAddress> interfacesAddresses = getHostAllNetworkInterfaces();
@@ -66,7 +67,7 @@ final public class Networker {
 
         tryToBind(interfacesAddresses, port);
 
-//        loopbackMessageBytes = new LoopbackMessageBytes();
+        loopbackMessageBytes = new LoopbackMessageBytes();
     }
 
     private static Queue<InetAddress> getHostAllNetworkInterfaces() throws UncheckedIOException {
@@ -227,15 +228,15 @@ final public class Networker {
     public void send(SocketChannel socket, Message message) {
         try {
             if (socket instanceof LoopbackSocketChannel) {
-                LoopbackMessageBytes loopbackMessageBytesStream = new LoopbackMessageBytes(message);
-                loopbackMessageBytesStream.writeMessage();
-                loopbackMessageBytesStream.close();
-
                 if (LOGGER.isLoggable(Level.FINEST)) {
                     LOGGER.log(Level.FINEST, "[{0}] Locally processing message {1}",
                             new Object[]{currentHostName, message.getType()});
                 }
-                InternalPCJ.getMessageProc().executeFromLocal(socket, message, loopbackMessageBytesStream.getMessageDataInputStream());
+
+                LoopbackMessageBytes.LoopbackOutputStream loopbackOutputStream = loopbackMessageBytes.prepareForNewMessage();
+                InternalPCJ.getMessageProc().process(socket, loopbackMessageBytes);
+
+                loopbackOutputStream.writeMessage(message);
             } else {
                 if (LOGGER.isLoggable(Level.FINEST)) {
                     LOGGER.log(Level.FINEST, "[{0}] Sending message {1} to {2}",

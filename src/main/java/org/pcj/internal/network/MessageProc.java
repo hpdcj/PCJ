@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
+ * All rights reserved.
+ *
+ * Licensed under New BSD License (3-clause license).
+ *
+ * See the file "LICENSE" for the full license governing this code.
+ */
 package org.pcj.internal.network;
 
 import java.io.IOException;
@@ -16,6 +24,9 @@ import org.pcj.internal.WorkerPoolExecutor;
 import org.pcj.internal.message.Message;
 import org.pcj.internal.message.MessageType;
 
+/**
+ * @author Marek Nowicki (faramir@mat.umk.pl)
+ */
 final public class MessageProc {
     private static final Logger LOGGER = Logger.getLogger(MessageProc.class.getName());
     private ExecutorService workers;
@@ -43,32 +54,18 @@ final public class MessageProc {
         workers.shutdownNow();
     }
 
-    public void process(SocketChannel socket, RemoteMessageInputBytes remoteMessageInputBytes) {
-        if (remoteMessageInputBytes.tryProcessing()) {
-            workers.execute(new MessageWorker(socket, remoteMessageInputBytes));
+    public void process(SocketChannel socket, MessageInputBytes messageInputBytes) {
+        if (messageInputBytes.tryProcessing()) {
+            workers.execute(new MessageWorker(socket, messageInputBytes));
         }
-    }
-
-    @Deprecated
-    public void executeFromLocal(SocketChannel socket, Message message, MessageDataInputStream messageDataInputStream) {
-        workers.execute(() -> {
-            try {
-                message.onReceive(socket, messageDataInputStream);
-                messageDataInputStream.close();
-            } catch (Throwable throwable) {
-                LOGGER.log(Level.SEVERE,
-                        String.format("Exception while processing message %s by node(%d).", message, InternalPCJ.getNodeData().getCurrentNodePhysicalId()),
-                        throwable);
-            }
-        });
     }
 
     private static class MessageWorker implements Runnable {
 
-        private final RemoteMessageInputBytes messageBytes;
+        private final MessageInputBytes messageBytes;
         private final SocketChannel socket;
 
-        public MessageWorker(SocketChannel socket, RemoteMessageInputBytes messageBytes) {
+        public MessageWorker(SocketChannel socket, MessageInputBytes messageBytes) {
             this.socket = socket;
             this.messageBytes = messageBytes;
         }
