@@ -26,7 +26,7 @@ import org.pcj.internal.InternalStorages;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.PcjThread;
 import org.pcj.internal.message.Message;
-import org.pcj.internal.network.CloneInputStream;
+import org.pcj.internal.network.InputStreamCloner;
 
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
@@ -89,7 +89,7 @@ public class BroadcastStates {
             return future;
         }
 
-        void downProcessNode(InternalCommonGroup group, CloneInputStream clonedData, String sharedEnumClassName, String name, int[] indices) {
+        void downProcessNode(InternalCommonGroup group, InputStreamCloner inputStreamCloner, String sharedEnumClassName, String name, int[] indices) {
             NodeData nodeData = InternalPCJ.getNodeData();
             Set<Integer> threadsId = group.getLocalThreadsId();
             for (int threadId : threadsId) {
@@ -98,8 +98,8 @@ public class BroadcastStates {
                 InternalStorages storage = pcjThread.getThreadData().getStorages();
 
                 try {
-                    clonedData.reset();
-                    Object newValue = new ObjectInputStream(clonedData).readObject();
+                    InputStreamCloner.ClonedInputStream clonedInputStream = inputStreamCloner.newInputStream();
+                    Object newValue = new ObjectInputStream(clonedInputStream).readObject();
 
                     storage.put(newValue, sharedEnumClassName, name, indices);
                 } catch (Exception ex) {

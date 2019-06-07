@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
@@ -16,7 +16,7 @@ import org.pcj.internal.Networker;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.message.Message;
 import org.pcj.internal.message.MessageType;
-import org.pcj.internal.network.CloneInputStream;
+import org.pcj.internal.network.InputStreamCloner;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
@@ -70,13 +70,13 @@ final public class BroadcastRequestMessage extends Message {
         variableName = in.readString();
         indices = in.readIntArray();
 
-        CloneInputStream clonedData = CloneInputStream.clone(in);
+        InputStreamCloner inputStreamCloner = InputStreamCloner.clone(in);
 
         NodeData nodeData = InternalPCJ.getNodeData();
         Networker networker = InternalPCJ.getNetworker();
 
         BroadcastBytesMessage broadcastBytesMessage
-                = new BroadcastBytesMessage(groupId, requestNum, requesterThreadId, sharedEnumClassName, variableName, indices, clonedData);
+                = new BroadcastBytesMessage(groupId, requestNum, requesterThreadId, sharedEnumClassName, variableName, indices, inputStreamCloner);
 
         InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
         commonGroup.getCommunicationTree().getChildrenNodes()
@@ -87,6 +87,6 @@ final public class BroadcastRequestMessage extends Message {
         BroadcastStates states = commonGroup.getBroadcastStates();
         BroadcastStates.State state = states.getOrCreate(requestNum, requesterThreadId, commonGroup);
 
-        state.downProcessNode(commonGroup, clonedData, sharedEnumClassName, variableName, indices);
+        state.downProcessNode(commonGroup, inputStreamCloner, sharedEnumClassName, variableName, indices);
     }
 }
