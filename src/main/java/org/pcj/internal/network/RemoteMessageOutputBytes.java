@@ -9,12 +9,7 @@
 package org.pcj.internal.network;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.function.BiConsumer;
-import org.pcj.internal.Configuration;
 import org.pcj.internal.message.Message;
 
 /**
@@ -22,121 +17,42 @@ import org.pcj.internal.message.Message;
  */
 public class RemoteMessageOutputBytes implements MessageOutputBytes {
 
-    private final MessageOutputStream messageOutputStream;
+    private final ByteBufferOutputStream byteBufferOutputStream;
 
     public RemoteMessageOutputBytes() {
-        messageOutputStream = new MessageOutputStream();
+        byteBufferOutputStream = new ByteBufferOutputStream();
     }
 
     @Override
     public void writeMessage(Message message) throws IOException {
-        try (MessageDataOutputStream messageDataOutputStream = new MessageDataOutputStream(messageOutputStream)) {
+        try (MessageDataOutputStream messageDataOutputStream = new MessageDataOutputStream(byteBufferOutputStream)) {
             messageDataOutputStream.writeByte(message.getType().getId());
             message.write(messageDataOutputStream);
         }
     }
 
     ByteBufferArray getByteBufferArray() {
-        return new ByteBufferArray(messageOutputStream);
-    }
-
-    private static class MessageOutputStream extends OutputStream {
-
-        private static final ByteBufferPool BYTE_BUFFER_POOL = new ByteBufferPool(Configuration.BUFFER_POOL_SIZE, Configuration.BUFFER_CHUNK_SIZE);
-        private static final int HEADER_SIZE = Integer.BYTES;
-        private static final int LAST_CHUNK_BIT = (1 << (Integer.SIZE - 1));
-        private final Queue<ByteBufferPool.PooledByteBuffer> queue;
-        private ByteBufferPool.PooledByteBuffer currentPooledByteBuffer;
-        private boolean closed;
-
-        public MessageOutputStream() {
-            this.queue = new ConcurrentLinkedQueue<>();
-            this.currentPooledByteBuffer = null;
-        }
-
-        @Override
-        public void close() {
-            offerCurrentByteBuffer(true);
-            closed = true;
-        }
-
-        @Override
-        public void write(int b) {
-            ByteBuffer currentByteBuffer = getCurrentByteBuffer();
-            if (!currentByteBuffer.hasRemaining()) {
-                offerCurrentByteBuffer(false);
-                currentByteBuffer = getNextByteBuffer();
-            }
-
-            currentByteBuffer.put((byte) b);
-        }
-
-        @Override
-        public void write(byte[] b) {
-            write(b, 0, b.length);
-        }
-
-        @Override
-        public void write(byte[] b, int off, int len) {
-            ByteBuffer currentByteBuffer = getCurrentByteBuffer();
-
-            int remaining = currentByteBuffer.remaining();
-            while (remaining < len) {
-                currentByteBuffer.put(b, off, remaining);
-
-                offerCurrentByteBuffer(false);
-                currentByteBuffer = getNextByteBuffer();
-
-                len -= remaining;
-                off += remaining;
-
-                remaining = currentByteBuffer.remaining();
-            }
-            currentByteBuffer.put(b, off, len);
-        }
-
-        private ByteBuffer getCurrentByteBuffer() {
-            if (currentPooledByteBuffer != null) {
-                return currentPooledByteBuffer.getByteBuffer();
-            }
-
-            return getNextByteBuffer();
-        }
-
-        private ByteBuffer getNextByteBuffer() {
-            currentPooledByteBuffer = BYTE_BUFFER_POOL.take();
-            currentPooledByteBuffer.getByteBuffer().position(HEADER_SIZE);
-            return currentPooledByteBuffer.getByteBuffer();
-        }
-
-        private void offerCurrentByteBuffer(boolean lastChunk) {
-            ByteBuffer currentByteBuffer = currentPooledByteBuffer.getByteBuffer();
-            currentByteBuffer.flip();
-
-            int length = (currentByteBuffer.limit() - HEADER_SIZE);
-            if (lastChunk) {
-                length = (length | LAST_CHUNK_BIT);
-            }
-            currentByteBuffer.putInt(0, length);
-
-            queue.offer(currentPooledByteBuffer);
-        }
+        return new ByteBufferArray(byteBufferOutputStream);
     }
 
     public static class ByteBufferArray {
-        private final MessageOutputStream messageOutputStream;
+        private static final ByteBuffer[] EMPTY_ARRAY = new ByteBuffer[0];
+        private final ByteBufferOutputStream byteBufferOutputStream;
         private ByteBuffer[] array;
         private int offset;
 
-        public ByteBufferArray(MessageOutputStream messageOutputStream) {
-            this.messageOutputStream = messageOutputStream;
+        public ByteBufferArray(ByteBufferOutputStream byteBufferOutputStream) {
+            this.byteBufferOutputStream = byteBufferOutputStream;
 
-            this.array = new ByteBuffer[0];
+            this.array = EMPTY_ARRAY;
         }
 
         public ByteBuffer[] getArray() {
             if (offset == array.length) {
-                array = messageOutputStream.queue.stream().map(ByteBufferPool.PooledByteBuffer::getByteBuffer).toArray(ByteBuffer[]::new);
+                array = byteBufferOutputStream.getQueue()
+                                .stream()
+                                .map(ByteBufferPool.PooledByteBuffer::getByteBuffer)
+                                .toArray(ByteBuffer[]::new);
                 offset = 0;
             }
             return array;
@@ -152,13 +68,15 @@ public class RemoteMessageOutputBytes implements MessageOutputBytes {
 
         public void revalidate() {
             while (offset < array.length && !array[offset].hasRemaining()) {
-                messageOutputStream.queue.remove().returnToPool();
+                byteBufferOutputStream.getQueue().remove().returnToPool();
                 ++offset;
             }
         }
 
         public boolean hasMoreData() {
-            return offset < array.length || !messageOutputStream.closed || !messageOutputStream.queue.isEmpty();
+            return offset < array.length
+                           || !byteBufferOutputStream.isClosed()
+                           || !byteBufferOutputStream.getQueue().isEmpty();
         }
     }
 }
