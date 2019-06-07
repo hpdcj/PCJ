@@ -49,7 +49,7 @@ public class RemoteMessageOutputBytes implements MessageOutputBytes {
 
         public ByteBuffer[] getArray() {
             if (offset == array.length) {
-                array = byteBufferOutputStream.getQueue()
+                array = byteBufferOutputStream.getDeque()
                                 .stream()
                                 .map(ByteBufferPool.PooledByteBuffer::getByteBuffer)
                                 .toArray(ByteBuffer[]::new);
@@ -68,7 +68,7 @@ public class RemoteMessageOutputBytes implements MessageOutputBytes {
 
         public void revalidate() {
             while (offset < array.length && !array[offset].hasRemaining()) {
-                byteBufferOutputStream.getQueue().remove().returnToPool();
+                byteBufferOutputStream.getDeque().remove().returnToPool();
                 ++offset;
             }
         }
@@ -76,7 +76,7 @@ public class RemoteMessageOutputBytes implements MessageOutputBytes {
         public boolean hasMoreData() {
             return offset < array.length
                            || !byteBufferOutputStream.isClosed()
-                           || !byteBufferOutputStream.getQueue().isEmpty();
+                           || !byteBufferOutputStream.getDeque().isEmpty();
         }
     }
 }

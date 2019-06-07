@@ -29,6 +29,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.pcj.PcjRuntimeException;
 import org.pcj.internal.message.Message;
+import org.pcj.internal.network.ByteBufferOutputStream;
 import org.pcj.internal.network.LoopbackMessageBytes;
 import org.pcj.internal.network.LoopbackSocketChannel;
 import org.pcj.internal.network.MessageInputBytes;
@@ -233,10 +234,10 @@ final public class Networker {
                             new Object[]{currentHostName, message.getType()});
                 }
 
-                LoopbackMessageBytes.LoopbackOutputStream loopbackOutputStream = loopbackMessageBytes.prepareForNewMessage();
+                LoopbackMessageBytes.LoopbackMessageOutputBytes loopbackMessageOutputBytes = loopbackMessageBytes.prepareForNewMessage();
                 InternalPCJ.getMessageProc().process(socket, loopbackMessageBytes);
 
-                loopbackOutputStream.writeMessage(message);
+                loopbackMessageOutputBytes.writeMessage(message);
             } else {
                 if (LOGGER.isLoggable(Level.FINEST)) {
                     LOGGER.log(Level.FINEST, "[{0}] Sending message {1} to {2}",

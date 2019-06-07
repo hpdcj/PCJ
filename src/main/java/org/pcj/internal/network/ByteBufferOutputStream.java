@@ -10,8 +10,9 @@ package org.pcj.internal.network;
 
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.Deque;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.LinkedBlockingDeque;
 import org.pcj.internal.Configuration;
 
 /**
@@ -22,15 +23,15 @@ public class ByteBufferOutputStream extends OutputStream {
     private static final ByteBufferPool BYTE_BUFFER_POOL = new ByteBufferPool(Configuration.BUFFER_POOL_SIZE, Configuration.BUFFER_CHUNK_SIZE);
     private static final int HEADER_SIZE = Integer.BYTES;
     private static final int LAST_CHUNK_BIT = (1 << (Integer.SIZE - 1));
-    private final Queue<ByteBufferPool.PooledByteBuffer> queue;
+    private final BlockingDeque<ByteBufferPool.PooledByteBuffer> queue;
     private ByteBufferPool.PooledByteBuffer currentPooledByteBuffer;
     private boolean closed;
 
     public ByteBufferOutputStream() {
-        this(new ConcurrentLinkedQueue<>());
+        this(new LinkedBlockingDeque<>());
     }
 
-    public ByteBufferOutputStream(Queue<ByteBufferPool.PooledByteBuffer> queue) {
+    public ByteBufferOutputStream(BlockingDeque<ByteBufferPool.PooledByteBuffer> queue) {
         this.queue = queue;
 
         this.currentPooledByteBuffer = null;
@@ -81,7 +82,7 @@ public class ByteBufferOutputStream extends OutputStream {
         return closed;
     }
 
-    public Queue<ByteBufferPool.PooledByteBuffer> getQueue() {
+    public BlockingDeque<ByteBufferPool.PooledByteBuffer> getDeque() {
         return queue;
     }
 
