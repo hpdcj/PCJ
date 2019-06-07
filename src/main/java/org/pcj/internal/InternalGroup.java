@@ -8,10 +8,7 @@
  */
 package org.pcj.internal;
 
-import java.io.NotSerializableException;
 import java.nio.channels.SocketChannel;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import org.pcj.AsyncTask;

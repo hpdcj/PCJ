@@ -12,8 +12,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.pcj.PcjFuture;
 import org.pcj.PcjRuntimeException;
-import org.pcj.internal.InternalGroup;
 import org.pcj.internal.InternalFuture;
+import org.pcj.internal.InternalGroup;
 
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)

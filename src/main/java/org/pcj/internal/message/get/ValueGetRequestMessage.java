@@ -10,7 +10,6 @@ package org.pcj.internal.message.get;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
-import org.pcj.PcjRuntimeException;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.InternalStorages;
 import org.pcj.internal.Networker;

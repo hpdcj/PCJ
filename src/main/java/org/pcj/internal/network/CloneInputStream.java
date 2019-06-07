@@ -8,7 +8,6 @@
  */
 package org.pcj.internal.network;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;

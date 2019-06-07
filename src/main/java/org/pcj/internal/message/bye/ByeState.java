@@ -11,11 +11,11 @@ package org.pcj.internal.message.bye;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
+import org.pcj.internal.InternalFuture;
 import org.pcj.internal.InternalGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.Networker;
 import org.pcj.internal.NodeData;
-import org.pcj.internal.InternalFuture;
 
 /*
  * @author Marek Nowicki (faramir@mat.umk.pl)

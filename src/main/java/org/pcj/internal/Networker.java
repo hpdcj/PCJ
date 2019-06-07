@@ -29,10 +29,8 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.pcj.PcjRuntimeException;
 import org.pcj.internal.message.Message;
-import org.pcj.internal.network.ByteBufferOutputStream;
 import org.pcj.internal.network.LoopbackMessageBytes;
 import org.pcj.internal.network.LoopbackSocketChannel;
-import org.pcj.internal.network.MessageInputBytes;
 import org.pcj.internal.network.RemoteMessageOutputBytes;
 import org.pcj.internal.network.SelectorProc;
 

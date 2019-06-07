@@ -10,7 +10,6 @@ package org.pcj.internal.network;
 
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.util.Deque;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import org.pcj.internal.Configuration;
