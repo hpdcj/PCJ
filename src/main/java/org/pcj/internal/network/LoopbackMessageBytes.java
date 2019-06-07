@@ -160,7 +160,7 @@ public class LoopbackMessageBytes implements MessageInputBytes {
         private final BlockingQueue<ByteBufferPool.PooledByteBuffer> queue;
         private ByteBufferPool.PooledByteBuffer currentPooledByteBuffer;
         private volatile boolean closed;
-        boolean allDataArrived;
+        private volatile boolean allDataArrived;
 
         private LoopbackInputStream(BlockingQueue<ByteBufferPool.PooledByteBuffer> queue) {
             this.queue = queue;
@@ -251,9 +251,9 @@ public class LoopbackMessageBytes implements MessageInputBytes {
         }
 
         private boolean isEndOfData() {
-            return allDataArrived
-                           && (currentPooledByteBuffer == null || !currentPooledByteBuffer.getByteBuffer().hasRemaining())
-                           && queue.isEmpty();
+            return (currentPooledByteBuffer == null || !currentPooledByteBuffer.getByteBuffer().hasRemaining())
+                           && queue.isEmpty()
+                           && allDataArrived;
         }
 
         @Override

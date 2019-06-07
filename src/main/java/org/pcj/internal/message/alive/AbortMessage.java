@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
+ * All rights reserved.
+ *
+ * Licensed under New BSD License (3-clause license).
+ *
+ * See the file "LICENSE" for the full license governing this code.
+ */
 package org.pcj.internal.message.alive;
 
 import java.io.IOException;
@@ -9,6 +17,9 @@ import org.pcj.internal.message.MessageType;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
+/**
+ * @author Marek Nowicki (faramir@mat.umk.pl)
+ */
 public class AbortMessage extends Message {
     public AbortMessage() {
         super(MessageType.ABORT);
