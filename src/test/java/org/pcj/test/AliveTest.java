@@ -39,7 +39,9 @@ public class AliveTest implements StartPoint {
                 "localhost:8008",
         };
 
-        PCJ.executionBuilder(AliveTest.class).addNodes(nodes).deploy();
+        PCJ.executionBuilder(AliveTest.class)
+                .addNodes(nodes)
+                .deploy();
     }
 
     @Override

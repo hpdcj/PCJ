@@ -1,9 +1,9 @@
-/* 
+/*
  * Copyright (c) 2016, HPDCJ
  * All rights reserved.
- * 
+ *
  * Licensed under New BSD License (3-clause license).
- * 
+ *
  * See the file "LICENSE" for the full license governing this code.
  */
 package org.pcj.test;
@@ -11,6 +11,7 @@ package org.pcj.test;
 /*
  * @author Piotr
  */
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Arrays;
@@ -29,17 +30,18 @@ public class PcjMicroBenchmarkBroadcast implements StartPoint {
     enum SharedEnum {
         a
     }
+
     double[] a;
 
     @Override
     public void main() {
 
         int[] transmit = {
-            1, 10, 100, 1024, 2048, 4096, 8192, 16348,
-            32768, 65536, 131072, 262144, 524288,
-            1048576,
-            2097152,
-            4194304,
+                1, 10, 100, 1024, 2048, 4096, 8192, 16348,
+                32768, 65536, 131072, 262144, 524288,
+                1048576,
+                2097152,
+                4194304,
         };
 
         for (int n : transmit) {
@@ -138,7 +140,9 @@ public class PcjMicroBenchmarkBroadcast implements StartPoint {
                     }
                 }
 
-                PCJ.executionBuilder(PcjMicroBenchmarkBroadcast.class).addNodes(nodes).deploy();
+                PCJ.executionBuilder(PcjMicroBenchmarkBroadcast.class)
+                        .addNodes(nodes)
+                        .deploy();
             }
         }
     }

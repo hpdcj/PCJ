@@ -42,7 +42,9 @@ public class AccumulateTest implements StartPoint {
                 "localhost:8092",};
 
 //        PCJ.start(EasyTest.class, EasyTest.class,
-        PCJ.executionBuilder(AccumulateTest.class).addNodes(nodes).deploy();
+        PCJ.executionBuilder(AccumulateTest.class)
+                .addNodes(nodes)
+                .deploy();
     }
 
     @Override

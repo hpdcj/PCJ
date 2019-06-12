@@ -27,6 +27,7 @@ public class MyTest implements StartPoint {
     enum SharedEnum {
         a, b, c;
     }
+
     double a, b;
     Double c;
 

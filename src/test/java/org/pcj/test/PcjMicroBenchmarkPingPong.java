@@ -192,6 +192,8 @@ public class PcjMicroBenchmarkPingPong implements StartPoint {
         String[] nodes = new String[2];
         nodes[0] = nodesTxt[0];
         nodes[1] = nodesTxt[1];
-        PCJ.executionBuilder(PcjMicroBenchmarkPingPong.class).addNodes(nodes).deploy();
+        PCJ.executionBuilder(PcjMicroBenchmarkPingPong.class)
+                .addNodes(nodes)
+                .deploy();
     }
 }

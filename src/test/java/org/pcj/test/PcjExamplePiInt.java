@@ -16,7 +16,6 @@ import org.pcj.Storage;
 import org.pcj.test.PcjExamplePiInt.SharedEnum;
 
 /**
- *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 @RegisterStorage(SharedEnum.class)
@@ -79,6 +78,8 @@ public class PcjExamplePiInt implements StartPoint {
                 "localhost:8092",
                 "localhost:8092",
                 "localhost:8093",};
-        PCJ.executionBuilder(PcjExamplePiInt.class).addNodes(nodes).deploy();
+        PCJ.executionBuilder(PcjExamplePiInt.class)
+                .addNodes(nodes)
+                .deploy();
     }
 }

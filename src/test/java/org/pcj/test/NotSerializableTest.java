@@ -43,7 +43,9 @@ public class NotSerializableTest implements StartPoint {
 
         String[] nodes = {"localhost"};
 
-        PCJ.executionBuilder(NotSerializableTest.class).addNodes(nodes).deploy();
+        PCJ.executionBuilder(NotSerializableTest.class)
+                .addNodes(nodes)
+                .deploy();
     }
 
     private void check(String method, String exceptionMessage, Supplier<? extends PcjFuture<?>> r) {

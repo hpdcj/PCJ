@@ -51,11 +51,12 @@ public class PropertiesTest implements StartPoint {
             };
             builder.addNodes(nodes);
         }
-        builder.addProperty("klucz", "Wartość\n#wielol ini\njkowa?")
+        builder
+                .addProperty("klucz", "Wartość\n#wielol ini\njkowa?")
                 .addProperty("#drugi", "trzeci")
                 .addProperty("No dobra", "teraz test kilku Ṫ spacji a n\uAB4Dwet \t tabulacji po spacji\n nowej linii")
                 .addProperty("klucz\nz kilkoma znakami\nnowej linii bez wartości", "")
-                .addProperty("\u0040\uFFFF","\uEFFE\uC1C2")
+                .addProperty("\u0040\uFFFF", "\uEFFE\uC1C2")
                 .deploy();
     }
 

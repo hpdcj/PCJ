@@ -16,7 +16,6 @@ import org.pcj.Storage;
 import org.pcj.test.StorageExample.SharedEnum;
 
 /**
- *
  * @author faramir
  */
 @RegisterStorage(SharedEnum.class)
@@ -26,6 +25,7 @@ public class StorageExample implements StartPoint {
     enum SharedEnum {
         x, avg;
     }
+
     int[] x; // Shared bo w Enum
     final static double[] STATIC_TEST = new double[PCJ.threadCount()];
     double avg; // Shared bo w Enum

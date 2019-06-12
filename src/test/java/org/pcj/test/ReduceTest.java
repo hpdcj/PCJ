@@ -52,7 +52,9 @@ public class ReduceTest implements StartPoint {
         };
 //        NodesDescription nodesDescription = new NodesDescription(nodes);
 
-        PCJ.executionBuilder(ReduceTest.class).addNodes(nodes).deploy();
+        PCJ.executionBuilder(ReduceTest.class)
+                .addNodes(nodes)
+                .deploy();
     }
 
     @Override

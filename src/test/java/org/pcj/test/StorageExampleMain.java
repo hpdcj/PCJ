@@ -11,10 +11,9 @@ package org.pcj.test;
 import org.pcj.PCJ;
 
 /**
- *
  * @author faramir
  */
-public class StorageExampleMain{
+public class StorageExampleMain {
 
     public static void main(String[] args) {
         PCJ.executionBuilder(StorageExample.class)

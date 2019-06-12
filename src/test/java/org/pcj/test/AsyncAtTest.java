@@ -51,7 +51,9 @@ public class AsyncAtTest implements StartPoint {
                 "localhost:8092",};
 
 //        PCJ.start(EasyTest.class, EasyTest.class,
-        PCJ.executionBuilder(AsyncAtTest.class).addNodes(nodes).deploy();
+        PCJ.executionBuilder(AsyncAtTest.class)
+                .addNodes(nodes)
+                .deploy();
     }
 
     @Override

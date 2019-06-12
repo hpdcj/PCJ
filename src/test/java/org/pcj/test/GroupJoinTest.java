@@ -70,7 +70,9 @@ public class GroupJoinTest implements StartPoint {
 //                "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019",
         };
 
-        PCJ.executionBuilder(GroupJoinTest.class).addNodes(nodes).deploy();
+        PCJ.executionBuilder(GroupJoinTest.class)
+                .addNodes(nodes)
+                .deploy();
     }
 
     @Override

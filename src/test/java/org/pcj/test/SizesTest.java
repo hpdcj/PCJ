@@ -1,9 +1,9 @@
-/* 
+/*
  * Copyright (c) 2016, Marek Nowicki
  * All rights reserved.
- * 
+ *
  * Licensed under New BSD License (3-clause license).
- * 
+ *
  * See the file "LICENSE" for the full license governing this code.
  */
 package org.pcj.test;
@@ -18,7 +18,6 @@ import org.pcj.Storage;
 import org.pcj.test.SizesTest.SharedEnum;
 
 /**
- *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 @RegisterStorage(SharedEnum.class)
@@ -28,6 +27,7 @@ public class SizesTest implements StartPoint {
     enum SharedEnum {
         b
     }
+
     byte[] b;
 
     public static void main(String[] args) throws InterruptedException {
@@ -42,7 +42,9 @@ public class SizesTest implements StartPoint {
                 "localhost:8002",};
 //        NodesDescription nodesDescription = new NodesDescription(nodes);
 
-        PCJ.executionBuilder(SizesTest.class).addNodes(nodes).deploy();
+        PCJ.executionBuilder(SizesTest.class)
+                .addNodes(nodes)
+                .deploy();
     }
 
     @Override

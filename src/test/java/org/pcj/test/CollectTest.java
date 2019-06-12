@@ -51,7 +51,9 @@ public class CollectTest implements StartPoint {
                 "localhost:8008",
         };
 
-        PCJ.executionBuilder(CollectTest.class).addNodes(nodes).deploy();
+        PCJ.executionBuilder(CollectTest.class)
+                .addNodes(nodes)
+                .deploy();
     }
 
     @Override
@@ -59,7 +61,7 @@ public class CollectTest implements StartPoint {
         intArray[0] = PCJ.myId() + 1;
         PCJ.barrier();
         if (PCJ.myId() == 0) {
-            int[] intSubArray = PCJ.collect(Communicable.intArray,0);
+            int[] intSubArray = PCJ.collect(Communicable.intArray, 0);
             System.out.println(Arrays.toString(intSubArray));
 
             int[][] intArray = PCJ.collect(Communicable.intArray);

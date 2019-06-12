@@ -1,9 +1,9 @@
-/* 
+/*
  * Copyright (c) 2016, HPDCJ
  * All rights reserved.
- * 
+ *
  * Licensed under New BSD License (3-clause license).
- * 
+ *
  * See the file "LICENSE" for the full license governing this code.
  */
 package org.pcj.test;
@@ -18,25 +18,25 @@ import org.pcj.PCJ;
 import org.pcj.StartPoint;
 
 public class PcjMicroBenchmarkBarrier implements StartPoint {
-    
+
     @Override
     public void main() {
         int number_of_tests = 10;
         int ntimes = 1000;
-        
+
         PCJ.barrier();
-        
+
         double tmin = Double.MAX_VALUE;
         for (int k = 0; k < number_of_tests; k++) {
             long rTime = System.nanoTime();
-            
+
             for (int i = 0; i < ntimes; i++) {
                 PCJ.barrier();
             }
-            
+
             rTime = System.nanoTime() - rTime;
             double dtime = (rTime / (double) ntimes) * 1e-9;
-            
+
             if (tmin > dtime) {
                 tmin = dtime;
             }
@@ -44,16 +44,16 @@ public class PcjMicroBenchmarkBarrier implements StartPoint {
 //            System.out.println(PCJ.threadCount() + " " + t);
             PCJ.barrier();
         }
-        
+
         if (PCJ.myId() == 0) {
             System.out.format("Barrier\t%5d\ttime\t%12.7f\n",
                     PCJ.threadCount(), tmin);
         }
     }
-    
+
     public static void main(String[] args) {
         int[] threads = {1, 2, 4, 8, 12, 24, 48};
-        
+
         String nodesFile = "nodes.txt";
         if (args.length > 0) {
             nodesFile = args[0];
@@ -70,9 +70,9 @@ public class PcjMicroBenchmarkBarrier implements StartPoint {
                     .mapToObj(i -> "localhost:" + (9000 + i))
                     .forEach(nodesSet::add);
         }
-        
+
         String[] nodesUniq = nodesSet.toArray(new String[0]);
-        
+
         int nn = nodesUniq.length;
 //        for (int nn = nodesUniq.length; nn > 0; nn = nn / 2) {
         for (int nt : threads) {
@@ -84,9 +84,11 @@ public class PcjMicroBenchmarkBarrier implements StartPoint {
                     nodes[ii] = nodesUniq[i];
                 }
             }
-            
+
 //            PCJ.executionBuilder(PcjMicroBenchmarkBarrier.class).addNodes(nodes).start();
-                PCJ.executionBuilder(PcjMicroBenchmarkBarrier.class).addNodes(nodes).deploy();
+            PCJ.executionBuilder(PcjMicroBenchmarkBarrier.class)
+                    .addNodes(nodes)
+                    .deploy();
         }
 //        }
     }

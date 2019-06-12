@@ -1,9 +1,9 @@
-/* 
+/*
  * Copyright (c) 2016, Marek Nowicki
  * All rights reserved.
- * 
+ *
  * Licensed under New BSD License (3-clause license).
- * 
+ *
  * See the file "LICENSE" for the full license governing this code.
  */
 package org.pcj.test;
@@ -14,7 +14,6 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 public class MultipleJvms {
@@ -35,9 +34,9 @@ public class MultipleJvms {
             );
             System.err.println(command);
             Process process = new ProcessBuilder(command)
-                    .redirectOutput(ProcessBuilder.Redirect.INHERIT)
-                    .redirectError(ProcessBuilder.Redirect.INHERIT)
-                    .start();
+                                      .redirectOutput(ProcessBuilder.Redirect.INHERIT)
+                                      .redirectError(ProcessBuilder.Redirect.INHERIT)
+                                      .start();
             process.getOutputStream().close();
             processes.add(process);
         }

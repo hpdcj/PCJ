@@ -61,6 +61,8 @@ public class PcjExamplePiMC implements StartPoint {
     public static void main(String[] args) {
 
         String[] nodes = {"localhost", "localhost", "localhost", "localhost"};
-        PCJ.executionBuilder(PcjExamplePiMC.class).addNodes(nodes).deploy();
+        PCJ.executionBuilder(PcjExamplePiMC.class)
+                .addNodes(nodes)
+                .deploy();
     }
 }
