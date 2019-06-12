@@ -13,15 +13,15 @@ import java.io.InputStream;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import org.pcj.internal.Configuration;
+import org.pcj.internal.InternalPCJ;
 
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 public class InputStreamCloner {
 
-    private static final int CHUNK_SIZE = Configuration.BUFFER_CHUNK_SIZE;
-    private static final byte[] EMPTY = new byte[0];
+    private static final int CHUNK_SIZE = InternalPCJ.getConfiguration().BUFFER_CHUNK_SIZE;
+    private static final byte[] EMPTY_ARRAY = new byte[0];
     private final List<byte[]> bytesList;
     private long length;
 
@@ -97,7 +97,7 @@ public class InputStreamCloner {
 
         private ClonedInputStream(List<byte[]> bytesList) {
             iterator = bytesList.iterator();
-            currentByteArray = EMPTY;
+            currentByteArray = EMPTY_ARRAY;
             currentIndex = 0;
         }
 

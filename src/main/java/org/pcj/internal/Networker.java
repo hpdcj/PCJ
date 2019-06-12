@@ -107,21 +107,21 @@ final public class Networker {
 
     private void tryToBind(Queue<InetAddress> interfacesAddresses, int port) {
         Queue<InetAddress> inetAddresses = new ArrayDeque<>(interfacesAddresses);
-        for (int attempt = 0; attempt <= Configuration.INIT_RETRY_COUNT; ++attempt) {
+        for (int attempt = 0; attempt <= InternalPCJ.getConfiguration().INIT_RETRY_COUNT; ++attempt) {
             for (Iterator<InetAddress> it = inetAddresses.iterator(); it.hasNext(); ) {
                 InetAddress inetAddress = it.next();
 
                 try {
-                    bind(inetAddress, port, Configuration.INIT_BACKLOG_COUNT);
+                    bind(inetAddress, port, InternalPCJ.getConfiguration().INIT_BACKLOG_COUNT);
                     it.remove();
                 } catch (IOException ex) {
-                    if (attempt < Configuration.INIT_RETRY_COUNT) {
+                    if (attempt < InternalPCJ.getConfiguration().INIT_RETRY_COUNT) {
                         LOGGER.log(Level.WARNING,
                                 "[{0}] ({1,number,#} attempt of {2,number,#}) Binding on {3}:{4,number,#} failed: {5}. Retrying.",
                                 new Object[]{
                                         currentHostName,
                                         attempt + 1,
-                                        Configuration.INIT_RETRY_COUNT + 1,
+                                        InternalPCJ.getConfiguration().INIT_RETRY_COUNT + 1,
                                         inetAddress,
                                         port,
                                         ex});
@@ -136,7 +136,7 @@ final public class Networker {
                 return;
             } else {
                 try {
-                    Thread.sleep(Configuration.INIT_RETRY_DELAY * 1000 + (int) (Math.random() * 1000));
+                    Thread.sleep(InternalPCJ.getConfiguration().INIT_RETRY_DELAY * 1000 + (int) (Math.random() * 1000));
                 } catch (InterruptedException ex) {
                     throw new PcjRuntimeException(String.format("[%s] Interruption occurred while waiting for binding retry.", currentHostName));
                 }
@@ -151,7 +151,7 @@ final public class Networker {
 
     public SocketChannel tryToConnectTo(String hostname, int port) {
         try {
-            for (int attempt = 0; attempt <= Configuration.INIT_RETRY_COUNT; ++attempt) {
+            for (int attempt = 0; attempt <= InternalPCJ.getConfiguration().INIT_RETRY_COUNT; ++attempt) {
                 try {
                     LOGGER.log(Level.FINE, "[{0}] Connecting to: {1}:{2,number,#}",
                             new Object[]{currentHostName, hostname, port});
@@ -164,18 +164,18 @@ final public class Networker {
 
                     return socket;
                 } catch (IOException ex) {
-                    if (attempt < Configuration.INIT_RETRY_COUNT) {
+                    if (attempt < InternalPCJ.getConfiguration().INIT_RETRY_COUNT) {
                         LOGGER.log(Level.WARNING,
                                 "[{0}] ({1,number,#} attempt of {2,number,#}) Connecting to {3}:{4,number,#} failed: {5}. Retrying.",
                                 new Object[]{
                                         currentHostName,
                                         attempt + 1,
-                                        Configuration.INIT_RETRY_COUNT + 1,
+                                        InternalPCJ.getConfiguration().INIT_RETRY_COUNT + 1,
                                         hostname,
                                         port,
                                         ex});
 
-                        Thread.sleep(Configuration.INIT_RETRY_DELAY * 1000 + (int) (Math.random() * 1000));
+                        Thread.sleep(InternalPCJ.getConfiguration().INIT_RETRY_DELAY * 1000 + (int) (Math.random() * 1000));
                     } else {
                         throw new PcjRuntimeException(String.format("[%s] Connecting to %s:%d failed!", currentHostName, hostname, port), ex);
                     }

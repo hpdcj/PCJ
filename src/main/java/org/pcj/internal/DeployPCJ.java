@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
@@ -36,21 +37,26 @@ final public class DeployPCJ {
     private final NodeInfo currentJvm;
     private final Collection<NodeInfo> allNodes;
     private final List<Process> processes;
-    private final int allNodesThreadCount;
     private final Properties properties;
+    private final int allNodesThreadCount;
 
     private DeployPCJ(Class<? extends StartPoint> startPoint,
-                      InternalNodesDescription nodesDescription,
+                      NodeInfo node0,
+                      NodeInfo currentJvm,
+                      Collection<NodeInfo> allNodes,
                       Properties props) {
         this.startPoint = startPoint;
+        this.node0 = node0;
+        this.currentJvm = currentJvm;
+        this.allNodes = allNodes;
         this.properties = props;
 
-        this.node0 = nodesDescription.getNode0();
-        this.currentJvm = nodesDescription.getCurrentJvm();
-        this.allNodes = nodesDescription.getAllNodes();
-        this.allNodesThreadCount = nodesDescription.getAllNodesThreadCount();
+        this.allNodesThreadCount = allNodes.stream()
+                                           .map(NodeInfo::getThreadIds)
+                                           .mapToInt(Set::size)
+                                           .sum();
 
-        processes = new ArrayList<>();
+        this.processes = new ArrayList<>();
     }
 
     public static void main(String[] args) throws ClassNotFoundException {
@@ -62,10 +68,16 @@ final public class DeployPCJ {
         String threadIdsStr = args[5];
         Properties props = new Properties();
         try {
-            props.load(new StringReader(args[6]));
+            if (args.length >= 7) {
+                props.load(new StringReader(args[6]));
+            } else {
+                LOGGER.log(Level.FINE, "Properties not set");
+            }
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Unable to parse properties", e);
         }
+
+        InternalPCJ.setConfiguration(new Configuration(props));
 
         @SuppressWarnings("unchecked")
         Class<? extends StartPoint> startPoint = (Class<? extends StartPoint>) Class.forName(startPointStr);
@@ -79,13 +91,15 @@ final public class DeployPCJ {
         LOGGER.log(Level.FINE, "Invoking InternalPCJ.start({0}, {1}, {2}, {3})",
                 new Object[]{startPoint, node0, currentJvm, allNodesThreadCount});
 
-        InternalPCJ.start(startPoint, node0, currentJvm, allNodesThreadCount, props);
+        InternalPCJ.start(startPoint, node0, currentJvm, allNodesThreadCount);
     }
 
     public static void deploy(Class<? extends StartPoint> startPoint,
-                              InternalNodesDescription nodesDescription,
+                              NodeInfo node0,
+                              NodeInfo currentJvm,
+                              Collection<NodeInfo> allNodes,
                               Properties props) {
-        DeployPCJ deploy = new DeployPCJ(startPoint, nodesDescription, props);
+        DeployPCJ deploy = new DeployPCJ(startPoint, node0, currentJvm, allNodes, props);
         try {
             deploy.startDeploying();
 
@@ -96,7 +110,7 @@ final public class DeployPCJ {
     }
 
     private void runPCJ(NodeInfo currentJvm) {
-        InternalPCJ.start(startPoint, node0, currentJvm, allNodesThreadCount, properties);
+        InternalPCJ.start(startPoint, node0, currentJvm, allNodesThreadCount);
     }
 
     private List<String> makeJvmParams(NodeInfo node) {
@@ -124,7 +138,10 @@ final public class DeployPCJ {
         String propertiesString = "";
         try (StringWriter sw = new StringWriter()) {
             properties.store(sw, null);
-            propertiesString = sw.toString().replaceAll("^#.*\\R", "");
+            propertiesString = sw.toString();
+
+            // remove comments from properties, eg. with timestamp
+            propertiesString = propertiesString.replaceAll("^#.*\\R", "");
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Unable to write properties", e);
         }

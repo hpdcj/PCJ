@@ -30,7 +30,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.pcj.internal.Configuration;
 import org.pcj.internal.InternalPCJ;
 
 /**
@@ -56,7 +55,9 @@ public class SelectorProc implements Runnable {
             throw new UncheckedIOException(ex);
         }
 
-        this.byteBufferPool = new ByteBufferPool(Configuration.BUFFER_POOL_SIZE, Configuration.BUFFER_CHUNK_SIZE);
+        this.byteBufferPool = new ByteBufferPool(
+                InternalPCJ.getConfiguration().BUFFER_POOL_SIZE,
+                InternalPCJ.getConfiguration().BUFFER_CHUNK_SIZE);
         this.readMap = new ConcurrentHashMap<>();
         this.writeMap = new ConcurrentHashMap<>();
         this.interestChanges = new ConcurrentHashMap<>();

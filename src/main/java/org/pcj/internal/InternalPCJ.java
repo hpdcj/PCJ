@@ -15,7 +15,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -52,7 +51,6 @@ public abstract class InternalPCJ {
     private static final String PCJ_VERSION;
 
     private static Configuration configuration;
-    private static Properties properties;
     private static Networker networker;
     private static MessageProc messageProc;
     private static NodeData nodeData;
@@ -71,8 +69,12 @@ public abstract class InternalPCJ {
         throw new AssertionError();
     }
 
-    public static Properties getProperties() {
-        return properties;
+    public static Configuration getConfiguration() {
+        return configuration;
+    }
+
+    static void setConfiguration(Configuration configuration) {
+        InternalPCJ.configuration = configuration;
     }
 
     public static Networker getNetworker() {
@@ -91,19 +93,10 @@ public abstract class InternalPCJ {
         return LoopbackSocketChannel.getInstance();
     }
 
-    protected static void start(Class<? extends StartPoint> startPoint,
-                                InternalNodesDescription nodesFile,
-                                Properties props) {
-        NodeInfo node0 = nodesFile.getNode0();
-        NodeInfo currentJvm = nodesFile.getCurrentJvm();
-        int allNodesThreadCount = nodesFile.getAllNodesThreadCount();
-        start(startPoint, node0, currentJvm, allNodesThreadCount, props);
-    }
-
-    protected static void start(Class<? extends StartPoint> startPointClass,
-                                NodeInfo node0, NodeInfo currentJvm, int allNodesThreadCount, Properties props) {
-        properties = props;
-
+    static void start(Class<? extends StartPoint> startPointClass,
+                                NodeInfo node0,
+                                NodeInfo currentJvm,
+                                int allNodesThreadCount) {
         if (currentJvm == null) {
             throw new IllegalArgumentException("There is no entry for PCJ threads for current JVM");
         }
@@ -230,7 +223,7 @@ public abstract class InternalPCJ {
             networker.send(nodeData.getNode0Socket(), helloMessage);
 
             /* waiting for HELLO_GO */
-            state.await(Configuration.INIT_MAXTIME);
+            state.await(InternalPCJ.getConfiguration().INIT_MAXTIME);
         } catch (InterruptedException ex) {
             throw new PcjRuntimeException("Interruption occurred while waiting for finish HELLO phase");
         } catch (TimeoutException e) {
@@ -250,16 +243,16 @@ public abstract class InternalPCJ {
             PcjThread.PcjThreadGroup pcjThreadGroup = PcjThread.createPcjThreadGroup(threadId, pcjThreadData);
 
             BlockingQueue<Runnable> blockingQueue;
-            if (Configuration.ASYNC_WORKERS_QUEUE_SIZE > 0) {
-                blockingQueue = new ArrayBlockingQueue<>(Configuration.ASYNC_WORKERS_QUEUE_SIZE);
-            } else if (Configuration.ASYNC_WORKERS_QUEUE_SIZE == 0) {
+            if (InternalPCJ.getConfiguration().ASYNC_WORKERS_QUEUE_SIZE > 0) {
+                blockingQueue = new ArrayBlockingQueue<>(InternalPCJ.getConfiguration().ASYNC_WORKERS_QUEUE_SIZE);
+            } else if (InternalPCJ.getConfiguration().ASYNC_WORKERS_QUEUE_SIZE == 0) {
                 blockingQueue = new SynchronousQueue<>();
             } else {
                 blockingQueue = new LinkedBlockingQueue<>();
             }
 
             ExecutorService asyncTasksWorkers = new WorkerPoolExecutor(
-                    Configuration.ASYNC_WORKERS_COUNT,
+                    InternalPCJ.getConfiguration().ASYNC_WORKERS_COUNT,
                     pcjThreadGroup, "PcjThread-" + threadId + "-Task-",
                     blockingQueue,
                     new ThreadPoolExecutor.AbortPolicy());

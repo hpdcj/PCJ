@@ -33,9 +33,9 @@ final public class MessageProc {
 
     public MessageProc() {
         BlockingQueue<Runnable> blockingQueue;
-        if (Configuration.MESSAGE_WORKERS_QUEUE_SIZE > 0) {
-            blockingQueue = new ArrayBlockingQueue<>(Configuration.MESSAGE_WORKERS_QUEUE_SIZE);
-        } else if (Configuration.MESSAGE_WORKERS_QUEUE_SIZE == 0) {
+        if (InternalPCJ.getConfiguration().MESSAGE_WORKERS_QUEUE_SIZE > 0) {
+            blockingQueue = new ArrayBlockingQueue<>(InternalPCJ.getConfiguration().MESSAGE_WORKERS_QUEUE_SIZE);
+        } else if (InternalPCJ.getConfiguration().MESSAGE_WORKERS_QUEUE_SIZE == 0) {
             blockingQueue = new SynchronousQueue<>();
         } else {
             blockingQueue = new LinkedBlockingQueue<>();
@@ -44,7 +44,7 @@ final public class MessageProc {
         ThreadGroup threadGroup = new ThreadGroup("MessageProc");
 
         workers = new WorkerPoolExecutor(
-                Configuration.MESSAGE_WORKERS_COUNT,
+                InternalPCJ.getConfiguration().MESSAGE_WORKERS_COUNT,
                 threadGroup, "MessageProc-Worker-",
                 blockingQueue,
                 new ThreadPoolExecutor.CallerRunsPolicy());

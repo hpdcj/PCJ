@@ -37,7 +37,7 @@ public class NodeInfo implements Serializable {
     private int port;
     private SortedSet<Integer> threadIds;
 
-    public NodeInfo(String hostname, int port) {
+    NodeInfo(String hostname, int port) {
         this.hostname = hostname;
         this.port = port;
         this.threadIds = new ConcurrentSkipListSet<>();
@@ -82,11 +82,11 @@ public class NodeInfo implements Serializable {
         return Collections.unmodifiableSet(threadIds);
     }
 
-    public void addThreadId(int i) {
+    void addThreadId(int i) {
         threadIds.add(i);
     }
 
-    public boolean isLocalAddress() {
+    boolean isLocalAddress() {
         try {
             InetAddress ia = InetAddress.getByName(hostname);
 

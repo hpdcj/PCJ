@@ -12,14 +12,16 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
-import org.pcj.internal.Configuration;
+import org.pcj.internal.InternalPCJ;
 
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 public class ByteBufferOutputStream extends OutputStream {
 
-    private static final ByteBufferPool BYTE_BUFFER_POOL = new ByteBufferPool(Configuration.BUFFER_POOL_SIZE, Configuration.BUFFER_CHUNK_SIZE);
+    private static final ByteBufferPool BYTE_BUFFER_POOL = new ByteBufferPool(
+            InternalPCJ.getConfiguration().BUFFER_POOL_SIZE,
+            InternalPCJ.getConfiguration().BUFFER_CHUNK_SIZE);
     private static final int HEADER_SIZE = Integer.BYTES;
     private static final int LAST_CHUNK_BIT = (1 << (Integer.SIZE - 1));
     private final BlockingDeque<ByteBufferPool.PooledByteBuffer> queue;

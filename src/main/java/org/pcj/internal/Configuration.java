@@ -8,6 +8,7 @@
  */
 package org.pcj.internal;
 
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -21,45 +22,46 @@ import java.util.logging.Logger;
  */
 public final class Configuration {
 
-    private static final Logger LOGGER = Logger.getLogger(Configuration.class.getName());
+    private final Logger LOGGER = Logger.getLogger(Configuration.class.getName());
+    private Properties properties;
     /**
      * pcj.port (int) default: 8091
      */
-    public static final int DEFAULT_PORT;
+    public final int DEFAULT_PORT;
     /**
      * pcj.init.backlog (int) default: 4096
      */
-    public static final int INIT_BACKLOG_COUNT;
+    public final int INIT_BACKLOG_COUNT;
     /**
      * pcj.init.retry.count (int) default: 3
      */
-    public static final int INIT_RETRY_COUNT;
+    public final int INIT_RETRY_COUNT;
     /**
      * pcj.init.retry.delay (int in seconds) default: 5
      */
-    public static final int INIT_RETRY_DELAY;
+    public final int INIT_RETRY_DELAY;
     /**
      * pcj.init.maxtime (int in seconds) default:
      * <p>
      * <tt>max(30, (pcj.init.retry.count + 1) * pcj.init.retry.delay)</tt>
      */
-    public static final int INIT_MAXTIME;
+    public final int INIT_MAXTIME;
     /**
      * pcj.buffer.chunksize (int) default: 8*1024
      */
-    public static final int BUFFER_CHUNK_SIZE;
+    public final int BUFFER_CHUNK_SIZE;
     /**
      * pcj.buffer.poolsize (int) default: 1024
      */
-    public static final int BUFFER_POOL_SIZE;
+    public final int BUFFER_POOL_SIZE;
     /**
      * pcj.msg.workers.count (int) default: available processors
      */
-    public static final int MESSAGE_WORKERS_COUNT;
+    public final int MESSAGE_WORKERS_COUNT;
     /**
      * pcj.msg.workers.keepalive (int in seconds) default: 60
      */
-    public static final int MESSAGE_WORKERS_KEEPALIVE;
+    public final int MESSAGE_WORKERS_KEEPALIVE;
     /**
      * pcj.msg.workers.queuesize (int) default: 0
      * <ul>
@@ -68,15 +70,15 @@ public final class Configuration {
      * <li> &lt; 0 - unbounded queue</li>
      * </ul>
      */
-    public static final int MESSAGE_WORKERS_QUEUE_SIZE;
+    public final int MESSAGE_WORKERS_QUEUE_SIZE;
     /**
      * pcj.async.workers.count (int) default: available processors
      */
-    public static final int ASYNC_WORKERS_COUNT;
+    public final int ASYNC_WORKERS_COUNT;
     /**
      * pcj.async.workers.keepalive (int in seconds) default: 60
      */
-    public static final int ASYNC_WORKERS_KEEPALIVE;
+    public final int ASYNC_WORKERS_KEEPALIVE;
     /**
      * pcj.async.workers.queuesize (int) default: -1
      * <ul>
@@ -85,18 +87,20 @@ public final class Configuration {
      * <li> &lt; 0 - unbounded queue</li>
      * </ul>
      */
-    public static final int ASYNC_WORKERS_QUEUE_SIZE;
+    public final int ASYNC_WORKERS_QUEUE_SIZE;
 
     /**
      * pcj.alive.heartbeat (int in seconds) default: 20
      */
-    public static final int ALIVE_HEARTBEAT;
+    public final int ALIVE_HEARTBEAT;
     /**
      * pcj.alive.timeout (int in seconds) default: 60
      */
-    public static final int ALIVE_TIMEOUT;
+    public final int ALIVE_TIMEOUT;
 
-    static {
+    Configuration(Properties properties) {
+        this.properties = properties;
+
         DEFAULT_PORT = getPropertyInt("pcj.port", 8091);
         INIT_BACKLOG_COUNT = getPropertyInt("pcj.init.backlog", 4096);
         INIT_RETRY_COUNT = getPropertyInt("pcj.init.retry.count", 3);
@@ -130,12 +134,20 @@ public final class Configuration {
         LOGGER.log(Level.CONFIG, "pcj.alive.timeout:            {0,number,#}", ALIVE_TIMEOUT);
     }
 
-    private static int getPropertyInt(String name, int defaultValue) {
+    private int getPropertyInt(String name, int defaultValue) {
         try {
-            return Integer.parseInt(System.getProperty(name, String.valueOf(defaultValue)));
+            return Integer.parseInt(getProperty(name, String.valueOf(defaultValue)));
         } catch (NumberFormatException ex) {
             LOGGER.log(Level.CONFIG, "Unable to parse to int: " + name, ex);
         }
         return defaultValue;
+    }
+
+    private String getProperty(String name, String defaultValue) {
+        return properties.getProperty(name, System.getProperty(name, defaultValue));
+    }
+
+    public Properties getProperties() {
+        return properties;
     }
 }

@@ -69,11 +69,11 @@ final public class PCJ extends InternalPCJ {
 
 
     public static Properties getProperties() {
-        return InternalPCJ.getProperties();
+        return InternalPCJ.getConfiguration().getProperties();
     }
 
     public static String getProperty(String key) {
-        return InternalPCJ.getProperties().getProperty(key);
+        return getProperties().getProperty(key);
     }
 
     /**
