@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
@@ -23,7 +23,6 @@ public interface PcjFuture<T> extends Future<T> {
      * Blocks till PcjFuture completed.
      *
      * @return returned value (or null if T is Void)
-     *
      * @throws PcjRuntimeException contains wrapped exception
      */
     @Override
@@ -34,10 +33,8 @@ public interface PcjFuture<T> extends Future<T> {
      *
      * @param timeout time
      * @param unit    time unit
-     *
      * @return returned value (or {@code null} if {@code T} is {@code Void})
-     *
-     * @throws TimeoutException if PcjFuture not complete before timeout
+     * @throws TimeoutException    if PcjFuture not complete before timeout
      * @throws PcjRuntimeException contains wrapped exception
      */
     @Override
@@ -53,7 +50,7 @@ public interface PcjFuture<T> extends Future<T> {
 
     /**
      * Checks if cancelled.
-     *
+     * <p>
      * Default implementation: always return {@code false}.
      *
      * @return false
@@ -68,7 +65,6 @@ public interface PcjFuture<T> extends Future<T> {
      * Default implementation: never cancel.
      *
      * @param mayInterruptIfRunning not used.
-     *
      * @return false
      */
     @Override

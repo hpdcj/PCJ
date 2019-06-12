@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
@@ -18,7 +18,6 @@ import org.pcj.internal.network.MessageDataOutputStream;
  * Unknown MessageType - to be logged and skipped.
  *
  * @param <i>unknown</i> <i>unknown parameters</i>
- *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 final public class MessageUnknown extends Message {

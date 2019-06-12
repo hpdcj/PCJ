@@ -16,11 +16,11 @@ import java.lang.annotation.Target;
 
 /**
  * Storage annotation is used for selecting class that can be Storage class.
- *
+ * <p>
  * This annotation has to annotate enum class, which constants will be names of shared variables.
  * All enum constants has to have field equivalent in class provided as annotation value.
  * Not all fields in the class has to be shared and exists in enum.
- *
+ * <p>
  * Example of usage:
  * <pre>
  * {@code

@@ -18,10 +18,10 @@ import org.pcj.internal.RegisterStorageRepeatableContainer;
 
 /**
  * Annotation for class implementing StartPoint interface.
- *
+ * <p>
  * It tells which storage should be automatically register on start up of class implementing
  * StartPoint interface.
- *
+ * <p>
  * Can be used multiple times per StartPoint class.
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)

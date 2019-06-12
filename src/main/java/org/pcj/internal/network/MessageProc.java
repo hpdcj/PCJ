@@ -18,7 +18,6 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.pcj.internal.Configuration;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.WorkerPoolExecutor;
 import org.pcj.internal.message.Message;

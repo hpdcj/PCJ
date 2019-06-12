@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
@@ -14,7 +14,6 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
 /**
- *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 public class MessageDataOutputStream extends OutputStream {

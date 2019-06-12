@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
@@ -78,7 +78,7 @@ final public class LoopbackSocketChannel extends SocketChannel {
     }
 
     @Override
-    public boolean isConnectionPending()throws IllegalStateException {
+    public boolean isConnectionPending() throws IllegalStateException {
         throw new IllegalStateException("Not supported");
     }
 

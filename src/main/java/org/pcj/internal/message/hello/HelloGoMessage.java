@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
@@ -27,7 +27,7 @@ final public class HelloGoMessage extends Message {
     public HelloGoMessage() {
         super(MessageType.HELLO_GO);
     }
-    
+
     @Override
     public void write(MessageDataOutputStream out) {
     }

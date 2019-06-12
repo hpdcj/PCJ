@@ -22,7 +22,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.pcj.PcjRuntimeException;
-import org.pcj.internal.Configuration;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.Networker;
 import org.pcj.internal.NodeData;

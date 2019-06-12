@@ -88,5 +88,4 @@ final public class CollectResponseMessage<T> extends Message {
     }
 
 
-
 }

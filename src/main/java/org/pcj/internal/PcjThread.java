@@ -150,7 +150,7 @@ public class PcjThread extends Thread {
         return pcjThreadGroup.getThreadData();
     }
 
-    public AsyncWorkers getAsyncWorkers(){
+    public AsyncWorkers getAsyncWorkers() {
         return asyncWorkers;
     }
 

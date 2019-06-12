@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
@@ -47,10 +47,11 @@ final public class PcjThreadData {
     public InternalGroup getGroupById(int groupId) {
         return groupById.get(groupId);
     }
-    
+
     InternalGroup getInternalGroupByName(String name) {
-        return groupById.values().stream()
-                .filter(groups -> name.equals(groups.getName()))
-                .findFirst().orElse(null);
+        return groupById.values()
+                       .stream()
+                       .filter(groups -> name.equals(groups.getName()))
+                       .findFirst().orElse(null);
     }
 }

@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
@@ -32,7 +32,8 @@ public class PcjRuntimeException extends RuntimeException {
     }
 
     protected PcjRuntimeException(String message, Throwable cause,
-            boolean enableSuppression, boolean writableStackTrace) {
+                                  boolean enableSuppression,
+                                  boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
     }
 }

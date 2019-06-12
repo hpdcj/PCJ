@@ -94,9 +94,9 @@ public abstract class InternalPCJ {
     }
 
     static void start(Class<? extends StartPoint> startPointClass,
-                                NodeInfo node0,
-                                NodeInfo currentJvm,
-                                int allNodesThreadCount) {
+                      NodeInfo node0,
+                      NodeInfo currentJvm,
+                      int allNodesThreadCount) {
         if (currentJvm == null) {
             throw new IllegalArgumentException("There is no entry for PCJ threads for current JVM");
         }
@@ -168,7 +168,10 @@ public abstract class InternalPCJ {
 
                 /* Finishing asyncTaskWorkers */
                 if (pcjThreads != null) {
-                    pcjThreads.values().stream().map(PcjThread::getAsyncWorkers).forEach(PcjThread.AsyncWorkers::shutdown);
+                    pcjThreads.values()
+                            .stream()
+                            .map(PcjThread::getAsyncWorkers)
+                            .forEach(PcjThread.AsyncWorkers::shutdown);
                 }
             }
 
