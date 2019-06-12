@@ -9,12 +9,15 @@
 package org.pcj.internal;
 
 import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
@@ -22,8 +25,6 @@ import org.pcj.StartPoint;
 
 /**
  * Class used for deploying PCJ when using one of deploy methods.
- *
- * @see org.pcj.PCJ#deploy(java.lang.Class, java.lang.Class)
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
@@ -36,10 +37,13 @@ final public class DeployPCJ {
     private final Collection<NodeInfo> allNodes;
     private final List<Process> processes;
     private final int allNodesThreadCount;
+    private final Properties properties;
 
     private DeployPCJ(Class<? extends StartPoint> startPoint,
-            InternalNodesDescription nodesDescription) {
+                      InternalNodesDescription nodesDescription,
+                      Properties props) {
         this.startPoint = startPoint;
+        this.properties = props;
 
         this.node0 = nodesDescription.getNode0();
         this.currentJvm = nodesDescription.getCurrentJvm();
@@ -49,13 +53,19 @@ final public class DeployPCJ {
         processes = new ArrayList<>();
     }
 
-    public static void main(String[] args) throws IOException, ClassNotFoundException {
+    public static void main(String[] args) throws ClassNotFoundException {
         String startPointStr = args[0];
         int localPort = Integer.parseInt(args[1]);
         String node0Str = args[2];
         int node0Port = Integer.parseInt(args[3]);
         int allNodesThreadCount = Integer.parseInt(args[4]);
         String threadIdsStr = args[5];
+        Properties props = new Properties();
+        try {
+            props.load(new StringReader(args[6]));
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, "Unable to parse properties", e);
+        }
 
         @SuppressWarnings("unchecked")
         Class<? extends StartPoint> startPoint = (Class<? extends StartPoint>) Class.forName(startPointStr);
@@ -64,17 +74,18 @@ final public class DeployPCJ {
         NodeInfo currentJvm = new NodeInfo("", localPort);
 
         String[] threadIds = threadIdsStr.substring(1, threadIdsStr.length() - 1).split(", ");
-        Stream.of(threadIds).mapToInt(Integer::parseInt).forEach(id -> currentJvm.addThreadId(id));
+        Stream.of(threadIds).mapToInt(Integer::parseInt).forEach(currentJvm::addThreadId);
 
         LOGGER.log(Level.FINE, "Invoking InternalPCJ.start({0}, {1}, {2}, {3})",
                 new Object[]{startPoint, node0, currentJvm, allNodesThreadCount});
 
-        InternalPCJ.start(startPoint, node0, currentJvm, allNodesThreadCount);
+        InternalPCJ.start(startPoint, node0, currentJvm, allNodesThreadCount, props);
     }
 
     public static void deploy(Class<? extends StartPoint> startPoint,
-            InternalNodesDescription nodesDescription) {
-        DeployPCJ deploy = new DeployPCJ(startPoint, nodesDescription);
+                              InternalNodesDescription nodesDescription,
+                              Properties props) {
+        DeployPCJ deploy = new DeployPCJ(startPoint, nodesDescription, props);
         try {
             deploy.startDeploying();
 
@@ -85,7 +96,7 @@ final public class DeployPCJ {
     }
 
     private void runPCJ(NodeInfo currentJvm) {
-        InternalPCJ.start(startPoint, node0, currentJvm, allNodesThreadCount);
+        InternalPCJ.start(startPoint, node0, currentJvm, allNodesThreadCount, properties);
     }
 
     private List<String> makeJvmParams(NodeInfo node) {
@@ -97,18 +108,27 @@ final public class DeployPCJ {
         List<String> params = new ArrayList<>(Arrays.asList(
                 path, "-cp", classpath));
 
-        RuntimeMXBean jvmOptions = ManagementFactory.getRuntimeMXBean();
-        for (String jvmArgument : jvmOptions.getInputArguments()) {
+        RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
+        for (String jvmArgument : runtimeMXBean.getInputArguments()) {
             if (jvmArgument.startsWith("-Xdebug")
-                    || jvmArgument.startsWith("-Xrunjdwp:transport=")
-                    || jvmArgument.startsWith("-agentpath:")
-                    || jvmArgument.startsWith("-agentlib:")
-                    || jvmArgument.startsWith("-javaagent:")
+                        || jvmArgument.startsWith("-Xrunjdwp:transport=")
+                        || jvmArgument.startsWith("-agentpath:")
+                        || jvmArgument.startsWith("-agentlib:")
+                        || jvmArgument.startsWith("-javaagent:")
             ) {
                 continue;
             }
             params.add(jvmArgument);
         }
+
+        String propertiesString = "";
+        try (StringWriter sw = new StringWriter()) {
+            properties.store(sw, null);
+            propertiesString = sw.toString().replaceAll("^#.*\\R", "");
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, "Unable to write properties", e);
+        }
+
         params.addAll(Arrays.asList(
                 DeployPCJ.class.getName(),
                 startPoint.getName(), // args[0]
@@ -116,7 +136,8 @@ final public class DeployPCJ {
                 node0.getHostname(), // args[2]
                 Integer.toString(node0.getPort()), // args[3]
                 Long.toString(allNodesThreadCount), // args[4]
-                node.getThreadIds().toString() // args[5]
+                node.getThreadIds().toString(), // args[5]
+                propertiesString // args[6]
         ));
         return params;
     }
@@ -132,15 +153,13 @@ final public class DeployPCJ {
         Process process = processBuilder.start();
         process.getOutputStream().close();
 
-        processes.add(process);
-
         return process;
     }
 
     private void runJVM(NodeInfo node) throws IOException {
         List<String> jvmExec = makeJvmParams(node);
 
-        exec(jvmExec);
+        processes.add(exec(jvmExec));
     }
 
     private void runSSH(NodeInfo node) throws IOException {
@@ -157,7 +176,7 @@ final public class DeployPCJ {
                 sb.toString().trim() // command
         ));
 
-        exec(sshExec);
+        processes.add(exec(sshExec));
     }
 
     private void waitForFinish() throws InterruptedException {

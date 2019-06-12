@@ -9,10 +9,10 @@ public abstract class InternalExecutionBuilder {
     }
 
     protected void start(Class<? extends StartPoint> startPoint, String[] nodes, Properties props) {
-        InternalPCJ.start(startPoint, new InternalNodesDescription(nodes));
+        InternalPCJ.start(startPoint, new InternalNodesDescription(nodes), props);
     }
 
     protected void deploy(Class<? extends StartPoint> startPoint, String[] nodes, Properties props) {
-        DeployPCJ.deploy(startPoint, new InternalNodesDescription(nodes));
+        DeployPCJ.deploy(startPoint, new InternalNodesDescription(nodes), props);
     }
 }

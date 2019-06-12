@@ -8,6 +8,7 @@
  */
 package org.pcj;
 
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.pcj.internal.InternalPCJ;
@@ -64,6 +65,15 @@ final public class PCJ extends InternalPCJ {
      */
     public static int getNodeCount() {
         return InternalPCJ.getNodeData().getTotalNodeCount();
+    }
+
+
+    public static Properties getProperties() {
+        return InternalPCJ.getProperties();
+    }
+
+    public static String getProperty(String key) {
+        return InternalPCJ.getProperties().getProperty(key);
     }
 
     /**

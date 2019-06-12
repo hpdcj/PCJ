@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -50,6 +51,8 @@ public abstract class InternalPCJ {
     private static final Logger LOGGER = Logger.getLogger(InternalPCJ.class.getName());
     private static final String PCJ_VERSION;
 
+    private static Configuration configuration;
+    private static Properties properties;
     private static Networker networker;
     private static MessageProc messageProc;
     private static NodeData nodeData;
@@ -68,16 +71,39 @@ public abstract class InternalPCJ {
         throw new AssertionError();
     }
 
+    public static Properties getProperties() {
+        return properties;
+    }
+
+    public static Networker getNetworker() {
+        return networker;
+    }
+
+    public static MessageProc getMessageProc() {
+        return messageProc;
+    }
+
+    public static NodeData getNodeData() {
+        return nodeData;
+    }
+
+    public static SocketChannel getLoopbackSocketChannel() {
+        return LoopbackSocketChannel.getInstance();
+    }
+
     protected static void start(Class<? extends StartPoint> startPoint,
-                                InternalNodesDescription nodesFile) {
+                                InternalNodesDescription nodesFile,
+                                Properties props) {
         NodeInfo node0 = nodesFile.getNode0();
         NodeInfo currentJvm = nodesFile.getCurrentJvm();
         int allNodesThreadCount = nodesFile.getAllNodesThreadCount();
-        start(startPoint, node0, currentJvm, allNodesThreadCount);
+        start(startPoint, node0, currentJvm, allNodesThreadCount, props);
     }
 
     protected static void start(Class<? extends StartPoint> startPointClass,
-                                NodeInfo node0, NodeInfo currentJvm, int allNodesThreadCount) {
+                                NodeInfo node0, NodeInfo currentJvm, int allNodesThreadCount, Properties props) {
+        properties = props;
+
         if (currentJvm == null) {
             throw new IllegalArgumentException("There is no entry for PCJ threads for current JVM");
         }
@@ -212,7 +238,9 @@ public abstract class InternalPCJ {
         }
     }
 
-    private static Map<Integer, PcjThread> preparePcjThreads(Class<? extends StartPoint> startPointClass, Set<Integer> threadIds, Semaphore notificationSemaphore) {
+    private static Map<Integer, PcjThread> preparePcjThreads(Class<? extends StartPoint> startPointClass,
+                                                             Set<Integer> threadIds,
+                                                             Semaphore notificationSemaphore) {
         InternalCommonGroup globalGroup = nodeData.getCommonGroupById(InternalCommonGroup.GLOBAL_GROUP_ID);
         Map<Integer, PcjThread> pcjThreads = new HashMap<>();
 
@@ -283,22 +311,6 @@ public abstract class InternalPCJ {
         } catch (InterruptedException ex) {
             throw new PcjRuntimeException("Interruption occurred while waiting for MESSAGE_BYE_COMPLETED phase");
         }
-    }
-
-    public static Networker getNetworker() {
-        return networker;
-    }
-
-    public static MessageProc getMessageProc() {
-        return messageProc;
-    }
-
-    public static NodeData getNodeData() {
-        return nodeData;
-    }
-
-    public static SocketChannel getLoopbackSocketChannel() {
-        return LoopbackSocketChannel.getInstance();
     }
 
     protected static InternalGroup joinGroup(int globalThreadId, String groupName) {
