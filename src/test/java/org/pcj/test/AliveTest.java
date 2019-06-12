@@ -11,7 +11,6 @@ package org.pcj.test;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.pcj.NodesDescription;
 import org.pcj.PCJ;
 import org.pcj.StartPoint;
 
@@ -29,7 +28,7 @@ public class AliveTest implements StartPoint {
         Arrays.stream(logger.getHandlers()).forEach(handler -> handler.setLevel(level));
         logger.setLevel(level);
 
-        NodesDescription nodesDescription = new NodesDescription(new String[]{
+        String[] nodes = {
                 "localhost:8091",
                 "localhost:8002",
                 "localhost:8003",
@@ -38,9 +37,9 @@ public class AliveTest implements StartPoint {
                 "localhost:8006",
                 "localhost:8007",
                 "localhost:8008",
-        });
+        };
 
-        PCJ.deploy(AliveTest.class, nodesDescription);
+        PCJ.executionBuilder(AliveTest.class).addNodes(nodes).deploy();
     }
 
     @Override

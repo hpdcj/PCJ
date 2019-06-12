@@ -12,7 +12,6 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.pcj.NodesDescription;
 import org.pcj.PCJ;
 import org.pcj.PcjFuture;
 import org.pcj.RegisterStorage;
@@ -41,7 +40,7 @@ public class CollectTest implements StartPoint {
         Arrays.stream(logger.getHandlers()).forEach(handler -> handler.setLevel(level));
         logger.setLevel(level);
 
-        NodesDescription nodesDescription = new NodesDescription(new String[]{
+        String[] nodes = {
                 "localhost:8091",
                 "localhost:8002",
                 "localhost:8003",
@@ -50,9 +49,9 @@ public class CollectTest implements StartPoint {
                 "localhost:8006",
                 "localhost:8007",
                 "localhost:8008",
-        });
+        };
 
-        PCJ.deploy(CollectTest.class, nodesDescription);
+        PCJ.executionBuilder(CollectTest.class).addNodes(nodes).deploy();
     }
 
     @Override

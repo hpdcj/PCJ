@@ -20,22 +20,11 @@ import java.util.Map;
 /*
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public abstract class InternalNodesDescription {
+final public class InternalNodesDescription {
 
     private static final String CURRENT_JVM_HOSTNAME = "";
     private NodeInfo node0;
     private Map<String, NodeInfo> nodesMap;
-
-    protected InternalNodesDescription(File nodeFile) throws IOException {
-        String[] nodes;
-        try (BufferedReader br = new BufferedReader(new FileReader(nodeFile))) {
-            nodes = br.lines()
-                            .map(String::trim)
-                            .filter(line -> !line.isEmpty())
-                            .toArray(String[]::new);
-        }
-        parseArray(nodes);
-    }
 
     protected InternalNodesDescription(String[] nodes) {
         parseArray(nodes);

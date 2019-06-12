@@ -16,7 +16,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Locale;
 import java.util.Scanner;
-import org.pcj.NodesDescription;
 import org.pcj.PCJ;
 import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
@@ -193,7 +192,6 @@ public class PcjMicroBenchmarkPingPong implements StartPoint {
         String[] nodes = new String[2];
         nodes[0] = nodesTxt[0];
         nodes[1] = nodesTxt[1];
-        PCJ.deploy(PcjMicroBenchmarkPingPong.class,
-                new NodesDescription(nodes));
+        PCJ.executionBuilder(PcjMicroBenchmarkPingPong.class).addNodes(nodes).deploy();
     }
 }

@@ -13,7 +13,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.pcj.Group;
-import org.pcj.NodesDescription;
 import org.pcj.PCJ;
 import org.pcj.StartPoint;
 
@@ -29,7 +28,7 @@ public class GroupJoinTest implements StartPoint {
         Arrays.stream(logger.getHandlers()).forEach(handler -> handler.setLevel(level));
         logger.setLevel(level);
 
-        NodesDescription nodesDescription = new NodesDescription(new String[]{
+        String[] nodes = {
                 "localhost:8091",
 //                "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091", "localhost:8091",
                 "localhost:8002",
@@ -69,9 +68,9 @@ public class GroupJoinTest implements StartPoint {
 //                "localhost:8018", "localhost:8018", "localhost:8018", "localhost:8018", "localhost:8018", "localhost:8018", "localhost:8018", "localhost:8018", "localhost:8018",
 //                "localhost:8019",
 //                "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019", "localhost:8019",
-        });
+        };
 
-        PCJ.deploy(GroupJoinTest.class, nodesDescription);
+        PCJ.executionBuilder(GroupJoinTest.class).addNodes(nodes).deploy();
     }
 
     @Override

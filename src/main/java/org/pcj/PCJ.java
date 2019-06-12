@@ -10,7 +10,6 @@ package org.pcj;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import org.pcj.internal.DeployPCJ;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.PcjThread;
 
@@ -29,34 +28,24 @@ final public class PCJ extends InternalPCJ {
     }
 
     /**
-     * Starts PCJ calculations on local node using specified StartPoint.
-     * NodesDescription contains list of all hostnames used in calculations.
-     * Hostnames can be specified many times, so more than one instance of PCJ will be run on node (called threads).
-     *
-     * @param startPoint       start point class
-     * @param nodesDescription description of used nodes (and threads)
-     */
-    public static void start(Class<? extends StartPoint> startPoint, NodesDescription nodesDescription) {
-        InternalPCJ.start(startPoint, nodesDescription);
-    }
-
-    /**
-     * Deploys and starts PCJ calculations on nodes using specified StartPoint class.
-     * NodesDescription contains list of all hostnames used in calculations.
-     * Hostnames can be specified many times, so more than one instance of PCJ will be run on node (called threads).
-     * Empty hostnames means current JVM.
+     * Creates execution builder for starting the application using startPoint class.
      * <p>
-     * Hostnames can take port (after colon ':'),
-     * eg. ["localhost:8000", "localhost:8001", "localhost", "host2:8001", "host2"].
-     * Default port is 8091 and can be modified using
-     * <tt>pcj.port</tt> system property value (-Dpcj.port=8091).
+     * It does not start application.
+     * It is necessary to execute {@link ExecutionBuilder#deploy()} or {@link ExecutionBuilder#start()} method to start
+     * application.
+     * <p>
+     * The example of usage:
+     * <pre>
+     * PCJ.executionBuilder(Hello.class)
+     *    .addNodes(new File("nodes.txt"))
+     *    .deploy();
+     * </pre>
      *
-     * @param startPoint       start point class
-     * @param nodesDescription description of used nodes (and threads)
+     * @param startPoint start point class
+     * @return ExecutionBuilder for chain configuration and starting application
      */
-    public static void deploy(Class<? extends StartPoint> startPoint, NodesDescription nodesDescription
-    ) {
-        DeployPCJ.deploy(startPoint, nodesDescription);
+    public static ExecutionBuilder executionBuilder(Class<? extends StartPoint> startPoint) {
+        return new ExecutionBuilder(startPoint);
     }
 
     /**

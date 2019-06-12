@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
-import org.pcj.NodesDescription;
 import org.pcj.StartPoint;
 
 /**
@@ -39,7 +38,7 @@ final public class DeployPCJ {
     private final int allNodesThreadCount;
 
     private DeployPCJ(Class<? extends StartPoint> startPoint,
-            NodesDescription nodesDescription) {
+            InternalNodesDescription nodesDescription) {
         this.startPoint = startPoint;
 
         this.node0 = nodesDescription.getNode0();
@@ -74,7 +73,7 @@ final public class DeployPCJ {
     }
 
     public static void deploy(Class<? extends StartPoint> startPoint,
-            NodesDescription nodesDescription) {
+            InternalNodesDescription nodesDescription) {
         DeployPCJ deploy = new DeployPCJ(startPoint, nodesDescription);
         try {
             deploy.startDeploying();

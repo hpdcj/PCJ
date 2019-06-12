@@ -26,7 +26,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.pcj.NodesDescription;
 import org.pcj.PcjFuture;
 import org.pcj.PcjRuntimeException;
 import org.pcj.StartPoint;
@@ -70,7 +69,7 @@ public abstract class InternalPCJ {
     }
 
     protected static void start(Class<? extends StartPoint> startPoint,
-                                NodesDescription nodesFile) {
+                                InternalNodesDescription nodesFile) {
         NodeInfo node0 = nodesFile.getNode0();
         NodeInfo currentJvm = nodesFile.getCurrentJvm();
         int allNodesThreadCount = nodesFile.getAllNodesThreadCount();

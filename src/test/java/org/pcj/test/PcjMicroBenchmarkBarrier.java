@@ -14,7 +14,6 @@ import java.util.LinkedHashSet;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.IntStream;
-import org.pcj.NodesDescription;
 import org.pcj.PCJ;
 import org.pcj.StartPoint;
 
@@ -86,8 +85,8 @@ public class PcjMicroBenchmarkBarrier implements StartPoint {
                 }
             }
             
-//            PCJ.start(PcjMicroBenchmarkBarrier.class, new NodesDescription(nodes));
-                PCJ.deploy(PcjMicroBenchmarkBarrier.class, new NodesDescription(nodes));
+//            PCJ.executionBuilder(PcjMicroBenchmarkBarrier.class).addNodes(nodes).start();
+                PCJ.executionBuilder(PcjMicroBenchmarkBarrier.class).addNodes(nodes).deploy();
         }
 //        }
     }

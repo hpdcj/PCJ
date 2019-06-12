@@ -11,7 +11,6 @@ package org.pcj.test;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.pcj.NodesDescription;
 import org.pcj.PCJ;
 import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
@@ -38,11 +37,12 @@ public class SizesTest implements StartPoint {
         Arrays.stream(logger.getHandlers()).forEach(handler -> handler.setLevel(level));
         logger.setLevel(level);
 
-        NodesDescription nodesDescription = new NodesDescription(new String[]{
-            "localhost:8091",
-            "localhost:8002",});
+        String[] nodes = {
+                "localhost:8091",
+                "localhost:8002",};
+//        NodesDescription nodesDescription = new NodesDescription(nodes);
 
-        PCJ.deploy(SizesTest.class, nodesDescription);
+        PCJ.executionBuilder(SizesTest.class).addNodes(nodes).deploy();
     }
 
     @Override

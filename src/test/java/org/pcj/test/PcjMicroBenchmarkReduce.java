@@ -8,6 +8,7 @@
  */
 package org.pcj.test;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,10 +20,9 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.pcj.NodesDescription;
 import org.pcj.PCJ;
+import org.pcj.ExecutionBuilder;
 import org.pcj.PcjFuture;
-import org.pcj.ReduceOperation;
 import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
@@ -51,17 +51,15 @@ public class PcjMicroBenchmarkReduce implements StartPoint {
     private List<Random> expectedRandomList = null;
 
     public static void main(String[] args) throws IOException {
-        NodesDescription nodesDescription;
+        ExecutionBuilder executionBuilder = PCJ.executionBuilder(PcjMicroBenchmarkReduce.class);
         if (args.length > 0) {
-            nodesDescription = new NodesDescription(args[0]);
+            executionBuilder.addNodes(new File(args[0]));
         } else {
-            nodesDescription = new NodesDescription(new String[]{
-                    "localhost",
-            });
+            executionBuilder.addNode("localhost");
         }
 
 //        PCJ.start(PcjMicroBenchmarkReduce.class, nodesDescription);
-        PCJ.deploy(PcjMicroBenchmarkReduce.class, nodesDescription);
+        executionBuilder.deploy();
     }
 
     private double calculateExpectedValue() {

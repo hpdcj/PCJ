@@ -14,7 +14,6 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import org.pcj.NodesDescription;
 import org.pcj.PCJ;
 import org.pcj.PcjFuture;
 import org.pcj.PcjRuntimeException;
@@ -47,12 +46,12 @@ public class AsyncAtTest implements StartPoint {
         Arrays.stream(logger.getHandlers()).forEach(handler -> handler.setLevel(level));
         logger.setLevel(level);
 
-        NodesDescription nodesDescription = new NodesDescription(new String[]{
+        String[] nodes = {
                 "localhost",
-                "localhost:8092",});
+                "localhost:8092",};
 
 //        PCJ.start(EasyTest.class, EasyTest.class,
-        PCJ.deploy(AsyncAtTest.class, nodesDescription);
+        PCJ.executionBuilder(AsyncAtTest.class).addNodes(nodes).deploy();
     }
 
     @Override

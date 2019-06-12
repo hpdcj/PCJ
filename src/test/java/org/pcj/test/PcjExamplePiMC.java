@@ -10,9 +10,7 @@ package org.pcj.test;
 
 import java.util.Arrays;
 import java.util.Random;
-import org.pcj.NodesDescription;
 import org.pcj.PCJ;
-import org.pcj.PcjFuture;
 import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
@@ -62,10 +60,7 @@ public class PcjExamplePiMC implements StartPoint {
 
     public static void main(String[] args) {
 
-        PCJ.deploy(PcjExamplePiMC.class,
-                new NodesDescription(
-                        new String[]{"localhost", "localhost", "localhost", "localhost"}
-                )
-        );
+        String[] nodes = {"localhost", "localhost", "localhost", "localhost"};
+        PCJ.executionBuilder(PcjExamplePiMC.class).addNodes(nodes).deploy();
     }
 }

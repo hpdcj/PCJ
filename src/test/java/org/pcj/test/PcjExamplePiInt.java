@@ -8,7 +8,6 @@
  */
 package org.pcj.test;
 
-import org.pcj.NodesDescription;
 import org.pcj.PCJ;
 import org.pcj.PcjFuture;
 import org.pcj.RegisterStorage;
@@ -75,12 +74,11 @@ public class PcjExamplePiInt implements StartPoint {
     }
 
     public static void main(String[] args) {
-        PCJ.deploy(PcjExamplePiInt.class,
-                new NodesDescription(
-                        new String[]{
-                                "localhost:8091",
-                                "localhost:8092",
-                                "localhost:8092",
-                                "localhost:8093",}));
+        String[] nodes = {
+                "localhost:8091",
+                "localhost:8092",
+                "localhost:8092",
+                "localhost:8093",};
+        PCJ.executionBuilder(PcjExamplePiInt.class).addNodes(nodes).deploy();
     }
 }

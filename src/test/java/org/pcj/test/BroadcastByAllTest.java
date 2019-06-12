@@ -11,7 +11,6 @@ package org.pcj.test;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.pcj.NodesDescription;
 import org.pcj.PCJ;
 import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
@@ -36,15 +35,15 @@ public class BroadcastByAllTest implements StartPoint {
         Logger logger = Logger.getLogger("");
         Arrays.stream(logger.getHandlers()).forEach(handler -> handler.setLevel(level));
         logger.setLevel(level);
-        
-        NodesDescription nodesDescription = new NodesDescription(new String[]{
-            "localhost",
-            "localhost:8091",
-            "localhost:8092",
-            "localhost",});
+
+        String[] nodes = {
+                "localhost",
+                "localhost:8091",
+                "localhost:8092",
+                "localhost",};
 
 //        PCJ.start(EasyTest.class, EasyTest.class,
-        PCJ.deploy(BroadcastByAllTest.class, nodesDescription);
+        PCJ.executionBuilder(BroadcastByAllTest.class).addNodes(nodes).deploy();
     }
     
     @Override

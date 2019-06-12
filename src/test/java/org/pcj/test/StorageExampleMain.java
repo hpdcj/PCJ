@@ -8,7 +8,6 @@
  */
 package org.pcj.test;
 
-import org.pcj.NodesDescription;
 import org.pcj.PCJ;
 
 /**
@@ -18,8 +17,10 @@ import org.pcj.PCJ;
 public class StorageExampleMain{
 
     public static void main(String[] args) {
-        PCJ.deploy(StorageExample.class,
-                new NodesDescription(new String[]{"localhost", "localhost", "localhost"})
-        );
+        PCJ.executionBuilder(StorageExample.class)
+                .addNode("localhost")
+                .addNode("localhost")
+                .addNode("localhost")
+                .deploy();
     }
 }

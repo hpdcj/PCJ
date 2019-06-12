@@ -11,9 +11,7 @@ package org.pcj.test;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.pcj.NodesDescription;
 import org.pcj.PCJ;
-import org.pcj.ReduceOperation;
 import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
@@ -39,12 +37,12 @@ public class AccumulateTest implements StartPoint {
         Arrays.stream(logger.getHandlers()).forEach(handler -> handler.setLevel(level));
         logger.setLevel(level);
 
-        NodesDescription nodesDescription = new NodesDescription(new String[]{
+        String[] nodes = {
                 "localhost",
-                "localhost:8092",});
+                "localhost:8092",};
 
 //        PCJ.start(EasyTest.class, EasyTest.class,
-        PCJ.deploy(AccumulateTest.class, nodesDescription);
+        PCJ.executionBuilder(AccumulateTest.class).addNodes(nodes).deploy();
     }
 
     @Override

@@ -16,9 +16,6 @@ import java.io.FileNotFoundException;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Scanner;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.pcj.NodesDescription;
 import org.pcj.PCJ;
 import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
@@ -141,8 +138,7 @@ public class PcjMicroBenchmarkBroadcast implements StartPoint {
                     }
                 }
 
-                PCJ.deploy(PcjMicroBenchmarkBroadcast.class,
-                        new NodesDescription(nodes));
+                PCJ.executionBuilder(PcjMicroBenchmarkBroadcast.class).addNodes(nodes).deploy();
             }
         }
     }

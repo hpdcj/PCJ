@@ -13,7 +13,6 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.pcj.AsyncTask;
-import org.pcj.NodesDescription;
 import org.pcj.PCJ;
 import org.pcj.PcjFuture;
 import org.pcj.PcjRuntimeException;
@@ -42,10 +41,9 @@ public class NotSerializableTest implements StartPoint {
         Arrays.stream(logger.getHandlers()).forEach(handler -> handler.setLevel(level));
         logger.setLevel(level);
 
-        NodesDescription nodesDescription = new NodesDescription(new String[]{
-                "localhost"});
+        String[] nodes = {"localhost"};
 
-        PCJ.deploy(NotSerializableTest.class, nodesDescription);
+        PCJ.executionBuilder(NotSerializableTest.class).addNodes(nodes).deploy();
     }
 
     private void check(String method, String exceptionMessage, Supplier<? extends PcjFuture<?>> r) {
