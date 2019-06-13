@@ -27,19 +27,19 @@ public class PropertiesTest implements StartPoint {
         } else {
             String[] nodes = {
                     "localhost",
-//                    "localhost",
-//                    "localhost:8002",
-//                    "localhost:8003",
-//                    "localhost:8004",
-//                    "localhost:8003",
-//                    "localhost:8005",
-//                    "localhost:8006",
-//                    "localhost:8007",
-//                    "localhost:8008",
-//                    "localhost:8008",
-//                    "localhost:8008",
-//                    "localhost:8008",
-//                    "localhost:8009", // run.jvmargs=-Xmx64m
+                    "localhost",
+                    "localhost:8002",
+                    "localhost:8003",
+                    "localhost:8004",
+                    "localhost:8003",
+                    "localhost:8005",
+                    "localhost:8006",
+                    "localhost:8007",
+                    "localhost:8008",
+                    "localhost:8008",
+                    "localhost:8008",
+                    "localhost:8008",
+                    "localhost:8009", // run.jvmargs=-Xmx64m
                     //                    "localhost:8010", "localhost:8011", "localhost:8012", "localhost:8013", "localhost:8014",
                     //                    "localhost:8015", "localhost:8016", "localhost:8017", "localhost:8018", "localhost:8019",
                     //                    "localhost:8020", "localhost:8021", "localhost:8022", "localhost:8023", "localhost:8024",
@@ -59,9 +59,12 @@ public class PropertiesTest implements StartPoint {
                 .addProperty("\u0040\uFFFF", "\uEFFE\uC1C2");
         builder.deploy();
 
-        ExecutionBuilder clone = builder.clone();
-        clone.addProperty("#drugi", "zmieniony");
-        clone.deploy();
+        builder.clone()
+                .addProperty("#drugi", "zmieniony")
+                .removeProperty("klucz")
+                .removeProperty("No dobra")
+                .removeProperty("\u0040\uFFFF")
+                .deploy();
 
         builder.deploy();
     }
@@ -70,7 +73,7 @@ public class PropertiesTest implements StartPoint {
     public void main() throws Throwable {
         for (int i = 0; i < PCJ.threadCount(); ++i) {
             if (PCJ.myId() == i) {
-                Thread.sleep(1000);
+                Thread.sleep(500);
                 System.out.printf("--- %d ---%n", i);
                 PCJ.getProperties().forEach((k, v) -> System.out.printf("'%s'->'%s'%n", k, v));
             }

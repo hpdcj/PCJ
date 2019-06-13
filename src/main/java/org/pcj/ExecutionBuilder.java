@@ -41,12 +41,22 @@ public final class ExecutionBuilder extends InternalExecutionBuilder implements 
         this.properties = new Properties();
     }
 
+    /**
+     * Copy constructor for {@link #clone()) method.
+     *
+     * @param that source object to copy from
+     */
     private ExecutionBuilder(ExecutionBuilder that) {
         this.startPoint = that.startPoint;
         this.nodeList = new ArrayList<>(that.nodeList);
         this.properties = (Properties) that.properties.clone();
     }
 
+    /**
+     * Creates a deep copy of this ExecutionBuilder.
+     *
+     * @return a clone of ExecutionBuilder
+     */
     @Override
     public ExecutionBuilder clone() {
         return new ExecutionBuilder(this);
@@ -89,7 +99,6 @@ public final class ExecutionBuilder extends InternalExecutionBuilder implements 
         }
         super.deploy(startPoint, nodes, properties);
     }
-
 
     /**
      * Adds node to execution builder configuration.
@@ -142,12 +151,23 @@ public final class ExecutionBuilder extends InternalExecutionBuilder implements 
     /**
      * Adds property to execution builder configuration, possibly replacing it.
      *
-     * @param key   the key to be placed into this property list.
+     * @param key   the key to be placed into property list.
      * @param value the value corresponding to key.
      * @return a reference to this object
      */
     public ExecutionBuilder addProperty(String key, String value) {
         properties.setProperty(key, value);
+        return this;
+    }
+
+    /**
+     * Removes property from execution builder configuration.
+     *
+     * @param key the key to be removed from property list.
+     * @return a reference to this object
+     */
+    public ExecutionBuilder removeProperty(String key) {
+        properties.remove(key);
         return this;
     }
 
