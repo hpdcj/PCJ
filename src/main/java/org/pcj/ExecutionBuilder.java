@@ -22,12 +22,12 @@ import org.pcj.internal.InternalExecutionBuilder;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class ExecutionBuilder extends InternalExecutionBuilder {
+public final class ExecutionBuilder extends InternalExecutionBuilder implements Cloneable {
 
     private static final String[] EMPTY_ARRAY = new String[0];
     private final Class<? extends StartPoint> startPoint;
-    private final List<Object> nodeList;
-    private final Properties properties;
+    private List<String> nodeList;
+    private Properties properties;
 
     /**
      * Should be created using {@link PCJ#executionBuilder(Class)}.
@@ -39,6 +39,24 @@ final public class ExecutionBuilder extends InternalExecutionBuilder {
 
         this.nodeList = new ArrayList<>();
         this.properties = new Properties();
+    }
+
+    @Override
+    public ExecutionBuilder clone() {
+        try {
+            ExecutionBuilder cloned = (ExecutionBuilder) super.clone();
+            cloned.nodeList = new ArrayList<>(this.nodeList);
+            cloned.properties = (Properties) this.properties.clone();
+            return cloned;
+        } catch (CloneNotSupportedException e) {
+            throw new InternalError(e);
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "ExecutionBuilder{startPoint=" + startPoint
+                       + ", nodeList=" + nodeList + ", properties=" + properties + "}";
     }
 
     /**
