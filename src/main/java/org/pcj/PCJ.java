@@ -11,6 +11,7 @@ package org.pcj;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import org.pcj.internal.InternalGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.PcjThread;
 
@@ -21,7 +22,7 @@ import org.pcj.internal.PcjThread;
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public final class PCJ extends InternalPCJ {
+public final class PCJ {
 
     /* Suppress default constructor for noninstantiability */
     private PCJ() {
@@ -574,7 +575,7 @@ public final class PCJ extends InternalPCJ {
      */
     public static Group joinGroup(String name) {
         int myThreadId = getGlobalGroup().myId();
-        return InternalPCJ.joinGroup(myThreadId, name);
+        return InternalGroup.joinGroup(myThreadId, name);
     }
 
     /**

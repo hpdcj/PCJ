@@ -27,6 +27,10 @@ import org.pcj.internal.message.collect.CollectRequestMessage;
 import org.pcj.internal.message.collect.CollectStates;
 import org.pcj.internal.message.get.ValueGetRequestMessage;
 import org.pcj.internal.message.get.ValueGetStates;
+import org.pcj.internal.message.join.GroupJoinRequestMessage;
+import org.pcj.internal.message.join.GroupJoinStates;
+import org.pcj.internal.message.join.GroupQueryMessage;
+import org.pcj.internal.message.join.GroupQueryStates;
 import org.pcj.internal.message.peerbarrier.PeerBarrierMessage;
 import org.pcj.internal.message.peerbarrier.PeerBarrierStates;
 import org.pcj.internal.message.put.ValuePutRequestMessage;
@@ -48,7 +52,6 @@ public final class InternalGroup extends InternalCommonGroup implements Group {
     private final AsyncAtStates asyncAtStates;
     private final PeerBarrierStates peerBarrierStates;
 
-
     public InternalGroup(int threadId, InternalCommonGroup internalGroup) {
         super(internalGroup);
 
@@ -59,6 +62,43 @@ public final class InternalGroup extends InternalCommonGroup implements Group {
         this.valueAccumulateStates = new ValueAccumulateStates();
         this.asyncAtStates = new AsyncAtStates();
         this.peerBarrierStates = new PeerBarrierStates();
+    }
+
+    public static InternalGroup joinGroup(int globalThreadId, String groupName) {
+        PcjThreadData currentThreadData = PcjThread.getCurrentThreadData();
+        InternalGroup group = currentThreadData.getInternalGroupByName(groupName);
+        if (group != null) {
+            return group;
+        }
+
+        NodeData nodeData = InternalPCJ.getNodeData();
+        Networker networker = InternalPCJ.getNetworker();
+
+        InternalCommonGroup commonGroup = nodeData.getInternalCommonGroupByName(groupName);
+        if (commonGroup == null) {
+            GroupQueryStates groupQueryStates = nodeData.getGroupQueryStates();
+            GroupQueryStates.State state = groupQueryStates.create();
+
+            GroupQueryMessage message = new GroupQueryMessage(state.getRequestNum(), nodeData.getCurrentNodePhysicalId(), groupName);
+
+            networker.send(nodeData.getNode0Socket(), message);
+
+            PcjFuture<InternalCommonGroup> future = state.getFuture();
+            commonGroup = future.get();
+        }
+
+        GroupJoinStates groupJoinStates = nodeData.getGroupJoinStates();
+        GroupJoinStates.Notification notification = groupJoinStates.createNotification(globalThreadId);
+
+        GroupJoinRequestMessage message = new GroupJoinRequestMessage(
+                notification.getRequestNum(), groupName, commonGroup.getGroupId(), nodeData.getCurrentNodePhysicalId(), globalThreadId);
+
+        SocketChannel groupMasterSocketChannel = nodeData.getSocketChannelByPhysicalId(commonGroup.getCommunicationTree().getMasterNode());
+
+        networker.send(groupMasterSocketChannel, message);
+
+        PcjFuture<InternalGroup> future = notification.getFuture();
+        return future.get();
     }
 
     public int myId() {

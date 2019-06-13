@@ -26,17 +26,12 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.pcj.PcjFuture;
 import org.pcj.PcjRuntimeException;
 import org.pcj.StartPoint;
 import org.pcj.internal.message.alive.AliveState;
 import org.pcj.internal.message.bye.ByeState;
 import org.pcj.internal.message.hello.HelloMessage;
 import org.pcj.internal.message.hello.HelloState;
-import org.pcj.internal.message.join.GroupJoinRequestMessage;
-import org.pcj.internal.message.join.GroupJoinStates;
-import org.pcj.internal.message.join.GroupQueryMessage;
-import org.pcj.internal.message.join.GroupQueryStates;
 import org.pcj.internal.network.LoopbackSocketChannel;
 import org.pcj.internal.network.MessageProc;
 
@@ -62,10 +57,8 @@ public abstract class InternalPCJ {
 
     /**
      * Suppress default constructor for noninstantiability.
-     * <p>
-     * Have to be protected to allow inheritance - to give rights to its protected methods.
      */
-    protected InternalPCJ() {
+    private InternalPCJ() {
         throw new AssertionError();
     }
 
@@ -307,39 +300,5 @@ public abstract class InternalPCJ {
         } catch (InterruptedException ex) {
             throw new PcjRuntimeException("Interruption occurred while waiting for MESSAGE_BYE_COMPLETED phase");
         }
-    }
-
-    protected static InternalGroup joinGroup(int globalThreadId, String groupName) {
-        PcjThreadData currentThreadData = PcjThread.getCurrentThreadData();
-        InternalGroup group = currentThreadData.getInternalGroupByName(groupName);
-        if (group != null) {
-            return group;
-        }
-
-        InternalCommonGroup commonGroup = nodeData.getInternalCommonGroupByName(groupName);
-        if (commonGroup == null) {
-            GroupQueryStates groupQueryStates = nodeData.getGroupQueryStates();
-            GroupQueryStates.State state = groupQueryStates.create();
-
-            GroupQueryMessage message = new GroupQueryMessage(state.getRequestNum(), nodeData.getCurrentNodePhysicalId(), groupName);
-
-            networker.send(nodeData.getNode0Socket(), message);
-
-            PcjFuture<InternalCommonGroup> future = state.getFuture();
-            commonGroup = future.get();
-        }
-
-        GroupJoinStates groupJoinStates = nodeData.getGroupJoinStates();
-        GroupJoinStates.Notification notification = groupJoinStates.createNotification(globalThreadId);
-
-        GroupJoinRequestMessage message = new GroupJoinRequestMessage(
-                notification.getRequestNum(), groupName, commonGroup.getGroupId(), nodeData.getCurrentNodePhysicalId(), globalThreadId);
-
-        SocketChannel groupMasterSocketChannel = nodeData.getSocketChannelByPhysicalId(commonGroup.getCommunicationTree().getMasterNode());
-
-        networker.send(groupMasterSocketChannel, message);
-
-        PcjFuture<InternalGroup> future = notification.getFuture();
-        return future.get();
     }
 }
