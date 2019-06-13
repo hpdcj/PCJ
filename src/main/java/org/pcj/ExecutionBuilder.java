@@ -26,8 +26,8 @@ public final class ExecutionBuilder extends InternalExecutionBuilder implements 
 
     private static final String[] EMPTY_ARRAY = new String[0];
     private final Class<? extends StartPoint> startPoint;
-    private List<String> nodeList;
-    private Properties properties;
+    private final List<String> nodeList;
+    private final Properties properties;
 
     /**
      * Should be created using {@link PCJ#executionBuilder(Class)}.
@@ -41,16 +41,15 @@ public final class ExecutionBuilder extends InternalExecutionBuilder implements 
         this.properties = new Properties();
     }
 
+    private ExecutionBuilder(ExecutionBuilder that) {
+        this.startPoint = that.startPoint;
+        this.nodeList = new ArrayList<>(that.nodeList);
+        this.properties = (Properties) that.properties.clone();
+    }
+
     @Override
     public ExecutionBuilder clone() {
-        try {
-            ExecutionBuilder cloned = (ExecutionBuilder) super.clone();
-            cloned.nodeList = new ArrayList<>(this.nodeList);
-            cloned.properties = (Properties) this.properties.clone();
-            return cloned;
-        } catch (CloneNotSupportedException e) {
-            throw new InternalError(e);
-        }
+        return new ExecutionBuilder(this);
     }
 
     @Override
