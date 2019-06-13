@@ -22,7 +22,7 @@ import org.pcj.internal.network.MessageDataOutputStream;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class ValuePutRequestMessage extends Message {
+public final class ValuePutRequestMessage extends Message {
 
     private int requestNum;
     private int groupId;

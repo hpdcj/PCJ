@@ -21,7 +21,7 @@ import org.pcj.internal.PcjThread;
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class PCJ extends InternalPCJ {
+public final class PCJ extends InternalPCJ {
 
     /* Suppress default constructor for noninstantiability */
     private PCJ() {

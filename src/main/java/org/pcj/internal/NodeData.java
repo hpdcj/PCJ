@@ -22,7 +22,7 @@ import org.pcj.internal.message.join.GroupQueryStates;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class NodeData {
+public final class NodeData {
 
     private final ConcurrentMap<Integer, InternalCommonGroup> groupById;
     private final ConcurrentMap<Integer, SocketChannel> socketChannelByPhysicalId; // physicalId -> socket

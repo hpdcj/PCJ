@@ -42,7 +42,7 @@ import org.pcj.internal.network.SelectorProc;
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class Networker {
+public final class Networker {
 
     private static final Logger LOGGER = Logger.getLogger(Networker.class.getName());
     private final String currentHostName;

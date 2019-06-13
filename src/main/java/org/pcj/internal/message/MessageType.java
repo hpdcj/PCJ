@@ -115,13 +115,13 @@ public enum MessageType {
      *
      * @return Message object
      */
-    final public static Message createMessage(byte messageTypeId) {
+    public final static Message createMessage(byte messageTypeId) {
         MessageType type = map.get(messageTypeId);
         Supplier<? extends Message> constructor = (type == null ? UNKNOWN.constructor : type.constructor);
         return constructor.get();
     }
 
-    final public byte getId() {
+    public final byte getId() {
         return (byte) ordinal();
     }
 }

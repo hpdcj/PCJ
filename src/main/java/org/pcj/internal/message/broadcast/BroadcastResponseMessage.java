@@ -24,7 +24,7 @@ import org.pcj.internal.network.MessageDataOutputStream;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class BroadcastResponseMessage extends Message {
+public final class BroadcastResponseMessage extends Message {
 
     private int groupId;
     private int requestNum;

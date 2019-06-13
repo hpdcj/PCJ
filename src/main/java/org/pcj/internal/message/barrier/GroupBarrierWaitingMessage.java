@@ -20,7 +20,7 @@ import org.pcj.internal.network.MessageDataOutputStream;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class GroupBarrierWaitingMessage extends Message {
+public final class GroupBarrierWaitingMessage extends Message {
 
     private int groupId;
     private int round;

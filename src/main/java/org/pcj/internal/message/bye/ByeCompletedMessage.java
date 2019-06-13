@@ -23,7 +23,7 @@ import org.pcj.internal.network.MessageDataOutputStream;
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class ByeCompletedMessage extends Message {
+public final class ByeCompletedMessage extends Message {
 
     public ByeCompletedMessage() {
         super(MessageType.BYE_COMPLETED);

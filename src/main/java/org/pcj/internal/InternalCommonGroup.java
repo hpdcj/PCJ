@@ -79,23 +79,23 @@ public class InternalCommonGroup {
         this.groupJoinStates = new GroupJoinStates();
     }
 
-    final public int getGroupId() {
+    public final int getGroupId() {
         return groupId;
     }
 
-    final public String getName() {
+    public final String getName() {
         return groupName;
     }
 
-    final public int threadCount() {
+    public final int threadCount() {
         return threadsMap.size();
     }
 
-    final public Set<Integer> getLocalThreadsId() {
+    public final Set<Integer> getLocalThreadsId() {
         return Collections.unmodifiableSet(localIds);
     }
 
-    final public int getGlobalThreadId(int groupThreadId) throws NoSuchElementException {
+    public final int getGlobalThreadId(int groupThreadId) throws NoSuchElementException {
         Integer globalThreadId = threadsMap.get(groupThreadId);
         if (globalThreadId == null) {
             throw new NoSuchElementException("Group threadId not found: " + groupThreadId);
@@ -103,7 +103,7 @@ public class InternalCommonGroup {
         return globalThreadId;
     }
 
-    final public int getGroupThreadId(int globalThreadId) throws NoSuchElementException {
+    public final int getGroupThreadId(int globalThreadId) throws NoSuchElementException {
         return threadsMap.entrySet().stream()
                        .filter(entry -> entry.getValue() == globalThreadId)
                        .mapToInt(Map.Entry::getKey)
@@ -111,7 +111,7 @@ public class InternalCommonGroup {
                        .orElseThrow(() -> new NoSuchElementException("Global threadId not found: " + globalThreadId));
     }
 
-    final public void addNewThread(int globalThreadId) {
+    public final void addNewThread(int globalThreadId) {
         int groupThreadId;
         do {
             groupThreadId = threadsCounter.getAndIncrement();
@@ -121,7 +121,7 @@ public class InternalCommonGroup {
         communicationTree.update(threadsMap);
     }
 
-    final public void updateThreadsMap(Map<Integer, Integer> newThreadsMap) { // groupId, globalId
+    public final void updateThreadsMap(Map<Integer, Integer> newThreadsMap) { // groupId, globalId
         threadsMap.putAll(newThreadsMap);
 
         updateLocalThreads();
@@ -147,15 +147,15 @@ public class InternalCommonGroup {
         return barrierStates;
     }
 
-    final public BroadcastStates getBroadcastStates() {
+    public final BroadcastStates getBroadcastStates() {
         return broadcastStates;
     }
 
-    final public CollectStates getCollectStates() {
+    public final CollectStates getCollectStates() {
         return collectStates;
     }
 
-    final public ReduceStates getReduceStates() {
+    public final ReduceStates getReduceStates() {
         return reduceStates;
     }
 
@@ -179,15 +179,15 @@ public class InternalCommonGroup {
             this.childrenNodes = new CopyOnWriteArraySet<>();
         }
 
-        final public int getMasterNode() {
+        public final int getMasterNode() {
             return masterNode;
         }
 
-        final public int getParentNode() {
+        public final int getParentNode() {
             return parentNode;
         }
 
-        final public Set<Integer> getChildrenNodes() {
+        public final Set<Integer> getChildrenNodes() {
             return Collections.unmodifiableSet(childrenNodes);
         }
 

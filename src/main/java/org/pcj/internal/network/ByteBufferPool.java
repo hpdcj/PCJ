@@ -62,7 +62,7 @@ public class ByteBufferPool {
         }
     }
 
-    final public static class HeapPooledByteBuffer extends PooledByteBuffer {
+    public final static class HeapPooledByteBuffer extends PooledByteBuffer {
         public HeapPooledByteBuffer(int capacity) {
             super(ByteBuffer.allocate(capacity));
         }

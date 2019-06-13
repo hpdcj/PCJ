@@ -26,7 +26,7 @@ import org.pcj.internal.message.MessageType;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class MessageProc {
+public final class MessageProc {
     private static final Logger LOGGER = Logger.getLogger(MessageProc.class.getName());
     private ExecutorService workers;
 

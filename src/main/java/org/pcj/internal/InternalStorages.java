@@ -220,7 +220,7 @@ public class InternalStorages {
         return enumToStorageMap.get(sharedEnumClassName);
     }
 
-    final public Class<?> getClass(String sharedEnumClassName, String name, int depth) throws ArrayIndexOutOfBoundsException {
+    public final Class<?> getClass(String sharedEnumClassName, String name, int depth) throws ArrayIndexOutOfBoundsException {
         return getClass0(getParent(sharedEnumClassName), name, depth);
     }
 
@@ -247,11 +247,11 @@ public class InternalStorages {
      * @throws ClassCastException             there is more indices than variable dimension
      * @throws ArrayIndexOutOfBoundsException one of indices is out of bound
      */
-    final public <T> T get(Enum<?> variable, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException {
+    public final <T> T get(Enum<?> variable, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException {
         return get0(getParent(variable), variable.name(), indices);
     }
 
-    final public <T> T get(String sharedEnumClassName, String name, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException {
+    public final <T> T get(String sharedEnumClassName, String name, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException {
         return get0(getParent(sharedEnumClassName), name, indices);
     }
 
@@ -292,11 +292,11 @@ public class InternalStorages {
      *                                        or value cannot be assigned to the variable
      * @throws ArrayIndexOutOfBoundsException one of indices is out of bound
      */
-    final public <T> void accumulate(ReduceOperation<T> function, T value, Enum<?> variable, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
+    public final <T> void accumulate(ReduceOperation<T> function, T value, Enum<?> variable, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
         accumulate0(function, value, getParent(variable), variable.name(), indices);
     }
 
-    final public <T> void accumulate(ReduceOperation<T> function, T value, String sharedEnumClassName, String name, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
+    public final <T> void accumulate(ReduceOperation<T> function, T value, String sharedEnumClassName, String name, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
         accumulate0(function, value, getParent(sharedEnumClassName), name, indices);
     }
 
@@ -373,11 +373,11 @@ public class InternalStorages {
      *                                        or value cannot be assigned to the variable
      * @throws ArrayIndexOutOfBoundsException one of indices is out of bound
      */
-    final public <T> void put(T value, Enum<?> variable, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
+    public final <T> void put(T value, Enum<?> variable, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
         put0(value, getParent(variable), variable.name(), indices);
     }
 
-    final public <T> void put(T value, String sharedEnumClassName, String name, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
+    public final <T> void put(T value, String sharedEnumClassName, String name, int... indices) throws ArrayIndexOutOfBoundsException, ClassCastException, NullPointerException {
         put0(value, getParent(sharedEnumClassName), name, indices);
     }
 
@@ -497,7 +497,7 @@ public class InternalStorages {
      *
      * @param variable name of shared variable
      */
-    final public int monitor(Enum<?> variable) {
+    public final int monitor(Enum<?> variable) {
         return monitor0(getParent(variable), variable.name());
     }
 
@@ -520,7 +520,7 @@ public class InternalStorages {
      * @param count    number of modifications. If 0 - the method exits
      *                 immediately.
      */
-    final public int waitFor(Enum<?> variable, int count) {
+    public final int waitFor(Enum<?> variable, int count) {
         return waitFor0(getParent(variable), variable.name(), count);
     }
 
@@ -554,7 +554,7 @@ public class InternalStorages {
      * @param count    number of modifications. If 0 - the method exits
      *                 immediately.
      */
-    final public int waitFor(Enum<?> variable, int count, long timeout, TimeUnit unit) throws TimeoutException {
+    public final int waitFor(Enum<?> variable, int count, long timeout, TimeUnit unit) throws TimeoutException {
         return waitFor0(getParent(variable), variable.name(), count, timeout, unit);
     }
 

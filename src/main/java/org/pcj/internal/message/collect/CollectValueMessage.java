@@ -24,7 +24,7 @@ import org.pcj.internal.network.MessageDataOutputStream;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class CollectValueMessage<T> extends Message {
+public final class CollectValueMessage<T> extends Message {
 
     private int groupId;
     private int requestNum;

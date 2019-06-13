@@ -39,7 +39,7 @@ import org.pcj.internal.message.reduce.ReduceStates;
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class InternalGroup extends InternalCommonGroup implements Group {
+public final class InternalGroup extends InternalCommonGroup implements Group {
 
     private final int myThreadId;
     private final ValueGetStates valueGetStates;

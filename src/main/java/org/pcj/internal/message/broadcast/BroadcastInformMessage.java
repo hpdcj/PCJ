@@ -23,7 +23,7 @@ import org.pcj.internal.network.MessageDataOutputStream;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class BroadcastInformMessage extends Message {
+public final class BroadcastInformMessage extends Message {
 
     private int groupId;
     private int requestNum;

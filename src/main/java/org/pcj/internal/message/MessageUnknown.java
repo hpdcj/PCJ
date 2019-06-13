@@ -20,7 +20,7 @@ import org.pcj.internal.network.MessageDataOutputStream;
  * @param <i>unknown</i> <i>unknown parameters</i>
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class MessageUnknown extends Message {
+public final class MessageUnknown extends Message {
 
     public MessageUnknown() {
         super(MessageType.UNKNOWN);

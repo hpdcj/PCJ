@@ -17,7 +17,7 @@ import org.pcj.Group;
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class PcjThreadData {
+public final class PcjThreadData {
 
     private final InternalStorages storages;
     private final InternalGroup globalGroup;

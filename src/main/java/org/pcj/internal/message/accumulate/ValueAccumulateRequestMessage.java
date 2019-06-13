@@ -23,7 +23,7 @@ import org.pcj.internal.network.MessageDataOutputStream;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class ValueAccumulateRequestMessage<T> extends Message {
+public final class ValueAccumulateRequestMessage<T> extends Message {
 
     private int requestNum;
     private int groupId;

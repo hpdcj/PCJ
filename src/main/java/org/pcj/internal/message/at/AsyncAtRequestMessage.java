@@ -22,7 +22,7 @@ import org.pcj.internal.network.MessageDataOutputStream;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class AsyncAtRequestMessage<T> extends Message {
+public final class AsyncAtRequestMessage<T> extends Message {
 
     private int requestNum;
     private int groupId;

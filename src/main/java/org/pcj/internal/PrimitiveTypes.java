@@ -15,7 +15,7 @@ import java.util.function.Function;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class PrimitiveTypes {
+public final class PrimitiveTypes {
 
     private static final Map<Class<?>, Class<?>> PRIMITIVES_BOXED = new HashMap<>(8, 1);
     private static final Map<Class<?>, Function<Object, ?>> CONVERSION_MAP = new HashMap<>(8, 1);

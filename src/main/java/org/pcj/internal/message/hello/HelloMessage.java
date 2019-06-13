@@ -31,7 +31,7 @@ import org.pcj.internal.network.MessageDataOutputStream;
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class HelloMessage extends Message {
+public final class HelloMessage extends Message {
 
     private int port;
     private int[] threadIds;

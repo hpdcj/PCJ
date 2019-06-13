@@ -29,7 +29,7 @@ import org.pcj.StartPoint;
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class DeployPCJ {
+public final class DeployPCJ {
 
     private static final Logger LOGGER = Logger.getLogger(DeployPCJ.class.getName());
     private final Class<? extends StartPoint> startPoint;

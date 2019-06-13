@@ -22,7 +22,7 @@ import java.util.Set;
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class LoopbackSocketChannel extends SocketChannel {
+public final class LoopbackSocketChannel extends SocketChannel {
 
     private static class LoopbackSocketChannelHolder {
 

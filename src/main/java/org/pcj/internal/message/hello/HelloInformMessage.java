@@ -23,7 +23,7 @@ import org.pcj.internal.network.MessageDataOutputStream;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-final public class HelloInformMessage extends Message {
+public final class HelloInformMessage extends Message {
 
     private int currentPhysicalId;
     private Map<Integer, NodeInfo> nodeInfoByPhysicalId;
