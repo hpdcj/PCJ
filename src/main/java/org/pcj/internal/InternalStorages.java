@@ -9,6 +9,8 @@
 package org.pcj.internal;
 
 import java.io.Serializable;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -37,37 +39,27 @@ public class InternalStorages {
 
     private static class StorageField {
 
-        private final Field field;
+        private final VarHandle varHandle;
         private final Object storageObject;
         private final Semaphore modificationCounter;
 
-        StorageField(Field field, Object storageObject) {
-            this.field = field;
+        StorageField(VarHandle varHandle, Object storageObject) {
+            this.varHandle = varHandle;
             this.storageObject = storageObject;
-
-            field.setAccessible(true);
 
             this.modificationCounter = new Semaphore(0);
         }
 
         Class<?> getType() {
-            return field.getType();
+            return varHandle.varType();
         }
 
         Object getValue() {
-            try {
-                return field.get(storageObject);
-            } catch (IllegalAccessException ex) {
-                throw new RuntimeException("Cannot get value from storage", ex);
-            }
+            return varHandle.get(storageObject);
         }
 
         void setValue(Object value) {
-            try {
-                field.set(storageObject, value);
-            } catch (IllegalAccessException ex) {
-                throw new RuntimeException("Cannot set value to storage", ex);
-            }
+            varHandle.set(storageObject, value);
         }
 
         void incrementModificationCounter() {
@@ -170,11 +162,15 @@ public class InternalStorages {
             }
         }
 
+        MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(storageClass, MethodHandles.lookup());
+
         for (Enum<?> enumConstant : storageEnumClass.getEnumConstants()) {
             String name = enumConstant.name();
             Field field = storageClass.getDeclaredField(name);
 
-            createShared0(storageClassName, name, field, storage);
+            VarHandle varHandle = lookup.unreflectVarHandle(field);
+
+            createShared0(storageClassName, name, varHandle, storage);
         }
 
         storageObjectsMap.put(storageClassName, storage);
@@ -182,9 +178,9 @@ public class InternalStorages {
         return storage;
     }
 
-    private void createShared0(String parent, String name, Field field, Object storageObject)
+    private void createShared0(String parent, String name, VarHandle varHandle, Object storageObject)
             throws NullPointerException, IllegalArgumentException, IllegalStateException {
-        Class<?> type = field.getType();
+        Class<?> type = varHandle.varType();
 
         if (!type.isPrimitive() && !Serializable.class.isAssignableFrom(type) && Modifier.isFinal(type.getModifiers())) {
             throw new IllegalArgumentException("Type of '" + name + "' (" + type.getCanonicalName() + ") from class '" + parent + "' is not serializable but final");
@@ -192,7 +188,7 @@ public class InternalStorages {
 
         ConcurrentMap<String, StorageField> storage
                 = sharedObjectsMap.computeIfAbsent(parent, key -> new ConcurrentHashMap<>());
-        StorageField storageField = new StorageField(field, storageObject);
+        StorageField storageField = new StorageField(varHandle, storageObject);
 
         storage.putIfAbsent(name, storageField);
     }
@@ -320,16 +316,16 @@ public class InternalStorages {
                                                  + ": " + targetClass);
         }
 
-        Object newValue = value;
+        Object updateValue = value;
         if (targetClass.isPrimitive()) {
-            newValue = PrimitiveTypes.convert(targetClass, value);
+            updateValue = PrimitiveTypes.convert(targetClass, value);
         } else if (PrimitiveTypes.isBoxedClass(targetClass) && value != null) {
-            newValue = PrimitiveTypes.convert(targetClass, value);
+            updateValue = PrimitiveTypes.convert(targetClass, value);
         }
 
         if (indices.length == 0) {
             synchronized (field) {
-                field.setValue(function.apply((T) field.getValue(), (T) newValue));
+                field.setValue(function.apply((T) field.getValue(), (T) updateValue));
             }
         } else {
             Object array = getArrayElement(field.getValue(), indices, indices.length - 1);
@@ -343,7 +339,7 @@ public class InternalStorages {
 
             synchronized (field) {
                 Array.set(array, indices[indices.length - 1],
-                        function.apply((T) Array.get(array, indices[indices.length - 1]), (T) newValue));
+                        function.apply((T) Array.get(array, indices[indices.length - 1]), (T) updateValue));
             }
         }
         field.incrementModificationCounter();
