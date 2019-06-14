@@ -1,3 +1,1 @@
 rootProject.name = 'PCJ'
-
-enableFeaturePreview('STABLE_PUBLISHING')

@@ -1,9 +1,10 @@
 buildscript {
     repositories {
         mavenCentral()
+        jcenter()
     }
     dependencies {
-        classpath 'org.ajoberstar:gradle-git:1.6.0'
+        classpath 'org.ajoberstar.grgit:grgit-core:3.1.1'
     }
 }
 
@@ -36,9 +37,7 @@ compileJava {
     description 'Compiling java classes using Java 8'
 
     options.compilerArgs = [
-            '-source', '1.8',
-            '-target', '1.8',
-            '-profile', 'compact3',
+            '--release', '9',
             '-Xlint:unchecked'
     ]
 }
@@ -114,12 +113,12 @@ jar {
     from 'LICENSE'
     manifest {
         attributes(
+                'Automatic-Module-Name': 'org.pcj',
                 'Specification-Title': 'PCJ -- Parallel Computing in Java',
                 'Implementation-Title': 'org.pcj',
                 'Specification-Vendor': 'PCJ Library, Marek Nowicki',
                 'Implementation-Vendor': 'Marek Nowicki',
                 'Sealed': true,
-                // 'Profile': 'compact3',
         )
         attributes(['Sealed': false], 'org/pcj/')
     }
@@ -199,7 +198,7 @@ gradle.taskGraph.whenReady { taskGraph ->
 
     def repoId = [abbreviatedId: "unknown", id: "unknown"]
     try {
-        repoId = org.ajoberstar.grgit.Grgit.open(project.file('.')).head();
+        repoId = org.ajoberstar.grgit.Grgit.open(dir: project.file('.')).head()
     } catch (Exception e) {
     }
 
@@ -231,21 +230,3 @@ gradle.taskGraph.whenReady { taskGraph ->
         }
     }
 }
-
-// Code needed for running Main classes from Task Packages in NetBeans
-def createJavaExec = { String taskName ->
-    project.task(taskName, dependsOn: project.testClasses, type: JavaExec) {
-        def definedMainClass = project.hasProperty('mainClass') ? project.mainClass : ''
-        if (definedMainClass == null) definedMainClass = ''
-        definedMainClass = definedMainClass.toString()
-
-        main = definedMainClass
-        classpath = project.sourceSets.test.runtimeClasspath
-        standardInput = System.in
-        //jvmArgs = ["-Xmx3g","-Xms3g"]
-        maxHeapSize = "2g"
-
-    }
-}
-
-createJavaExec('run')
