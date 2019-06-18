@@ -14,7 +14,7 @@ plugins {
     id 'signing'
 }
 
-def getDate() {
+static def getDate() {
     return new Date().format("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
 }
 
@@ -37,7 +37,7 @@ compileJava {
     description 'Compiling java classes using Java 8'
 
     options.compilerArgs = [
-            '--release', '9',
+            '--release', '8',
             '-Xlint:unchecked'
     ]
 }

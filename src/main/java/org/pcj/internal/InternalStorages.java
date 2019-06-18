@@ -9,8 +9,6 @@
 package org.pcj.internal;
 
 import java.io.Serializable;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -39,27 +37,37 @@ public class InternalStorages {
 
     private static class StorageField {
 
-        private final VarHandle varHandle;
+        private final Field field;
         private final Object storageObject;
         private final Semaphore modificationCounter;
 
-        StorageField(VarHandle varHandle, Object storageObject) {
-            this.varHandle = varHandle;
+        StorageField(Field field, Object storageObject) {
+            this.field = field;
             this.storageObject = storageObject;
+
+            field.setAccessible(true);
 
             this.modificationCounter = new Semaphore(0);
         }
 
         Class<?> getType() {
-            return varHandle.varType();
+            return field.getType();
         }
 
         Object getValue() {
-            return varHandle.get(storageObject);
+            try {
+                return field.get(storageObject);
+            } catch (IllegalAccessException ex) {
+                throw new RuntimeException("Cannot get value from storage", ex);
+            }
         }
 
         void setValue(Object value) {
-            varHandle.set(storageObject, value);
+            try {
+                field.set(storageObject, value);
+            } catch (IllegalAccessException ex) {
+                throw new RuntimeException("Cannot set value to storage", ex);
+            }
         }
 
         void incrementModificationCounter() {
@@ -162,15 +170,11 @@ public class InternalStorages {
             }
         }
 
-        MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(storageClass, MethodHandles.lookup());
-
         for (Enum<?> enumConstant : storageEnumClass.getEnumConstants()) {
             String name = enumConstant.name();
             Field field = storageClass.getDeclaredField(name);
 
-            VarHandle varHandle = lookup.unreflectVarHandle(field);
-
-            createShared0(storageClassName, name, varHandle, storage);
+            createShared0(storageClassName, name, field, storage);
         }
 
         storageObjectsMap.put(storageClassName, storage);
@@ -178,9 +182,9 @@ public class InternalStorages {
         return storage;
     }
 
-    private void createShared0(String parent, String name, VarHandle varHandle, Object storageObject)
+    private void createShared0(String parent, String name, Field field, Object storageObject)
             throws NullPointerException, IllegalArgumentException, IllegalStateException {
-        Class<?> type = varHandle.varType();
+        Class<?> type = field.getType();
 
         if (!type.isPrimitive() && !Serializable.class.isAssignableFrom(type) && Modifier.isFinal(type.getModifiers())) {
             throw new IllegalArgumentException("Type of '" + name + "' (" + type.getCanonicalName() + ") from class '" + parent + "' is not serializable but final");
@@ -188,7 +192,7 @@ public class InternalStorages {
 
         ConcurrentMap<String, StorageField> storage
                 = sharedObjectsMap.computeIfAbsent(parent, key -> new ConcurrentHashMap<>());
-        StorageField storageField = new StorageField(varHandle, storageObject);
+        StorageField storageField = new StorageField(field, storageObject);
 
         storage.putIfAbsent(name, storageField);
     }
