@@ -21,48 +21,37 @@ import org.pcj.internal.message.Message;
  */
 public class LoopbackMessageBytes implements MessageInputBytes {
 
-    private final BlockingQueue<LoopbackMessageOutputBytes> queue;
-    private final AtomicBoolean processing;
-    private ByteBufferInputStream currentInputStream;
+    private final LoopbackMessageOutputBytes loopbackMessageOutputBytes;
 
-    public LoopbackMessageBytes() {
-        queue = new LinkedBlockingQueue<>();
-        processing = new AtomicBoolean(false);
+    private LoopbackMessageBytes() {
+        loopbackMessageOutputBytes = new LoopbackMessageOutputBytes();
     }
 
-    public LoopbackMessageOutputBytes prepareForNewMessage() {
-        LoopbackMessageOutputBytes loopbackMessageOutputBytes = new LoopbackMessageOutputBytes();
-        queue.add(loopbackMessageOutputBytes);
-
-        return loopbackMessageOutputBytes;
+    public static LoopbackMessageBytes prepareForNewMessage() {
+        return new LoopbackMessageBytes();
     }
 
     @Override
     public InputStream getInputStream() {
-        if (currentInputStream == null || currentInputStream.isClosed()) {
-            try {
-                LoopbackMessageOutputBytes loopbackMessageOutputBytes = queue.take();
-                currentInputStream = loopbackMessageOutputBytes.getByteBufferInputStream();
-            } catch (InterruptedException e) {
-                throw new PcjRuntimeException(e);
-            }
-        }
-        return currentInputStream;
+        return loopbackMessageOutputBytes.getByteBufferInputStream();
     }
 
     @Override
     public boolean tryProcessing() {
-        return processing.compareAndSet(false, true);
+        return true;
     }
 
     @Override
     public void finishedProcessing() {
-        processing.set(false);
     }
 
     @Override
     public boolean hasMoreData() {
-        return !queue.isEmpty();
+        return false;
+    }
+
+    public void writeMessage(Message message) throws IOException {
+        loopbackMessageOutputBytes.writeMessage(message);
     }
 
     public static class LoopbackMessageOutputBytes implements MessageOutputBytes {

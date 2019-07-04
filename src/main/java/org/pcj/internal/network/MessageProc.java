@@ -28,7 +28,8 @@ import org.pcj.internal.message.MessageType;
  */
 public final class MessageProc {
     private static final Logger LOGGER = Logger.getLogger(MessageProc.class.getName());
-    private ExecutorService workers;
+    private final ExecutorService workers;
+    private final ExecutorService localWorkers;
 
     public MessageProc() {
         BlockingQueue<Runnable> blockingQueue;
@@ -47,16 +48,27 @@ public final class MessageProc {
                 threadGroup, "MessageProc-Worker-",
                 blockingQueue,
                 new ThreadPoolExecutor.CallerRunsPolicy());
+
+        localWorkers = new WorkerPoolExecutor(
+                InternalPCJ.getConfiguration().MESSAGE_WORKERS_COUNT,
+                threadGroup, "MessageProc-LocalWorker-",
+                blockingQueue,
+                new ThreadPoolExecutor.CallerRunsPolicy());
     }
 
     public void shutdown() {
         workers.shutdownNow();
+        localWorkers.shutdownNow();
     }
 
     public void process(SocketChannel socket, MessageInputBytes messageInputBytes) {
         if (messageInputBytes.tryProcessing()) {
             workers.execute(new MessageWorker(socket, messageInputBytes));
         }
+    }
+
+    public void processLocal(SocketChannel socket, MessageInputBytes messageInputBytes) {
+        localWorkers.execute(new MessageWorker(socket, messageInputBytes));
     }
 
     private static class MessageWorker implements Runnable {

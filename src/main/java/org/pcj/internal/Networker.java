@@ -48,7 +48,6 @@ public final class Networker {
     private final String currentHostName;
     private final SelectorProc selectorProc;
     private final Thread selectorProcThread;
-    private final LoopbackMessageBytes loopbackMessageBytes;
 
     protected Networker(int port) {
         Queue<InetAddress> interfacesAddresses = getHostAllNetworkInterfaces();
@@ -65,8 +64,6 @@ public final class Networker {
         selectorProcThread.start();
 
         tryToBind(interfacesAddresses, port);
-
-        loopbackMessageBytes = new LoopbackMessageBytes();
     }
 
     private static Queue<InetAddress> getHostAllNetworkInterfaces() throws UncheckedIOException {
@@ -232,10 +229,10 @@ public final class Networker {
                             new Object[]{currentHostName, message.getType()});
                 }
 
-                LoopbackMessageBytes.LoopbackMessageOutputBytes loopbackMessageOutputBytes = loopbackMessageBytes.prepareForNewMessage();
-                InternalPCJ.getMessageProc().process(socket, loopbackMessageBytes);
+                LoopbackMessageBytes loopbackMessageBytes = LoopbackMessageBytes.prepareForNewMessage();
+                InternalPCJ.getMessageProc().processLocal(socket, loopbackMessageBytes);
 
-                loopbackMessageOutputBytes.writeMessage(message);
+                loopbackMessageBytes.writeMessage(message);
             } else {
                 if (LOGGER.isLoggable(Level.FINEST)) {
                     LOGGER.log(Level.FINEST, "[{0}] Sending message {1} to {2}",
