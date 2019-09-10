@@ -585,8 +585,50 @@ public final class PCJ {
      * @return joined group
      * @deprecated use {@link #joinGroup(String)} instead
      */
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public static Group join(String name) {
         return PCJ.joinGroup(name);
+    }
+
+    /**
+     * This function will be removed.
+     *
+     * Starts PCJ calculations on local node using specified StartPoint.
+     * NodesDescription contains list of all hostnames used in calculations.
+     * Hostnames can be specified many times, so more than one instance of PCJ
+     * will be run on node (called threads).
+     *
+     * @param startPoint start point class
+     * @param nodesDescription description of used nodes (and threads)
+     * @deprecated use {@link #executionBuilder(Class)} instead
+     */
+    @Deprecated(forRemoval = true)
+    public static void start(Class<? extends StartPoint> startPoint,
+                             NodesDescription nodesDescription) {
+        PCJ.executionBuilder(startPoint).addNodes(nodesDescription.getNodes()).start();
+    }
+
+    /**
+     * This function will be removed.
+     *
+     * Deploys and starts PCJ calculations on nodes using specified StartPoint
+     * class. NodesDescription contains list of all hostnames used in
+     * calculations. Hostnames can be specified many times, so more than one
+     * instance of PCJ will be run on node (called threads). Empty hostnames
+     * means current JVM.
+     *
+     * Hostnames can take port (after colon ':'), eg. ["localhost:8000",
+     * "localhost:8001", "localhost", "host2:8001", "host2"]. Default port is
+     * 8091 and can be modified using
+     * <tt>pcj.port</tt> system property value (-Dpcj.port=8091).
+     *
+     * @param startPoint start point class
+     * @param nodesDescription description of used nodes (and threads)
+     * @deprecated use {@link #executionBuilder(Class)} instead
+     */
+    @Deprecated(forRemoval = true)
+    public static void deploy(Class<? extends StartPoint> startPoint,
+                              NodesDescription nodesDescription) {
+        PCJ.executionBuilder(startPoint).addNodes(nodesDescription.getNodes()).deploy();
     }
 }
