@@ -19,11 +19,9 @@ import org.pcj.internal.InternalPCJ;
  */
 public class ByteBufferOutputStream extends OutputStream {
 
-    private static final ByteBufferPool BYTE_BUFFER_POOL = new ByteBufferPool(
-            InternalPCJ.getConfiguration().BUFFER_POOL_SIZE,
-            InternalPCJ.getConfiguration().BUFFER_CHUNK_SIZE);
     private static final int HEADER_SIZE = Integer.BYTES;
     private static final int LAST_CHUNK_BIT = (1 << (Integer.SIZE - 1));
+    private final ByteBufferPool byteBufferPool;
     private final BlockingDeque<ByteBufferPool.PooledByteBuffer> queue;
     private ByteBufferPool.PooledByteBuffer currentPooledByteBuffer;
     private boolean closed;
@@ -32,8 +30,15 @@ public class ByteBufferOutputStream extends OutputStream {
         this(new LinkedBlockingDeque<>());
     }
 
-    public ByteBufferOutputStream(BlockingDeque<ByteBufferPool.PooledByteBuffer> queue) {
+    private ByteBufferOutputStream(BlockingDeque<ByteBufferPool.PooledByteBuffer> queue) {
+        this(queue, new ByteBufferPool(
+                InternalPCJ.getConfiguration().BUFFER_POOL_SIZE,
+                InternalPCJ.getConfiguration().BUFFER_CHUNK_SIZE));
+    }
+
+    private ByteBufferOutputStream(BlockingDeque<ByteBufferPool.PooledByteBuffer> queue, ByteBufferPool byteBufferPool) {
         this.queue = queue;
+        this.byteBufferPool = byteBufferPool;
 
         this.currentPooledByteBuffer = null;
     }
@@ -96,7 +101,7 @@ public class ByteBufferOutputStream extends OutputStream {
     }
 
     private ByteBuffer getNextByteBuffer() {
-        currentPooledByteBuffer = BYTE_BUFFER_POOL.take();
+        currentPooledByteBuffer = byteBufferPool.take();
         currentPooledByteBuffer.getByteBuffer().position(HEADER_SIZE);
         return currentPooledByteBuffer.getByteBuffer();
     }
