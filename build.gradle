@@ -34,10 +34,10 @@ dependencies {
 
 compileJava {
     group 'build'
-    description 'Compiling java classes using Java 8'
+    description 'Compiling java classes using Java 9'
 
     options.compilerArgs = [
-            '--release', '8',
+            '--release', '9',
             '-Xlint:unchecked'
     ]
 }
