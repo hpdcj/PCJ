@@ -147,7 +147,7 @@ public interface Group {
      * @return name of the group
      * @deprecated use {@link #getName()} instead
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated
     default String getGroupName() {
         return getName();
     }

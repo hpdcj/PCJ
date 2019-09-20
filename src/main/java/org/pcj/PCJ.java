@@ -585,7 +585,7 @@ public final class PCJ {
      * @return joined group
      * @deprecated use {@link #joinGroup(String)} instead
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated
     public static Group join(String name) {
         return PCJ.joinGroup(name);
     }
@@ -602,7 +602,7 @@ public final class PCJ {
      * @param nodesDescription description of used nodes (and threads)
      * @deprecated use {@link #executionBuilder(Class)} instead
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated
     public static void start(Class<? extends StartPoint> startPoint,
                              NodesDescription nodesDescription) {
         PCJ.executionBuilder(startPoint).addNodes(nodesDescription.getNodes()).start();
@@ -620,13 +620,13 @@ public final class PCJ {
      * Hostnames can take port (after colon ':'), eg. ["localhost:8000",
      * "localhost:8001", "localhost", "host2:8001", "host2"]. Default port is
      * 8091 and can be modified using
-     * <tt>pcj.port</tt> system property value (-Dpcj.port=8091).
+     * <code>pcj.port</code> system property value (-Dpcj.port=8091).
      *
      * @param startPoint start point class
      * @param nodesDescription description of used nodes (and threads)
      * @deprecated use {@link #executionBuilder(Class)} instead
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated
     public static void deploy(Class<? extends StartPoint> startPoint,
                               NodesDescription nodesDescription) {
         PCJ.executionBuilder(startPoint).addNodes(nodesDescription.getNodes()).deploy();

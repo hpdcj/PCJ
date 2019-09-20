@@ -25,7 +25,7 @@ import java.io.IOException;
  * @author Marek Nowicki (faramir@mat.umk.pl)
  * @deprecated use {@link PCJ#executionBuilder(Class)} instead
  */
-@Deprecated(forRemoval = true)
+@Deprecated
 public class NodesDescription {
 
     private final String[] nodes;
