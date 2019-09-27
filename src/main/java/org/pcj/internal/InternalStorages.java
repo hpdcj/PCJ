@@ -351,7 +351,9 @@ public class InternalStorages {
 
     private Object getArrayElement(Object array, int[] indices, int length) throws ArrayIndexOutOfBoundsException, IllegalArgumentException, ClassCastException {
         for (int index = 0; index < length; ++index) {
-            if (!array.getClass().isArray()) {
+            if (array == null) {
+                throw new NullPointerException("Array is null at index " + index + " of " + Arrays.toString(indices));
+            } else if (!array.getClass().isArray()) {
                 throw new ClassCastException("Wrong dimension at point " + index + ".");
             } else if (Array.getLength(array) <= indices[index]) {
                 throw new ArrayIndexOutOfBoundsException("Wrong size at point " + index + ".");
