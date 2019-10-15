@@ -18,6 +18,7 @@ import org.pcj.PcjRuntimeException;
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 public class ByteBufferInputStream extends InputStream {
+
     private static final int HEADER_SIZE = Integer.BYTES;
     private static final int LAST_CHUNK_BIT = (1 << (Integer.SIZE - 1));
     private static final int LENGTH_MASK = ~LAST_CHUNK_BIT;

@@ -10,6 +10,7 @@ package org.pcj.internal.network;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.message.Message;
 
 /**
@@ -17,10 +18,13 @@ import org.pcj.internal.message.Message;
  */
 public class RemoteMessageOutputBytes implements MessageOutputBytes {
 
+    private static final ByteBufferPool BYTE_BUFFER_POOL = new ByteBufferPool(
+            InternalPCJ.getConfiguration().BUFFER_POOL_SIZE,
+            InternalPCJ.getConfiguration().BUFFER_CHUNK_SIZE);
     private final ByteBufferOutputStream byteBufferOutputStream;
 
     public RemoteMessageOutputBytes() {
-        byteBufferOutputStream = new ByteBufferOutputStream();
+        byteBufferOutputStream = new ByteBufferOutputStream(BYTE_BUFFER_POOL);
     }
 
     @Override

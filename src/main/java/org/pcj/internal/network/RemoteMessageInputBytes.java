@@ -17,6 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 public class RemoteMessageInputBytes implements MessageInputBytes {
+
     private final AtomicBoolean processing;
     private ByteBufferInputStream inputStream;
     private final BlockingDeque<ByteBufferPool.PooledByteBuffer> queue;

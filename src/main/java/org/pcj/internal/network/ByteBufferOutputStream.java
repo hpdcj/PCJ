@@ -26,20 +26,10 @@ public class ByteBufferOutputStream extends OutputStream {
     private ByteBufferPool.PooledByteBuffer currentPooledByteBuffer;
     private boolean closed;
 
-    public ByteBufferOutputStream() {
-        this(new LinkedBlockingDeque<>());
-    }
-
-    private ByteBufferOutputStream(BlockingDeque<ByteBufferPool.PooledByteBuffer> queue) {
-        this(queue, new ByteBufferPool(
-                InternalPCJ.getConfiguration().BUFFER_POOL_SIZE,
-                InternalPCJ.getConfiguration().BUFFER_CHUNK_SIZE));
-    }
-
-    private ByteBufferOutputStream(BlockingDeque<ByteBufferPool.PooledByteBuffer> queue, ByteBufferPool byteBufferPool) {
-        this.queue = queue;
+    public ByteBufferOutputStream(ByteBufferPool byteBufferPool) {
         this.byteBufferPool = byteBufferPool;
 
+        this.queue = new LinkedBlockingDeque<>();
         this.currentPooledByteBuffer = null;
     }
 

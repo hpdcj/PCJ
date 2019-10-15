@@ -11,9 +11,11 @@ package org.pcj.internal.network;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.pcj.PcjRuntimeException;
+import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.message.Message;
 
 /**
@@ -21,14 +23,17 @@ import org.pcj.internal.message.Message;
  */
 public class LoopbackMessageBytes implements MessageInputBytes {
 
+    private static final ByteBufferPool BYTE_BUFFER_POOL = new ByteBufferPool(
+            InternalPCJ.getConfiguration().BUFFER_POOL_SIZE,
+            InternalPCJ.getConfiguration().BUFFER_CHUNK_SIZE);
     private final LoopbackMessageOutputBytes loopbackMessageOutputBytes;
-
-    private LoopbackMessageBytes() {
-        loopbackMessageOutputBytes = new LoopbackMessageOutputBytes();
-    }
 
     public static LoopbackMessageBytes prepareForNewMessage() {
         return new LoopbackMessageBytes();
+    }
+
+    private LoopbackMessageBytes() {
+        loopbackMessageOutputBytes = new LoopbackMessageOutputBytes();
     }
 
     @Override
@@ -59,7 +64,7 @@ public class LoopbackMessageBytes implements MessageInputBytes {
         private final ByteBufferInputStream byteBufferInputStream;
 
         public LoopbackMessageOutputBytes() {
-            byteBufferOutputStream = new ByteBufferOutputStream();
+            byteBufferOutputStream = new ByteBufferOutputStream(BYTE_BUFFER_POOL);
             byteBufferInputStream = new ByteBufferInputStream(byteBufferOutputStream.getDeque());
         }
 
