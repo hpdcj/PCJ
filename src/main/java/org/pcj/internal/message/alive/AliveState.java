@@ -31,6 +31,7 @@ import org.pcj.internal.message.Message;
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 public class AliveState {
+
     private static final Logger LOGGER = Logger.getLogger(AliveState.class.getName());
     private final ConcurrentMap<SocketChannel, LocalDateTime> nodeLastNotificationMap;
     private final ScheduledExecutorService scheduledExecutorService;

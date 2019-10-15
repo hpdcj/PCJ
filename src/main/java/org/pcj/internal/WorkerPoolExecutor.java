@@ -19,6 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 public class WorkerPoolExecutor extends ThreadPoolExecutor {
+
     public WorkerPoolExecutor(int poolSize,
                               ThreadGroup threadGroup, String threadNamePrefix,
                               BlockingQueue<Runnable> workQueue,

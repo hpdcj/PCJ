@@ -65,6 +65,7 @@ public class GroupJoinStates {
     }
 
     public class Notification {
+
         private final int requestNum;
         private final GroupJoinFuture future;
 
@@ -87,6 +88,7 @@ public class GroupJoinStates {
     }
 
     public class State {
+
         private final int requestNum;
         private final int joinerGlobalThreadId;
         private final AtomicInteger notificationCount;

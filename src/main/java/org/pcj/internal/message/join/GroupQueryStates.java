@@ -18,8 +18,8 @@ import org.pcj.internal.InternalCommonGroup;
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 public class GroupQueryStates {
-    private final AtomicInteger counter;
 
+    private final AtomicInteger counter;
     private final ConcurrentMap<Integer, State> stateMap;
 
     public GroupQueryStates() {

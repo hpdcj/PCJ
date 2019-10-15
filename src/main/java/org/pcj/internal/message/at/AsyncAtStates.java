@@ -18,6 +18,7 @@ import org.pcj.PcjRuntimeException;
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 public class AsyncAtStates {
+
     private final AtomicInteger counter;
     private final ConcurrentMap<Integer, State<?>> stateMap;
 

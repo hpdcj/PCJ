@@ -31,6 +31,7 @@ import org.pcj.internal.message.Message;
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 public class ReduceStates {
+
     private final AtomicInteger counter;
     private final ConcurrentMap<List<Integer>, State<?>> stateMap;
 

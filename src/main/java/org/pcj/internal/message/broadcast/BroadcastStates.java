@@ -32,6 +32,7 @@ import org.pcj.internal.network.InputStreamCloner;
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 public class BroadcastStates {
+
     private final AtomicInteger counter;
     private final ConcurrentMap<List<Integer>, State> stateMap;
 
@@ -61,6 +62,7 @@ public class BroadcastStates {
     }
 
     public class State {
+
         private final int requestNum;
         private final int requesterThreadId;
         private final AtomicInteger notificationCount;

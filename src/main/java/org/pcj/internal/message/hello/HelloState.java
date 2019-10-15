@@ -32,7 +32,6 @@ import org.pcj.internal.message.bye.ByeState;
  */
 public class HelloState {
 
-    private static final Logger LOGGER = Logger.getLogger(HelloState.class.getName());
     private final HelloFuture future;
     private final ConcurrentMap<Integer, SocketChannel> socketChannelByPhysicalId; // physicalId -> nodeInfo
     private final ConcurrentMap<Integer, NodeInfo> nodeInfoByPhysicalId; // physicalId -> nodeInfo

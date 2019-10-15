@@ -21,6 +21,7 @@ import org.pcj.internal.network.MessageDataOutputStream;
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
 public class AbortMessage extends Message {
+
     public AbortMessage() {
         super(MessageType.ABORT);
     }

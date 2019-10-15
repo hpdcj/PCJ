@@ -22,7 +22,6 @@ import org.pcj.internal.NodeData;
  */
 public class ByeState {
 
-    private static final Logger LOGGER = Logger.getLogger(ByeState.class.getName());
     private final ByeFuture future;
     private final AtomicInteger notificationCount;
 

@@ -253,7 +253,6 @@ public abstract class InternalPCJ {
                     blockingQueue,
                     new ThreadPoolExecutor.AbortPolicy());
 
-
             PcjThread pcjThread = new PcjThread(startPointClass, threadId, pcjThreadGroup, asyncTasksWorkers, notificationSemaphore);
 
             pcjThreads.put(threadId, pcjThread);
