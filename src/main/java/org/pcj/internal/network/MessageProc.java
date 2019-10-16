@@ -32,28 +32,19 @@ public final class MessageProc {
     private final ExecutorService localWorkers;
 
     public MessageProc() {
-        BlockingQueue<Runnable> blockingQueue;
-        if (InternalPCJ.getConfiguration().MESSAGE_WORKERS_QUEUE_SIZE > 0) {
-            blockingQueue = new ArrayBlockingQueue<>(InternalPCJ.getConfiguration().MESSAGE_WORKERS_QUEUE_SIZE);
-        } else if (InternalPCJ.getConfiguration().MESSAGE_WORKERS_QUEUE_SIZE == 0) {
-            blockingQueue = new SynchronousQueue<>();
-        } else {
-            blockingQueue = new LinkedBlockingQueue<>();
-        }
-
         ThreadGroup threadGroup = new ThreadGroup("MessageProc");
 
         workers = new WorkerPoolExecutor(
                 InternalPCJ.getConfiguration().MESSAGE_WORKERS_COUNT,
                 threadGroup, "MessageProc-Worker-",
-                blockingQueue,
-                new ThreadPoolExecutor.CallerRunsPolicy());
+                new LinkedBlockingQueue<>(),
+                new ThreadPoolExecutor.AbortPolicy());
 
         localWorkers = new WorkerPoolExecutor(
                 InternalPCJ.getConfiguration().MESSAGE_WORKERS_COUNT,
                 threadGroup, "MessageProc-LocalWorker-",
-                blockingQueue,
-                new ThreadPoolExecutor.CallerRunsPolicy());
+                new LinkedBlockingQueue<>(),
+                new ThreadPoolExecutor.AbortPolicy());
     }
 
     public void shutdown() {

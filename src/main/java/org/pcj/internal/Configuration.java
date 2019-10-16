@@ -63,15 +63,6 @@ public final class Configuration {
      */
     public final int MESSAGE_WORKERS_KEEPALIVE;
     /**
-     * pcj.msg.workers.queuesize (int) default: 0
-     * <ul>
-     * <li> = 0 - synchronous queue</li>
-     * <li> &gt; 0 - bounded queue</li>
-     * <li> &lt; 0 - unbounded queue</li>
-     * </ul>
-     */
-    public final int MESSAGE_WORKERS_QUEUE_SIZE;
-    /**
      * pcj.async.workers.count (int) default: available processors
      */
     public final int ASYNC_WORKERS_COUNT;
@@ -110,7 +101,6 @@ public final class Configuration {
         BUFFER_POOL_SIZE = getPropertyInt("pcj.buffer.poolsize", 1024);
         MESSAGE_WORKERS_COUNT = getPropertyInt("pcj.msg.workers.count", Runtime.getRuntime().availableProcessors());
         MESSAGE_WORKERS_KEEPALIVE = getPropertyInt("pcj.msg.workers.keepalive", 60);
-        MESSAGE_WORKERS_QUEUE_SIZE = getPropertyInt("pcj.msg.workers.queuesize", 0);
         ASYNC_WORKERS_COUNT = getPropertyInt("pcj.async.workers.count", Runtime.getRuntime().availableProcessors());
         ASYNC_WORKERS_KEEPALIVE = getPropertyInt("pcj.async.workers.keepalive", 60);
         ASYNC_WORKERS_QUEUE_SIZE = getPropertyInt("pcj.async.workers.queuesize", -1);
@@ -126,7 +116,6 @@ public final class Configuration {
         LOGGER.log(Level.CONFIG, "pcj.buffer.poolsize:          {0,number,#}", BUFFER_POOL_SIZE);
         LOGGER.log(Level.CONFIG, "pcj.msg.workers.count:        {0,number,#}", MESSAGE_WORKERS_COUNT);
         LOGGER.log(Level.CONFIG, "pcj.msg.workers.keepalive:    {0,number,#}", MESSAGE_WORKERS_KEEPALIVE);
-        LOGGER.log(Level.CONFIG, "pcj.msg.workers.queuesize:    {0,number,#}", MESSAGE_WORKERS_QUEUE_SIZE);
         LOGGER.log(Level.CONFIG, "pcj.async.workers.count:      {0,number,#}", ASYNC_WORKERS_COUNT);
         LOGGER.log(Level.CONFIG, "pcj.async.workers.keepalive:  {0,number,#}", ASYNC_WORKERS_KEEPALIVE);
         LOGGER.log(Level.CONFIG, "pcj.async.workers.queuesize:  {0,number,#}", ASYNC_WORKERS_QUEUE_SIZE);
