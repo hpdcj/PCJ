@@ -23,12 +23,8 @@ public class ByteBufferPool {
     public ByteBufferPool(int size, int chunkSize) {
         this.pool = new ArrayBlockingQueue<>(size);
         this.chunkSize = chunkSize;
-        ByteBuffer directByteBuffer = ByteBuffer.allocateDirect(size * chunkSize);
         for (int i = 0; i < size; ++i) {
-            int index = i * chunkSize;
-            directByteBuffer.position(index);
-            directByteBuffer.limit(index + chunkSize);
-            ByteBuffer buffer = directByteBuffer.slice();
+            ByteBuffer buffer = ByteBuffer.allocateDirect(chunkSize);
             pool.offer(new DirectPooledByteBuffer(buffer));
         }
     }
