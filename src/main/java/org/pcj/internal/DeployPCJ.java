@@ -24,7 +24,7 @@ import org.pcj.StartPoint;
 /**
  * Class used for deploying PCJ when using one of deploy methods.
  *
- * @see org.pcj.PCJ#deploy(java.lang.Class, java.lang.Class)
+ * @see org.pcj.PCJ#deploy(java.lang.Class, NodesDescription)
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
@@ -130,15 +130,13 @@ final public class DeployPCJ {
         Process process = processBuilder.start();
         process.getOutputStream().close();
 
-        processes.add(process);
-
         return process;
     }
 
     private void runJVM(NodeInfo node) throws IOException {
         List<String> jvmExec = makeJvmParams(node);
 
-        exec(jvmExec);
+        processes.add(exec(jvmExec));
     }
 
     private void runSSH(NodeInfo node) throws IOException {
@@ -151,11 +149,15 @@ final public class DeployPCJ {
 
         List<String> sshExec = new ArrayList<>(Arrays.asList(
                 "ssh",
+                "-o", "BatchMode=yes",
+                "-o", "StrictHostKeyChecking=no",
+                "-o", "UserKnownHostsFile=/dev/null ~/.ssh/known_hosts ~/.ssh/known_hosts2",
                 node.getHostname(), // ssh host
+                "cd", System.getProperty("user.dir"), ";",
                 sb.toString().trim() // command
         ));
 
-        exec(sshExec);
+        processes.add(exec(sshExec));
     }
 
     private void waitForFinish() throws InterruptedException {
