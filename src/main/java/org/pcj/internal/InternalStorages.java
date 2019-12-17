@@ -34,7 +34,7 @@ import org.pcj.Storage;
  */
 public class InternalStorages {
 
-    private class StorageField {
+    private static class StorageField {
 
         private final Field field;
         private final AtomicInteger modificationCount;
@@ -84,29 +84,22 @@ public class InternalStorages {
     }
 
     public Object registerStorage(Class<? extends Enum<?>> storageClass) {
-        try {
-            return registerStorage0(storageClass, null);
-        } catch (NoSuchFieldException | IllegalAccessException | NoSuchMethodException
-                         | IllegalArgumentException | InvocationTargetException | InstantiationException ex) {
-            throw new PcjRuntimeException("Exception while registering enum class: " + storageClass, ex);
-        }
+        return registerStorage(storageClass, null);
     }
 
     public Object registerStorage(Class<? extends Enum<?>> storageEnumClass, Object storageObject) {
         try {
             return registerStorage0(storageEnumClass, storageObject);
-        } catch (NoSuchFieldException | IllegalAccessException | NoSuchMethodException
-                         | IllegalArgumentException | InvocationTargetException | InstantiationException
-                         | ClassCastException ex) {
+        } catch (NoSuchFieldException | IllegalArgumentException | ClassCastException ex) {
             throw new PcjRuntimeException("Exception while registering enum class: " + storageEnumClass, ex);
         }
     }
 
-    private Object registerStorage0(Class<? extends Enum<?>> storageEnumClass, Object storageObject) throws NoSuchFieldException, InstantiationException, IllegalAccessException, NoSuchMethodException, IllegalArgumentException, InvocationTargetException {
-        if (storageEnumClass.isEnum() == false) {
+    private Object registerStorage0(Class<? extends Enum<?>> storageEnumClass, Object storageObject) throws NoSuchFieldException, IllegalArgumentException {
+        if (!storageEnumClass.isEnum()) {
             throw new IllegalArgumentException("Class is not enum: " + storageEnumClass.getName());
         }
-        if (storageEnumClass.isAnnotationPresent(Storage.class) == false) {
+        if (!storageEnumClass.isAnnotationPresent(Storage.class)) {
             throw new IllegalArgumentException("Enum is not annotated by @Storage annotation: " + storageEnumClass.getName());
         }
 
@@ -119,35 +112,34 @@ public class InternalStorages {
 
         String storageClassName = storageClass.getName();
 
-        if (enumToStorageMap.putIfAbsent(storageEnumClass.getName(), storageClassName) != null) {
-            throw new IllegalArgumentException("Enum is already registered: " + storageEnumClass.getName());
-        }
-
         Set<String> fieldNames = Arrays.stream(storageClass.getDeclaredFields())
                                          .map(Field::getName)
                                          .collect(Collectors.toCollection(HashSet::new));
 
         Optional<String> notFoundName = Arrays.stream(storageEnumClass.getEnumConstants())
                                                 .map(Enum::name)
-                                                .filter(enumName -> fieldNames.contains(enumName) == false)
+                                                .filter(enumName -> !fieldNames.contains(enumName))
                                                 .findFirst();
         if (notFoundName.isPresent()) {
             throw new NoSuchFieldException("Field not found in " + storageClassName + ": " + notFoundName.get());
         }
 
-        Object storage = storageObjectsMap.get(storageClassName);
-        if (storage == null) {
+        Object storage = storageObjectsMap.computeIfAbsent(storageClassName, key -> {
             if (storageObject == null) {
-                Constructor<?> storageConstructor = storageClass.getConstructor();
-                storageConstructor.setAccessible(true);
-                storage = storageConstructor.newInstance();
+                try {
+                    Constructor<?> storageConstructor = storageClass.getConstructor();
+                    storageConstructor.setAccessible(true);
+                    return storageConstructor.newInstance();
+                } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+                    throw new PcjRuntimeException(e);
+                }
             } else {
-                storage = storageObject;
+                return storageObject;
             }
-        } else {
-            if (storageObject != null && storageObject != storage) {
-                throw new IllegalArgumentException("The registered storage object is different than provided");
-            }
+        });
+
+        if (enumToStorageMap.putIfAbsent(storageEnumClass.getName(), storageClassName) != null) {
+            return storage;
         }
 
         for (Enum<?> enumConstant : storageEnumClass.getEnumConstants()) {
@@ -156,8 +148,6 @@ public class InternalStorages {
 
             createShared0(storageClassName, name, field, storage);
         }
-
-        storageObjectsMap.put(storageClassName, storage);
 
         return storage;
     }
@@ -170,8 +160,7 @@ public class InternalStorages {
             throw new IllegalArgumentException("Type of '" + name + "' (" + type.getCanonicalName() + ") from class '" + parent + "' is not serializable but final");
         }
 
-        ConcurrentMap<String, StorageField> storage
-                = sharedObjectsMap.computeIfAbsent(parent, key -> new ConcurrentHashMap<>());
+        ConcurrentMap<String, StorageField> storage = sharedObjectsMap.computeIfAbsent(parent, key -> new ConcurrentHashMap<>());
         StorageField storageField = new StorageField(field, storageObject);
 
         storage.putIfAbsent(name, storageField);
@@ -179,7 +168,7 @@ public class InternalStorages {
 
     public Object getStorage(Class<? extends Enum<?>> sharedEnumClass) {
         String sharedEnumClassName = sharedEnumClass.getName();
-        if (enumToStorageMap.containsKey(sharedEnumClassName) == false) {
+        if (!enumToStorageMap.containsKey(sharedEnumClassName)) {
             throw new IllegalArgumentException("Enum is not registered: " + sharedEnumClassName);
         }
         String storageName = enumToStorageMap.get(sharedEnumClassName);
@@ -194,7 +183,7 @@ public class InternalStorages {
     }
 
     private String getParent(String sharedEnumClassName) throws NullPointerException, IllegalArgumentException {
-        if (enumToStorageMap.containsKey(sharedEnumClassName) == false) {
+        if (!enumToStorageMap.containsKey(sharedEnumClassName)) {
             throw new IllegalArgumentException("Enum is not registered: " + sharedEnumClassName);
         }
         return enumToStorageMap.get(sharedEnumClassName);
@@ -231,7 +220,7 @@ public class InternalStorages {
             return (T) value;
         } else {
             Object array = getArrayElement(value, indices, indices.length - 1);
-            if (array.getClass().isArray() == false) {
+            if (!array.getClass().isArray()) {
                 throw new ClassCastException("Cannot put value to " + name + Arrays.toString(indices) + ".");
             } else if (Array.getLength(array) <= indices[indices.length - 1]) {
                 throw new ArrayIndexOutOfBoundsException("Cannot put value to " + name + Arrays.toString(indices) + ".");
@@ -243,7 +232,7 @@ public class InternalStorages {
 
     private Object getArrayElement(Object array, int[] indices, int length) throws ArrayIndexOutOfBoundsException, IllegalArgumentException, ClassCastException {
         for (int index = 0; index < length; ++index) {
-            if (array.getClass().isArray() == false) {
+            if (!array.getClass().isArray()) {
                 throw new ClassCastException("Wrong dimension at point " + index + ".");
             } else if (Array.getLength(array) <= indices[index]) {
                 throw new ArrayIndexOutOfBoundsException("Wrong size at point " + index + ".");
@@ -295,7 +284,7 @@ public class InternalStorages {
 
         Class<?> fromClass = getValueClass(value);
 
-        if (isAssignableFrom(targetClass, fromClass) == false) {
+        if (!isAssignableFrom(targetClass, fromClass)) {
             throw new ClassCastException("Cannot cast " + fromClass.getName()
                                                  + " to the type of variable '" + parent + "." + name + ""
                                                  + (indices.length == 0 ? "" : Arrays.toString(indices))
@@ -320,7 +309,7 @@ public class InternalStorages {
 
             if (array == null) {
                 throw new NullPointerException("Cannot put value to: " + name);
-            } else if (array.getClass().isArray() == false) {
+            } else if (!array.getClass().isArray()) {
                 throw new ClassCastException("Cannot put value to " + name + Arrays.toString(indices));
             } else if (Array.getLength(array) <= indices[indices.length - 1]) {
                 throw new ArrayIndexOutOfBoundsException("Cannot put value to " + name + Arrays.toString(indices));
@@ -345,7 +334,7 @@ public class InternalStorages {
 
     private Class<?> getTargetClass(Class<?> variableClass, int... indices) {
         for (int i = 0; i < indices.length; ++i) {
-            if (variableClass.isArray() == false) {
+            if (!variableClass.isArray()) {
                 return null;
             }
             variableClass = variableClass.getComponentType();
@@ -376,14 +365,13 @@ public class InternalStorages {
             if (targetClass.equals(boolean.class)) {
                 return fromClass.equals(Boolean.class);
             } else {
-                return fromClass.equals(Boolean.class) == false
+                return !fromClass.equals(Boolean.class)
                                && PrimitiveTypes.isBoxedClass(fromClass);
             }
         }
 
         if (PrimitiveTypes.isBoxedClass(targetClass) && PrimitiveTypes.isBoxedClass(fromClass)) {
-            return targetClass.equals(Boolean.class) == false
-                           && fromClass.equals(Boolean.class) == false;
+            return !targetClass.equals(Boolean.class) && !fromClass.equals(Boolean.class);
         }
 
         return false;
@@ -448,7 +436,7 @@ public class InternalStorages {
                     }
                 }
             }
-        } while (modificationCount.compareAndSet(v, v - count) == false);
+        } while (!modificationCount.compareAndSet(v, v - count));
 
         return modificationCount.get();
     }
@@ -501,7 +489,7 @@ public class InternalStorages {
                     nanosTimeout = deadline - System.nanoTime();
                 }
             }
-        } while (modificationCount.compareAndSet(v, v - count) == false);
+        } while (!modificationCount.compareAndSet(v, v - count));
 
         return modificationCount.get();
     }

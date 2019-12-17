@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -98,7 +98,7 @@ public class PcjThread extends Thread {
         }
     }
 
-    private StartPoint getStartPointObject() throws SecurityException, RuntimeException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchFieldException, NoSuchMethodException {
+    private StartPoint getStartPointObject() throws RuntimeException, InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
         StartPoint startPoint = initializeStorages();
         if (startPoint == null) {
             startPoint = initializeStartPointClass();
@@ -106,21 +106,22 @@ public class PcjThread extends Thread {
         return startPoint;
     }
 
-    private StartPoint initializeStorages() throws IllegalAccessException, NoSuchFieldException, InstantiationException, RuntimeException {
+    private StartPoint initializeStorages() throws RuntimeException {
         StartPoint startPoint = null;
 
         RegisterStorage[] registerStorages = startPointClass.getAnnotationsByType(RegisterStorage.class);
 
         for (RegisterStorage registerStorage : registerStorages) {
-            Class<? extends Enum<?>> sharedEnumClass = registerStorage.value();
-            Storage storageAnnotation = sharedEnumClass.getAnnotation(Storage.class);
-            if (storageAnnotation == null) {
-                throw new RuntimeException("Enum is not annotated by @Storage annotation: " + sharedEnumClass.getName());
-            }
+            for (Class<? extends Enum<?>> sharedEnumClass : registerStorage.value()) {
+                Storage storageAnnotation = sharedEnumClass.getAnnotation(Storage.class);
+                if (storageAnnotation == null) {
+                    throw new RuntimeException("Enum is not annotated by @Storage annotation: " + sharedEnumClass.getName());
+                }
 
-            Object object = PCJ.registerStorage(sharedEnumClass);
-            if (storageAnnotation.value().equals(startPointClass)) {
-                startPoint = (StartPoint) object;
+                Object object = PCJ.registerStorage(sharedEnumClass);
+                if (storageAnnotation.value().equals(startPointClass)) {
+                    startPoint = (StartPoint) object;
+                }
             }
         }
 
