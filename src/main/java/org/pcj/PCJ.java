@@ -93,6 +93,19 @@ public final class PCJ {
     }
 
     /**
+     * Gets the PCJ property indicated by the specified key.
+     * <p>
+     * The method returns the default value argument if the key is not found.
+     *
+     * @param key          the name of the PCJ property
+     * @param defaultValue a default value
+     * @return the string value of the PCJ property, or defaultValue if there is no property with that key
+     */
+    public static String getProperty(String key, String defaultValue) {
+        return getProperties().getProperty(key, defaultValue);
+    }
+
+    /**
      * Gets identifier of current PCJ Thread in the global group.
      * <p>
      * Identifiers are consecutive numbers that start with 0.
