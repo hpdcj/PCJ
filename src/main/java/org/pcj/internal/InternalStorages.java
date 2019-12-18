@@ -104,25 +104,18 @@ public class InternalStorages {
     }
 
     public Object registerStorage(Class<? extends Enum<?>> storageClass) {
-        try {
-            return registerStorage0(storageClass, null);
-        } catch (NoSuchFieldException | IllegalAccessException | NoSuchMethodException
-                         | IllegalArgumentException | InvocationTargetException | InstantiationException ex) {
-            throw new PcjRuntimeException("Exception while registering enum class: " + storageClass, ex);
-        }
+        return registerStorage(storageClass, null);
     }
 
     public Object registerStorage(Class<? extends Enum<?>> storageEnumClass, Object storageObject) {
         try {
             return registerStorage0(storageEnumClass, storageObject);
-        } catch (NoSuchFieldException | IllegalAccessException | NoSuchMethodException
-                         | IllegalArgumentException | InvocationTargetException | InstantiationException
-                         | ClassCastException ex) {
+        } catch (NoSuchFieldException | IllegalArgumentException | ClassCastException ex) {
             throw new PcjRuntimeException("Exception while registering enum class: " + storageEnumClass, ex);
         }
     }
 
-    private Object registerStorage0(Class<? extends Enum<?>> storageEnumClass, Object storageObject) throws NoSuchFieldException, InstantiationException, IllegalAccessException, NoSuchMethodException, IllegalArgumentException, InvocationTargetException {
+    private Object registerStorage0(Class<? extends Enum<?>> storageEnumClass, Object storageObject) throws NoSuchFieldException, IllegalArgumentException {
         if (!storageEnumClass.isEnum()) {
             throw new IllegalArgumentException("Class is not enum: " + storageEnumClass.getName());
         }
@@ -139,10 +132,6 @@ public class InternalStorages {
 
         String storageClassName = storageClass.getName();
 
-        if (enumToStorageMap.putIfAbsent(storageEnumClass.getName(), storageClassName) != null) {
-            throw new IllegalArgumentException("Enum is already registered: " + storageEnumClass.getName());
-        }
-
         Set<String> fieldNames = Arrays.stream(storageClass.getDeclaredFields())
                                          .map(Field::getName)
                                          .collect(Collectors.toCollection(HashSet::new));
@@ -155,19 +144,22 @@ public class InternalStorages {
             throw new NoSuchFieldException("Field not found in " + storageClassName + ": " + notFoundName.get());
         }
 
-        Object storage = storageObjectsMap.get(storageClassName);
-        if (storage == null) {
+        Object storage = storageObjectsMap.computeIfAbsent(storageClassName, key -> {
             if (storageObject == null) {
-                Constructor<?> storageConstructor = storageClass.getConstructor();
-                storageConstructor.setAccessible(true);
-                storage = storageConstructor.newInstance();
+                try {
+                    Constructor<?> storageConstructor = storageClass.getConstructor();
+                    storageConstructor.setAccessible(true);
+                    return storageConstructor.newInstance();
+                } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+                    throw new PcjRuntimeException(e);
+                }
             } else {
-                storage = storageObject;
+                return storageObject;
             }
-        } else {
-            if (storageObject != null && storageObject != storage) {
-                throw new IllegalArgumentException("The registered storage object is different than provided");
-            }
+        });
+
+        if (enumToStorageMap.putIfAbsent(storageEnumClass.getName(), storageClassName) != null) {
+            return storage;
         }
 
         for (Enum<?> enumConstant : storageEnumClass.getEnumConstants()) {
@@ -176,8 +168,6 @@ public class InternalStorages {
 
             createShared0(storageClassName, name, field, storage);
         }
-
-        storageObjectsMap.put(storageClassName, storage);
 
         return storage;
     }

@@ -189,7 +189,9 @@ public final class DeployPCJ {
 
         List<String> sshExec = new ArrayList<>(Arrays.asList(
                 "ssh",
+                "-o", "BatchMode=yes",
                 node.getHostname(), // ssh host
+                "cd", System.getProperty("user.dir"), ";",
                 sb.toString().trim() // command
         ));
 
