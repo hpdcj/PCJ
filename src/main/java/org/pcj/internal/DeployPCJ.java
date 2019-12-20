@@ -119,19 +119,22 @@ public final class DeployPCJ {
 
         String classpath = System.getProperty("java.class.path");
 
-        List<String> params = new ArrayList<>(Arrays.asList(
-                path, "-cp", classpath));
+        List<String> params = new ArrayList<>(Arrays.asList(path, "-cp", classpath));
+
+        String[] skippedJvmArgs = {
+                "-Xdebug",
+                "-Xrunjdwp:transport=",
+                "-agentpath:",
+                "-agentlib:",
+                "-javaagent:"
+        };
 
         RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
         for (String jvmArgument : runtimeMXBean.getInputArguments()) {
-            if (jvmArgument.startsWith("-Xdebug")
-                        || jvmArgument.startsWith("-Xrunjdwp:transport=")
-                        || jvmArgument.startsWith("-agentpath:")
-                        || jvmArgument.startsWith("-agentlib:")
-                        || jvmArgument.startsWith("-javaagent:")
-            ) {
+            if (Arrays.stream(skippedJvmArgs).anyMatch(jvmArgument::startsWith)) {
                 continue;
             }
+
             params.add(jvmArgument);
         }
 
