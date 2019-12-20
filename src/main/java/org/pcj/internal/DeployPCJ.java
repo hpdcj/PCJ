@@ -164,11 +164,11 @@ public final class DeployPCJ {
 
         processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
         processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
+        processBuilder.redirectInput(ProcessBuilder.Redirect.INHERIT);
 
         LOGGER.log(Level.FINE, "Starting new process {0}", exec);
 
         Process process = processBuilder.start();
-        process.getOutputStream().close();
 
         return process;
     }
