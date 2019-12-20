@@ -132,6 +132,12 @@ public final class DeployPCJ {
         return processBuilder.start();
     }
 
+    private static void waitForFinish(List<Process> processes) throws InterruptedException {
+        for (Process process : processes) {
+            process.waitFor();
+        }
+    }
+
     private static List<String> localJvmCommand(NodeInfo node, List<String> jvmParams,
                                                 Class<? extends StartPoint> startPoint,
                                                 NodeInfo node0, long allNodesThreadCount,
@@ -169,12 +175,6 @@ public final class DeployPCJ {
                 "cd", System.getProperty("user.dir"), ";",
                 sb.toString().trim()
         ));
-    }
-
-    private static void waitForFinish(List<Process> processes) throws InterruptedException {
-        for (Process process : processes) {
-            process.waitFor();
-        }
     }
 
     public static void main(String[] args) throws ClassNotFoundException {
