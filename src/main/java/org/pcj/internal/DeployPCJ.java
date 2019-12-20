@@ -16,7 +16,9 @@ import java.lang.management.RuntimeMXBean;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Level;
@@ -109,11 +111,7 @@ public final class DeployPCJ {
         }
     }
 
-    private void runPCJ(NodeInfo currentJvm) {
-        InternalPCJ.start(startPoint, node0, currentJvm, allNodesThreadCount);
-    }
-
-    private List<String> makeJvmParams(NodeInfo node) {
+    private List<String> getJvmParams() {
         String separator = System.getProperty("file.separator");
         String path = System.getProperty("java.home") + separator + "bin" + separator + "java";
 
@@ -138,6 +136,10 @@ public final class DeployPCJ {
             params.add(jvmArgument);
         }
 
+        return Collections.unmodifiableList(params);
+    }
+
+    private String getPropertiesAsString() {
         String propertiesString = "";
         try (StringWriter sw = new StringWriter()) {
             properties.store(sw, null);
@@ -148,18 +150,7 @@ public final class DeployPCJ {
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Unable to write properties", e);
         }
-
-        params.addAll(Arrays.asList(
-                DeployPCJ.class.getName(),
-                startPoint.getName(), // args[0]
-                Integer.toString(node.getPort()), // args[1]
-                node0.getHostname(), // args[2]
-                Integer.toString(node0.getPort()), // args[3]
-                Long.toString(allNodesThreadCount), // args[4]
-                node.getThreadIds().toString(), // args[5]
-                propertiesString // args[6]
-        ));
-        return params;
+        return propertiesString;
     }
 
     private Process exec(List<String> exec) throws IOException {
@@ -176,29 +167,38 @@ public final class DeployPCJ {
         return process;
     }
 
-    private void runJVM(NodeInfo node) throws IOException {
-        List<String> jvmExec = makeJvmParams(node);
+    private List<String> localJvmCommand(List<String> jvmParams, String propertiesString, NodeInfo node) throws IOException {
+        List<String> jvmExec = new ArrayList<>(jvmParams);
 
-        processes.add(exec(jvmExec));
+        jvmExec.addAll(Arrays.asList(
+                DeployPCJ.class.getName(),
+                startPoint.getName(), // args[0]
+                Integer.toString(node.getPort()), // args[1]
+                node0.getHostname(), // args[2]
+                Integer.toString(node0.getPort()), // args[3]
+                Long.toString(allNodesThreadCount), // args[4]
+                node.getThreadIds().toString(), // args[5]
+                propertiesString // args[6]
+        ));
+
+        return Collections.unmodifiableList(jvmExec);
     }
 
-    private void runSSH(NodeInfo node) throws IOException {
+    private List<String> remoteSshCommand(List<String> jvmCommand, NodeInfo node) throws IOException {
         StringBuilder sb = new StringBuilder();
-        for (String arg : makeJvmParams(node)) {
+        for (String arg : jvmCommand) {
             sb.append("'");
             sb.append(arg);
             sb.append("' ");
         }
 
-        List<String> sshExec = new ArrayList<>(Arrays.asList(
+        return new ArrayList<>(Arrays.asList(
                 "ssh",
                 "-o", "BatchMode=yes",
-                node.getHostname(), // ssh host
+                node.getHostname(),
                 "cd", System.getProperty("user.dir"), ";",
-                sb.toString().trim() // command
+                sb.toString().trim()
         ));
-
-        processes.add(exec(sshExec));
     }
 
     private void waitForFinish() throws InterruptedException {
@@ -208,20 +208,28 @@ public final class DeployPCJ {
     }
 
     private void startDeploying() throws IOException {
+        List<String> jvmParams = getJvmParams();
+        String properties = getPropertiesAsString();
+
         for (NodeInfo node : allNodes) {
-            if (node.equals(currentJvm)) {
+            if (Objects.equals(currentJvm, node)) {
                 continue;
             }
 
+            List<String> jvmCommand = localJvmCommand(jvmParams, properties, node);
+
+            List<String> command;
             if (node.isLocalAddress()) {
-                this.runJVM(node);
+                command = jvmCommand;
             } else {
-                this.runSSH(node);
+                command = remoteSshCommand(jvmCommand, node);
             }
+
+            processes.add(exec(command));
         }
 
         if (currentJvm != null) {
-            this.runPCJ(currentJvm);
+            InternalPCJ.start(startPoint, node0, currentJvm, allNodesThreadCount);
         }
     }
 }
