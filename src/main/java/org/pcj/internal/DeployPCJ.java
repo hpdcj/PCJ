@@ -34,31 +34,147 @@ import org.pcj.StartPoint;
 public final class DeployPCJ {
 
     private static final Logger LOGGER = Logger.getLogger(DeployPCJ.class.getName());
-    private final Class<? extends StartPoint> startPoint;
-    private final NodeInfo node0;
-    private final NodeInfo currentJvm;
-    private final Collection<NodeInfo> allNodes;
-    private final List<Process> processes;
-    private final Properties properties;
-    private final int allNodesThreadCount;
 
-    private DeployPCJ(Class<? extends StartPoint> startPoint,
-                      NodeInfo node0,
-                      NodeInfo currentJvm,
-                      Collection<NodeInfo> allNodes,
-                      Properties props) {
-        this.startPoint = startPoint;
-        this.node0 = node0;
-        this.currentJvm = currentJvm;
-        this.allNodes = allNodes;
-        this.properties = props;
+    public static void deploy(Class<? extends StartPoint> startPoint,
+                              NodeInfo node0,
+                              NodeInfo currentJvm,
+                              Collection<NodeInfo> allNodes,
+                              Properties props) {
 
-        this.allNodesThreadCount = allNodes.stream()
+        List<String> jvmParams = getJvmParams();
+        String properties = getPropertiesAsString(props);
+        int allNodesThreadCount = allNodes.stream()
                                            .map(NodeInfo::getThreadIds)
                                            .mapToInt(Set::size)
                                            .sum();
 
-        this.processes = new ArrayList<>();
+        List<Process> processes = new ArrayList<>();
+        try {
+            for (NodeInfo node : allNodes) {
+                if (Objects.equals(currentJvm, node)) {
+                    continue;
+                }
+
+                List<String> jvmCommand = localJvmCommand(node, jvmParams, startPoint, node0, allNodesThreadCount, properties);
+
+                List<String> command;
+                if (node.isLocalAddress()) {
+                    command = jvmCommand;
+                } else {
+                    command = remoteSshCommand(node, jvmCommand);
+                }
+
+                processes.add(exec(command));
+            }
+
+            if (currentJvm != null) {
+                InternalPCJ.start(startPoint, node0, currentJvm, allNodesThreadCount);
+            }
+
+            waitForFinish(processes);
+        } catch (InterruptedException | IOException ex) {
+            LOGGER.log(Level.SEVERE, null, ex);
+        }
+    }
+
+
+    private static List<String> getJvmParams() {
+        String separator = System.getProperty("file.separator");
+        String path = System.getProperty("java.home") + separator + "bin" + separator + "java";
+
+        String classpath = System.getProperty("java.class.path");
+
+        List<String> params = new ArrayList<>(Arrays.asList(path, "-cp", classpath));
+
+        String[] skippedJvmArgs = {
+                "-Xdebug",
+                "-Xrunjdwp:transport=",
+                "-agentpath:",
+                "-agentlib:",
+                "-javaagent:"
+        };
+
+        RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
+        for (String jvmArgument : runtimeMXBean.getInputArguments()) {
+            if (Arrays.stream(skippedJvmArgs).anyMatch(jvmArgument::startsWith)) {
+                continue;
+            }
+
+            params.add(jvmArgument);
+        }
+
+        return Collections.unmodifiableList(params);
+    }
+
+    private static String getPropertiesAsString(Properties properties) {
+        String propertiesString = "";
+        try (StringWriter sw = new StringWriter()) {
+            properties.store(sw, null);
+            propertiesString = sw.toString();
+
+            // remove comments from properties, eg. with timestamp
+            propertiesString = propertiesString.replaceAll("^#.*\\R", "");
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, "Unable to write properties", e);
+        }
+        return propertiesString;
+    }
+
+    private static Process exec(List<String> exec) throws IOException {
+        ProcessBuilder processBuilder = new ProcessBuilder(exec);
+
+        processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+        processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
+        processBuilder.redirectInput(ProcessBuilder.Redirect.INHERIT);
+
+        LOGGER.log(Level.FINE, "Starting new process {0}", exec);
+
+        return processBuilder.start();
+    }
+
+    private static List<String> localJvmCommand(NodeInfo node, List<String> jvmParams,
+                                                Class<? extends StartPoint> startPoint,
+                                                NodeInfo node0, long allNodesThreadCount,
+                                                String propertiesString) {
+        List<String> jvmExec = new ArrayList<>(jvmParams);
+
+        jvmExec.addAll(Arrays.asList(
+//                "-Dloader.main="+DeployPCJ.class.getName(),
+//                "org.springframework.boot.loader.PropertiesLauncher",
+                DeployPCJ.class.getName(),
+                startPoint.getName(), // args[0]
+                Integer.toString(node.getPort()), // args[1]
+                node0.getHostname(), // args[2]
+                Integer.toString(node0.getPort()), // args[3]
+                Long.toString(allNodesThreadCount), // args[4]
+                node.getThreadIds().toString(), // args[5]
+                propertiesString // args[6]
+        ));
+
+        return Collections.unmodifiableList(jvmExec);
+    }
+
+    private static List<String> remoteSshCommand(NodeInfo node, List<String> jvmCommand) {
+        StringBuilder sb = new StringBuilder();
+        for (String arg : jvmCommand) {
+            sb.append("'");
+            sb.append(arg);
+            sb.append("' ");
+        }
+
+        return new ArrayList<>(Arrays.asList(
+                "ssh",
+                "-o", "BatchMode=yes",
+                node.getHostname(),
+                "cd", System.getProperty("user.dir"), ";",
+                sb.toString().trim()
+        ));
+    }
+
+    private static void waitForFinish(List<Process> processes) throws InterruptedException {
+        for (Process process : processes) {
+            process.waitFor();
+        }
     }
 
     public static void main(String[] args) throws ClassNotFoundException {
@@ -94,142 +210,5 @@ public final class DeployPCJ {
                 new Object[]{startPoint, node0, currentJvm, allNodesThreadCount});
 
         InternalPCJ.start(startPoint, node0, currentJvm, allNodesThreadCount);
-    }
-
-    public static void deploy(Class<? extends StartPoint> startPoint,
-                              NodeInfo node0,
-                              NodeInfo currentJvm,
-                              Collection<NodeInfo> allNodes,
-                              Properties props) {
-        DeployPCJ deploy = new DeployPCJ(startPoint, node0, currentJvm, allNodes, props);
-        try {
-            deploy.startDeploying();
-
-            deploy.waitForFinish();
-        } catch (InterruptedException | IOException ex) {
-            LOGGER.log(Level.SEVERE, null, ex);
-        }
-    }
-
-    private List<String> getJvmParams() {
-        String separator = System.getProperty("file.separator");
-        String path = System.getProperty("java.home") + separator + "bin" + separator + "java";
-
-        String classpath = System.getProperty("java.class.path");
-
-        List<String> params = new ArrayList<>(Arrays.asList(path, "-cp", classpath));
-
-        String[] skippedJvmArgs = {
-                "-Xdebug",
-                "-Xrunjdwp:transport=",
-                "-agentpath:",
-                "-agentlib:",
-                "-javaagent:"
-        };
-
-        RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
-        for (String jvmArgument : runtimeMXBean.getInputArguments()) {
-            if (Arrays.stream(skippedJvmArgs).anyMatch(jvmArgument::startsWith)) {
-                continue;
-            }
-
-            params.add(jvmArgument);
-        }
-
-        return Collections.unmodifiableList(params);
-    }
-
-    private String getPropertiesAsString() {
-        String propertiesString = "";
-        try (StringWriter sw = new StringWriter()) {
-            properties.store(sw, null);
-            propertiesString = sw.toString();
-
-            // remove comments from properties, eg. with timestamp
-            propertiesString = propertiesString.replaceAll("^#.*\\R", "");
-        } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Unable to write properties", e);
-        }
-        return propertiesString;
-    }
-
-    private Process exec(List<String> exec) throws IOException {
-        ProcessBuilder processBuilder = new ProcessBuilder(exec);
-
-        processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-        processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
-        processBuilder.redirectInput(ProcessBuilder.Redirect.INHERIT);
-
-        LOGGER.log(Level.FINE, "Starting new process {0}", exec);
-
-        Process process = processBuilder.start();
-
-        return process;
-    }
-
-    private List<String> localJvmCommand(List<String> jvmParams, String propertiesString, NodeInfo node) throws IOException {
-        List<String> jvmExec = new ArrayList<>(jvmParams);
-
-        jvmExec.addAll(Arrays.asList(
-                DeployPCJ.class.getName(),
-                startPoint.getName(), // args[0]
-                Integer.toString(node.getPort()), // args[1]
-                node0.getHostname(), // args[2]
-                Integer.toString(node0.getPort()), // args[3]
-                Long.toString(allNodesThreadCount), // args[4]
-                node.getThreadIds().toString(), // args[5]
-                propertiesString // args[6]
-        ));
-
-        return Collections.unmodifiableList(jvmExec);
-    }
-
-    private List<String> remoteSshCommand(List<String> jvmCommand, NodeInfo node) throws IOException {
-        StringBuilder sb = new StringBuilder();
-        for (String arg : jvmCommand) {
-            sb.append("'");
-            sb.append(arg);
-            sb.append("' ");
-        }
-
-        return new ArrayList<>(Arrays.asList(
-                "ssh",
-                "-o", "BatchMode=yes",
-                node.getHostname(),
-                "cd", System.getProperty("user.dir"), ";",
-                sb.toString().trim()
-        ));
-    }
-
-    private void waitForFinish() throws InterruptedException {
-        for (Process process : processes) {
-            process.waitFor();
-        }
-    }
-
-    private void startDeploying() throws IOException {
-        List<String> jvmParams = getJvmParams();
-        String properties = getPropertiesAsString();
-
-        for (NodeInfo node : allNodes) {
-            if (Objects.equals(currentJvm, node)) {
-                continue;
-            }
-
-            List<String> jvmCommand = localJvmCommand(jvmParams, properties, node);
-
-            List<String> command;
-            if (node.isLocalAddress()) {
-                command = jvmCommand;
-            } else {
-                command = remoteSshCommand(jvmCommand, node);
-            }
-
-            processes.add(exec(command));
-        }
-
-        if (currentJvm != null) {
-            InternalPCJ.start(startPoint, node0, currentJvm, allNodesThreadCount);
-        }
     }
 }
