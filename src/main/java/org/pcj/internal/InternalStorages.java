@@ -504,9 +504,9 @@ public class InternalStorages {
     }
 
     /**
-     * Pauses current Thread and wait for <code>count</code> modifications of
+     * Pauses current Thread and wait for {@code count} modifications of
      * variable. After modification decreases the variable modification counter
-     * by <code>count</code>.
+     * by {@code count}.
      *
      * @param variable name of shared variable
      * @param count    number of modifications. If 0 - the method exits
@@ -538,9 +538,9 @@ public class InternalStorages {
     }
 
     /**
-     * Pauses current Thread and wait for <code>count</code> modifications of
+     * Pauses current Thread and wait for {@code count} modifications of
      * variable. After modification decreases the variable modification counter
-     * by <code>count</code>.
+     * by {@code count}.
      *
      * @param variable name of shared variable
      * @param count    number of modifications. If 0 - the method exits

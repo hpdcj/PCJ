@@ -43,7 +43,7 @@ public final class Configuration {
     /**
      * pcj.init.maxtime (int in seconds) default:
      * <p>
-     * <code>max(30, (pcj.init.retry.count + 1) * pcj.init.retry.delay)</code>
+     * {@code max(30, (pcj.init.retry.count + 1) * pcj.init.retry.delay)}
      */
     public final int INIT_MAXTIME;
     /**

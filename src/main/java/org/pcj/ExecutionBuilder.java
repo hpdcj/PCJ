@@ -107,7 +107,7 @@ public final class ExecutionBuilder extends InternalExecutionBuilder implements 
      * Empty hostnames means current JVM.
      * <p>
      * Hostnames can take port (after colon ':'), eg. <i>localhost:8000</i>.
-     * Default port is 8091 and can be modified using <code>pcj.port</code> system property value (-Dpcj.port=8091).
+     * Default port is 8091 and can be modified using {@systemProperty pcj.port} system property value.
      * <p>
      * Hostnames can be specified many times, so more than one instance of PCJ will be run on node (called threads).
      *

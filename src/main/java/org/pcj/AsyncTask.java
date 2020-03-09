@@ -35,7 +35,7 @@ public interface AsyncTask<T> extends Callable<T>, Serializable {
         void run() throws Exception;
 
         /**
-         * Default method that wraps the invokation of the <code>run()</code>
+         * Default method that wraps the invocation of the {@link #run()}
          * method.
          */
         @Override

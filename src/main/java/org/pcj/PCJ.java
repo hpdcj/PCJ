@@ -660,9 +660,9 @@ public final class PCJ {
      * Hostnames can be specified many times, so more than one PCJ Thread will be run on node.
      * Empty hostnames means current JVM.
      * <p>
-     * Line with hostname can have part with port number (after colon ':'), eg. ["localhost:8000",
-     * "localhost:8001", "localhost", "host2:8001", "host2"].
-     * Default port is 8091 and can be modified using <tt>pcj.port</tt> system property value (-Dpcj.port=8091).
+     * Line with hostname can have part with port number (after colon ':'), eg.
+     * ["localhost:8000", "localhost:8001", "localhost", "host2:8001", "host2"].
+     * Default port is 8091 and can be modified using {@systemProperty pcj.port} system property value.
      *
      * @param startPoint       start point class
      * @param nodesDescription description of used nodes (and threads)
