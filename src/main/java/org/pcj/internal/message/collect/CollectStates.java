@@ -174,7 +174,7 @@ public class CollectStates {
 
         public void signal(Map<Integer, T> valueMap, Queue<Exception> messageExceptions) {
             if ((messageExceptions != null) && (!messageExceptions.isEmpty())) {
-                PcjRuntimeException ex = new PcjRuntimeException("Collecting values failed");
+                PcjRuntimeException ex = new PcjRuntimeException("Collecting values failed", messageExceptions.poll());
                 messageExceptions.forEach(ex::addSuppressed);
                 future.signalException(ex);
             } else {

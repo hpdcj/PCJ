@@ -65,8 +65,7 @@ public class ValueGetStates {
             if (exception == null) {
                 future.signalDone(variableValue);
             } else {
-                PcjRuntimeException ex = new PcjRuntimeException("Getting value failed");
-                ex.addSuppressed(exception);
+                PcjRuntimeException ex = new PcjRuntimeException("Getting value failed", exception);
                 future.signalException(ex);
             }
         }

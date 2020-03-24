@@ -65,8 +65,7 @@ public class AsyncAtStates {
             if (exception == null) {
                 future.signalDone(variableValue);
             } else {
-                PcjRuntimeException ex = new PcjRuntimeException("Asynchronous execution failed");
-                ex.addSuppressed(exception);
+                PcjRuntimeException ex = new PcjRuntimeException("Asynchronous execution failed", exception);
                 future.signalException(ex);
             }
         }

@@ -65,8 +65,7 @@ public class ValueAccumulateStates {
             if (exception == null) {
                 future.signalDone();
             } else {
-                PcjRuntimeException ex = new PcjRuntimeException("Accumulating value failed");
-                ex.addSuppressed(exception);
+                PcjRuntimeException ex = new PcjRuntimeException("Accumulating value failed", exception);
                 future.signalException(ex);
             }
         }

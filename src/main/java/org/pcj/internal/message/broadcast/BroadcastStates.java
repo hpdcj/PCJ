@@ -152,7 +152,7 @@ public class BroadcastStates {
 
         public void signal(Queue<Exception> messageExceptions) {
             if ((messageExceptions != null) && (!messageExceptions.isEmpty())) {
-                PcjRuntimeException ex = new PcjRuntimeException("Broadcasting value failed");
+                PcjRuntimeException ex = new PcjRuntimeException("Broadcasting value failed", messageExceptions.poll());
                 messageExceptions.forEach(ex::addSuppressed);
                 future.signalException(ex);
             } else {

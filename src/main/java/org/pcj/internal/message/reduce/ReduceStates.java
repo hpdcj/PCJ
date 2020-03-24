@@ -187,7 +187,7 @@ public class ReduceStates {
 
         public void signal(T value, Queue<Exception> messageExceptions) {
             if ((messageExceptions != null) && (!messageExceptions.isEmpty())) {
-                PcjRuntimeException ex = new PcjRuntimeException("Reducing values failed");
+                PcjRuntimeException ex = new PcjRuntimeException("Reducing values failed", messageExceptions.poll());
                 messageExceptions.forEach(ex::addSuppressed);
                 future.signalException(ex);
             } else {
