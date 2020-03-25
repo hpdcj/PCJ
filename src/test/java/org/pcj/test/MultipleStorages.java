@@ -26,6 +26,8 @@ public class MultipleStorages implements StartPoint {
     }
 
     public static void main(String[] args) {
-        PCJ.start(MultipleStorages.class, new NodesDescription(new String[]{"localhost"}));
+        PCJ.executionBuilder(MultipleStorages.class)
+                .addNode("localhost")
+                .start();
     }
 }
