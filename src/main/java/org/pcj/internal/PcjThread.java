@@ -10,6 +10,7 @@ package org.pcj.internal;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -60,6 +61,24 @@ public class PcjThread extends Thread {
 
         public PcjThreadData getThreadData() {
             return threadData;
+        }
+
+        public void join(long millis) throws InterruptedException {
+            synchronized (this) {
+                int activeCount = this.activeCount();
+                Thread[] activeThreads = new Thread[activeCount];
+                this.enumerate(activeThreads);
+
+                final long startTime = System.nanoTime();
+                long delay = millis;
+
+                for (Thread pcjThread : activeThreads) {
+                    while (pcjThread.isAlive() && delay > 0) {
+                        pcjThread.join(delay);
+                        delay = millis - TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
+                    }
+                }
+            }
         }
     }
 
@@ -149,6 +168,9 @@ public class PcjThread extends Thread {
 
     public PcjThreadData getThreadData() {
         return pcjThreadGroup.getThreadData();
+    }
+    public PcjThreadGroup getPcjThreadGroup() {
+        return pcjThreadGroup;
     }
 
     public AsyncWorkers getAsyncWorkers() {

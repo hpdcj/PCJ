@@ -8,24 +8,6 @@
  */
 package org.pcj.internal;
 
-import java.io.UncheckedIOException;
-import java.nio.channels.SocketChannel;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeoutException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.pcj.PcjRuntimeException;
 import org.pcj.StartPoint;
 import org.pcj.internal.message.alive.AliveState;
@@ -34,6 +16,17 @@ import org.pcj.internal.message.hello.HelloMessage;
 import org.pcj.internal.message.hello.HelloState;
 import org.pcj.internal.network.LoopbackSocketChannel;
 import org.pcj.internal.network.MessageProc;
+import java.io.UncheckedIOException;
+import java.nio.channels.SocketChannel;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Internal class for external PCJ class.
@@ -125,8 +118,8 @@ public abstract class InternalPCJ {
             /* Starting execution */
             if (isCurrentJvmNode0) {
                 LOGGER.log(Level.INFO, "Starting {0}"
-                                               + " with {1,number,#} {1,choice,1#thread|1<threads}"
-                                               + " (on {2,number,#} {2,choice,1#node|1<nodes})...",
+                                + " with {1,number,#} {1,choice,1#thread|1<threads}"
+                                + " (on {2,number,#} {2,choice,1#node|1<nodes})...",
                         new Object[]{startPointClass.getName(),
                                 nodeData.getCommonGroupById(InternalCommonGroup.GLOBAL_GROUP_ID).threadCount(),
                                 nodeData.getTotalNodeCount(),});
@@ -153,9 +146,24 @@ public abstract class InternalPCJ {
                 if (!Thread.interrupted()) {
                     /* finishing */
                     byePhase();
+                } else {
+                    throw new InterruptedException("Interrupted.");
                 }
             } catch (InterruptedException ex) {
-                pcjThreads.values().forEach(Thread::interrupt);
+                LOGGER.log(Level.SEVERE, "PCJ main thread interrupted. Interrupting all PCJ threads");
+                pcjThreads.values().stream().map(PcjThread::getPcjThreadGroup).forEach(ThreadGroup::interrupt);
+
+                try {
+                    LOGGER.log(Level.INFO, "Waiting up to 8 seconds before forcibly stop PCJ threads.");
+                    joinPcjThreadGroup(pcjThreads.values(), 8_000);
+                } catch (InterruptedException e) {
+                    LOGGER.log(Level.SEVERE, "Exception while waiting for joining PCJ Threads", e);
+                }
+                if (pcjThreads.values().stream().map(PcjThread::getPcjThreadGroup)
+                        .mapToInt(PcjThread.PcjThreadGroup::activeCount).count() > 0) {
+                    LOGGER.log(Level.INFO, "Forcibly stopping PCJ threads.");
+                    pcjThreads.values().stream().map(PcjThread::getPcjThreadGroup).forEach(ThreadGroup::stop);
+                }
             } finally {
                 aliveState.stop();
 
@@ -178,9 +186,9 @@ public abstract class InternalPCJ {
                 long s = (timer % 60);
 
                 LOGGER.log(Level.INFO, "{0} {1}"
-                                               + " with {2,number,#} {2,choice,1#thread|1<threads}"
-                                               + " (on {3,number,#} {3,choice,1#node|1<nodes})"
-                                               + " after {4,number,#}h {5,number,#}m {6,number,#}s {7,number,#}ms.",
+                                + " with {2,number,#} {2,choice,1#thread|1<threads}"
+                                + " (on {3,number,#} {3,choice,1#node|1<nodes})"
+                                + " after {4,number,#}h {5,number,#}m {6,number,#}s {7,number,#}ms.",
                         new Object[]{
                                 !aliveState.isAborted() ? "Completed" : "Aborted",
                                 startPointClass.getName(),
@@ -192,6 +200,21 @@ public abstract class InternalPCJ {
         } finally {
             messageProc.shutdown();
             networker.shutdown();
+        }
+    }
+
+    private static void joinPcjThreadGroup(Collection<PcjThread> pcjThreadsSet, long millis) throws InterruptedException {
+        Set<PcjThread> pcjThreads = new HashSet<>(pcjThreadsSet);
+
+        final long startTime = System.nanoTime();
+        long delay = millis;
+
+        for (PcjThread pcjThread : pcjThreads) {
+            PcjThread.PcjThreadGroup pcjThreadGroup = pcjThread.getPcjThreadGroup();
+            while (delay > 0) {
+                pcjThreadGroup.join(delay);
+                delay = millis - TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
+            }
         }
     }
 
@@ -276,7 +299,7 @@ public abstract class InternalPCJ {
                     Throwable t = pcjThread.getThrowable();
                     if (t != null) {
                         LOGGER.log(Level.SEVERE, "Exception occurred in thread: " + pcjThread.getName()
-                                                         + " (node: " + nodeData.getCurrentNodePhysicalId() + ")",
+                                        + " (node: " + nodeData.getCurrentNodePhysicalId() + ")",
                                 t);
 
                         AliveState aliveState = nodeData.getAliveState();
