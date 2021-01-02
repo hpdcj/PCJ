@@ -8,6 +8,7 @@
  */
 package org.pcj.internal;
 
+import java.util.function.Supplier;
 import org.pcj.PcjRuntimeException;
 import org.pcj.StartPoint;
 import org.pcj.internal.message.alive.AliveState;
@@ -78,11 +79,24 @@ public abstract class InternalPCJ {
     public static SocketChannel getLoopbackSocketChannel() {
         return LoopbackSocketChannel.getInstance();
     }
+    
 
-    static void start(Class<? extends StartPoint> startPointClass,
-                      NodeInfo node0,
-                      NodeInfo currentJvm,
-                      int allNodesThreadCount) {
+    static  void start(
+        Class<? extends StartPoint> startPointClass,
+        NodeInfo node0,
+        NodeInfo currentJvm,
+        int allNodesThreadCount
+    ) {
+        start(startPointClass, null, node0, currentJvm, allNodesThreadCount);
+    }
+    
+    static <StartingPointT extends StartPoint> void start(
+        Class<StartingPointT> startPointClass,
+        Supplier<StartingPointT> startPointSupplier,
+        NodeInfo node0,
+        NodeInfo currentJvm,
+        int allNodesThreadCount
+    ) {
         if (currentJvm == null) {
             throw new IllegalArgumentException("There is no entry for PCJ threads for current JVM");
         }
@@ -134,7 +148,7 @@ public abstract class InternalPCJ {
                 /* Preparing PcjThreads */
                 Semaphore notificationObject = new Semaphore(0);
 
-                pcjThreads = preparePcjThreads(startPointClass, currentJvm.getThreadIds(), notificationObject);
+                pcjThreads = preparePcjThreads(startPointClass, startPointSupplier, currentJvm.getThreadIds(), notificationObject);
                 nodeData.updatePcjThreads(pcjThreads);
 
                 /* Starting PcjThreads */
@@ -250,9 +264,15 @@ public abstract class InternalPCJ {
         }
     }
 
-    private static Map<Integer, PcjThread> preparePcjThreads(Class<? extends StartPoint> startPointClass,
-                                                             Set<Integer> threadIds,
-                                                             Semaphore notificationSemaphore) {
+    
+    
+    private static <StartingPointT extends StartPoint> 
+    Map<Integer, PcjThread>  preparePcjThreads(
+        Class<StartingPointT> startPointClass,
+        Supplier<StartingPointT> startPointSupplier,
+        Set<Integer> threadIds,
+        Semaphore notificationSemaphore
+    ) {
         InternalCommonGroup globalGroup = nodeData.getCommonGroupById(InternalCommonGroup.GLOBAL_GROUP_ID);
         Map<Integer, PcjThread> pcjThreads = new HashMap<>();
 
@@ -276,7 +296,7 @@ public abstract class InternalPCJ {
                     blockingQueue,
                     new ThreadPoolExecutor.AbortPolicy());
 
-            PcjThread pcjThread = new PcjThread(startPointClass, threadId, pcjThreadGroup, asyncTasksWorkers, notificationSemaphore);
+            PcjThread pcjThread = new PcjThread(startPointClass, startPointSupplier, threadId, pcjThreadGroup, asyncTasksWorkers, notificationSemaphore);
 
             pcjThreads.put(threadId, pcjThread);
         }

@@ -16,16 +16,18 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.pcj.internal.InternalExecutionBuilder;
 
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public final class ExecutionBuilder extends InternalExecutionBuilder implements Cloneable {
+public final class ExecutionBuilder<StartingPointT extends StartPoint>  extends InternalExecutionBuilder implements Cloneable {
 
     private static final String[] EMPTY_ARRAY = new String[0];
-    private final Class<? extends StartPoint> startPoint;
+    private final Class<StartingPointT> startPoint;
+    private final Supplier<StartingPointT> startPointSupplier;
     private final List<String> nodeList;
     private final Properties properties;
 
@@ -34,8 +36,25 @@ public final class ExecutionBuilder extends InternalExecutionBuilder implements 
      *
      * @param startPoint startPoint class
      */
-    ExecutionBuilder(Class<? extends StartPoint> startPoint) {
+    ExecutionBuilder(Class<StartingPointT> startPoint) {
         this.startPoint = startPoint;
+        this.startPointSupplier = null;
+
+        this.nodeList = new ArrayList<>();
+        this.properties = new Properties();
+    }
+
+    /**
+     * Should be created using {@link PCJ#executionBuilder(Class)}.
+     *
+     * @param startPoint startPoint class
+     */
+    ExecutionBuilder(
+        Class<StartingPointT> startPoint, 
+        Supplier<StartingPointT> startPointSupplier
+    ) {
+        this.startPoint = startPoint;
+        this.startPointSupplier = startPointSupplier;
 
         this.nodeList = new ArrayList<>();
         this.properties = new Properties();
@@ -46,8 +65,10 @@ public final class ExecutionBuilder extends InternalExecutionBuilder implements 
      *
      * @param that source object to copy from
      */
-    private ExecutionBuilder(ExecutionBuilder that) {
+    private ExecutionBuilder(ExecutionBuilder<StartingPointT> that) {
         this.startPoint = that.startPoint;
+        this.startPointSupplier = that.startPointSupplier;
+
         this.nodeList = new ArrayList<>(that.nodeList);
         this.properties = (Properties) that.properties.clone();
     }
@@ -58,8 +79,8 @@ public final class ExecutionBuilder extends InternalExecutionBuilder implements 
      * @return a clone of ExecutionBuilder
      */
     @Override
-    public ExecutionBuilder clone() {
-        return new ExecutionBuilder(this);
+    public ExecutionBuilder<StartingPointT> clone() {
+        return new ExecutionBuilder<>(this);
     }
 
     @Override
@@ -81,7 +102,7 @@ public final class ExecutionBuilder extends InternalExecutionBuilder implements 
         } else {
             nodes = nodeList.toArray(EMPTY_ARRAY);
         }
-        super.start(startPoint, nodes, properties);
+        super.start(startPoint, startPointSupplier, nodes, properties);
     }
 
     /**

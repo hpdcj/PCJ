@@ -11,6 +11,7 @@ package org.pcj;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Supplier;
 import org.pcj.internal.InternalGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.PcjThread;
@@ -46,8 +47,34 @@ public final class PCJ {
      * @param startPoint start point class
      * @return {@link ExecutionBuilder} for chain configuration and starting application
      */
-    public static ExecutionBuilder executionBuilder(Class<? extends StartPoint> startPoint) {
-        return new ExecutionBuilder(startPoint);
+    public static <StartingPointT extends StartPoint> 
+    ExecutionBuilder<StartingPointT> executionBuilder(Class<StartingPointT> startPoint) {
+        return new ExecutionBuilder<>(startPoint);
+    }
+
+    /**
+     * Creates execution builder for starting the application using startPoint class.
+     * <p>
+     * It does not start application.
+     * It is necessary to execute {@link ExecutionBuilder#deploy()} or {@link ExecutionBuilder#start()} method to start
+     * application.
+     * <p>
+     * The example of usage:
+     * <pre>
+     * PCJ.executionBuilder(Hello.class, () -> new Hello(...))
+     *    .addNodes(new File("nodes.txt"))
+     *    .deploy();
+     * </pre>
+     *
+     * @param startPoint start point class
+     * @return {@link ExecutionBuilder} for chain configuration and starting application
+     */
+    public static <StartingPointT extends StartPoint> 
+    ExecutionBuilder<StartingPointT> executionBuilder(
+        Class<StartingPointT> startPoint, 
+        Supplier<StartingPointT> startingPointTSupplier
+    ) {
+        return new ExecutionBuilder<>(startPoint, startingPointTSupplier);
     }
 
     /**
@@ -137,42 +164,21 @@ public final class PCJ {
         return PcjThread.getCurrentThreadData().getGlobalGroup();
     }
 
-    /**
-     * Register storage as enum' constants.
-     * <p>
-     * This method, when necessary, creates a object pointed by enum' annotation.
-     * If the object is already created for the PCJ Thread, method returns already associated object.
-     *
-     * @param storageEnumClass Enum class that represents storage shareable variables
-     * @return Object associated with Storage (type of value from enum annotation)
-     * @throws PcjRuntimeException thrown when there is problem with registering provided class.
-     */
-    public static Object registerStorage(Class<? extends Enum<?>> storageEnumClass)
-            throws PcjRuntimeException {
-        return PcjThread.getCurrentThreadData().getStorages().registerStorage(storageEnumClass);
-    }
 
     /**
-     * Register storage as enum' constants.
-     * <p>
-     * This method associates provided object as storage of shareable variable.
-     * If the object is already created for the PCJ Thread, method returns already associated object.
-     * <p>
-     * This method uses provided object as storage of shareable variables.
-     * The object has to be the same type as the type pointed by enum' annotation.
-     * <p>
-     * If the {@code storageObject} is {@code null}, it works like
-     * {@link #registerStorage(java.lang.Class)} method.
+     * Register storage as enum' constants associated with provided storage object.
      *
      * @param storageEnumClass Enum class that represents storage shareable
      *                         variables
      * @param storageObject    object that stores the shareable variables
-     * @return Object associated with Storage (type of value from enum annotation)
      * @throws PcjRuntimeException thrown when there is problem with registering provided class.
      */
-    public static Object registerStorage(Class<? extends Enum<?>> storageEnumClass, Object storageObject)
+    public static void registerStorage(Class<? extends Enum<?>> storageEnumClass, Object storageObject)
             throws PcjRuntimeException {
-        return PcjThread.getCurrentThreadData().getStorages().registerStorage(storageEnumClass, storageObject);
+        if(storageObject == null){
+            throw new IllegalArgumentException("Storage object of " + storageEnumClass.getName() + " cannot be null");
+        }
+        PcjThread.getCurrentThreadData().getStorages().registerStorage(storageEnumClass, storageObject);
     }
 
     /**

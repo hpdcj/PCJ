@@ -103,19 +103,15 @@ public class InternalStorages {
         sharedObjectsMap = new ConcurrentHashMap<>();
     }
 
-    public Object registerStorage(Class<? extends Enum<?>> storageClass) {
-        return registerStorage(storageClass, null);
-    }
-
-    public Object registerStorage(Class<? extends Enum<?>> storageEnumClass, Object storageObject) {
+    public void registerStorage(Class<? extends Enum<?>> storageEnumClass, Object storageObject) {
         try {
-            return registerStorage0(storageEnumClass, storageObject);
+            registerStorage0(storageEnumClass, storageObject);
         } catch (NoSuchFieldException | IllegalArgumentException | ClassCastException ex) {
             throw new PcjRuntimeException("Exception while registering enum class: " + storageEnumClass, ex);
         }
     }
 
-    private Object registerStorage0(Class<? extends Enum<?>> storageEnumClass, Object storageObject) throws NoSuchFieldException, IllegalArgumentException {
+    private void registerStorage0(Class<? extends Enum<?>> storageEnumClass, Object storageObject) throws NoSuchFieldException, IllegalArgumentException {
         if (!storageEnumClass.isEnum()) {
             throw new IllegalArgumentException("Class is not enum: " + storageEnumClass.getName());
         }
@@ -144,22 +140,12 @@ public class InternalStorages {
             throw new NoSuchFieldException("Field not found in " + storageClassName + ": " + notFoundName.get());
         }
 
-        Object storage = storageObjectsMap.computeIfAbsent(storageClassName, key -> {
-            if (storageObject == null) {
-                try {
-                    Constructor<?> storageConstructor = storageClass.getConstructor();
-                    storageConstructor.setAccessible(true);
-                    return storageConstructor.newInstance();
-                } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
-                    throw new PcjRuntimeException(e);
-                }
-            } else {
-                return storageObject;
-            }
-        });
+        Object storage = storageObjectsMap.computeIfAbsent(storageClassName, key -> storageObject);
 
+        // TODO: Does this mean that only one storage enum class will be picked up? 
+        // Maybe we should throw an exception instead of silently ignoring?
         if (enumToStorageMap.putIfAbsent(storageEnumClass.getName(), storageClassName) != null) {
-            return storage;
+            return;
         }
 
         for (Enum<?> enumConstant : storageEnumClass.getEnumConstants()) {
@@ -168,8 +154,6 @@ public class InternalStorages {
 
             createShared0(storageClassName, name, field, storage);
         }
-
-        return storage;
     }
 
     private void createShared0(String parent, String name, Field field, Object storageObject)

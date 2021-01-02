@@ -13,6 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.Supplier;
 import org.pcj.PcjRuntimeException;
 import org.pcj.StartPoint;
 
@@ -26,7 +27,17 @@ public abstract class InternalExecutionBuilder {
     protected InternalExecutionBuilder() {
     }
 
+
     protected void start(Class<? extends StartPoint> startPoint, String[] nodes, Properties props) {
+        this.start(startPoint, null, nodes, props);
+    }
+        
+    protected <StartingPointT extends StartPoint> 
+    void start(
+        Class<StartingPointT> startPoint,
+        Supplier<StartingPointT> startPointSupplier, 
+        String[] nodes, Properties props
+    ) {
         InternalPCJ.setConfiguration(new Configuration(props));
 
         Map<String, NodeInfo> nodesMap = parseArray(nodes);
@@ -43,7 +54,7 @@ public abstract class InternalExecutionBuilder {
                                           .mapToInt(Set::size)
                                           .sum();
 
-        InternalPCJ.start(startPoint, node0, currentJvm, allNodesThreadCount);
+        InternalPCJ.start(startPoint, startPointSupplier, node0, currentJvm, allNodesThreadCount);
     }
 
     protected void deploy(Class<? extends StartPoint> startPoint, String[] nodes, Properties props) {

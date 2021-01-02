@@ -10,10 +10,10 @@ package org.pcj.internal;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import org.pcj.PCJ;
 import org.pcj.PcjRuntimeException;
 import org.pcj.RegisterStorage;
@@ -33,10 +33,12 @@ public class PcjThread extends Thread {
 
     private final PcjThreadGroup pcjThreadGroup;
     private final Class<? extends StartPoint> startPointClass;
+    private final Supplier<? extends StartPoint> startPointSupplier;
     private final AsyncWorkers asyncWorkers;
     private final Semaphore notificationSemaphore;
     private Throwable throwable;
 
+    //TODO: IDE says it's not used, should it be removed or there is some reflection still using it?
     PcjThread(Class<? extends StartPoint> startPointClass,
               int threadId,
               PcjThreadGroup pcjThreadGroup,
@@ -45,6 +47,23 @@ public class PcjThread extends Thread {
         super(pcjThreadGroup, "PcjThread-" + threadId);
 
         this.startPointClass = startPointClass;
+        this.startPointSupplier = null;
+        this.pcjThreadGroup = pcjThreadGroup;
+        this.asyncWorkers = new AsyncWorkers(asyncTasksWorkers);
+        this.notificationSemaphore = notificationSemaphore;
+    }
+
+    <StartingPointT extends StartPoint>
+    PcjThread(Class<StartingPointT> startPointClass,
+        Supplier<StartingPointT> startPointSupplier,
+        int threadId,
+        PcjThreadGroup pcjThreadGroup,
+        ExecutorService asyncTasksWorkers,
+        Semaphore notificationSemaphore) {
+        super(pcjThreadGroup, "PcjThread-" + threadId);
+
+        this.startPointClass = startPointClass;
+        this.startPointSupplier = startPointSupplier;
         this.pcjThreadGroup = pcjThreadGroup;
         this.asyncWorkers = new AsyncWorkers(asyncTasksWorkers);
         this.notificationSemaphore = notificationSemaphore;
@@ -125,16 +144,12 @@ public class PcjThread extends Thread {
     }
 
     private StartPoint getStartPointObject() throws RuntimeException, InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
-        StartPoint startPoint = initializeStorages();
-        if (startPoint == null) {
-            startPoint = initializeStartPointClass();
-        }
+        StartPoint startPoint = initializeStartPointClass();
+        initializeStorages(startPoint);
         return startPoint;
     }
 
-    private StartPoint initializeStorages() {
-        StartPoint startPoint = null;
-
+    private void initializeStorages(StartPoint startPoint) {
         RegisterStorage[] registerStorages = startPointClass.getAnnotationsByType(RegisterStorage.class);
 
         for (RegisterStorage registerStorage : registerStorages) {
@@ -144,22 +159,19 @@ public class PcjThread extends Thread {
                     throw new PcjRuntimeException("Enum is not annotated by @Storage annotation: " + sharedEnumClass.getName());
                 }
 
-                Object object = PCJ.registerStorage(sharedEnumClass);
-                if (storageAnnotation.value().equals(startPointClass)) {
-                    startPoint = (StartPoint) object;
-                }
+                PCJ.registerStorage(sharedEnumClass, startPoint);
             }
         }
-
-        return startPoint;
     }
 
     private StartPoint initializeStartPointClass() throws NoSuchMethodException, InstantiationException, InvocationTargetException, IllegalAccessException, SecurityException, IllegalArgumentException {
-        StartPoint startPoint;
-        Constructor<? extends StartPoint> startPointClassConstructor = startPointClass.getConstructor();
-        startPointClassConstructor.setAccessible(true);
-        startPoint = startPointClassConstructor.newInstance();
-        return startPoint;
+        if(startPointSupplier == null) {
+            Constructor<? extends StartPoint> startPointClassConstructor = startPointClass.getConstructor();
+            startPointClassConstructor.setAccessible(true);
+            return startPointClassConstructor.newInstance();
+        } else {
+            return startPointSupplier.get();
+        }
     }
 
     Throwable getThrowable() {
