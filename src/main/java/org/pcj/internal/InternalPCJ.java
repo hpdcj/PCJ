@@ -188,7 +188,7 @@ public abstract class InternalPCJ {
                 long m = (timer / 60) % 60;
                 long s = (timer % 60);
 
-                LOGGER.log(Level.INFO, "{0} {1}"
+                LOGGER.log(Level.INFO, "{0} using instance from {1}"
                                 + " with {2,number,#} {2,choice,1#thread|1<threads}"
                                 + " (on {3,number,#} {3,choice,1#node|1<nodes})"
                                 + " after {4,number,#}h {5,number,#}m {6,number,#}s {7,number,#}ms.",
