@@ -65,6 +65,11 @@ public final class PCJ {
      *    .addNodes(new File("nodes.txt"))
      *    .deploy();
      * </pre>
+     * <pre>
+     * PCJ.executionBuilder(() -> new Hello(...))
+     *    .addNodes(new File("nodes.txt"))
+     *    .deploy();
+     * </pre>
      *
      * @return {@link ExecutionBuilder} for chain configuration and starting application
      */
