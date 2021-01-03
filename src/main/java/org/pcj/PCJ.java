@@ -45,6 +45,7 @@ public final class PCJ {
      * </pre>
      *
      * @param startPoint start point class
+     * @param <StartingPointT> starting point type
      * @return {@link ExecutionBuilder} for chain configuration and starting application
      */
     public static <StartingPointT extends StartPoint> 
@@ -66,11 +67,13 @@ public final class PCJ {
      *    .deploy();
      * </pre>
      * <pre>
-     * PCJ.executionBuilder(() -> new Hello(...))
+     * PCJ.executionBuilder(() -{@literal @>} new Hello(...))
      *    .addNodes(new File("nodes.txt"))
      *    .deploy();
      * </pre>
      *
+     * @param startingPointFactory start point factory
+     * @param <StartingPointT> starting point type
      * @return {@link ExecutionBuilder} for chain configuration and starting application
      */
     public static <StartingPointT extends StartPoint> 
