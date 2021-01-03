@@ -17,16 +17,16 @@ public class StartingPointReflectionFactory implements StartPointFactory {
     this.startPointClass = startPointClass;
   }
 
+  private boolean isZeroArgumentConstructorMissing(Class<? extends StartPoint> startPointClass) {
+    return Arrays.stream(startPointClass.getConstructors()).noneMatch(constructor -> constructor.getParameterCount() == 0);
+  }
+  
   @Override
   public StartPoint create()
       throws NoSuchMethodException, InstantiationException, InvocationTargetException, IllegalAccessException, SecurityException, IllegalArgumentException {
     Constructor<? extends StartPoint> startPointClassConstructor = startPointClass.getConstructor();
     startPointClassConstructor.setAccessible(true);
     return startPointClassConstructor.newInstance();
-  }
-
-  private boolean isZeroArgumentConstructorMissing(Class<? extends StartPoint> startPointClass) {
-    return Arrays.stream(startPointClass.getConstructors()).noneMatch(constructor -> constructor.getParameterCount() == 0);
   }
 
   @Override
