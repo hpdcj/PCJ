@@ -11,10 +11,10 @@ package org.pcj;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Supplier;
 import org.pcj.internal.InternalGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.PcjThread;
+import org.pcj.internal.StartingPointReflectionFactory;
 
 /**
  * Main PCJ class with static methods.
@@ -49,11 +49,11 @@ public final class PCJ {
      */
     public static <StartingPointT extends StartPoint> 
     ExecutionBuilder<StartingPointT> executionBuilder(Class<StartingPointT> startPoint) {
-        return new ExecutionBuilder<>(startPoint);
+        return executionBuilder(new StartingPointReflectionFactory<>(startPoint));
     }
 
     /**
-     * Creates execution builder for starting the application using startPoint class.
+     * Creates execution builder for starting the application using startPoint class instance created by startingPointFactory.
      * <p>
      * It does not start application.
      * It is necessary to execute {@link ExecutionBuilder#deploy()} or {@link ExecutionBuilder#start()} method to start
@@ -61,20 +61,18 @@ public final class PCJ {
      * <p>
      * The example of usage:
      * <pre>
-     * PCJ.executionBuilder(Hello.class, () -> new Hello(...))
+     * PCJ.executionBuilder(new HelloFactory(...))
      *    .addNodes(new File("nodes.txt"))
      *    .deploy();
      * </pre>
      *
-     * @param startPoint start point class
      * @return {@link ExecutionBuilder} for chain configuration and starting application
      */
     public static <StartingPointT extends StartPoint> 
     ExecutionBuilder<StartingPointT> executionBuilder(
-        Class<StartingPointT> startPoint, 
-        Supplier<StartingPointT> startingPointTSupplier
+        StartPointFactory<StartingPointT> startingPointFactory
     ) {
-        return new ExecutionBuilder<>(startPoint, startingPointTSupplier);
+        return new ExecutionBuilder<>(startingPointFactory);
     }
 
     /**

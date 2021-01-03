@@ -8,9 +8,9 @@
  */
 package org.pcj.internal;
 
-import java.util.function.Supplier;
 import org.pcj.PcjRuntimeException;
 import org.pcj.StartPoint;
+import org.pcj.StartPointFactory;
 import org.pcj.internal.message.alive.AliveState;
 import org.pcj.internal.message.bye.ByeState;
 import org.pcj.internal.message.hello.HelloMessage;
@@ -80,19 +80,8 @@ public abstract class InternalPCJ {
         return LoopbackSocketChannel.getInstance();
     }
     
-
-    static  void start(
-        Class<? extends StartPoint> startPointClass,
-        NodeInfo node0,
-        NodeInfo currentJvm,
-        int allNodesThreadCount
-    ) {
-        start(startPointClass, null, node0, currentJvm, allNodesThreadCount);
-    }
-    
     static <StartingPointT extends StartPoint> void start(
-        Class<StartingPointT> startPointClass,
-        Supplier<StartingPointT> startPointSupplier,
+        StartPointFactory<StartingPointT> startPointFactory,
         NodeInfo node0,
         NodeInfo currentJvm,
         int allNodesThreadCount
@@ -131,10 +120,10 @@ public abstract class InternalPCJ {
 
             /* Starting execution */
             if (isCurrentJvmNode0) {
-                LOGGER.log(Level.INFO, "Starting {0}"
+                LOGGER.log(Level.INFO, "Starting with instance from {0}"
                                 + " with {1,number,#} {1,choice,1#thread|1<threads}"
                                 + " (on {2,number,#} {2,choice,1#node|1<nodes})...",
-                        new Object[]{startPointClass.getName(),
+                        new Object[]{startPointFactory,
                                 nodeData.getCommonGroupById(InternalCommonGroup.GLOBAL_GROUP_ID).threadCount(),
                                 nodeData.getTotalNodeCount(),});
             }
@@ -148,7 +137,7 @@ public abstract class InternalPCJ {
                 /* Preparing PcjThreads */
                 Semaphore notificationObject = new Semaphore(0);
 
-                pcjThreads = preparePcjThreads(startPointClass, startPointSupplier, currentJvm.getThreadIds(), notificationObject);
+                pcjThreads = preparePcjThreads(startPointFactory, currentJvm.getThreadIds(), notificationObject);
                 nodeData.updatePcjThreads(pcjThreads);
 
                 /* Starting PcjThreads */
@@ -205,7 +194,7 @@ public abstract class InternalPCJ {
                                 + " after {4,number,#}h {5,number,#}m {6,number,#}s {7,number,#}ms.",
                         new Object[]{
                                 !aliveState.isAborted() ? "Completed" : "Aborted",
-                                startPointClass.getName(),
+                                startPointFactory,
                                 nodeData.getCommonGroupById(InternalCommonGroup.GLOBAL_GROUP_ID).threadCount(),
                                 nodeData.getTotalNodeCount(),
                                 h, m, s, ms
@@ -268,8 +257,7 @@ public abstract class InternalPCJ {
     
     private static <StartingPointT extends StartPoint> 
     Map<Integer, PcjThread>  preparePcjThreads(
-        Class<StartingPointT> startPointClass,
-        Supplier<StartingPointT> startPointSupplier,
+        StartPointFactory<StartingPointT> startPointFactory,
         Set<Integer> threadIds,
         Semaphore notificationSemaphore
     ) {
@@ -296,7 +284,7 @@ public abstract class InternalPCJ {
                     blockingQueue,
                     new ThreadPoolExecutor.AbortPolicy());
 
-            PcjThread pcjThread = new PcjThread(startPointClass, startPointSupplier, threadId, pcjThreadGroup, asyncTasksWorkers, notificationSemaphore);
+            PcjThread pcjThread = new PcjThread(startPointFactory, threadId, pcjThreadGroup, asyncTasksWorkers, notificationSemaphore);
 
             pcjThreads.put(threadId, pcjThread);
         }

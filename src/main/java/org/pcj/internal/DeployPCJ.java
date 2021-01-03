@@ -8,13 +8,19 @@
  */
 package org.pcj.internal;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -25,6 +31,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 import org.pcj.StartPoint;
+import org.pcj.StartPointFactory;
 
 /**
  * Class used for deploying PCJ when using one of deploy methods.
@@ -35,11 +42,13 @@ public final class DeployPCJ {
 
     private static final Logger LOGGER = Logger.getLogger(DeployPCJ.class.getName());
 
-    public static void deploy(Class<? extends StartPoint> startPoint,
-                              NodeInfo node0,
-                              NodeInfo currentJvm,
-                              Collection<NodeInfo> allNodes,
-                              Properties props) {
+    public static <StartingPointT extends StartPoint> void deploy(
+        StartPointFactory<StartingPointT> startPointFactory,
+        NodeInfo node0,
+        NodeInfo currentJvm,
+        Collection<NodeInfo> allNodes,
+        Properties props
+    ) {
 
         List<String> jvmParams = getJvmParams();
         String properties = getPropertiesAsString(props);
@@ -55,7 +64,7 @@ public final class DeployPCJ {
                     continue;
                 }
 
-                List<String> jvmCommand = localJvmCommand(node, jvmParams, startPoint, node0, allNodesThreadCount, properties);
+                List<String> jvmCommand = localJvmCommand(node, jvmParams, startPointFactory, node0, allNodesThreadCount, properties);
 
                 List<String> command;
                 if (node.isLocalAddress()) {
@@ -68,7 +77,7 @@ public final class DeployPCJ {
             }
 
             if (currentJvm != null) {
-                InternalPCJ.start(startPoint, node0, currentJvm, allNodesThreadCount);
+                InternalPCJ.start(startPointFactory, node0, currentJvm, allNodesThreadCount);
             }
 
             waitForFinish(processes);
@@ -137,18 +146,23 @@ public final class DeployPCJ {
             process.waitFor();
         }
     }
-
-    private static List<String> localJvmCommand(NodeInfo node, List<String> jvmParams,
-                                                Class<? extends StartPoint> startPoint,
-                                                NodeInfo node0, long allNodesThreadCount,
-                                                String propertiesString) {
+    
+    private static  <StartingPointT extends StartPoint> 
+    List<String> localJvmCommand(
+        NodeInfo node, 
+        List<String> jvmParams,
+        StartPointFactory<StartingPointT> startPointFactory,
+        NodeInfo node0, 
+        long allNodesThreadCount,
+        String propertiesString
+    ) throws IOException {
         List<String> jvmExec = new ArrayList<>(jvmParams);
 
         jvmExec.addAll(Arrays.asList(
 //                "-Dloader.main="+DeployPCJ.class.getName(),
 //                "org.springframework.boot.loader.PropertiesLauncher",
                 DeployPCJ.class.getName(),
-                startPoint.getName(), // args[0]
+                toString(startPointFactory), // args[0]
                 Integer.toString(node.getPort()), // args[1]
                 node0.getHostname(), // args[2]
                 Integer.toString(node0.getPort()), // args[3]
@@ -158,6 +172,15 @@ public final class DeployPCJ {
         ));
 
         return Collections.unmodifiableList(jvmExec);
+    }
+
+    /** Write the object to a Base64 string. */
+    private static String toString( Serializable serializable ) throws IOException {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+        objectOutputStream.writeObject(serializable);
+        objectOutputStream.close();
+        return Base64.getEncoder().encodeToString(byteArrayOutputStream.toByteArray());
     }
 
     private static List<String> remoteSshCommand(NodeInfo node, List<String> jvmCommand) {
@@ -177,8 +200,14 @@ public final class DeployPCJ {
         ));
     }
 
-    public static void main(String[] args) throws ClassNotFoundException {
-        String startPointStr = args[0];
+    public static void main(String[] args) {
+        StartPointFactory<? extends StartPoint> startingPointFactory;
+        try {
+            startingPointFactory = fromString(args[0]);
+        } catch (IOException | ClassNotFoundException e) {
+            LOGGER.log(Level.SEVERE, "Unable to obtain starting point factory", e);
+            throw new RuntimeException(e);
+        }
         int localPort = Integer.parseInt(args[1]);
         String node0Str = args[2];
         int node0Port = Integer.parseInt(args[3]);
@@ -197,9 +226,6 @@ public final class DeployPCJ {
 
         InternalPCJ.setConfiguration(new Configuration(props));
 
-        @SuppressWarnings("unchecked")
-        Class<? extends StartPoint> startPoint = (Class<? extends StartPoint>) Class.forName(startPointStr);
-
         NodeInfo node0 = new NodeInfo(node0Str, node0Port);
         NodeInfo currentJvm = new NodeInfo("", localPort);
 
@@ -207,8 +233,19 @@ public final class DeployPCJ {
         Stream.of(threadIds).mapToInt(Integer::parseInt).forEach(currentJvm::addThreadId);
 
         LOGGER.log(Level.FINE, "Invoking InternalPCJ.start({0}, {1}, {2}, {3})",
-                new Object[]{startPoint, node0, currentJvm, allNodesThreadCount});
+            new Object[]{startingPointFactory, node0, currentJvm, allNodesThreadCount});
 
-        InternalPCJ.start(startPoint, node0, currentJvm, allNodesThreadCount);
+        InternalPCJ.start(startingPointFactory, node0, currentJvm, allNodesThreadCount);
+    }
+
+    /** Read the object from Base64 string. */
+    @SuppressWarnings("unchecked")
+    private static <SerializedT> SerializedT fromString(String serialized) throws IOException , ClassNotFoundException {
+        byte [] data = Base64.getDecoder().decode(serialized);
+        final ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(data);
+        ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream);
+        Object object  = objectInputStream.readObject();
+        objectInputStream.close();
+        return (SerializedT) object;
     }
 }

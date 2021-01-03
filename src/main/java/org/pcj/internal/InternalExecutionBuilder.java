@@ -13,9 +13,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.function.Supplier;
 import org.pcj.PcjRuntimeException;
 import org.pcj.StartPoint;
+import org.pcj.StartPointFactory;
 
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
@@ -24,18 +24,11 @@ public abstract class InternalExecutionBuilder {
 
     private static final String CURRENT_JVM_HOSTNAME = "";
 
-    protected InternalExecutionBuilder() {
-    }
-
-
-    protected void start(Class<? extends StartPoint> startPoint, String[] nodes, Properties props) {
-        this.start(startPoint, null, nodes, props);
-    }
+    protected InternalExecutionBuilder() {}
         
     protected <StartingPointT extends StartPoint> 
     void start(
-        Class<StartingPointT> startPoint,
-        Supplier<StartingPointT> startPointSupplier, 
+        StartPointFactory<StartingPointT> startPointFactory, 
         String[] nodes, Properties props
     ) {
         InternalPCJ.setConfiguration(new Configuration(props));
@@ -54,10 +47,14 @@ public abstract class InternalExecutionBuilder {
                                           .mapToInt(Set::size)
                                           .sum();
 
-        InternalPCJ.start(startPoint, startPointSupplier, node0, currentJvm, allNodesThreadCount);
+        InternalPCJ.start(startPointFactory, node0, currentJvm, allNodesThreadCount);
     }
-
-    protected void deploy(Class<? extends StartPoint> startPoint, String[] nodes, Properties props) {
+    protected <StartingPointT extends StartPoint>
+    void deploy(
+        StartPointFactory<StartingPointT> startPointFactory,
+        String[] nodes,
+        Properties props
+    ) {
         InternalPCJ.setConfiguration(new Configuration(props));
 
         Map<String, NodeInfo> nodesMap = parseArray(nodes);
@@ -71,7 +68,7 @@ public abstract class InternalExecutionBuilder {
 
         Collection<NodeInfo> allNodes = nodesMap.values();
 
-        DeployPCJ.deploy(startPoint, node0, currentJvm, allNodes, props);
+        DeployPCJ.deploy(startPointFactory, node0, currentJvm, allNodes, props);
     }
 
     private Map<String, NodeInfo> parseArray(String[] nodesList) {

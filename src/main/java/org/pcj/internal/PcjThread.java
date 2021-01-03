@@ -8,16 +8,15 @@
  */
 package org.pcj.internal;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 import org.pcj.PCJ;
 import org.pcj.PcjRuntimeException;
 import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
+import org.pcj.StartPointFactory;
 import org.pcj.Storage;
 
 /**
@@ -32,38 +31,21 @@ import org.pcj.Storage;
 public class PcjThread extends Thread {
 
     private final PcjThreadGroup pcjThreadGroup;
-    private final Class<? extends StartPoint> startPointClass;
-    private final Supplier<? extends StartPoint> startPointSupplier;
+    private final StartPointFactory<? extends StartPoint> startPointFactory;
     private final AsyncWorkers asyncWorkers;
     private final Semaphore notificationSemaphore;
     private Throwable throwable;
 
-    //TODO: IDE says it's not used, should it be removed or there is some reflection still using it?
-    PcjThread(Class<? extends StartPoint> startPointClass,
-              int threadId,
-              PcjThreadGroup pcjThreadGroup,
-              ExecutorService asyncTasksWorkers,
-              Semaphore notificationSemaphore) {
-        super(pcjThreadGroup, "PcjThread-" + threadId);
-
-        this.startPointClass = startPointClass;
-        this.startPointSupplier = null;
-        this.pcjThreadGroup = pcjThreadGroup;
-        this.asyncWorkers = new AsyncWorkers(asyncTasksWorkers);
-        this.notificationSemaphore = notificationSemaphore;
-    }
-
-    <StartingPointT extends StartPoint>
-    PcjThread(Class<StartingPointT> startPointClass,
-        Supplier<StartingPointT> startPointSupplier,
+    PcjThread(
+        StartPointFactory<? extends StartPoint> startPointFactory,
         int threadId,
         PcjThreadGroup pcjThreadGroup,
         ExecutorService asyncTasksWorkers,
-        Semaphore notificationSemaphore) {
+        Semaphore notificationSemaphore
+    ) {
         super(pcjThreadGroup, "PcjThread-" + threadId);
 
-        this.startPointClass = startPointClass;
-        this.startPointSupplier = startPointSupplier;
+        this.startPointFactory = startPointFactory;
         this.pcjThreadGroup = pcjThreadGroup;
         this.asyncWorkers = new AsyncWorkers(asyncTasksWorkers);
         this.notificationSemaphore = notificationSemaphore;
@@ -144,13 +126,13 @@ public class PcjThread extends Thread {
     }
 
     private StartPoint getStartPointObject() throws RuntimeException, InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
-        StartPoint startPoint = initializeStartPointClass();
+        StartPoint startPoint = startPointFactory.create();
         initializeStorages(startPoint);
         return startPoint;
     }
 
     private void initializeStorages(StartPoint startPoint) {
-        RegisterStorage[] registerStorages = startPointClass.getAnnotationsByType(RegisterStorage.class);
+        RegisterStorage[] registerStorages = startPoint.getClass().getAnnotationsByType(RegisterStorage.class);
 
         for (RegisterStorage registerStorage : registerStorages) {
             for (Class<? extends Enum<?>> sharedEnumClass : registerStorage.value()) {
@@ -161,16 +143,6 @@ public class PcjThread extends Thread {
 
                 PCJ.registerStorage(sharedEnumClass, startPoint);
             }
-        }
-    }
-
-    private StartPoint initializeStartPointClass() throws NoSuchMethodException, InstantiationException, InvocationTargetException, IllegalAccessException, SecurityException, IllegalArgumentException {
-        if(startPointSupplier == null) {
-            Constructor<? extends StartPoint> startPointClassConstructor = startPointClass.getConstructor();
-            startPointClassConstructor.setAccessible(true);
-            return startPointClassConstructor.newInstance();
-        } else {
-            return startPointSupplier.get();
         }
     }
 

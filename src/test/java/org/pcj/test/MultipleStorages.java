@@ -1,6 +1,5 @@
 package org.pcj.test;
 
-import org.pcj.NodesDescription;
 import org.pcj.PCJ;
 import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
@@ -15,25 +14,18 @@ public class MultipleStorages implements StartPoint {
 
     private static int V = 0;
     private int v = ++V;
-    
-    private final String test;
-    
-    public MultipleStorages(String test){
-        this.test = test;
-    }
 
     @Override
     public void main() {
-        System.out.println("v = " + v + ", test = " + test);
+        System.out.println("v = " + v);
         PCJ.registerStorage(MultipleStorages.Vars.class, this);
-        System.out.println("v = " + v + ", test = " + test);
+        System.out.println("v = " + v);
         PCJ.registerStorage(MultipleStorages.Vars.class, this);
-        System.out.println("v = " + v + ", test = " + test);
+        System.out.println("v = " + v);
     }
 
     public static void main(String[] args) {
-        PCJ.executionBuilder(MultipleStorages.class, () -> new MultipleStorages("Some text"))
-                .addNode("localhost")
+        PCJ.executionBuilder(MultipleStorages.class)
                 .addNode("localhost")
                 .start();
     }
