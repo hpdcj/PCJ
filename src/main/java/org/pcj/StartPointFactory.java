@@ -8,6 +8,6 @@ import java.lang.reflect.InvocationTargetException;
  * Implementation/lambda of this interface should have serializable fields/captured arguments so system is able to share it with other nodes.
  */
 @FunctionalInterface
-public interface StartPointFactory<StartPointT extends StartPoint> extends Serializable {
-    StartPointT create() throws NoSuchMethodException, InstantiationException, InvocationTargetException, IllegalAccessException, SecurityException, IllegalArgumentException;
+public interface StartPointFactory extends Serializable {
+    StartPoint create() throws NoSuchMethodException, InstantiationException, InvocationTargetException, IllegalAccessException, SecurityException, IllegalArgumentException;
 }

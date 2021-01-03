@@ -28,7 +28,7 @@ public class DeployUsingFactory implements StartPoint {
                 .deploy();
     }
 
-    public static class DeployExecutionBuilderWithSupplierFactory implements StartPointFactory<DeployUsingFactory> {
+    public static class DeployExecutionBuilderWithSupplierFactory implements StartPointFactory {
 
         private final String someText;
 

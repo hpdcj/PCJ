@@ -26,9 +26,8 @@ public abstract class InternalExecutionBuilder {
 
     protected InternalExecutionBuilder() {}
         
-    protected <StartingPointT extends StartPoint> 
-    void start(
-        StartPointFactory<StartingPointT> startPointFactory, 
+    protected void start(
+        StartPointFactory startPointFactory, 
         String[] nodes, Properties props
     ) {
         InternalPCJ.setConfiguration(new Configuration(props));
@@ -49,9 +48,8 @@ public abstract class InternalExecutionBuilder {
 
         InternalPCJ.start(startPointFactory, node0, currentJvm, allNodesThreadCount);
     }
-    protected <StartingPointT extends StartPoint>
-    void deploy(
-        StartPointFactory<StartingPointT> startPointFactory,
+    protected void deploy(
+        StartPointFactory startPointFactory,
         String[] nodes,
         Properties props
     ) {

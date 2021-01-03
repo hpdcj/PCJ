@@ -45,12 +45,10 @@ public final class PCJ {
      * </pre>
      *
      * @param startPoint start point class
-     * @param <StartingPointT> starting point type
      * @return {@link ExecutionBuilder} for chain configuration and starting application
      */
-    public static <StartingPointT extends StartPoint> 
-    ExecutionBuilder<StartingPointT> executionBuilder(Class<StartingPointT> startPoint) {
-        return executionBuilder(new StartingPointReflectionFactory<>(startPoint));
+    public static ExecutionBuilder executionBuilder(Class<? extends StartPoint> startPoint) {
+        return executionBuilder(new StartingPointReflectionFactory(startPoint));
     }
 
     /**
@@ -73,14 +71,12 @@ public final class PCJ {
      * </pre>
      *
      * @param startingPointFactory start point factory
-     * @param <StartingPointT> starting point type
      * @return {@link ExecutionBuilder} for chain configuration and starting application
      */
-    public static <StartingPointT extends StartPoint> 
-    ExecutionBuilder<StartingPointT> executionBuilder(
-        StartPointFactory<StartingPointT> startingPointFactory
+    public static ExecutionBuilder executionBuilder(
+        StartPointFactory startingPointFactory
     ) {
-        return new ExecutionBuilder<>(startingPointFactory);
+        return new ExecutionBuilder(startingPointFactory);
     }
 
     /**

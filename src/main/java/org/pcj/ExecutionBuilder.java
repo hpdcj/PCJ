@@ -22,10 +22,10 @@ import org.pcj.internal.InternalExecutionBuilder;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public final class ExecutionBuilder<StartingPointT extends StartPoint>  extends InternalExecutionBuilder implements Cloneable {
+public final class ExecutionBuilder extends InternalExecutionBuilder implements Cloneable {
 
     private static final String[] EMPTY_ARRAY = new String[0];
-    private final StartPointFactory<StartingPointT> startPointFactory;
+    private final StartPointFactory startPointFactory;
     private final List<String> nodeList;
     private final Properties properties;
 
@@ -34,7 +34,7 @@ public final class ExecutionBuilder<StartingPointT extends StartPoint>  extends 
      *
      * @param startPointFactory startPoint class
      */
-    ExecutionBuilder(StartPointFactory<StartingPointT> startPointFactory) {
+    ExecutionBuilder(StartPointFactory startPointFactory) {
         this.startPointFactory = startPointFactory;
 
         this.nodeList = new ArrayList<>();
@@ -46,7 +46,7 @@ public final class ExecutionBuilder<StartingPointT extends StartPoint>  extends 
      *
      * @param that source object to copy from
      */
-    private ExecutionBuilder(ExecutionBuilder<StartingPointT> that) {
+    private ExecutionBuilder(ExecutionBuilder that) {
         this.startPointFactory = that.startPointFactory;
 
         this.nodeList = new ArrayList<>(that.nodeList);
@@ -59,8 +59,8 @@ public final class ExecutionBuilder<StartingPointT extends StartPoint>  extends 
      * @return a clone of ExecutionBuilder
      */
     @Override
-    public ExecutionBuilder<StartingPointT> clone() {
-        return new ExecutionBuilder<>(this);
+    public ExecutionBuilder clone() {
+        return new ExecutionBuilder(this);
     }
 
     @Override

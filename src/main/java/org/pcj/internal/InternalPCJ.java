@@ -80,8 +80,8 @@ public abstract class InternalPCJ {
         return LoopbackSocketChannel.getInstance();
     }
     
-    static <StartingPointT extends StartPoint> void start(
-        StartPointFactory<StartingPointT> startPointFactory,
+    static void start(
+        StartPointFactory startPointFactory,
         NodeInfo node0,
         NodeInfo currentJvm,
         int allNodesThreadCount
@@ -255,9 +255,8 @@ public abstract class InternalPCJ {
 
     
     
-    private static <StartingPointT extends StartPoint> 
-    Map<Integer, PcjThread>  preparePcjThreads(
-        StartPointFactory<StartingPointT> startPointFactory,
+    private static Map<Integer, PcjThread>  preparePcjThreads(
+        StartPointFactory startPointFactory,
         Set<Integer> threadIds,
         Semaphore notificationSemaphore
     ) {

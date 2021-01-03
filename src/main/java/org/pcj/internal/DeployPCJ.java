@@ -42,8 +42,8 @@ public final class DeployPCJ {
 
     private static final Logger LOGGER = Logger.getLogger(DeployPCJ.class.getName());
 
-    public static <StartingPointT extends StartPoint> void deploy(
-        StartPointFactory<StartingPointT> startPointFactory,
+    public static void deploy(
+        StartPointFactory startPointFactory,
         NodeInfo node0,
         NodeInfo currentJvm,
         Collection<NodeInfo> allNodes,
@@ -147,11 +147,10 @@ public final class DeployPCJ {
         }
     }
     
-    private static  <StartingPointT extends StartPoint> 
-    List<String> localJvmCommand(
+    private static List<String> localJvmCommand(
         NodeInfo node, 
         List<String> jvmParams,
-        StartPointFactory<StartingPointT> startPointFactory,
+        StartPointFactory startPointFactory,
         NodeInfo node0, 
         long allNodesThreadCount,
         String propertiesString
@@ -201,7 +200,7 @@ public final class DeployPCJ {
     }
 
     public static void main(String[] args) {
-        StartPointFactory<? extends StartPoint> startingPointFactory;
+        StartPointFactory startingPointFactory;
         try {
             startingPointFactory = fromString(args[0]);
         } catch (IOException | ClassNotFoundException e) {

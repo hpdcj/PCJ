@@ -31,13 +31,13 @@ import org.pcj.Storage;
 public class PcjThread extends Thread {
 
     private final PcjThreadGroup pcjThreadGroup;
-    private final StartPointFactory<? extends StartPoint> startPointFactory;
+    private final StartPointFactory startPointFactory;
     private final AsyncWorkers asyncWorkers;
     private final Semaphore notificationSemaphore;
     private Throwable throwable;
 
     PcjThread(
-        StartPointFactory<? extends StartPoint> startPointFactory,
+        StartPointFactory startPointFactory,
         int threadId,
         PcjThreadGroup pcjThreadGroup,
         ExecutorService asyncTasksWorkers,
