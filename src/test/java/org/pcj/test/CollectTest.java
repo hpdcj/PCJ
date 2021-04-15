@@ -60,15 +60,19 @@ public class CollectTest implements StartPoint {
     public void main() {
         intArray[0] = PCJ.myId() + 1;
         PCJ.barrier();
-        if (PCJ.myId() == 0) {
-            int[] intSubArray = PCJ.collect(Communicable.intArray, 0);
-            System.out.println(Arrays.toString(intSubArray));
+        for (int i = 0; i < PCJ.threadCount(); ++i) {
+            if (PCJ.myId() == i) {
+                System.out.println("--- " + PCJ.myId() + " ---");
+                int[] intSubArray = PCJ.collect(Communicable.intArray, 0);
+                System.out.println(Arrays.toString(intSubArray));
 
-            int[][] intArray = PCJ.collect(Communicable.intArray);
-            System.out.println(Arrays.deepToString(intArray));
+                int[][] intArray = PCJ.collect(Communicable.intArray);
+                System.out.println(Arrays.deepToString(intArray));
 
-            PcjFuture<Serializable[]> nullObjectsFuture = PCJ.asyncCollect(Communicable.nullObject);
-            System.out.println(Arrays.deepToString(nullObjectsFuture.get()));
+                PcjFuture<Serializable[]> nullObjectsFuture = PCJ.asyncCollect(Communicable.nullObject);
+                System.out.println(Arrays.deepToString(nullObjectsFuture.get()));
+            }
+            PCJ.barrier();
         }
     }
 }
