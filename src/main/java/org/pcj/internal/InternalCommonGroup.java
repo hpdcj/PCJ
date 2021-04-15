@@ -8,16 +8,16 @@
  */
 package org.pcj.internal;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.pcj.internal.message.barrier.BarrierStates;
 import org.pcj.internal.message.broadcast.BroadcastStates;
 import org.pcj.internal.message.collect.CollectStates;
@@ -37,6 +37,7 @@ public class InternalCommonGroup {
 
     private final int groupId;
     private final String groupName;
+    private final int groupMasterNode;
     private final ConcurrentHashMap<Integer, Integer> threadsMap; // groupThreadId, globalThreadId
     private final AtomicInteger threadsCounter;
     private final Set<Integer> localIds;
@@ -50,6 +51,7 @@ public class InternalCommonGroup {
     public InternalCommonGroup(InternalCommonGroup g) {
         this.groupId = g.groupId;
         this.groupName = g.groupName;
+        this.groupMasterNode = g.groupMasterNode;
         this.communicationTree = g.communicationTree;
 
         this.threadsMap = g.threadsMap;
@@ -66,7 +68,8 @@ public class InternalCommonGroup {
     public InternalCommonGroup(int groupMasterNode, int groupId, String groupName) {
         this.groupId = groupId;
         this.groupName = groupName;
-        this.communicationTree = new CommunicationTree(groupMasterNode);
+        this.groupMasterNode = groupMasterNode;
+        this.communicationTree = new CommunicationTree();
 
         this.threadsMap = new ConcurrentHashMap<>();
         this.threadsCounter = new AtomicInteger(0);
@@ -105,10 +108,10 @@ public class InternalCommonGroup {
 
     public final int getGroupThreadId(int globalThreadId) throws NoSuchElementException {
         return threadsMap.entrySet().stream()
-                       .filter(entry -> entry.getValue() == globalThreadId)
-                       .mapToInt(Map.Entry::getKey)
-                       .findFirst()
-                       .orElseThrow(() -> new NoSuchElementException("Global threadId not found: " + globalThreadId));
+                .filter(entry -> entry.getValue() == globalThreadId)
+                .mapToInt(Map.Entry::getKey)
+                .findFirst()
+                .orElseThrow(() -> new NoSuchElementException("Global threadId not found: " + globalThreadId));
     }
 
     public final void addNewThread(int globalThreadId) {
@@ -118,14 +121,14 @@ public class InternalCommonGroup {
         } while (threadsMap.putIfAbsent(groupThreadId, globalThreadId) != null);
 
         updateLocalThreads();
-        communicationTree.update(threadsMap);
+        communicationTree.update();
     }
 
     public final void updateThreadsMap(Map<Integer, Integer> newThreadsMap) { // groupId, globalId
         threadsMap.putAll(newThreadsMap);
 
         updateLocalThreads();
-        communicationTree.update(this.threadsMap);
+        communicationTree.update();
     }
 
     private void updateLocalThreads() {
@@ -167,61 +170,72 @@ public class InternalCommonGroup {
         return communicationTree;
     }
 
-    public static class CommunicationTree {
+    public class CommunicationTree {
 
-        private final int masterNode;
-        private int parentNode;
-        private final Set<Integer> childrenNodes;
+        private List<Integer> physicalIds;
+        private int currentIndex;
 
-        private CommunicationTree(int masterNode) {
-            this.masterNode = masterNode;
-            this.parentNode = -1;
-            this.childrenNodes = new CopyOnWriteArraySet<>();
+        private CommunicationTree() {
+            this.currentIndex = -1;
+            this.physicalIds = Collections.emptyList();
         }
 
-        public final int getMasterNode() {
-            return masterNode;
+        public int getParentNode() {
+            return getParentNode(0);
         }
 
-        public final int getParentNode() {
-            return parentNode;
+        public int getParentNode(int shift) {
+            if (currentIndex < 0) {
+                return -1;
+            }
+            if (physicalIds.get(currentIndex) == shift) { // if root after shift
+                return -1;
+            }
+            int index = (((currentIndex - shift - 1) % physicalIds.size()) / 2 + shift) % physicalIds.size();
+            return physicalIds.get(index);
         }
 
-        public final Set<Integer> getChildrenNodes() {
-            return Collections.unmodifiableSet(childrenNodes);
+        public Set<Integer> getChildrenNodes() {
+            return getChildrenNodes(0);
         }
 
-        private void update(Map<Integer, Integer> threadsMapping) {
+        public Set<Integer> getChildrenNodes(int shift) {
+            if (currentIndex < 0) {
+                return Collections.emptySet();
+            }
+            Set<Integer> children = new HashSet<>();
+            int shiftIndex = (currentIndex - shift + physicalIds.size()) % physicalIds.size();
+            if (shiftIndex * 2 + 1 < physicalIds.size()) {
+                children.add(physicalIds.get((shiftIndex * 2 + 1 + shift) % physicalIds.size()));
+            }
+            if (shiftIndex * 2 + 2 < physicalIds.size()) {
+                children.add(physicalIds.get((shiftIndex * 2 + 2 + shift) % physicalIds.size()));
+            }
+            return children;
+        }
+
+        private void update() {
             NodeData nodeData = InternalPCJ.getNodeData();
 
-            Set<Integer> physicalIdsSet = new LinkedHashSet<>();
-            physicalIdsSet.add(masterNode);
-            threadsMapping.keySet().stream()
-                    .sorted()
-                    .map(threadsMapping::get)
-                    .map(nodeData::getPhysicalId)
-                    .forEach(physicalIdsSet::add);
-            List<Integer> physicalIds = new ArrayList<>(physicalIdsSet);
+            physicalIds = Stream.concat(
+                    Stream.of(groupMasterNode),
+                    threadsMap.keySet().stream()
+                            .sorted()
+                            .map(threadsMap::get)
+                            .map(nodeData::getPhysicalId))
+                    .distinct()
+                    .collect(Collectors.toList());
 
-            int currentPhysicalId = InternalPCJ.getNodeData().getCurrentNodePhysicalId();
-            int currentIndex = physicalIds.indexOf(currentPhysicalId);
-            if (currentIndex < 0) {
-                return;
-            }
-
-            if (currentIndex > 0) {
-                parentNode = physicalIds.get((currentIndex - 1) / 2);
-            }
-            if (currentIndex * 2 + 1 < physicalIds.size()) {
-                childrenNodes.add(physicalIds.get(currentIndex * 2 + 1));
-            }
-            if (currentIndex * 2 + 2 < physicalIds.size()) {
-                childrenNodes.add(physicalIds.get(currentIndex * 2 + 2));
-            }
+            int currentPhysicalId = nodeData.getCurrentNodePhysicalId();
+            currentIndex = physicalIds.indexOf(currentPhysicalId);
         }
 
-        public void setParentNode(int parentNode) {
-            this.parentNode = parentNode;
+        public int getMasterNode() {
+            return groupMasterNode;
+        }
+
+        public void setParentNode(int v) {
+
         }
     }
 }
