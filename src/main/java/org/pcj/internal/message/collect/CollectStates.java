@@ -99,25 +99,21 @@ public class CollectStates {
             this(requestNum, requesterThreadId, childrenCount, null);
         }
 
-        public int getRequestNum() {
-            return requestNum;
-        }
-
         public PcjFuture<T> getFuture() {
             return future;
         }
 
-        public void downProcessNode(InternalCommonGroup group, int requesterThreadId, String sharedEnumClassName, String variableName, int[] indices) {
+        public void downProcessNode(InternalCommonGroup group, String sharedEnumClassName, String variableName, int[] indices) {
             this.sharedEnumClassName = sharedEnumClassName;
             this.variableName = variableName;
             this.indices = indices;
 
+            CollectRequestMessage message = new CollectRequestMessage(
+                    group.getGroupId(), this.requestNum, this.requesterThreadId,
+                    sharedEnumClassName, variableName, indices);
+
             NodeData nodeData = InternalPCJ.getNodeData();
             Networker networker = InternalPCJ.getNetworker();
-
-            CollectRequestMessage message = new CollectRequestMessage(
-                    group.getGroupId(), this.getRequestNum(), requesterThreadId,
-                    sharedEnumClassName, variableName, indices);
 
             int requesterPhysicalId = nodeData.getPhysicalId(group.getGlobalThreadId(requesterThreadId));
             group.getCommunicationTree().getChildrenNodes(requesterPhysicalId)
@@ -156,19 +152,19 @@ public class CollectStates {
                     }
                 }
 
-                Networker networker = InternalPCJ.getNetworker();
-
                 Message message;
                 SocketChannel socket;
 
                 int parentId = group.getCommunicationTree().getParentNode(requesterPhysicalId);
-                if (parentId>=0) {
+                if (parentId >= 0) {
                     message = new CollectResponseMessage<>(group.getGroupId(), requestNum, requesterThreadId, valueMap, exceptions);
                     socket = nodeData.getSocketChannelByPhysicalId(parentId);
                 } else {
                     message = new CollectValueMessage<>(group.getGroupId(), requestNum, requesterThreadId, valueMap, exceptions);
                     socket = nodeData.getSocketChannelByPhysicalId(nodeData.getCurrentNodePhysicalId());
                 }
+
+                Networker networker = InternalPCJ.getNetworker();
                 try {
                     networker.send(socket, message);
                 } catch (Exception ex) {

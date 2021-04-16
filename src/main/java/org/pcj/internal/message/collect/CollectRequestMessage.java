@@ -72,6 +72,6 @@ public final class CollectRequestMessage extends Message {
         CollectStates states = commonGroup.getCollectStates();
         CollectStates.State<?> state = states.getOrCreate(requestNum, requesterThreadId, commonGroup);
 
-        state.downProcessNode(commonGroup, requesterThreadId, sharedEnumClassName, variableName, indices);
+        state.downProcessNode(commonGroup, sharedEnumClassName, variableName, indices);
     }
 }
