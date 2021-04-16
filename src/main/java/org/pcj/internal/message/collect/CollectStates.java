@@ -26,6 +26,7 @@ import org.pcj.PcjRuntimeException;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.InternalStorages;
+import org.pcj.internal.Networker;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.PcjThread;
 import org.pcj.internal.message.Message;
@@ -46,8 +47,12 @@ public class CollectStates {
     public <T> State<T> create(int threadId, InternalCommonGroup commonGroup) {
         int requestNum = counter.incrementAndGet();
 
+        NodeData nodeData = InternalPCJ.getNodeData();
+
         CollectFuture<T> future = new CollectFuture<>();
-        State<T> state = new State<>(requestNum, threadId, commonGroup.getCommunicationTree().getChildrenNodes().size(), future);
+        State<T> state = new State<>(requestNum, threadId,
+                commonGroup.getCommunicationTree().getChildrenNodes(nodeData.getCurrentNodePhysicalId()).size(),
+                future);
 
         stateMap.put(Arrays.asList(requestNum, threadId), state);
 
@@ -56,8 +61,11 @@ public class CollectStates {
 
     @SuppressWarnings("unchecked")
     public <T> State<T> getOrCreate(int requestNum, int requesterThreadId, InternalCommonGroup commonGroup) {
+        NodeData nodeData = InternalPCJ.getNodeData();
+        int requesterPhysicalId = nodeData.getPhysicalId(commonGroup.getGlobalThreadId(requesterThreadId));
         return (State<T>) stateMap.computeIfAbsent(Arrays.asList(requestNum, requesterThreadId),
-                key -> new State<>(requestNum, requesterThreadId, commonGroup.getCommunicationTree().getChildrenNodes().size()));
+                key -> new State<>(requestNum, requesterThreadId,
+                        commonGroup.getCommunicationTree().getChildrenNodes(requesterPhysicalId).size()));
     }
 
     public State remove(int requestNum, int threadId) {
@@ -99,10 +107,23 @@ public class CollectStates {
             return future;
         }
 
-        void downProcessNode(InternalCommonGroup group, String sharedEnumClassName, String variableName, int[] indices) {
+        public void downProcessNode(InternalCommonGroup group, int requesterThreadId, String sharedEnumClassName, String variableName, int[] indices) {
             this.sharedEnumClassName = sharedEnumClassName;
             this.variableName = variableName;
             this.indices = indices;
+
+            NodeData nodeData = InternalPCJ.getNodeData();
+            Networker networker = InternalPCJ.getNetworker();
+
+            CollectRequestMessage message = new CollectRequestMessage(
+                    group.getGroupId(), this.getRequestNum(), requesterThreadId,
+                    sharedEnumClassName, variableName, indices);
+
+            int requesterPhysicalId = nodeData.getPhysicalId(group.getGlobalThreadId(requesterThreadId));
+            group.getCommunicationTree().getChildrenNodes(requesterPhysicalId)
+                    .stream()
+                    .map(nodeData::getSocketChannelByPhysicalId)
+                    .forEach(socket -> networker.send(socket, message));
 
             nodeProcessed(group);
         }
@@ -122,9 +143,8 @@ public class CollectStates {
             if (leftPhysical == 0) {
                 NodeData nodeData = InternalPCJ.getNodeData();
 
-                int globalThreadId = group.getGlobalThreadId(requesterThreadId);
-                int requesterPhysicalId = nodeData.getPhysicalId(globalThreadId);
-                if (requesterPhysicalId != nodeData.getCurrentNodePhysicalId()) { // requester is going to receive response
+                int requesterPhysicalId = nodeData.getPhysicalId(group.getGlobalThreadId(requesterThreadId));
+                if (requesterPhysicalId != nodeData.getCurrentNodePhysicalId()) { // requester will receive response
                     CollectStates.this.remove(requestNum, requesterThreadId);
                 }
 
@@ -136,26 +156,24 @@ public class CollectStates {
                     }
                 }
 
+                Networker networker = InternalPCJ.getNetworker();
+
                 Message message;
                 SocketChannel socket;
 
-                int physicalId = nodeData.getCurrentNodePhysicalId();
-                if (physicalId != group.getCommunicationTree().getMasterNode()) {
-                    int parentId = group.getCommunicationTree().getParentNode();
-                    socket = nodeData.getSocketChannelByPhysicalId(parentId);
-
-                    message = new CollectValueMessage<>(group.getGroupId(), requestNum, requesterThreadId, valueMap, exceptions);
-                } else {
-                    socket = nodeData.getSocketChannelByPhysicalId(requesterPhysicalId);
-
+                int parentId = group.getCommunicationTree().getParentNode(requesterPhysicalId);
+                if (parentId>=0) {
                     message = new CollectResponseMessage<>(group.getGroupId(), requestNum, requesterThreadId, valueMap, exceptions);
+                    socket = nodeData.getSocketChannelByPhysicalId(parentId);
+                } else {
+                    message = new CollectValueMessage<>(group.getGroupId(), requestNum, requesterThreadId, valueMap, exceptions);
+                    socket = nodeData.getSocketChannelByPhysicalId(nodeData.getCurrentNodePhysicalId());
                 }
-
                 try {
-                    InternalPCJ.getNetworker().send(socket, message);
+                    networker.send(socket, message);
                 } catch (Exception ex) {
                     exceptions.add(ex);
-                    InternalPCJ.getNetworker().send(socket, message);
+                    networker.send(socket, message);
                 }
             }
         }

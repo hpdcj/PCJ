@@ -72,12 +72,6 @@ public final class CollectRequestMessage extends Message {
         CollectStates states = commonGroup.getCollectStates();
         CollectStates.State<?> state = states.getOrCreate(requestNum, requesterThreadId, commonGroup);
 
-        Networker networker = InternalPCJ.getNetworker();
-        commonGroup.getCommunicationTree().getChildrenNodes()
-                .stream()
-                .map(nodeData::getSocketChannelByPhysicalId)
-                .forEach(socket -> networker.send(socket, this));
-
-        state.downProcessNode(commonGroup, sharedEnumClassName, variableName, indices);
+        state.downProcessNode(commonGroup, requesterThreadId, sharedEnumClassName, variableName, indices);
     }
 }
