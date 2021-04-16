@@ -23,7 +23,6 @@ import org.pcj.internal.message.at.AsyncAtStates;
 import org.pcj.internal.message.barrier.BarrierStates;
 import org.pcj.internal.message.broadcast.BroadcastRequestMessage;
 import org.pcj.internal.message.broadcast.BroadcastStates;
-import org.pcj.internal.message.collect.CollectRequestMessage;
 import org.pcj.internal.message.collect.CollectStates;
 import org.pcj.internal.message.get.ValueGetRequestMessage;
 import org.pcj.internal.message.get.ValueGetStates;
@@ -252,11 +251,10 @@ public final class InternalGroup extends InternalCommonGroup implements Group {
                 super.getGroupId(), state.getRequestNum(), myThreadId,
                 variable.getDeclaringClass().getName(), variable.name(), indices, newValue);
 
-        int physicalMasterId = super.getCommunicationTree().getMasterNode();
-        SocketChannel masterSocket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId(physicalMasterId);
-
+        NodeData nodeData = InternalPCJ.getNodeData();
+        SocketChannel socket = nodeData.getSocketChannelByPhysicalId(nodeData.getCurrentNodePhysicalId());
         try {
-            InternalPCJ.getNetworker().send(masterSocket, message);
+            InternalPCJ.getNetworker().send(socket, message);
         } catch (PcjRuntimeException ex) {
             Queue<Exception> queue = new ConcurrentLinkedQueue<>();
             queue.add(ex);

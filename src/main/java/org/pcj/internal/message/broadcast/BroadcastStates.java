@@ -26,6 +26,8 @@ import org.pcj.internal.InternalStorages;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.PcjThread;
 import org.pcj.internal.message.Message;
+import org.pcj.internal.message.collect.CollectResponseMessage;
+import org.pcj.internal.message.collect.CollectValueMessage;
 import org.pcj.internal.network.InputStreamCloner;
 
 /**
@@ -44,8 +46,12 @@ public class BroadcastStates {
     public State create(int threadId, InternalCommonGroup commonGroup) {
         int requestNum = counter.incrementAndGet();
 
+        NodeData nodeData = InternalPCJ.getNodeData();
+
         BroadcastFuture future = new BroadcastFuture();
-        State state = new State(requestNum, threadId, commonGroup.getCommunicationTree().getChildrenNodes().size(), future);
+        State state = new State(requestNum, threadId,
+                commonGroup.getCommunicationTree().getChildrenNodes(nodeData.getCurrentNodePhysicalId()).size(),
+                future);
 
         stateMap.put(Arrays.asList(requestNum, threadId), state);
 
@@ -53,8 +59,11 @@ public class BroadcastStates {
     }
 
     public State getOrCreate(int requestNum, int requesterThreadId, InternalCommonGroup commonGroup) {
+        NodeData nodeData = InternalPCJ.getNodeData();
+        int requesterPhysicalId = nodeData.getPhysicalId(commonGroup.getGlobalThreadId(requesterThreadId));
         return stateMap.computeIfAbsent(Arrays.asList(requestNum, requesterThreadId),
-                key -> new State(requestNum, requesterThreadId, commonGroup.getCommunicationTree().getChildrenNodes().size()));
+                key -> new State(requestNum, requesterThreadId,
+                        commonGroup.getCommunicationTree().getChildrenNodes(requesterPhysicalId).size()));
     }
 
     public State remove(int requestNum, int threadId) {
@@ -125,24 +134,20 @@ public class BroadcastStates {
             if (leftPhysical == 0) {
                 NodeData nodeData = InternalPCJ.getNodeData();
 
-                int globalThreadId = group.getGlobalThreadId(requesterThreadId);
-                int requesterPhysicalId = nodeData.getPhysicalId(globalThreadId);
-                if (requesterPhysicalId != nodeData.getCurrentNodePhysicalId()) { // requester is going to receive response
+                int requesterPhysicalId = nodeData.getPhysicalId(group.getGlobalThreadId(requesterThreadId));
+                if (requesterPhysicalId != nodeData.getCurrentNodePhysicalId()) { // requester will receive response
                     BroadcastStates.this.remove(requestNum, requesterThreadId);
                 }
 
                 Message message;
                 SocketChannel socket;
 
-                int physicalId = nodeData.getCurrentNodePhysicalId();
-                if (physicalId != group.getCommunicationTree().getMasterNode()) {
-                    int parentId = group.getCommunicationTree().getParentNode();
-                    socket = nodeData.getSocketChannelByPhysicalId(parentId);
-
+                int parentId = group.getCommunicationTree().getParentNode(requesterPhysicalId);
+                if (parentId>=0) {
                     message = new BroadcastInformMessage(group.getGroupId(), requestNum, requesterThreadId, exceptions);
+                    socket = nodeData.getSocketChannelByPhysicalId(parentId);
                 } else {
                     message = new BroadcastResponseMessage(group.getGroupId(), requestNum, requesterThreadId, exceptions);
-
                     socket = nodeData.getSocketChannelByPhysicalId(requesterPhysicalId);
                 }
 

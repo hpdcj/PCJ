@@ -49,7 +49,7 @@ public final class BroadcastInformMessage extends Message {
         out.writeInt(requestNum);
         out.writeInt(requesterThreadId);
 
-        if ((exceptions != null) && (exceptions.isEmpty() == false)) {
+        if ((exceptions != null) && (!exceptions.isEmpty())) {
             out.writeBoolean(true);
             out.writeObject(exceptions);
         } else {

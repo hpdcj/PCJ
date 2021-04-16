@@ -620,6 +620,34 @@ public final class PCJ {
      */
     public static Group joinGroup(String name) {
         int myThreadId = getGlobalGroup().myId();
+
+
+        /*
+    Map<Integer, Integer> colors = Map.of(
+            1, 2,
+            2, 1,
+            3, 1,
+            4, 1,
+            5, 2,
+            6, 2,
+            7, 2,
+            8, 1);
+    Map<Integer, Integer> keys = Map.of(
+            1, 3,
+            2, 8,
+            3, 7,
+            4, 6,
+            5, 5,
+            6, 4,
+            7, 3,
+            8, 2);
+    Map<Integer, List<Integer>> results = keys.entrySet().stream()
+            .sorted(Map.Entry.<Integer, Integer>comparingByValue().thenComparing(Map.Entry.comparingByKey()))
+            .map(Map.Entry::getKey)
+            .collect(Collectors.groupingBy(colors::get));
+    System.out.println(results);
+         */
+
         return InternalGroup.joinGroup(myThreadId, name);
     }
 

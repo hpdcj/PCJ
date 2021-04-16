@@ -37,10 +37,17 @@ public class BroadcastByAllTest implements StartPoint {
         logger.setLevel(level);
 
         String[] nodes = {
-                "localhost",
                 "localhost:8091",
-                "localhost:8092",
-                "localhost",};
+                "localhost:8002",
+                "localhost:8003",
+                "localhost:8004",
+                "localhost:8005",
+                "localhost:8006",
+                "localhost:8007",
+                "localhost:8008",
+                "localhost:8091",
+                "localhost:8091"
+        };
 
 //        PCJ.start(EasyTest.class, EasyTest.class,
         PCJ.executionBuilder(BroadcastByAllTest.class)
@@ -50,7 +57,14 @@ public class BroadcastByAllTest implements StartPoint {
 
     @Override
     public void main() throws Throwable {
-        PCJ.broadcast(PCJ.myId(), Shared.array, PCJ.myId());
-        System.err.println(PCJ.myId() + " -> " + Arrays.toString(array));
+        PCJ.barrier();
+        for (int i = 0; i < PCJ.threadCount(); ++i) {
+            if (PCJ.myId() == i) {
+                System.out.println("--- " + PCJ.myId() + " ---");
+                PCJ.broadcast(PCJ.myId() + 1000, Shared.array, PCJ.myId());
+                System.out.println(PCJ.myId() + " -> " + Arrays.toString(array));
+            }
+            PCJ.barrier();
+        }
     }
 }

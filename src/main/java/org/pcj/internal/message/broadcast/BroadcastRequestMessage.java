@@ -79,7 +79,8 @@ public final class BroadcastRequestMessage extends Message {
                 = new BroadcastBytesMessage(groupId, requestNum, requesterThreadId, sharedEnumClassName, variableName, indices, inputStreamCloner);
 
         InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
-        commonGroup.getCommunicationTree().getChildrenNodes()
+        int requesterPhysicalId = nodeData.getPhysicalId(commonGroup.getGlobalThreadId(requesterThreadId));
+        commonGroup.getCommunicationTree().getChildrenNodes(requesterPhysicalId)
                 .stream()
                 .map(nodeData::getSocketChannelByPhysicalId)
                 .forEach(socket -> networker.send(socket, broadcastBytesMessage));
