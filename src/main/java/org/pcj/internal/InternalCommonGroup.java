@@ -191,7 +191,7 @@ public class InternalCommonGroup {
             if (physicalIds.get(currentIndex) == shift) { // if root after shift
                 return -1;
             }
-            int index = (((currentIndex - shift - 1) % physicalIds.size()) / 2 + shift) % physicalIds.size();
+            int index = (Math.floorMod(currentIndex - shift - 1, physicalIds.size()) / 2 + shift) % physicalIds.size();
             return physicalIds.get(index);
         }
 
