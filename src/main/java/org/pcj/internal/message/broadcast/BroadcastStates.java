@@ -26,8 +26,6 @@ import org.pcj.internal.InternalStorages;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.PcjThread;
 import org.pcj.internal.message.Message;
-import org.pcj.internal.message.collect.CollectResponseMessage;
-import org.pcj.internal.message.collect.CollectValueMessage;
 import org.pcj.internal.network.InputStreamCloner;
 
 /**

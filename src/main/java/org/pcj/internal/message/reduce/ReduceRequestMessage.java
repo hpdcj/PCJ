@@ -14,7 +14,6 @@ import org.pcj.PcjRuntimeException;
 import org.pcj.ReduceOperation;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
-import org.pcj.internal.Networker;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.message.Message;
 import org.pcj.internal.message.MessageType;
@@ -82,12 +81,6 @@ public final class ReduceRequestMessage<T> extends Message {
 
         ReduceStates states = commonGroup.getReduceStates();
         ReduceStates.State<T> state = states.getOrCreate(requestNum, requesterThreadId, commonGroup);
-
-        Networker networker = InternalPCJ.getNetworker();
-        commonGroup.getCommunicationTree().getChildrenNodes()
-                .stream()
-                .map(nodeData::getSocketChannelByPhysicalId)
-                .forEach(socket -> networker.send(socket, this));
 
         state.downProcessNode(commonGroup, sharedEnumClassName, variableName, indices, function);
     }

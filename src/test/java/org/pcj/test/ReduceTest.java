@@ -49,6 +49,8 @@ public class ReduceTest implements StartPoint {
                 "localhost:8006",
                 "localhost:8007",
                 "localhost:8008",
+//                "localhost:8091",
+//                "localhost:8091",
         };
 //        NodesDescription nodesDescription = new NodesDescription(nodes);
 
@@ -63,15 +65,20 @@ public class ReduceTest implements StartPoint {
         doubleArray[0] = 1.0 / PCJ.threadCount();
         string = Integer.toString(PCJ.myId());
         PCJ.barrier();
-        if (PCJ.myId() == 0) {
-            int intValueReduced = PCJ.reduce(Integer::sum, Communicable.intValue);
-            System.out.println(intValueReduced);
+        for (int i = 0; i < PCJ.threadCount(); ++i) {
+            if (PCJ.myId() == i) {
+                System.out.println("--- " + PCJ.myId() + " ---");
 
-            double doubleArrayReduced = PCJ.reduce(Double::sum, Communicable.doubleArray, 0);
-            System.out.println(doubleArrayReduced);
+                int intValueReduced = PCJ.reduce(Integer::sum, Communicable.intValue);
+                System.out.println(intValueReduced);
 
-            String stringReduced = PCJ.reduce((a, b) -> (a + " " + b), Communicable.string);
-            System.out.println(stringReduced);
+                double doubleArrayReduced = PCJ.reduce(Double::sum, Communicable.doubleArray, 0);
+                System.out.println(doubleArrayReduced);
+
+                String stringReduced = PCJ.reduce((a, b) -> (a + " " + b), Communicable.string);
+                System.out.println(stringReduced);
+            }
+            PCJ.barrier();
         }
     }
 }

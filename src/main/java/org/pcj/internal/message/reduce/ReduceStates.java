@@ -22,9 +22,10 @@ import org.pcj.PcjRuntimeException;
 import org.pcj.ReduceOperation;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
-import org.pcj.internal.InternalStorages;
+import org.pcj.internal.Networker;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.PcjThread;
+import org.pcj.internal.PcjThreadData;
 import org.pcj.internal.message.Message;
 
 /**
@@ -43,8 +44,12 @@ public class ReduceStates {
     public <T> State<T> create(int threadId, InternalCommonGroup commonGroup) {
         int requestNum = counter.incrementAndGet();
 
+        NodeData nodeData = InternalPCJ.getNodeData();
+
         ReduceFuture<T> future = new ReduceFuture<>();
-        State<T> state = new State<>(requestNum, threadId, commonGroup.getCommunicationTree().getChildrenNodes().size(), future);
+        State<T> state = new State<>(requestNum, threadId,
+                commonGroup.getCommunicationTree().getChildrenNodes(nodeData.getCurrentNodePhysicalId()).size(),
+                future);
 
         stateMap.put(Arrays.asList(requestNum, threadId), state);
 
@@ -53,8 +58,11 @@ public class ReduceStates {
 
     @SuppressWarnings("unchecked")
     public <T> State<T> getOrCreate(int requestNum, int requesterThreadId, InternalCommonGroup commonGroup) {
+        NodeData nodeData = InternalPCJ.getNodeData();
+        int requesterPhysicalId = nodeData.getPhysicalId(commonGroup.getGlobalThreadId(requesterThreadId));
         return (State<T>) stateMap.computeIfAbsent(Arrays.asList(requestNum, requesterThreadId),
-                key -> new State<>(requestNum, requesterThreadId, commonGroup.getCommunicationTree().getChildrenNodes().size()));
+                key -> new State<>(requestNum, requesterThreadId,
+                        commonGroup.getCommunicationTree().getChildrenNodes(requesterPhysicalId).size()));
     }
 
     public State remove(int requestNum, int threadId) {
@@ -89,19 +97,29 @@ public class ReduceStates {
             this(requestNum, requesterThreadId, childrenCount, null);
         }
 
-        public int getRequestNum() {
-            return requestNum;
-        }
-
         public PcjFuture<T> getFuture() {
             return future;
         }
 
-        void downProcessNode(InternalCommonGroup group, String sharedEnumClassName, String variableName, int[] indices, ReduceOperation<T> function) {
+        public void downProcessNode(InternalCommonGroup group, String sharedEnumClassName, String variableName, int[] indices, ReduceOperation<T> function) {
             this.sharedEnumClassName = sharedEnumClassName;
             this.variableName = variableName;
             this.indices = indices;
             this.function = function;
+
+            ReduceRequestMessage<T> message = new ReduceRequestMessage<>(
+                    group.getGroupId(), this.requestNum, this.requesterThreadId,
+                    sharedEnumClassName, variableName, indices, function
+            );
+
+            NodeData nodeData = InternalPCJ.getNodeData();
+            Networker networker = InternalPCJ.getNetworker();
+
+            int requesterPhysicalId = nodeData.getPhysicalId(group.getGlobalThreadId(requesterThreadId));
+            group.getCommunicationTree().getChildrenNodes(requesterPhysicalId)
+                    .stream()
+                    .map(nodeData::getSocketChannelByPhysicalId)
+                    .forEach(socket -> networker.send(socket, message));
 
             nodeProcessed(group);
         }
@@ -121,9 +139,8 @@ public class ReduceStates {
             if (leftPhysical == 0) {
                 NodeData nodeData = InternalPCJ.getNodeData();
 
-                int globalThreadId = group.getGlobalThreadId(requesterThreadId);
-                int requesterPhysicalId = nodeData.getPhysicalId(globalThreadId);
-                if (requesterPhysicalId != nodeData.getCurrentNodePhysicalId()) { // requester is going to receive response
+                int requesterPhysicalId = nodeData.getPhysicalId(group.getGlobalThreadId(requesterThreadId));
+                if (requesterPhysicalId != nodeData.getCurrentNodePhysicalId()) { // requester will receive response
                     ReduceStates.this.remove(requestNum, requesterThreadId);
                 }
 
@@ -142,23 +159,21 @@ public class ReduceStates {
                 Message message;
                 SocketChannel socket;
 
-                int physicalId = nodeData.getCurrentNodePhysicalId();
-                if (physicalId != group.getCommunicationTree().getMasterNode()) {
-                    int parentId = group.getCommunicationTree().getParentNode();
-                    socket = nodeData.getSocketChannelByPhysicalId(parentId);
-
-                    message = new ReduceValueMessage<>(group.getGroupId(), requestNum, requesterThreadId, reducedValue, exceptions);
-                } else {
-                    socket = nodeData.getSocketChannelByPhysicalId(requesterPhysicalId);
-
+                int parentId = group.getCommunicationTree().getParentNode(requesterPhysicalId);
+                if (parentId >= 0) {
                     message = new ReduceResponseMessage<>(group.getGroupId(), requestNum, requesterThreadId, reducedValue, exceptions);
+                    socket = nodeData.getSocketChannelByPhysicalId(parentId);
+                } else {
+                    message = new ReduceValueMessage<>(group.getGroupId(), requestNum, requesterThreadId, reducedValue, exceptions);
+                    socket = nodeData.getSocketChannelByPhysicalId(nodeData.getCurrentNodePhysicalId());
                 }
 
+                Networker networker = InternalPCJ.getNetworker();
                 try {
-                    InternalPCJ.getNetworker().send(socket, message);
+                    networker.send(socket, message);
                 } catch (Exception ex) {
                     exceptions.add(ex);
-                    InternalPCJ.getNetworker().send(socket, message);
+                    networker.send(socket, message);
                 }
             }
         }
@@ -167,22 +182,14 @@ public class ReduceStates {
             NodeData nodeData = InternalPCJ.getNodeData();
             Set<Integer> threadsId = group.getLocalThreadsId();
 
-            boolean foundAny = false;
-            T reducedValue = null;
-            for (int threadId : threadsId) {
-                int globalThreadId = group.getGlobalThreadId(threadId);
-                PcjThread pcjThread = nodeData.getPcjThread(globalThreadId);
-                InternalStorages storage = pcjThread.getThreadData().getStorages();
-
-                T value = storage.get(this.sharedEnumClassName, this.variableName, this.indices);
-                if (!foundAny) {
-                    foundAny = true;
-                    reducedValue = value;
-                } else {
-                    reducedValue = function.apply(reducedValue, value);
-                }
-            }
-            return reducedValue;
+            return threadsId.stream()
+                    .map(group::getGlobalThreadId)
+                    .map(nodeData::getPcjThread)
+                    .map(PcjThread::getThreadData)
+                    .map(PcjThreadData::getStorages)
+                    .map(storages -> storages.<T>get(this.sharedEnumClassName, this.variableName, this.indices))
+                    .reduce(function)
+                    .orElse(null);
         }
 
         public void signal(T value, Queue<Exception> messageExceptions) {

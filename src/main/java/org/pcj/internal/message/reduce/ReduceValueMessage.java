@@ -81,8 +81,8 @@ public final class ReduceValueMessage<T> extends Message {
         InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
 
         ReduceStates states = commonGroup.getReduceStates();
-        ReduceStates.State<T> state = states.getOrCreate(requestNum, requesterThreadId, commonGroup);
+        ReduceStates.State<T> state = (ReduceStates.State<T>) states.remove(requestNum, requesterThreadId);
 
-        state.upProcessNode(commonGroup, value, exceptions);
+        state.signal(value, exceptions);
     }
 }

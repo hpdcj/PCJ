@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
-import org.pcj.internal.Networker;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.message.Message;
 import org.pcj.internal.message.MessageType;

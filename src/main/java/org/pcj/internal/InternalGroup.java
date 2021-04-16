@@ -162,7 +162,7 @@ public final class InternalGroup extends InternalCommonGroup implements Group {
         CollectStates states = super.getCollectStates();
         CollectStates.State<T> state = states.create(myThreadId, this);
 
-        state.downProcessNode(this, myThreadId, sharedEnumClassName, variableName, indices);
+        state.downProcessNode(this, sharedEnumClassName, variableName, indices);
 
         return state.getFuture();
     }
@@ -175,15 +175,7 @@ public final class InternalGroup extends InternalCommonGroup implements Group {
         ReduceStates states = super.getReduceStates();
         ReduceStates.State<T> state = states.create(myThreadId, this);
 
-        ReduceRequestMessage<T> message = new ReduceRequestMessage<>(
-                super.getGroupId(), state.getRequestNum(), myThreadId,
-                sharedEnumClassName, variableName, indices, function
-        );
-
-        int physicalMasterId = super.getCommunicationTree().getMasterNode();
-        SocketChannel masterSocket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId(physicalMasterId);
-
-        InternalPCJ.getNetworker().send(masterSocket, message);
+        state.downProcessNode(this, sharedEnumClassName, variableName, indices, function);
 
         return state.getFuture();
     }
