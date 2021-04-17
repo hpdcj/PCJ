@@ -611,22 +611,18 @@ public final class PCJ {
     }
 
     /**
-     * Joins current PCJ Thread to the group.
-     * <p>
-     * If current PCJ Thread is already in the group, returns the group.
-     *
-     * @param name name of the group
-     * @return joined group
+     * TODO: Write description
+     * @param split
+     * @param ordering
+     * @return
      */
-    public static Group joinGroup(String name) {
-        int myThreadId = getGlobalGroup().myId();
-
-
+//    public static Group splitGroup(Integer split, int ordering) {
+//        getGlobalGroup().asyncSplitGroup(split, ordering).get();
         /*
     Map<Integer, Integer> colors = Map.of(
             1, 2,
             2, 1,
-            3, 1,
+            3, -1,
             4, 1,
             5, 2,
             6, 2,
@@ -642,25 +638,42 @@ public final class PCJ {
             7, 3,
             8, 2);
     Map<Integer, List<Integer>> results = keys.entrySet().stream()
+            .filter(entry -> colors.get(entry.getKey()) != null)
             .sorted(Map.Entry.<Integer, Integer>comparingByValue().thenComparing(Map.Entry.comparingByKey()))
             .map(Map.Entry::getKey)
             .collect(Collectors.groupingBy(colors::get));
     System.out.println(results);
          */
+//    }
 
-        return InternalGroup.joinGroup(myThreadId, name);
+    /**
+     * This function will be removed.
+     * <p>
+     * This operation is no longer supported.
+     * Throws {@link UnsupportedOperationException}
+     * <p>
+     * Use {@link #splitGroup(Integer, int)} instead.
+     *
+     * @deprecated use {@link #splitGroup(Integer, int)} instead
+     */
+    @Deprecated
+    public static Group joinGroup(String name) {
+        throw new UnsupportedOperationException("Use splitGroup(Integer, int");
     }
 
     /**
      * This function will be removed.
+     * <p>
+     * This operation is no longer supported.
+     * Throws {@link UnsupportedOperationException}
+     * <p>
+     * Use {@link #splitGroup(Integer, int)} instead.
      *
-     * @param name name of the group
-     * @return joined group
-     * @deprecated use {@link #joinGroup(String)} instead
+     * @deprecated use {@link #splitGroup(Integer, int)} instead
      */
     @Deprecated
     public static Group join(String name) {
-        return PCJ.joinGroup(name);
+        throw new UnsupportedOperationException("Use splitGroup(Integer, int");
     }
 
     /**

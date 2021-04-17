@@ -62,43 +62,15 @@ public final class InternalGroup extends InternalCommonGroup implements Group {
         this.asyncAtStates = new AsyncAtStates();
         this.peerBarrierStates = new PeerBarrierStates();
     }
-
-    public static InternalGroup joinGroup(int globalThreadId, String groupName) {
-        PcjThreadData currentThreadData = PcjThread.getCurrentThreadData();
-        InternalGroup group = currentThreadData.getInternalGroupByName(groupName);
-        if (group != null) {
-            return group;
-        }
-
-        NodeData nodeData = InternalPCJ.getNodeData();
-        Networker networker = InternalPCJ.getNetworker();
-
-        InternalCommonGroup commonGroup = nodeData.getInternalCommonGroupByName(groupName);
-        if (commonGroup == null) {
-            GroupQueryStates groupQueryStates = nodeData.getGroupQueryStates();
-            GroupQueryStates.State state = groupQueryStates.create();
-
-            GroupQueryMessage message = new GroupQueryMessage(state.getRequestNum(), nodeData.getCurrentNodePhysicalId(), groupName);
-
-            networker.send(nodeData.getNode0Socket(), message);
-
-            PcjFuture<InternalCommonGroup> future = state.getFuture();
-            commonGroup = future.get();
-        }
-
-        GroupJoinStates groupJoinStates = nodeData.getGroupJoinStates();
-        GroupJoinStates.Notification notification = groupJoinStates.createNotification(globalThreadId);
-
-        GroupJoinRequestMessage message = new GroupJoinRequestMessage(
-                notification.getRequestNum(), groupName, commonGroup.getGroupId(), nodeData.getCurrentNodePhysicalId(), globalThreadId);
-
-        SocketChannel groupMasterSocketChannel = nodeData.getSocketChannelByPhysicalId(commonGroup.getCommunicationTree().getMasterNode());
-
-        networker.send(groupMasterSocketChannel, message);
-
-        PcjFuture<InternalGroup> future = notification.getFuture();
-        return future.get();
-    }
+//
+//    public static InternalGroup asyncSplitGroup(Integer split, int ordering) {
+//        SplitGroupStates states = super.getSplitGroupStates();
+//        int round = states.getNextRound(myThreadId);
+//        SplitGroupStates.State state = states.getOrCreate(round, split, ordering, this);
+//        state.processLocal(this);
+//
+//        return state.getFuture();
+//    }
 
     public int myId() {
         return myThreadId;

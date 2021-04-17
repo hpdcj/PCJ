@@ -66,19 +66,13 @@ public final class NodeData {
         this.node0Data = node0Data;
     }
 
-    public InternalCommonGroup getOrCreateGroup(int groupMaster, int groupId, String groupName) {
+    public InternalCommonGroup getOrCreateGroup(int groupMaster, int groupId) {
         return groupById.computeIfAbsent(groupId,
-                key -> new InternalCommonGroup(groupMaster, groupId, groupName));
+                key -> new InternalCommonGroup(groupMaster, groupId));
     }
 
     public InternalCommonGroup getCommonGroupById(int id) {
         return groupById.get(id);
-    }
-
-    InternalCommonGroup getInternalCommonGroupByName(String name) {
-        return groupById.values().stream()
-                       .filter(groups -> name.equals(groups.getName()))
-                       .findFirst().orElse(null);
     }
 
     public SocketChannel getSocketChannelByPhysicalId(int physicalId) {

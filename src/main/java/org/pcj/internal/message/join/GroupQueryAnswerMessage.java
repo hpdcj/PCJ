@@ -57,7 +57,7 @@ public class GroupQueryAnswerMessage extends Message {
         this.masterPhysicalId = in.readInt();
 
         NodeData nodeData = InternalPCJ.getNodeData();
-        InternalCommonGroup internalCommonGroup = nodeData.getOrCreateGroup(masterPhysicalId, groupId, groupName);
+        InternalCommonGroup internalCommonGroup = nodeData.getOrCreateGroup(masterPhysicalId, groupId);
 
         GroupQueryStates states = nodeData.getGroupQueryStates();
         GroupQueryStates.State state = states.remove(requestNum);

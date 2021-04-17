@@ -33,10 +33,8 @@ import org.pcj.internal.message.reduce.ReduceStates;
 public class InternalCommonGroup {
 
     public static final int GLOBAL_GROUP_ID = 0;
-    public static final String GLOBAL_GROUP_NAME = "";
 
     private final int groupId;
-    private final String groupName;
     private final int groupMasterNode;
     private final ConcurrentHashMap<Integer, Integer> threadsMap; // groupThreadId, globalThreadId
     private final AtomicInteger threadsCounter;
@@ -50,7 +48,6 @@ public class InternalCommonGroup {
 
     public InternalCommonGroup(InternalCommonGroup g) {
         this.groupId = g.groupId;
-        this.groupName = g.groupName;
         this.groupMasterNode = g.groupMasterNode;
         this.communicationTree = g.communicationTree;
 
@@ -65,9 +62,8 @@ public class InternalCommonGroup {
         this.groupJoinStates = g.groupJoinStates;
     }
 
-    public InternalCommonGroup(int groupMasterNode, int groupId, String groupName) {
+    public InternalCommonGroup(int groupMasterNode, int groupId) {
         this.groupId = groupId;
-        this.groupName = groupName;
         this.groupMasterNode = groupMasterNode;
         this.communicationTree = new CommunicationTree();
 
@@ -84,10 +80,6 @@ public class InternalCommonGroup {
 
     public final int getGroupId() {
         return groupId;
-    }
-
-    public final String getName() {
-        return groupName;
     }
 
     public final int threadCount() {

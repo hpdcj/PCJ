@@ -32,13 +32,19 @@ public interface Group {
     int threadCount();
 
     /**
+     * This function will be removed.
+     * <p>
      * Gets group name.
      * <p>
      * Global group name is empty string {@code ""}.
      *
      * @return name of the group
+     * @deprecated for removal
      */
-    String getName();
+    @Deprecated
+    default String getName() {
+        return null;
+    }
 
     /**
      * Starts asynchronous barrier. After starting barrier the {@link PcjFuture} is returned.
@@ -164,10 +170,15 @@ public interface Group {
      * This function will be removed.
      *
      * @return name of the group
-     * @deprecated use {@link #getName()} instead
+     * @deprecated for removal
      */
     @Deprecated
     default String getGroupName() {
         return getName();
     }
+
+    /**
+     * TODO: Write description
+     */
+//    Group asyncSplitGroup(Integer split, int ordering);
 }

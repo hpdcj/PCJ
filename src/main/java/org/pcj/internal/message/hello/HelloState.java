@@ -115,7 +115,7 @@ public class HelloState {
             }
         }
 
-        InternalCommonGroup globalGroup = nodeData.getOrCreateGroup(0, InternalCommonGroup.GLOBAL_GROUP_ID, InternalCommonGroup.GLOBAL_GROUP_NAME);
+        InternalCommonGroup globalGroup = nodeData.getOrCreateGroup(0, InternalCommonGroup.GLOBAL_GROUP_ID);
         globalGroup.updateThreadsMap(threadsMap);
     }
 

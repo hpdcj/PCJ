@@ -65,7 +65,7 @@ public class GroupJoinRequestMessage extends Message {
         this.requesterGlobalThreadId = in.readInt();
 
         NodeData nodeData = InternalPCJ.getNodeData();
-        InternalCommonGroup commonGroup = nodeData.getOrCreateGroup(nodeData.getCurrentNodePhysicalId(), groupId, groupName);
+        InternalCommonGroup commonGroup = nodeData.getOrCreateGroup(nodeData.getCurrentNodePhysicalId(), groupId);
 
         commonGroup.addNewThread(requesterGlobalThreadId);
 
