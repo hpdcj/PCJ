@@ -35,18 +35,17 @@ import org.pcj.internal.message.hello.HelloCompletedMessage;
 import org.pcj.internal.message.hello.HelloGoMessage;
 import org.pcj.internal.message.hello.HelloInformMessage;
 import org.pcj.internal.message.hello.HelloMessage;
-import org.pcj.internal.message.join.GroupJoinConfirmMessage;
-import org.pcj.internal.message.join.GroupJoinInformMessage;
-import org.pcj.internal.message.join.GroupJoinRequestMessage;
-import org.pcj.internal.message.join.GroupJoinResponseMessage;
-import org.pcj.internal.message.join.GroupQueryAnswerMessage;
-import org.pcj.internal.message.join.GroupQueryMessage;
 import org.pcj.internal.message.peerbarrier.PeerBarrierMessage;
 import org.pcj.internal.message.put.ValuePutRequestMessage;
 import org.pcj.internal.message.put.ValuePutResponseMessage;
 import org.pcj.internal.message.reduce.ReduceRequestMessage;
 import org.pcj.internal.message.reduce.ReduceResponseMessage;
 import org.pcj.internal.message.reduce.ReduceValueMessage;
+import org.pcj.internal.message.splitgroup.SplitGroupAnswerMessage;
+import org.pcj.internal.message.splitgroup.SplitGroupGoMessage;
+import org.pcj.internal.message.splitgroup.SplitGroupQueryMessage;
+import org.pcj.internal.message.splitgroup.SplitGroupRequestMessage;
+import org.pcj.internal.message.splitgroup.SplitGroupResponseMessage;
 
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
@@ -66,12 +65,11 @@ public enum MessageType {
     GROUP_BARRIER_WAITING(GroupBarrierWaitingMessage::new),
     GROUP_BARRIER_GO(GroupBarrierGoMessage::new),
     PEER_BARRIER(PeerBarrierMessage::new),
-    GROUP_JOIN_QUERY(GroupQueryMessage::new),
-    GROUP_JOIN_ANSWER(GroupQueryAnswerMessage::new),
-    GROUP_JOIN_REQUEST(GroupJoinRequestMessage::new),
-    GROUP_JOIN_INFORM(GroupJoinInformMessage::new),
-    GROUP_JOIN_CONFIRM(GroupJoinConfirmMessage::new),
-    GROUP_JOIN_RESPONSE(GroupJoinResponseMessage::new),
+    SPLIT_GROUP_REQUEST(SplitGroupRequestMessage::new),
+    SPLIT_GROUP_RESPONSE(SplitGroupResponseMessage::new),
+    SPLIT_GROUP_QUERY(SplitGroupQueryMessage::new),
+    SPLIT_GROUP_ANSWER(SplitGroupAnswerMessage::new),
+    SPLIT_GROUP_GO(SplitGroupGoMessage::new),
     VALUE_GET_REQUEST(ValueGetRequestMessage::new),
     VALUE_GET_RESPONSE(ValueGetResponseMessage::new),
     VALUE_PUT_REQUEST(ValuePutRequestMessage::new),

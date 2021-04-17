@@ -180,5 +180,5 @@ public interface Group {
     /**
      * TODO: Write description
      */
-//    Group asyncSplitGroup(Integer split, int ordering);
+    PcjFuture<Group> asyncSplitGroup(Integer split, int ordering);
 }

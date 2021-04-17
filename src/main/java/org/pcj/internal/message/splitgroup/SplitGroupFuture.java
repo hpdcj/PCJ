@@ -6,23 +6,28 @@
  *
  * See the file "LICENSE" for the full license governing this code.
  */
-package org.pcj.internal.message.join;
+package org.pcj.internal.message.splitgroup;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import org.pcj.Group;
 import org.pcj.PcjFuture;
 import org.pcj.PcjRuntimeException;
 import org.pcj.internal.InternalFuture;
-import org.pcj.internal.InternalGroup;
 
-/**
+/*
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-class GroupJoinFuture extends InternalFuture<InternalGroup> implements PcjFuture<InternalGroup> {
-    private InternalGroup internalGroup;
-    private PcjRuntimeException exception;
+public class SplitGroupFuture extends InternalFuture<Group> implements PcjFuture<Group> {
 
-    GroupJoinFuture() {
+    private Group group;
+
+    SplitGroupFuture() {
+    }
+
+    protected void signalDone(Group group) {
+        this.group = group;
+        super.signal();
     }
 
     @Override
@@ -30,34 +35,23 @@ class GroupJoinFuture extends InternalFuture<InternalGroup> implements PcjFuture
         return super.isSignaled();
     }
 
-    protected void signalDone(InternalGroup internalGroup) {
-        this.internalGroup = internalGroup;
-        super.signal();
-    }
-
     @Override
-    public InternalGroup get() throws PcjRuntimeException {
+    public Group get() throws PcjRuntimeException {
         try {
             super.await();
         } catch (InterruptedException ex) {
             throw new PcjRuntimeException(ex);
         }
-        if (exception != null) {
-            throw exception;
-        }
-        return internalGroup;
+        return group;
     }
 
     @Override
-    public InternalGroup get(long timeout, TimeUnit unit) throws TimeoutException, PcjRuntimeException {
+    public Group get(long timeout, TimeUnit unit) throws TimeoutException, PcjRuntimeException {
         try {
             super.await(timeout, unit);
         } catch (InterruptedException ex) {
             throw new PcjRuntimeException(ex);
         }
-        if (exception != null) {
-            throw exception;
-        }
-        return internalGroup;
+        return group;
     }
 }

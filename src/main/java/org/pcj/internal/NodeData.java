@@ -151,35 +151,16 @@ public final class NodeData {
         this.byeState = byeState;
     }
 
-    public GroupQueryStates getGroupQueryStates() {
-        return groupQueryStates;
-    }
-
-    public GroupJoinStates getGroupJoinStates() {
-        return groupJoinStates;
-    }
-
     public static class Node0Data {
 
         private final AtomicInteger groupIdCounter;
-        private final ConcurrentMap<String, Integer> groupsId; // groupName -> groupId
-        private final ConcurrentMap<Integer, Integer> groupsMaster; // groupId -> physicalId
 
         Node0Data() {
             this.groupIdCounter = new AtomicInteger(1);
-            this.groupsId = new ConcurrentHashMap<>();
-            this.groupsMaster = new ConcurrentHashMap<>();
-
-            groupsId.put("", 0);
-            groupsMaster.put(0, 0);
         }
 
-        public int getGroupId(String name) {
-            return groupsId.computeIfAbsent(name, key -> groupIdCounter.getAndIncrement());
-        }
-
-        public int getGroupMaster(int groupId, int physicalId) {
-            return groupsMaster.computeIfAbsent(groupId, key -> physicalId);
+        public int reserveGroupId() {
+            return groupIdCounter.getAndIncrement();
         }
     }
 }

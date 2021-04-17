@@ -26,16 +26,12 @@ import org.pcj.internal.message.broadcast.BroadcastStates;
 import org.pcj.internal.message.collect.CollectStates;
 import org.pcj.internal.message.get.ValueGetRequestMessage;
 import org.pcj.internal.message.get.ValueGetStates;
-import org.pcj.internal.message.join.GroupJoinRequestMessage;
-import org.pcj.internal.message.join.GroupJoinStates;
-import org.pcj.internal.message.join.GroupQueryMessage;
-import org.pcj.internal.message.join.GroupQueryStates;
 import org.pcj.internal.message.peerbarrier.PeerBarrierMessage;
 import org.pcj.internal.message.peerbarrier.PeerBarrierStates;
 import org.pcj.internal.message.put.ValuePutRequestMessage;
 import org.pcj.internal.message.put.ValuePutStates;
-import org.pcj.internal.message.reduce.ReduceRequestMessage;
 import org.pcj.internal.message.reduce.ReduceStates;
+import org.pcj.internal.message.splitgroup.SplitGroupStates;
 
 /**
  * External class that represents group for grouped communication.
@@ -62,15 +58,6 @@ public final class InternalGroup extends InternalCommonGroup implements Group {
         this.asyncAtStates = new AsyncAtStates();
         this.peerBarrierStates = new PeerBarrierStates();
     }
-//
-//    public static InternalGroup asyncSplitGroup(Integer split, int ordering) {
-//        SplitGroupStates states = super.getSplitGroupStates();
-//        int round = states.getNextRound(myThreadId);
-//        SplitGroupStates.State state = states.getOrCreate(round, split, ordering, this);
-//        state.processLocal(this);
-//
-//        return state.getFuture();
-//    }
 
     public int myId() {
         return myThreadId;
@@ -251,5 +238,14 @@ public final class InternalGroup extends InternalCommonGroup implements Group {
 
     public AsyncAtStates getAsyncAtStates() {
         return asyncAtStates;
+    }
+
+    public PcjFuture<Group> asyncSplitGroup(Integer split, int ordering) {
+        SplitGroupStates states = super.getSplitGroupStates();
+        int round = states.getNextRound(myThreadId);
+        SplitGroupStates.State state = states.getOrCreate(round, this);
+        state.processLocal(this, myThreadId, split, ordering);
+
+        return state.getFuture();
     }
 }

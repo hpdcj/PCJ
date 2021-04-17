@@ -11,7 +11,6 @@ package org.pcj;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import org.pcj.internal.InternalGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.PcjThread;
 
@@ -616,35 +615,9 @@ public final class PCJ {
      * @param ordering
      * @return
      */
-//    public static Group splitGroup(Integer split, int ordering) {
-//        getGlobalGroup().asyncSplitGroup(split, ordering).get();
-        /*
-    Map<Integer, Integer> colors = Map.of(
-            1, 2,
-            2, 1,
-            3, -1,
-            4, 1,
-            5, 2,
-            6, 2,
-            7, 2,
-            8, 1);
-    Map<Integer, Integer> keys = Map.of(
-            1, 3,
-            2, 8,
-            3, 7,
-            4, 6,
-            5, 5,
-            6, 4,
-            7, 3,
-            8, 2);
-    Map<Integer, List<Integer>> results = keys.entrySet().stream()
-            .filter(entry -> colors.get(entry.getKey()) != null)
-            .sorted(Map.Entry.<Integer, Integer>comparingByValue().thenComparing(Map.Entry.comparingByKey()))
-            .map(Map.Entry::getKey)
-            .collect(Collectors.groupingBy(colors::get));
-    System.out.println(results);
-         */
-//    }
+    public static Group splitGroup(Integer split, int ordering) {
+        return getGlobalGroup().asyncSplitGroup(split, ordering).get();
+    }
 
     /**
      * This function will be removed.

@@ -6,10 +6,13 @@
  *
  * See the file "LICENSE" for the full license governing this code.
  */
-package org.pcj.internal.message.join;
+package org.pcj.internal.message.splitgroup;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
+import java.util.List;
+import org.pcj.PcjRuntimeException;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
@@ -19,46 +22,45 @@ import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
 /**
+ * ....
+ *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public class GroupJoinConfirmMessage extends Message {
+public final class SplitGroupAnswerMessage extends Message {
 
-    private int requestNum;
     private int groupId;
-    private int requesterGlobalThreadId;
+    private int round;
+    private int[] groupIds;
 
-    public GroupJoinConfirmMessage() {
-        super(MessageType.GROUP_JOIN_CONFIRM);
+    public SplitGroupAnswerMessage() {
+        super(MessageType.SPLIT_GROUP_ANSWER);
     }
 
-    public GroupJoinConfirmMessage(int requestNum, int groupId, int requesterGlobalThreadId, int confirmerPhysicalId) {
+    public SplitGroupAnswerMessage(int groupId, int round, int[] groupIds) {
         this();
 
-        this.requestNum = requestNum;
         this.groupId = groupId;
-        this.requesterGlobalThreadId = requesterGlobalThreadId;
+        this.round = round;
+        this.groupIds = groupIds;
     }
 
     @Override
     public void write(MessageDataOutputStream out) throws IOException {
-        out.writeInt(requestNum);
         out.writeInt(groupId);
-        out.writeInt(requesterGlobalThreadId);
+        out.writeInt(round);
+        out.writeObject(groupIds);
     }
 
     @Override
     public void onReceive(SocketChannel sender, MessageDataInputStream in) throws IOException {
-        requestNum = in.readInt();
         groupId = in.readInt();
-        requesterGlobalThreadId = in.readInt();
+        round = in.readInt();
+        groupIds = in.readIntArray();
 
-        NodeData nodeData = InternalPCJ.getNodeData();
+        InternalCommonGroup commonGroup = InternalPCJ.getNodeData().getCommonGroupById(groupId);
 
-        InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
-
-        GroupJoinStates states = commonGroup.getGroupJoinStates();
-        GroupJoinStates.State state = states.get(requestNum, requesterGlobalThreadId);
-        state.processNode(commonGroup);
+        SplitGroupStates states = commonGroup.getSplitGroupStates();
+        SplitGroupStates.State state = states.getOrCreate(round, commonGroup);
+        state.upProcessNode(commonGroup, groupIds);
     }
-
 }

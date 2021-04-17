@@ -21,8 +21,8 @@ import java.util.stream.Stream;
 import org.pcj.internal.message.barrier.BarrierStates;
 import org.pcj.internal.message.broadcast.BroadcastStates;
 import org.pcj.internal.message.collect.CollectStates;
-import org.pcj.internal.message.join.GroupJoinStates;
 import org.pcj.internal.message.reduce.ReduceStates;
+import org.pcj.internal.message.splitgroup.SplitGroupStates;
 
 /**
  * Internal (with common ClassLoader) representation of Group. It contains
@@ -44,7 +44,7 @@ public class InternalCommonGroup {
     private final BroadcastStates broadcastStates;
     private final CollectStates collectStates;
     private final ReduceStates reduceStates;
-    private final GroupJoinStates groupJoinStates;
+    private final SplitGroupStates splitGroupStates;
 
     public InternalCommonGroup(InternalCommonGroup g) {
         this.groupId = g.groupId;
@@ -59,7 +59,7 @@ public class InternalCommonGroup {
         this.broadcastStates = g.broadcastStates;
         this.collectStates = g.collectStates;
         this.reduceStates = g.reduceStates;
-        this.groupJoinStates = g.groupJoinStates;
+        this.splitGroupStates = g.splitGroupStates;
     }
 
     public InternalCommonGroup(int groupMasterNode, int groupId) {
@@ -75,7 +75,7 @@ public class InternalCommonGroup {
         this.broadcastStates = new BroadcastStates();
         this.collectStates = new CollectStates();
         this.reduceStates = new ReduceStates();
-        this.groupJoinStates = new GroupJoinStates();
+        this.splitGroupStates = new SplitGroupStates();
     }
 
     public final int getGroupId() {
@@ -154,8 +154,8 @@ public class InternalCommonGroup {
         return reduceStates;
     }
 
-    public GroupJoinStates getGroupJoinStates() {
-        return groupJoinStates;
+    public SplitGroupStates getSplitGroupStates() {
+        return splitGroupStates;
     }
 
     public CommunicationTree getCommunicationTree() {
@@ -220,14 +220,6 @@ public class InternalCommonGroup {
 
             int currentPhysicalId = nodeData.getCurrentNodePhysicalId();
             currentIndex = physicalIds.indexOf(currentPhysicalId);
-        }
-
-        public int getMasterNode() {
-            return groupMasterNode;
-        }
-
-        public void setParentNode(int v) {
-
         }
     }
 }
