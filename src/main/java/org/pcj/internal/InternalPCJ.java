@@ -288,7 +288,7 @@ public abstract class InternalPCJ {
         Set<PcjThread> pcjThreads = new HashSet<>(pcjThreadsSet);
 
         int notProcessedFinishedThreads = 0;
-        while (!pcjThreads.isEmpty()) {
+        while (!pcjThreads.isEmpty() && !Thread.currentThread().isInterrupted()) {
             if (notProcessedFinishedThreads <= 0) {
                 notificationSemaphore.acquire();
                 notProcessedFinishedThreads += notificationSemaphore.drainPermits() + 1;
@@ -304,7 +304,6 @@ public abstract class InternalPCJ {
 
                         AliveState aliveState = nodeData.getAliveState();
                         aliveState.nodeAborted();
-                        return;
                     }
                     it.remove();
                     --notProcessedFinishedThreads;

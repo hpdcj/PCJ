@@ -60,12 +60,12 @@ public final class SplitGroupResponseMessage extends Message {
 
         InternalCommonGroup commonGroup = InternalPCJ.getNodeData().getCommonGroupById(groupId);
 
-        commonGroup.
-                
-        InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
-        InternalGroup threadGroup = new InternalGroup(requesterGroupThreadId, commonGroup);
-        PcjThread pcjThread = nodeData.getPcjThread(requesterGlobalThreadId);
-        pcjThread.getThreadData().addGroup(threadGroup)
+//        commonGroup.
+//
+//        InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
+//        InternalGroup threadGroup = new InternalGroup(requesterGroupThreadId, commonGroup);
+//        PcjThread pcjThread = nodeData.getPcjThread(requesterGlobalThreadId);
+//        pcjThread.getThreadData().addGroup(threadGroup)
 
     }
 }

@@ -45,7 +45,7 @@ public class SplitGroupStates {
 
     public State getOrCreate(int round, InternalCommonGroup commonGroup) {
         return stateMap.computeIfAbsent(round,
-                _round -> new State(_round, commonGroup.getLocalThreadsId().size(), commonGroup.getCommunicationTree().getChildrenNodes().size(), new SplitGroupFuture()));
+                _round -> new State(_round, commonGroup.getLocalThreadsId().size(), commonGroup.getCommunicationTree().getChildrenNodes().size()));
     }
 
     public State remove(int round) {
@@ -55,28 +55,31 @@ public class SplitGroupStates {
     public static class State {
         private final int round;
         private final AtomicReference<NotificationCount> notificationCount;
-        private final SplitGroupFuture future;
-        private final Map<Integer, Integer> splitMap;
-        private final Map<Integer, Integer> orderingMap;
+        private final ConcurrentMap<Integer, SplitGroupFuture> futureMap;
+        private final ConcurrentMap<Integer, Integer> splitMap;
+        private final ConcurrentMap<Integer, Integer> orderingMap;
 
-        private State(int round, int localCount, int physicalCount, SplitGroupFuture future) {
+        private State(int round, int localCount, int physicalCount) {
             this.round = round;
-            this.future = future;
 
+            futureMap = new ConcurrentHashMap<>();
             splitMap = new ConcurrentHashMap<>();
             orderingMap = new ConcurrentHashMap<>();
 
             notificationCount = new AtomicReference<>(new NotificationCount(localCount, physicalCount));
         }
 
-        public PcjFuture<Group> getFuture() {
-            return future;
+        public PcjFuture<Group> getFuture(int threadId) {
+            return futureMap.get(threadId);
         }
 
         public void processLocal(InternalCommonGroup group, int threadId, Integer split, int ordering) {
+            futureMap.put(threadId, new SplitGroupFuture());
             if (split != null) {
-                splitMap.put(threadId, split);
-                orderingMap.put(threadId, ordering);
+                splitMap.put(group.getGlobalThreadId(threadId), split);
+                orderingMap.put(group.getGlobalThreadId(threadId), ordering);
+            } else {
+                futureMap.get(threadId).signalDone(null);
             }
 
             NotificationCount count = notificationCount.updateAndGet(
@@ -107,7 +110,7 @@ public class SplitGroupStates {
 
             int parentId = group.getCommunicationTree().getParentNode();
             if (group.getCommunicationTree().getParentNode() >= 0) {
-                message = new SplitGroupRequestMessage(group.getGroupId(), round);
+                message = new SplitGroupRequestMessage(group.getGroupId(), round, splitMap, orderingMap);
                 socket = nodeData.getSocketChannelByPhysicalId(parentId);
             } else {
                 int splitCount = (int) splitMap.values().stream().distinct().count();
@@ -119,29 +122,33 @@ public class SplitGroupStates {
         }
 
         public void signalDone() {
-            future.signalDone(null);
+            futureMap.values().forEach(future -> future.signalDone(null)); // TODO: rzeczywista grupa
         }
 
-        public void upProcessNode(InternalCommonGroup group, int[] groupIds) {
+        public void groupIdsAnswer(InternalCommonGroup group, int[] groupIds) {
             int[] splitIds = splitMap.values().stream().mapToInt(Integer::intValue).distinct().toArray();
-            Map<Integer, Integer> splitGroupIdMap = IntStream.range(0, groupIds.length)
+            // mapping: split number -> group id
+            Map<Integer, Integer> splitNumToGroupIdMap = IntStream.range(0, groupIds.length)
                     .collect(HashMap::new,
                             (map, key) -> map.put(splitIds[key], groupIds[key]),
                             Map::putAll);
 
+            // mapping: groupId -> List of thread globalId
             Map<Integer, List<Integer>> threadGroupIdMap
                     = orderingMap.entrySet().stream()
                     .sorted(Map.Entry.<Integer, Integer>comparingByValue()
                             .thenComparing(Map.Entry.comparingByKey()))
                     .map(Map.Entry::getKey)
-                    .collect(Collectors.groupingBy(threadId -> splitGroupIdMap.get(splitMap.get(threadId))));
+                    .collect(Collectors.groupingBy(threadId -> splitNumToGroupIdMap.get(splitMap.get(threadId))));
+
+
 
             NodeData nodeData = InternalPCJ.getNodeData();
 
-            Message message = new SplitGroupResponseMessage(group.getGroupId(), round, threadGroupIdMap);
-            SocketChannel socket = nodeData.getSocketChannelByPhysicalId(nodeData.getCurrentNodePhysicalId());
-
-            InternalPCJ.getNetworker().send(socket, message);
+//            Message message = new SplitGroupResponseMessage(group.getGroupId(), round, threadGroupIdMap);
+//            SocketChannel socket = nodeData.getSocketChannelByPhysicalId(nodeData.getCurrentNodePhysicalId());
+//
+//            InternalPCJ.getNetworker().send(socket, message);
         }
 
         private static class NotificationCount {

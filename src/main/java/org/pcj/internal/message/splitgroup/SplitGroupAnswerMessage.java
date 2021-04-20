@@ -10,12 +10,8 @@ package org.pcj.internal.message.splitgroup;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayList;
-import java.util.List;
-import org.pcj.PcjRuntimeException;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
-import org.pcj.internal.NodeData;
 import org.pcj.internal.message.Message;
 import org.pcj.internal.message.MessageType;
 import org.pcj.internal.network.MessageDataInputStream;
@@ -48,7 +44,7 @@ public final class SplitGroupAnswerMessage extends Message {
     public void write(MessageDataOutputStream out) throws IOException {
         out.writeInt(groupId);
         out.writeInt(round);
-        out.writeObject(groupIds);
+        out.writeIntArray(groupIds);
     }
 
     @Override
@@ -61,6 +57,6 @@ public final class SplitGroupAnswerMessage extends Message {
 
         SplitGroupStates states = commonGroup.getSplitGroupStates();
         SplitGroupStates.State state = states.getOrCreate(round, commonGroup);
-        state.upProcessNode(commonGroup, groupIds);
+        state.groupIdsAnswer(commonGroup, groupIds);
     }
 }

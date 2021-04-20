@@ -98,24 +98,6 @@ public class InternalCommonGroup {
         return globalThreadId;
     }
 
-    public final int getGroupThreadId(int globalThreadId) throws NoSuchElementException {
-        return threadsMap.entrySet().stream()
-                .filter(entry -> entry.getValue() == globalThreadId)
-                .mapToInt(Map.Entry::getKey)
-                .findFirst()
-                .orElseThrow(() -> new NoSuchElementException("Global threadId not found: " + globalThreadId));
-    }
-
-    public final void addNewThread(int globalThreadId) {
-        int groupThreadId;
-        do {
-            groupThreadId = threadsCounter.getAndIncrement();
-        } while (threadsMap.putIfAbsent(groupThreadId, globalThreadId) != null);
-
-        updateLocalThreads();
-        communicationTree.update();
-    }
-
     public final void updateThreadsMap(Map<Integer, Integer> newThreadsMap) { // groupId, globalId
         threadsMap.putAll(newThreadsMap);
 
