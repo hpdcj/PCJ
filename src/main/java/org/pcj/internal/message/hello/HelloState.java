@@ -16,7 +16,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Logger;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalFuture;
 import org.pcj.internal.InternalGroup;
@@ -115,7 +114,7 @@ public class HelloState {
             }
         }
 
-        InternalCommonGroup globalGroup = nodeData.getOrCreateGroup(0, InternalCommonGroup.GLOBAL_GROUP_ID);
+        InternalCommonGroup globalGroup = nodeData.getOrCreateCommonGroup(InternalCommonGroup.GLOBAL_GROUP_ID);
         globalGroup.updateThreadsMap(threadsMap);
     }
 

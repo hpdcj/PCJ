@@ -246,7 +246,6 @@ public final class InternalGroup extends InternalCommonGroup implements Group {
         int round = states.getNextRound(myThreadId);
         SplitGroupStates.State state = states.getOrCreate(round, this);
         state.processLocal(this, myThreadId, split, ordering);
-        System.out.println(state); // kilka wątków taki sam state... czyli taki sam future...
 
         return state.getFuture(myThreadId);
     }

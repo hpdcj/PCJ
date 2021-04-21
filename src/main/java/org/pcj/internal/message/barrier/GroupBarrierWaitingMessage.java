@@ -48,6 +48,7 @@ public final class GroupBarrierWaitingMessage extends Message {
         round = in.readInt();
 
         InternalCommonGroup commonGroup = InternalPCJ.getNodeData().getCommonGroupById(groupId);
+        System.out.println(InternalPCJ.getNodeData().getCurrentNodePhysicalId()+" groupId:"+groupId+" "+commonGroup);
 
         BarrierStates states = commonGroup.getBarrierStates();
         BarrierStates.State state = states.getOrCreate(round, commonGroup);

@@ -10,10 +10,12 @@ package org.pcj.internal.message.splitgroup;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
+import java.util.List;
 import java.util.Map;
 import org.pcj.PcjRuntimeException;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
+import org.pcj.internal.NodeData;
 import org.pcj.internal.message.Message;
 import org.pcj.internal.message.MessageType;
 import org.pcj.internal.network.MessageDataInputStream;
@@ -26,13 +28,13 @@ public final class SplitGroupResponseMessage extends Message {
 
     private int groupId;
     private int round;
-    private Map<Integer, Integer> threadGroupIdMap;
+    private Map<Integer, List<Integer>> threadGroupIdMap;
 
     public SplitGroupResponseMessage() {
         super(MessageType.SPLIT_GROUP_RESPONSE);
     }
 
-    public SplitGroupResponseMessage(int groupId, int round, Map<Integer, Integer> threadGroupIdMap) {
+    public SplitGroupResponseMessage(int groupId, int round, Map<Integer, List<Integer>> threadGroupIdMap) {
         this();
 
         this.groupId = groupId;
@@ -47,25 +49,28 @@ public final class SplitGroupResponseMessage extends Message {
         out.writeObject(threadGroupIdMap);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void onReceive(SocketChannel sender, MessageDataInputStream in) throws IOException {
         groupId = in.readInt();
         round = in.readInt();
 
         try {
-            threadGroupIdMap = (Map<Integer, Integer>) in.readObject();
+            threadGroupIdMap = (Map<Integer, List<Integer>>) in.readObject();
         } catch (Exception ex) {
             throw new PcjRuntimeException("Unable to read nodeInfoByPhysicalId", ex);
         }
 
-        InternalCommonGroup commonGroup = InternalPCJ.getNodeData().getCommonGroupById(groupId);
+        NodeData nodeData = InternalPCJ.getNodeData();
 
-//        commonGroup.
-//
-//        InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
-//        InternalGroup threadGroup = new InternalGroup(requesterGroupThreadId, commonGroup);
-//        PcjThread pcjThread = nodeData.getPcjThread(requesterGlobalThreadId);
-//        pcjThread.getThreadData().addGroup(threadGroup)
+        InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
 
+        commonGroup.getCommunicationTree().getChildrenNodes().stream()
+                .map(nodeData::getSocketChannelByPhysicalId)
+                .forEach(socket -> InternalPCJ.getNetworker().send(socket, this));
+
+        SplitGroupStates states = commonGroup.getSplitGroupStates();
+        SplitGroupStates.State state = states.getOrCreate(round, commonGroup);
+        state.createGroups(commonGroup,  threadGroupIdMap);
     }
 }

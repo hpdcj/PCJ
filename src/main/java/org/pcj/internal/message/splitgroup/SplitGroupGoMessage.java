@@ -53,13 +53,8 @@ public final class SplitGroupGoMessage extends Message {
         NodeData nodeData = InternalPCJ.getNodeData();
 
         InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
-
-        commonGroup.getCommunicationTree().getChildrenNodes().stream()
-                .map(nodeData::getSocketChannelByPhysicalId)
-                .forEach(socket -> InternalPCJ.getNetworker().send(socket, this));
-
         SplitGroupStates states = commonGroup.getSplitGroupStates();
-        SplitGroupStates.State state = states.remove(round);
-        state.signalDone();
+        SplitGroupStates.State state = states.getOrCreate(round, commonGroup);
+        state.readyToGo(commonGroup);
     }
 }

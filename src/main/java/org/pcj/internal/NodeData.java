@@ -60,9 +60,10 @@ public final class NodeData {
         this.node0Data = node0Data;
     }
 
-    public InternalCommonGroup getOrCreateGroup(int groupMaster, int groupId) {
+    public InternalCommonGroup getOrCreateCommonGroup(int groupId) {
         return groupById.computeIfAbsent(groupId,
-                key -> new InternalCommonGroup(groupMaster, groupId));
+                key -> {
+                    System.out.println(InternalPCJ.getNodeData().getCurrentNodePhysicalId()+" creating group "+groupId);return new InternalCommonGroup(groupId);});
     }
 
     public InternalCommonGroup getCommonGroupById(int id) {

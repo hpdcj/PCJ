@@ -17,7 +17,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.pcj.internal.message.barrier.BarrierStates;
 import org.pcj.internal.message.broadcast.BroadcastStates;
 import org.pcj.internal.message.collect.CollectStates;
@@ -35,7 +34,6 @@ public class InternalCommonGroup {
     public static final int GLOBAL_GROUP_ID = 0;
 
     private final int groupId;
-    private final int groupMasterNode;
     private final ConcurrentHashMap<Integer, Integer> threadsMap; // groupThreadId, globalThreadId
     private final AtomicInteger threadsCounter;
     private final Set<Integer> localIds;
@@ -48,7 +46,6 @@ public class InternalCommonGroup {
 
     public InternalCommonGroup(InternalCommonGroup g) {
         this.groupId = g.groupId;
-        this.groupMasterNode = g.groupMasterNode;
         this.communicationTree = g.communicationTree;
 
         this.threadsMap = g.threadsMap;
@@ -62,9 +59,8 @@ public class InternalCommonGroup {
         this.splitGroupStates = g.splitGroupStates;
     }
 
-    public InternalCommonGroup(int groupMasterNode, int groupId) {
+    public InternalCommonGroup(int groupId) {
         this.groupId = groupId;
-        this.groupMasterNode = groupMasterNode;
         this.communicationTree = new CommunicationTree();
 
         this.threadsMap = new ConcurrentHashMap<>();
@@ -191,14 +187,12 @@ public class InternalCommonGroup {
         private void update() {
             NodeData nodeData = InternalPCJ.getNodeData();
 
-            physicalIds = Stream.concat(
-                    Stream.of(groupMasterNode),
-                    threadsMap.keySet().stream()
-                            .sorted()
-                            .map(threadsMap::get)
-                            .map(nodeData::getPhysicalId))
-                    .distinct()
-                    .collect(Collectors.toList());
+            physicalIds = threadsMap.keySet().stream()
+                                  .sorted()
+                                  .map(threadsMap::get)
+                                  .map(nodeData::getPhysicalId)
+                                  .distinct()
+                                  .collect(Collectors.toList());
 
             int currentPhysicalId = nodeData.getCurrentNodePhysicalId();
             currentIndex = physicalIds.indexOf(currentPhysicalId);

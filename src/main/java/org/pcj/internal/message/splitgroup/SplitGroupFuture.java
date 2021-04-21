@@ -25,8 +25,11 @@ public class SplitGroupFuture extends InternalFuture<Group> implements PcjFuture
     SplitGroupFuture() {
     }
 
-    protected void signalDone(Group group) {
+    protected void setGroup(Group group) {
         this.group = group;
+    }
+
+    protected void signalDone() {
         super.signal();
     }
 
