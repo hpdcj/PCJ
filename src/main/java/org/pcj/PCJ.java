@@ -615,6 +615,7 @@ public final class PCJ {
      * Splits global group into subgroups based on the split and ordering parameters.
      * <p>
      * Split parameter can be {@code null} which means the thread would not be included in any of new group.
+     * Threads with the same split parameter value are in the same new group.
      * <p>
      * Ordering determines the PCJ Thread id in new group.
      * The smaller number of ordering means smaller PCJ Thread id in subgroup.
@@ -647,7 +648,7 @@ public final class PCJ {
      * @return {@link org.pcj.Group} of subgroup or {@code null} if the thread would not be included in any of new group
      */
     public static Group splitGroup(Integer split, int ordering) {
-        return getGlobalGroup().asyncSplitGroup(split, ordering).get();
+        return PCJ.asyncSplitGroup(split, ordering).get();
     }
 
     /**

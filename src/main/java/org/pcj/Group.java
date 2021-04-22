@@ -180,9 +180,10 @@ public interface Group {
     /**
      * Asynchronous collective split group operation. This method has to be invoked by all threads in a group.
      * <p>
-     * Splits global group into subgroups based on the split and ordering parameters.
+     * Splits this group into subgroups based on the split and ordering parameters.
      * <p>
      * Split parameter can be {@code null} which means the thread would not be included in any of new group.
+     * Threads with the same split parameter value are in the same new group.
      * <p>
      * Ordering determines the PCJ Thread id in new group.
      * The smaller number of ordering means smaller PCJ Thread id in subgroup.
