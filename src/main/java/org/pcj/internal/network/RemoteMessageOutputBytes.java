@@ -19,8 +19,8 @@ import org.pcj.internal.message.Message;
 public class RemoteMessageOutputBytes implements MessageOutputBytes {
 
     private static final ByteBufferPool BYTE_BUFFER_POOL = new ByteBufferPool(
-            InternalPCJ.getConfiguration().getBufferPoolSize(),
-            InternalPCJ.getConfiguration().getBufferChunkSize());
+            InternalPCJ.getConfiguration().BUFFER_POOL_SIZE,
+            InternalPCJ.getConfiguration().BUFFER_CHUNK_SIZE);
     private final ByteBufferOutputStream byteBufferOutputStream;
 
     public RemoteMessageOutputBytes() {

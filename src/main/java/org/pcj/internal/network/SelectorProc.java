@@ -56,8 +56,8 @@ public class SelectorProc implements Runnable {
         }
 
         this.byteBufferPool = new ByteBufferPool(
-                InternalPCJ.getConfiguration().getBufferPoolSize(),
-                InternalPCJ.getConfiguration().getBufferChunkSize());
+                InternalPCJ.getConfiguration().BUFFER_POOL_SIZE,
+                InternalPCJ.getConfiguration().BUFFER_CHUNK_SIZE);
         this.readMap = new ConcurrentHashMap<>();
         this.writeMap = new ConcurrentHashMap<>();
         this.interestChanges = new ConcurrentHashMap<>();

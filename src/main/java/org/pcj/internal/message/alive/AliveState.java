@@ -55,13 +55,13 @@ public class AliveState {
 
         updateNeighbours();
 
-        if (InternalPCJ.getConfiguration().getAliveHeartbeat() > 0) {
+        if (InternalPCJ.getConfiguration().ALIVE_HEARTBEAT > 0) {
             scheduledExecutorService.scheduleAtFixedRate(this::sendAliveMessage,
-                    InternalPCJ.getConfiguration().getAliveHeartbeat(), InternalPCJ.getConfiguration().getAliveHeartbeat(), TimeUnit.SECONDS);
+                    InternalPCJ.getConfiguration().ALIVE_HEARTBEAT, InternalPCJ.getConfiguration().ALIVE_HEARTBEAT, TimeUnit.SECONDS);
 
-            if (InternalPCJ.getConfiguration().getAliveTimeout() > InternalPCJ.getConfiguration().getAliveHeartbeat()) {
+            if (InternalPCJ.getConfiguration().ALIVE_TIMEOUT > InternalPCJ.getConfiguration().ALIVE_HEARTBEAT) {
                 scheduledExecutorService.scheduleAtFixedRate(this::checkAliveNotifyTimeout,
-                        InternalPCJ.getConfiguration().getAliveTimeout(), InternalPCJ.getConfiguration().getAliveHeartbeat(), TimeUnit.SECONDS);
+                        InternalPCJ.getConfiguration().ALIVE_TIMEOUT, InternalPCJ.getConfiguration().ALIVE_HEARTBEAT, TimeUnit.SECONDS);
             }
         }
     }
@@ -97,7 +97,7 @@ public class AliveState {
         Optional<SocketChannel> lostNotificationChannel
                 = nodeLastNotificationMap.entrySet()
                           .stream()
-                          .filter(entry -> ChronoUnit.SECONDS.between(entry.getValue(), now) > InternalPCJ.getConfiguration().getAliveTimeout())
+                          .filter(entry -> ChronoUnit.SECONDS.between(entry.getValue(), now) > InternalPCJ.getConfiguration().ALIVE_TIMEOUT)
                           .map(Map.Entry::getKey)
                           .findAny();
 

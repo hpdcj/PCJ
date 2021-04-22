@@ -8,15 +8,9 @@
  */
 package org.pcj.internal;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-import java.lang.reflect.Field;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.pcj.PcjRuntimeException;
 
 /**
  * Configuration for PCJ.
@@ -29,102 +23,104 @@ import org.pcj.PcjRuntimeException;
 public final class Configuration {
 
     private final Logger LOGGER = Logger.getLogger(Configuration.class.getName());
-    private final Properties properties;
+    private Properties properties;
+    /**
+     * pcj.port (int) default: 8091
+     */
+    public final int DEFAULT_PORT;
+    /**
+     * pcj.init.backlog (int) default: 4096
+     */
+    public final int INIT_BACKLOG_COUNT;
+    /**
+     * pcj.init.retry.count (int) default: 3
+     */
+    public final int INIT_RETRY_COUNT;
+    /**
+     * pcj.init.retry.delay (int in seconds) default: 5
+     */
+    public final int INIT_RETRY_DELAY;
+    /**
+     * pcj.init.maxtime (int in seconds) default:
+     * <p>
+     * {@code max(30, (pcj.init.retry.count + 1) * pcj.init.retry.delay)}
+     */
+    public final int INIT_MAXTIME;
+    /**
+     * pcj.buffer.chunksize (int) default: 8*1024
+     */
+    public final int BUFFER_CHUNK_SIZE;
+    /**
+     * pcj.buffer.poolsize (int) default: 1024
+     */
+    public final int BUFFER_POOL_SIZE;
+    /**
+     * pcj.msg.workers.count (int) default: available processors
+     */
+    public final int MESSAGE_WORKERS_COUNT;
+    /**
+     * pcj.msg.workers.keepalive (int in seconds) default: 60
+     */
+    public final int MESSAGE_WORKERS_KEEPALIVE;
+    /**
+     * pcj.async.workers.count (int) default: available processors
+     */
+    public final int ASYNC_WORKERS_COUNT;
+    /**
+     * pcj.async.workers.keepalive (int in seconds) default: 60
+     */
+    public final int ASYNC_WORKERS_KEEPALIVE;
+    /**
+     * pcj.async.workers.queuesize (int) default: -1
+     * <ul>
+     * <li> = 0 - synchronous queue</li>
+     * <li> &gt; 0 - bounded queue</li>
+     * <li> &lt; 0 - unbounded queue</li>
+     * </ul>
+     */
+    public final int ASYNC_WORKERS_QUEUE_SIZE;
 
-    @Config(value = "pcj.port",
-            type = int.class, defaultValue = "8091",
-            description = "default PCJ port")
-    private int defaultPort;
-
-    @Config(value = "pcj.init.backlog",
-            type = int.class, defaultValue = "4096",
-            description = "socket backlog size")
-    private int initBacklogCount;
-
-    @Config(value = "pcj.init.retry.count",
-            type = int.class, defaultValue = "3",
-            description = "retry count")
-    private int initRetryCount;
-
-    @Config(value = "pcj.init.retry.delay",
-            type = int.class, defaultValue = "5",
-            description = "retry delay in seconds")
-    private int initRetryDelay;
-
-    @Config(value = "pcj.init.maxtime",
-            type = int.class, defaultValue = "30",
-            description = "maxtime in seconds")
-    private int initMaxtime;
-
-    @Config(value = "pcj.buffer.chunksize",
-            type = int.class, defaultValue = "8192",
-            description = "chunksize of buffer in bytes")
-    private int bufferChunkSize;
-
-    @Config(value = "pcj.buffer.poolsize",
-            type = int.class, defaultValue = "1024",
-            description = "number of buffers in pool")
-    private int bufferPoolSize;
-
-    @Config(value = "pcj.msg.workers.count",
-            type = int.class, defaultValue = "#procs",
-            description = "#procs evaluated on runtime")
-    private int messageWorkersCount;
-
-    @Config(value = "pcj.msg.workers.keepalive",
-            type = int.class, defaultValue = "60",
-            description = "keepalive in seconds")
-    private int messageWorkersKeepalive;
-
-    @Config(value = "pcj.async.workers.count",
-            type = int.class, defaultValue = "#procs",
-            description = "#procs evaluated on runtime")
-    private int asyncWorkersCount;
-
-    @Config(value = "pcj.async.workers.keepalive",
-            type = int.class, defaultValue = "60",
-            description = "keepalive in seconds")
-    private int asyncWorkersKeepalive;
-
-    @Config(value = "pcj.async.workers.queuesize",
-            type = int.class, defaultValue = "-1",
-            description = " = 0 - synchronous queue; > 0 - bounded queue; < 0 - unbounded queue")
-    private int asyncWorkersQueueSize;
-
-    @Config(value = "pcj.alive.heartbeat",
-            type = int.class, defaultValue = "20",
-            description = "heartbeat in seconds")
-    private int aliveHeartbeat;
-
-    @Config(value = "pcj.alive.timeout",
-            type = int.class, defaultValue = "60",
-            description = "timeout in seconds")
-    private int aliveTimeout;
+    /**
+     * pcj.alive.heartbeat (int in seconds) default: 20
+     */
+    public final int ALIVE_HEARTBEAT;
+    /**
+     * pcj.alive.timeout (int in seconds) default: 60
+     */
+    public final int ALIVE_TIMEOUT;
 
     Configuration(Properties properties) {
         this.properties = properties;
 
-        for (Field field : Configuration.class.getDeclaredFields()) {
-            Config configAnnotation = field.getAnnotation(Config.class);
-            if (configAnnotation == null) {
-                continue;
-            }
+        DEFAULT_PORT = getPropertyInt("pcj.port", 8091);
+        INIT_BACKLOG_COUNT = getPropertyInt("pcj.init.backlog", 4096);
+        INIT_RETRY_COUNT = getPropertyInt("pcj.init.retry.count", 3);
+        INIT_RETRY_DELAY = getPropertyInt("pcj.init.retry.delay", 5);
+        INIT_MAXTIME = getPropertyInt("pcj.init.maxtime", Math.max(30, (INIT_RETRY_COUNT + 1) * INIT_RETRY_DELAY));
+        BUFFER_CHUNK_SIZE = getPropertyInt("pcj.buffer.chunksize", 8 * 1024);
+        BUFFER_POOL_SIZE = getPropertyInt("pcj.buffer.poolsize", 1024);
+        MESSAGE_WORKERS_COUNT = getPropertyInt("pcj.msg.workers.count", Runtime.getRuntime().availableProcessors());
+        MESSAGE_WORKERS_KEEPALIVE = getPropertyInt("pcj.msg.workers.keepalive", 60);
+        ASYNC_WORKERS_COUNT = getPropertyInt("pcj.async.workers.count", Runtime.getRuntime().availableProcessors());
+        ASYNC_WORKERS_KEEPALIVE = getPropertyInt("pcj.async.workers.keepalive", 60);
+        ASYNC_WORKERS_QUEUE_SIZE = getPropertyInt("pcj.async.workers.queuesize", -1);
+        ALIVE_HEARTBEAT = getPropertyInt("pcj.alive.heartbeat", 20);
+        ALIVE_TIMEOUT = getPropertyInt("pcj.alive.timeout", 60);
 
-            if (configAnnotation.type().equals(int.class)) {
-                int defaultValue;
-                if ("#procs".equals(configAnnotation.defaultValue())) {
-                    defaultValue = Runtime.getRuntime().availableProcessors();
-                } else {
-                    defaultValue = Integer.parseInt(configAnnotation.defaultValue());
-                }
-                try {
-                    field.setInt(this, getPropertyInt(configAnnotation.value(), defaultValue));
-                    LOGGER.log(Level.CONFIG, "Configuration: " + configAnnotation.value() + " = {0,number,#}", field.get(this));
-                } catch (IllegalAccessException e) {
-                    throw new PcjRuntimeException("Unable to parse configuration: " + configAnnotation.value(), e);
-                }
-            }
-        }
+        LOGGER.log(Level.CONFIG, "pcj.port:                     {0,number,#}", DEFAULT_PORT);
+        LOGGER.log(Level.CONFIG, "pcj.init.backlog:             {0,number,#}", INIT_BACKLOG_COUNT);
+        LOGGER.log(Level.CONFIG, "pcj.init.retry.count:         {0,number,#}", INIT_RETRY_COUNT);
+        LOGGER.log(Level.CONFIG, "pcj.init.retry.delay:         {0,number,#}", INIT_RETRY_DELAY);
+        LOGGER.log(Level.CONFIG, "pcj.init.maxtime:             {0,number,#}", INIT_MAXTIME);
+        LOGGER.log(Level.CONFIG, "pcj.buffer.chunksize:         {0,number,#}", BUFFER_CHUNK_SIZE);
+        LOGGER.log(Level.CONFIG, "pcj.buffer.poolsize:          {0,number,#}", BUFFER_POOL_SIZE);
+        LOGGER.log(Level.CONFIG, "pcj.msg.workers.count:        {0,number,#}", MESSAGE_WORKERS_COUNT);
+        LOGGER.log(Level.CONFIG, "pcj.msg.workers.keepalive:    {0,number,#}", MESSAGE_WORKERS_KEEPALIVE);
+        LOGGER.log(Level.CONFIG, "pcj.async.workers.count:      {0,number,#}", ASYNC_WORKERS_COUNT);
+        LOGGER.log(Level.CONFIG, "pcj.async.workers.keepalive:  {0,number,#}", ASYNC_WORKERS_KEEPALIVE);
+        LOGGER.log(Level.CONFIG, "pcj.async.workers.queuesize:  {0,number,#}", ASYNC_WORKERS_QUEUE_SIZE);
+        LOGGER.log(Level.CONFIG, "pcj.alive.heartbeat:          {0,number,#}", ALIVE_HEARTBEAT);
+        LOGGER.log(Level.CONFIG, "pcj.alive.timeout:            {0,number,#}", ALIVE_TIMEOUT);
     }
 
     private int getPropertyInt(String name, int defaultValue) {
@@ -142,74 +138,5 @@ public final class Configuration {
 
     public Properties getProperties() {
         return properties;
-    }
-
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target(ElementType.FIELD)
-    private @interface Config {
-
-        String value();
-
-        Class<?> type();
-
-        String defaultValue();
-
-        String description();
-    }
-
-    public int getDefaultPort() {
-        return defaultPort;
-    }
-
-    public int getInitBacklogCount() {
-        return initBacklogCount;
-    }
-
-    public int getInitRetryCount() {
-        return initRetryCount;
-    }
-
-    public int getInitRetryDelay() {
-        return initRetryDelay;
-    }
-
-    public int getInitMaxtime() {
-        return initMaxtime;
-    }
-
-    public int getBufferChunkSize() {
-        return bufferChunkSize;
-    }
-
-    public int getBufferPoolSize() {
-        return bufferPoolSize;
-    }
-
-    public int getMessageWorkersCount() {
-        return messageWorkersCount;
-    }
-
-    public int getMessageWorkersKeepalive() {
-        return messageWorkersKeepalive;
-    }
-
-    public int getAsyncWorkersCount() {
-        return asyncWorkersCount;
-    }
-
-    public int getAsyncWorkersKeepalive() {
-        return asyncWorkersKeepalive;
-    }
-
-    public int getAsyncWorkersQueueSize() {
-        return asyncWorkersQueueSize;
-    }
-
-    public int getAliveHeartbeat() {
-        return aliveHeartbeat;
-    }
-
-    public int getAliveTimeout() {
-        return aliveTimeout;
     }
 }
