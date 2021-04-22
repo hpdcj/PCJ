@@ -250,7 +250,7 @@ public abstract class InternalPCJ {
             networker.send(nodeData.getNode0Socket(), helloMessage);
 
             /* waiting for HELLO_GO */
-            state.await(InternalPCJ.getConfiguration().INIT_MAXTIME);
+            state.await(InternalPCJ.getConfiguration().getInitMaxtime());
         } catch (InterruptedException ex) {
             throw new PcjRuntimeException("Interruption occurred while waiting for finish HELLO phase");
         } catch (TimeoutException e) {
@@ -270,16 +270,16 @@ public abstract class InternalPCJ {
             PcjThread.PcjThreadGroup pcjThreadGroup = PcjThread.createPcjThreadGroup(threadId, pcjThreadData);
 
             BlockingQueue<Runnable> blockingQueue;
-            if (InternalPCJ.getConfiguration().ASYNC_WORKERS_QUEUE_SIZE > 0) {
-                blockingQueue = new ArrayBlockingQueue<>(InternalPCJ.getConfiguration().ASYNC_WORKERS_QUEUE_SIZE);
-            } else if (InternalPCJ.getConfiguration().ASYNC_WORKERS_QUEUE_SIZE == 0) {
+            if (InternalPCJ.getConfiguration().getAsyncWorkersQueueSize() > 0) {
+                blockingQueue = new ArrayBlockingQueue<>(InternalPCJ.getConfiguration().getAsyncWorkersQueueSize());
+            } else if (InternalPCJ.getConfiguration().getAsyncWorkersQueueSize() == 0) {
                 blockingQueue = new SynchronousQueue<>();
             } else {
                 blockingQueue = new LinkedBlockingQueue<>();
             }
 
             ExecutorService asyncTasksWorkers = new WorkerPoolExecutor(
-                    InternalPCJ.getConfiguration().ASYNC_WORKERS_COUNT,
+                    InternalPCJ.getConfiguration().getAsyncWorkersCount(),
                     pcjThreadGroup, "PcjThread-" + threadId + "-Task-",
                     blockingQueue,
                     new ThreadPoolExecutor.AbortPolicy());

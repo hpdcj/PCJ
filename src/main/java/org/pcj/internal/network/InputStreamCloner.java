@@ -20,7 +20,7 @@ import org.pcj.internal.InternalPCJ;
  */
 public class InputStreamCloner {
 
-    private static final int CHUNK_SIZE = InternalPCJ.getConfiguration().BUFFER_CHUNK_SIZE;
+    private static final int CHUNK_SIZE = InternalPCJ.getConfiguration().getBufferChunkSize();
     private static final byte[] EMPTY_ARRAY = new byte[0];
     private final List<byte[]> bytesList;
     private long length;

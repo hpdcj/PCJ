@@ -68,7 +68,7 @@ public abstract class InternalExecutionBuilder {
             throw new IllegalArgumentException("nodesList is null or empty");
         }
 
-        int defaultPort = InternalPCJ.getConfiguration().DEFAULT_PORT;
+        int defaultPort = InternalPCJ.getConfiguration().getDefaultPort();
 
         Map<String, NodeInfo> nodesMap = new LinkedHashMap<>();
         int clientsCount = 0;

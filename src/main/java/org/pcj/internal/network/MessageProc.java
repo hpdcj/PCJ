@@ -32,13 +32,13 @@ public final class MessageProc {
         ThreadGroup threadGroup = new ThreadGroup("MessageProc");
 
         workers = new WorkerPoolExecutor(
-                InternalPCJ.getConfiguration().MESSAGE_WORKERS_COUNT,
+                InternalPCJ.getConfiguration().getMessageWorkersCount(),
                 threadGroup, "MessageProc-Worker-",
                 new LinkedBlockingQueue<>(),
                 new ThreadPoolExecutor.AbortPolicy());
 
         localWorkers = new WorkerPoolExecutor(
-                InternalPCJ.getConfiguration().MESSAGE_WORKERS_COUNT,
+                InternalPCJ.getConfiguration().getMessageWorkersCount(),
                 threadGroup, "MessageProc-LocalWorker-",
                 new LinkedBlockingQueue<>(),
                 new ThreadPoolExecutor.AbortPolicy());
