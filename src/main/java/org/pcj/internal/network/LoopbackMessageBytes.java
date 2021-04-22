@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2021, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -10,11 +10,6 @@ package org.pcj.internal.network;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
-import org.pcj.PcjRuntimeException;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.message.Message;
 

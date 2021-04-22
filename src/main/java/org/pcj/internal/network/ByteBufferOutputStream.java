@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2021, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -12,7 +12,6 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
-import org.pcj.internal.InternalPCJ;
 
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)

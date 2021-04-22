@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2021, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -10,7 +10,6 @@ package org.pcj.internal;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2021, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -10,7 +10,6 @@ package org.pcj.internal.message.bye;
 
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Logger;
 import org.pcj.internal.InternalFuture;
 import org.pcj.internal.InternalGroup;
 import org.pcj.internal.InternalPCJ;

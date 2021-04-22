@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2021, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -8,14 +8,6 @@
  */
 package org.pcj.internal;
 
-import org.pcj.PcjRuntimeException;
-import org.pcj.StartPoint;
-import org.pcj.internal.message.alive.AliveState;
-import org.pcj.internal.message.bye.ByeState;
-import org.pcj.internal.message.hello.HelloMessage;
-import org.pcj.internal.message.hello.HelloState;
-import org.pcj.internal.network.LoopbackSocketChannel;
-import org.pcj.internal.network.MessageProc;
 import java.io.UncheckedIOException;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
@@ -24,9 +16,25 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.pcj.PcjRuntimeException;
+import org.pcj.StartPoint;
+import org.pcj.internal.message.alive.AliveState;
+import org.pcj.internal.message.bye.ByeState;
+import org.pcj.internal.message.hello.HelloMessage;
+import org.pcj.internal.message.hello.HelloState;
+import org.pcj.internal.network.LoopbackSocketChannel;
+import org.pcj.internal.network.MessageProc;
 
 /**
  * Internal class for external PCJ class.
