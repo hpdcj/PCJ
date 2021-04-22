@@ -400,7 +400,7 @@ public final class PCJ {
      * @param <T>      type of value
      * @param variable variable name
      * @param indices  (optional) indices for array variable
-     * @return {@link org.pcj.PcjFuture} that will contain shareable variable values in form of array
+     * @return shareable variable values in form of array
      */
     public static <T> T collect(Enum<?> variable, int... indices) throws PcjRuntimeException {
         return PCJ.<T>asyncCollect(variable, indices).get();
@@ -450,7 +450,7 @@ public final class PCJ {
      * @param threadId global PCJ Thread id
      * @param variable variable name
      * @param indices  (optional) indices for array variable
-     * @return {@link org.pcj.PcjFuture} for checking the operation state
+     * @return {@link org.pcj.PcjFuture}&lt;{@link java.lang.Void}&gt; for checking the operation state
      */
     public static <T> PcjFuture<Void> asyncPut(T newValue, int threadId, Enum<?> variable, int... indices) {
         return getGlobalGroup().asyncPut(newValue, threadId, variable, indices);
@@ -487,7 +487,7 @@ public final class PCJ {
      * @param threadId global PCJ Thread id
      * @param variable variable name
      * @param indices  (optional) indices for array variable
-     * @return {@link org.pcj.PcjFuture}
+     * @return {@link org.pcj.PcjFuture}&lt;{@link java.lang.Void}&gt; for checking the operation state
      */
     public static <T> PcjFuture<Void> asyncAccumulate(ReduceOperation<T> function, T newValue, int threadId, Enum<?> variable, int... indices) {
         return getGlobalGroup().asyncAccumulate(function, newValue, threadId, variable, indices);
@@ -523,7 +523,7 @@ public final class PCJ {
      * @param newValue new variable value
      * @param variable variable name
      * @param indices  (optional) indices for array variable
-     * @return {@link org.pcj.PcjFuture}&lt;{@link java.lang.Void}&gt;
+     * @return {@link org.pcj.PcjFuture}&lt;{@link java.lang.Void}&gt; for checking the operation state
      */
     public static <T> PcjFuture<Void> asyncBroadcast(T newValue, Enum<?> variable, int... indices) {
         return getGlobalGroup().asyncBroadcast(newValue, variable, indices);
@@ -610,10 +610,41 @@ public final class PCJ {
     }
 
     /**
-     * TODO: Write description
-     * @param split
-     * @param ordering
-     * @return
+     * Asynchronous collective split group operation. This method has to be invoked by all threads in a group.
+     * <p>
+     * Splits global group into subgroups based on the split and ordering parameters.
+     * <p>
+     * Split parameter can be {@code null} which means the thread would not be included in any of new group.
+     * <p>
+     * Ordering determines the PCJ Thread id in new group.
+     * The smaller number of ordering means smaller PCJ Thread id in subgroup.
+     * When multiple PCJ Threads gives the same ordering value,
+     * the original group PCJ Thread id will be used to break a tie.
+     *
+     * @param split    control of subgroup assignment
+     *                 or {@code null} if the thread would not be included in any of new group
+     * @param ordering control of PCJ Thread id assignment
+     * @return {@link org.pcj.PcjFuture} that will contains {@link org.pcj.Group} of subgroup
+     * or {@code null} if the thread would not be included in any of new group
+     */
+    public static PcjFuture<Group> asyncSplitGroup(Integer split, int ordering) {
+        return getGlobalGroup().asyncSplitGroup(split, ordering);
+    }
+
+    /**
+     * Synchronous collective split group operation. This method has to be invoked by all threads in a group.
+     * <p>
+     * Splits global group into subgroups based on the split and ordering parameters.
+     * <p>
+     * Wrapper for {@link #asyncSplitGroup(Integer, int)}.
+     * <p>
+     * It is the equivalent to call:
+     * <blockquote>{@code PCJ.asyncSplitGroup(split, ordering).get();}</blockquote>
+     *
+     * @param split    control of subgroup assignment
+     *                 or {@code null} if the thread would not be included in any of new group
+     * @param ordering control of PCJ Thread id assignment
+     * @return {@link org.pcj.Group} of subgroup or {@code null} if the thread would not be included in any of new group
      */
     public static Group splitGroup(Integer split, int ordering) {
         return getGlobalGroup().asyncSplitGroup(split, ordering).get();

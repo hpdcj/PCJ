@@ -38,7 +38,8 @@ compileJava {
 
     options.compilerArgs = [
             '--release', '8',
-            '-Xlint:unchecked'
+            '-Xlint:unchecked',
+            '-Xlint:deprecation'
     ]
 }
 
@@ -73,7 +74,7 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
 
     from 'LICENSE'
     from javadoc.destinationDir
-    classifier = 'javadoc'
+    archiveClassifier = 'javadoc'
 }
 
 task sourcesJar(type: Jar) {
@@ -83,7 +84,7 @@ task sourcesJar(type: Jar) {
     from 'LICENSE'
     from sourceSets.main.allJava
     from sourceSets.main.resources
-    classifier = 'sources'
+    archiveClassifier = 'sources'
 }
 
 task snapshotBuild {
@@ -204,7 +205,7 @@ gradle.taskGraph.whenReady { taskGraph ->
 
     version = "$versionNumber.$buildNumber"
     jar.doFirst {
-        classifier = ''
+        archiveClassifier = ''
         manifest {
             attributes(
                     'Specification-Version': "$version",
