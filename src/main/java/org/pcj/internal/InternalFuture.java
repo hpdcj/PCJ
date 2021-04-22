@@ -39,7 +39,7 @@ public abstract class InternalFuture<T> {
 
     final protected void await() throws InterruptedException {
         synchronized (lock) {
-            while (signaled == false) {
+            while (!signaled) {
                 lock.wait();
             }
         }
@@ -50,7 +50,7 @@ public abstract class InternalFuture<T> {
         final long deadline = System.nanoTime() + nanosTimeout;
 
         synchronized (lock) {
-            while (signaled == false) {
+            while (!signaled) {
                 if (nanosTimeout <= 0L) {
                     throw new TimeoutException("Not done yet.");
                 }

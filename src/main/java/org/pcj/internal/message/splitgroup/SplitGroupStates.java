@@ -56,7 +56,7 @@ public class SplitGroupStates {
         return stateMap.remove(round);
     }
 
-    public class State {
+    public static class State {
         private final int round;
         private final AtomicReference<NotificationCount> notificationCount;
         private final AtomicInteger readyToGoNotificationCount;
@@ -127,7 +127,7 @@ public class SplitGroupStates {
             InternalPCJ.getNetworker().send(socket, message);
         }
 
-        private void signalDone() {
+        protected void signalDone() {
             futureMap.values().forEach(SplitGroupFuture::signalDone);
         }
 
@@ -147,15 +147,17 @@ public class SplitGroupStates {
                               .map(Map.Entry::getKey)
                               .collect(Collectors.groupingBy(threadId -> splitNumToGroupIdMap.get(splitMap.get(threadId))));
 
-            NodeData nodeData = InternalPCJ.getNodeData();
-            Message message = new SplitGroupResponseMessage(group.getGroupId(), round, threadGroupIdMap);
-            SocketChannel socket = nodeData.getSocketChannelByPhysicalId(nodeData.getCurrentNodePhysicalId());
-
-            InternalPCJ.getNetworker().send(socket, message);
+            createGroups(group, threadGroupIdMap);
         }
 
         protected void createGroups(InternalCommonGroup group, Map<Integer, List<Integer>> threadGroupIdMap) {
             NodeData nodeData = InternalPCJ.getNodeData();
+
+            Message message = new SplitGroupResponseMessage(group.getGroupId(), round, threadGroupIdMap);
+            group.getCommunicationTree().getChildrenNodes().stream()
+                    .map(nodeData::getSocketChannelByPhysicalId)
+                    .forEach(socket -> InternalPCJ.getNetworker().send(socket, message));
+
 
             Set<Integer> localThreadsId = group.getLocalThreadsId();
             // mapping: thread groupId -> groupId
@@ -165,7 +167,6 @@ public class SplitGroupStates {
                 }
 
                 InternalCommonGroup newCommonGroup = nodeData.getOrCreateCommonGroup(entry.getKey());
-                System.out.println(nodeData.getCurrentNodePhysicalId()+" newGroup: "+entry.getKey()+" "+newCommonGroup);
 
                 Map<Integer, Integer> groupIdGlobalIdMap = new HashMap<>();
                 int newThreadId = 0;
@@ -193,33 +194,35 @@ public class SplitGroupStates {
             if (leftPhysical == 0) {
                 NodeData nodeData = InternalPCJ.getNodeData();
 
+                Message message;
+                SocketChannel socket;
+
                 int parentId = group.getCommunicationTree().getParentNode();
                 if (parentId >= 0) {
-                    SplitGroupGoMessage message = new SplitGroupGoMessage(group.getGroupId(), round);
-                    SocketChannel socket = nodeData.getSocketChannelByPhysicalId(parentId);
-
-                    InternalPCJ.getNetworker().send(socket, message);
+                    message = new SplitGroupWaitingMessage(group.getGroupId(), round);
+                    socket = nodeData.getSocketChannelByPhysicalId(parentId);
+                } else {
+                    message = new SplitGroupGoMessage(group.getGroupId(), round);
+                    socket = nodeData.getSocketChannelByPhysicalId(nodeData.getCurrentNodePhysicalId());
                 }
 
-                SplitGroupStates.this.remove(round);
-
-                signalDone();
+                InternalPCJ.getNetworker().send(socket, message);
             }
         }
-    }
 
-    private static class NotificationCount {
+        private static class NotificationCount {
 
-        private final int local;
-        private final int physical;
+            private final int local;
+            private final int physical;
 
-        public NotificationCount(int local, int physical) {
-            this.local = local;
-            this.physical = physical;
-        }
+            public NotificationCount(int local, int physical) {
+                this.local = local;
+                this.physical = physical;
+            }
 
-        boolean isDone() {
-            return local == 0 && physical == 0;
+            boolean isDone() {
+                return local == 0 && physical == 0;
+            }
         }
     }
 }

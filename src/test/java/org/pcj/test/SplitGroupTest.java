@@ -98,11 +98,16 @@ public class SplitGroupTest implements StartPoint {
         PCJ.barrier();
 
         Group gOddEvenReversed = PCJ.splitGroup((PCJ.myId() % 2), PCJ.threadCount() - PCJ.myId());
+        System.out.println(PCJ.getNodeId() + " gOddEvenReversed received");
         for (int i = 0; i < gOddEvenReversed.threadCount(); ++i) {
             if (gOddEvenReversed.myId() == i) {
-                System.out.println(">>> global: " + PCJ.myId() + ", group: " + gOddEvenReversed.myId() + "/" + gOddEvenReversed.threadCount());
+                System.out.println(">>> MINE " + PCJ.myId() + "(" + gOddEvenReversed.myId() + ")/" + gOddEvenReversed.threadCount());
+            } else {
+                System.out.println("OTHER " + i + " " + PCJ.myId() + "(" + gOddEvenReversed.myId() + ")/" + gOddEvenReversed.threadCount());
             }
             gOddEvenReversed.asyncBarrier().get();
         }
+        PCJ.barrier();
+        System.out.println("FINISHED " + PCJ.myId() + "(" + gOddEvenReversed.myId()+")");
     }
 }

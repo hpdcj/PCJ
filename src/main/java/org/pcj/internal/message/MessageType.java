@@ -46,6 +46,7 @@ import org.pcj.internal.message.splitgroup.SplitGroupGoMessage;
 import org.pcj.internal.message.splitgroup.SplitGroupQueryMessage;
 import org.pcj.internal.message.splitgroup.SplitGroupRequestMessage;
 import org.pcj.internal.message.splitgroup.SplitGroupResponseMessage;
+import org.pcj.internal.message.splitgroup.SplitGroupWaitingMessage;
 
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
@@ -69,6 +70,7 @@ public enum MessageType {
     SPLIT_GROUP_RESPONSE(SplitGroupResponseMessage::new),
     SPLIT_GROUP_QUERY(SplitGroupQueryMessage::new),
     SPLIT_GROUP_ANSWER(SplitGroupAnswerMessage::new),
+    SPLIT_GROUP_WAITING(SplitGroupWaitingMessage::new),
     SPLIT_GROUP_GO(SplitGroupGoMessage::new),
     VALUE_GET_REQUEST(ValueGetRequestMessage::new),
     VALUE_GET_RESPONSE(ValueGetResponseMessage::new),
@@ -87,8 +89,7 @@ public enum MessageType {
     REDUCE_VALUE(ReduceValueMessage::new),
     REDUCE_RESPONSE(ReduceResponseMessage::new),
     ASYNC_AT_REQUEST(AsyncAtRequestMessage::new),
-    ASYNC_AT_RESPONSE(AsyncAtResponseMessage::new),
-    ;
+    ASYNC_AT_RESPONSE(AsyncAtResponseMessage::new);
     /* **************************************************** */
     private static final Map<Byte, MessageType> map;
 
