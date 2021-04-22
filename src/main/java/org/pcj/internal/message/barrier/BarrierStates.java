@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2021, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -71,7 +71,7 @@ public class BarrierStates {
             }
         }
 
-        public void processPhysical(InternalCommonGroup group) {
+        protected void processPhysical(InternalCommonGroup group) {
             NotificationCount count = notificationCount.updateAndGet(
                     old -> new NotificationCount(old.local, old.physical - 1));
 
@@ -97,7 +97,7 @@ public class BarrierStates {
             InternalPCJ.getNetworker().send(socket, message);
         }
 
-        public void signalDone() {
+        protected void signalDone() {
             future.signalDone();
         }
 

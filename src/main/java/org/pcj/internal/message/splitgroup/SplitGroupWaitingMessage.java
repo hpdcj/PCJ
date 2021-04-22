@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2021, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -53,6 +53,7 @@ public final class SplitGroupWaitingMessage extends Message {
         NodeData nodeData = InternalPCJ.getNodeData();
 
         InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
+
         SplitGroupStates states = commonGroup.getSplitGroupStates();
         SplitGroupStates.State state = states.getOrCreate(round, commonGroup);
         state.readyToGo(commonGroup);

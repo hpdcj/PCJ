@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2021, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -28,8 +28,7 @@ public class SplitGroupTest implements StartPoint {
         logger.setLevel(level);
 
         String[] nodes = {
-                "localhost:8091",
-                "localhost:8091", "localhost:8091",
+                "localhost:8091", "localhost:8091", "localhost:8091",
                 "localhost:8002",
                 "localhost:8003",
                 "localhost:8004",
@@ -47,49 +46,52 @@ public class SplitGroupTest implements StartPoint {
 
     @Override
     public void main() throws Throwable {
-//        if (PCJ.myId() == 0) {
-//            System.out.println("***** no join *****");
-//        }
-//        PCJ.barrier();
-//
-//        Group gNull = PCJ.splitGroup(null, 0);
-//        for (int i = 0; i < PCJ.threadCount(); ++i) {
-//            if (PCJ.myId() == i) {
-//                System.out.println(">>> global: " + PCJ.myId() + ", group: " + gNull);
-//            }
-//            PCJ.barrier();
-//        }
+        if (PCJ.myId() == 0) {
+            System.out.println("***** no join *****");
+        }
+        PCJ.barrier();
 
+        Group gNull = PCJ.splitGroup(null, 0);
+        for (int i = 0; i < PCJ.threadCount(); ++i) {
+            if (PCJ.myId() == i) {
+                System.out.println(">>> global: " + PCJ.myId() + ", group: " + gNull);
+            }
+            PCJ.barrier();
+        }
 
-//        PCJ.barrier();
-//        if (PCJ.myId() == 0) {
-//            System.out.println("***** odd/even *****");
-//        }
-//        PCJ.barrier();
-//
-//        Group gOddEven = PCJ.splitGroup((PCJ.myId() % 2), 0);
-//        for (int i = 0; i < gOddEven.threadCount(); ++i) {
-//            if (gOddEven.myId() == i) {
-//                System.out.println(">>> global: " + PCJ.myId() + ", group: " + gOddEven.myId() + "/" + gOddEven.threadCount());
-//            }
-//            gOddEven.asyncBarrier().get();
-//        }
+        // -------
 
+        PCJ.barrier();
+        if (PCJ.myId() == 0) {
+            System.out.println("***** odd/even *****");
+        }
+        PCJ.barrier();
 
-//        PCJ.barrier();
-//        if (PCJ.myId() == 0) {
-//            System.out.println("***** odd/even in subgroups *****");
-//        }
-//        PCJ.barrier();
-//
-//        Group gSubGroup = gOddEven.asyncSplitGroup(gOddEven.myId() % 2, 0).get();
-//        for (int i = 0; i < gSubGroup.threadCount(); ++i) {
-//            if (gSubGroup.myId() == i) {
-//                System.out.println(">>> global: " + PCJ.myId() + ", oddEven: " + gOddEven.myId() + ", group: " + gSubGroup.myId() + "/" + gSubGroup.threadCount());
-//            }
-//            gSubGroup.asyncBarrier().get();
-//        }
+        Group gOddEven = PCJ.splitGroup((PCJ.myId() % 2), 0);
+        for (int i = 0; i < gOddEven.threadCount(); ++i) {
+            if (gOddEven.myId() == i) {
+                System.out.println(">>> global: " + PCJ.myId() + ", group: " + gOddEven.myId() + "/" + gOddEven.threadCount());
+            }
+            gOddEven.asyncBarrier().get();
+        }
 
+        // -------
+
+        PCJ.barrier();
+        if (PCJ.myId() == 0) {
+            System.out.println("***** odd/even in subgroups *****");
+        }
+        PCJ.barrier();
+
+        Group gSubGroup = gOddEven.asyncSplitGroup(gOddEven.myId() % 2, 0).get();
+        for (int i = 0; i < gSubGroup.threadCount(); ++i) {
+            if (gSubGroup.myId() == i) {
+                System.out.println(">>> global: " + PCJ.myId() + ", oddEven: " + gOddEven.myId() + ", group: " + gSubGroup.myId() + "/" + gSubGroup.threadCount());
+            }
+            gSubGroup.asyncBarrier().get();
+        }
+
+        // -------
 
         PCJ.barrier();
         if (PCJ.myId() == 0) {
@@ -98,16 +100,12 @@ public class SplitGroupTest implements StartPoint {
         PCJ.barrier();
 
         Group gOddEvenReversed = PCJ.splitGroup((PCJ.myId() % 2), PCJ.threadCount() - PCJ.myId());
-        System.out.println(PCJ.getNodeId() + " gOddEvenReversed received");
         for (int i = 0; i < gOddEvenReversed.threadCount(); ++i) {
             if (gOddEvenReversed.myId() == i) {
-                System.out.println(">>> MINE " + PCJ.myId() + "(" + gOddEvenReversed.myId() + ")/" + gOddEvenReversed.threadCount());
-            } else {
-                System.out.println("OTHER " + i + " " + PCJ.myId() + "(" + gOddEvenReversed.myId() + ")/" + gOddEvenReversed.threadCount());
+                System.out.println(">>> global: " + PCJ.myId() + ", group: " + gOddEvenReversed.myId() + "/" + gOddEvenReversed.threadCount());
             }
             gOddEvenReversed.asyncBarrier().get();
         }
         PCJ.barrier();
-        System.out.println("FINISHED " + PCJ.myId() + "(" + gOddEvenReversed.myId()+")");
     }
 }

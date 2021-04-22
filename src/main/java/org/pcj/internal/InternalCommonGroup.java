@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2021, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -158,7 +158,7 @@ public class InternalCommonGroup {
             if (currentIndex < 0) {
                 return -1;
             }
-            if (physicalIds.get(currentIndex) == shift) { // if root after shift
+            if (currentIndex == shift) { // if root after shift
                 return -1;
             }
             int index = (((currentIndex - shift - 1 + physicalIds.size()) % physicalIds.size()) / 2 + shift) % physicalIds.size();
@@ -193,7 +193,6 @@ public class InternalCommonGroup {
                                   .map(nodeData::getPhysicalId)
                                   .distinct()
                                   .collect(Collectors.toList());
-
             int currentPhysicalId = nodeData.getCurrentNodePhysicalId();
             currentIndex = physicalIds.indexOf(currentPhysicalId);
         }
