@@ -9,9 +9,11 @@
 package org.pcj.internal.message.reduce;
 
 import java.io.IOException;
+import java.io.WriteAbortedException;
 import java.nio.channels.SocketChannel;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.logging.Level;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
@@ -72,6 +74,9 @@ public final class ReduceValueMessage<T> extends Message {
             } else {
                 exceptions = (Queue<Exception>) in.readObject();
             }
+        } catch (WriteAbortedException ex) {
+            LOGGER.log(Level.WARNING, "WriteAbortedException occurred: {0}", ex.getMessage());
+            return;
         } catch (Exception ex) {
             exceptions = new ConcurrentLinkedQueue<>();
             exceptions.add(ex);

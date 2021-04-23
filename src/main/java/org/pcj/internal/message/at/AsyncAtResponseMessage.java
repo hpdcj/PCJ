@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2021, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -9,7 +9,9 @@
 package org.pcj.internal.message.at;
 
 import java.io.IOException;
+import java.io.WriteAbortedException;
 import java.nio.channels.SocketChannel;
+import java.util.logging.Level;
 import org.pcj.internal.InternalGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.NodeData;
@@ -80,6 +82,9 @@ public class AsyncAtResponseMessage extends Message {
             } else {
                 exception = (Exception) in.readObject();
             }
+        } catch (WriteAbortedException ex) {
+            LOGGER.log(Level.WARNING, "WriteAbortedException occurred: {0}", ex.getMessage());
+            return;
         } catch (Exception ex) {
             exception = ex;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2021, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -79,11 +79,12 @@ public class ValueGetRequestMessage extends Message {
         try {
             Object variableValue = storage.get(sharedEnumClassName, name, indices);
 
-            ValueGetResponseMessage valueGetResponseMessage = new ValueGetResponseMessage(groupId, requestNum, requesterThreadId, variableValue);
-            networker.send(sender, valueGetResponseMessage);
-        } catch (Exception ex) {
-            ValueGetResponseMessage valueGetResponseMessage = new ValueGetResponseMessage(groupId, requestNum, requesterThreadId, ex);
-            networker.send(sender, valueGetResponseMessage);
+            Message message = new ValueGetResponseMessage(groupId, requestNum, requesterThreadId, variableValue);
+            networker.send(sender, message);
+        } catch(Exception ex) {
+            Message message = new ValueGetResponseMessage(groupId, requestNum, requesterThreadId, ex);
+            networker.send(sender, message);
         }
+
     }
 }

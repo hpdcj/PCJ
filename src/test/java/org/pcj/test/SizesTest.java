@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Marek Nowicki
+ * Copyright (c) 2016-2021, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -49,7 +49,7 @@ public class SizesTest implements StartPoint {
 
     @Override
     public void main() throws Throwable {
-        for (int n = 0; n < 10000; ++n) {
+        for (int n = 0; n <= 80000; ++n) {
             System.out.println("n=" + n);
             byte[] bytes = new byte[n];
             if (PCJ.myId() == 0) {
