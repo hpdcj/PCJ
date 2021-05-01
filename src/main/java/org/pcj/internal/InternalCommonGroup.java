@@ -184,6 +184,27 @@ public class InternalCommonGroup {
             return children;
         }
 
+        public List<Integer> getSubtree(int shift, int subTreeRootNode) {
+            List<Integer> subTree = new ArrayList<>();
+
+            Queue<Integer> queue = new ArrayDeque<>();
+            int index = physicalIds.indexOf(subTreeRootNode);
+            queue.offer((index + shift) % physicalIds.size());
+            while (!queue.isEmpty()) {
+                index = queue.poll();
+                subTree.add(physicalIds.get(index));
+                int shiftIndex = (index - shift + physicalIds.size()) % physicalIds.size();
+                if (shiftIndex * 2 + 1 < physicalIds.size()) {
+                    queue.offer((shiftIndex * 2 + 1 + shift) % physicalIds.size());
+                }
+                if (shiftIndex * 2 + 2 < physicalIds.size()) {
+                    queue.offer((shiftIndex * 2 + 2 + shift) % physicalIds.size());
+                }
+            }
+
+            return subTree;
+        }
+
         private void update() {
             NodeData nodeData = InternalPCJ.getNodeData();
 
@@ -193,8 +214,8 @@ public class InternalCommonGroup {
                                   .map(nodeData::getPhysicalId)
                                   .distinct()
                                   .collect(Collectors.toList());
-            int currentPhysicalId = nodeData.getCurrentNodePhysicalId();
-            currentIndex = physicalIds.indexOf(currentPhysicalId);
+
+            currentIndex = physicalIds.indexOf(nodeData.getCurrentNodePhysicalId());
         }
     }
 }
