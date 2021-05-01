@@ -31,7 +31,7 @@ public final class BroadcastResponseMessage extends Message {
     private Queue<Exception> exceptions;
 
     public BroadcastResponseMessage() {
-        super(MessageType.VALUE_BROADCAST_INFORM);
+        super(MessageType.VALUE_BROADCAST_RESPONSE);
     }
 
     public BroadcastResponseMessage(int groupId, int requestNum, int requesterThreadId, Queue<Exception> exceptions) {
