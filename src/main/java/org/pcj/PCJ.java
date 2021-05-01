@@ -546,6 +546,15 @@ public final class PCJ {
         PCJ.asyncBroadcast(newValue, variable, indices).get();
     }
 
+
+    private static <T> PcjFuture<Void> asyncScatter(T newValueArray, Enum<?> variable, int... indices) {
+        return getGlobalGroup().asyncScatter(newValueArray, variable, indices);
+    }
+
+    public static <T> void scatter(T newValueArray, Enum<?> variable, int... indices) {
+        PCJ.asyncScatter(newValueArray, variable, indices).get();
+    }
+
     /**
      * Asynchronous execution operation.
      * <p>

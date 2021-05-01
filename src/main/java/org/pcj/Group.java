@@ -154,6 +154,7 @@ public interface Group {
      */
     <T> PcjFuture<Void> asyncBroadcast(T newValue, Enum<?> variable, int... indices);
 
+    <T> PcjFuture<Void> asyncScatter(T newValueArray, Enum<?> variable, int... indices);
     /**
      * Asynchronous execution operation.
      * <p>

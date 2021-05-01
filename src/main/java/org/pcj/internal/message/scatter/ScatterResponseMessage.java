@@ -6,7 +6,7 @@
  *
  * See the file "LICENSE" for the full license governing this code.
  */
-package org.pcj.internal.message.broadcast;
+package org.pcj.internal.message.scatter;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
@@ -23,18 +23,18 @@ import org.pcj.internal.network.MessageDataOutputStream;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public final class BroadcastResponseMessage extends Message {
+public final class ScatterResponseMessage extends Message {
 
     private int groupId;
     private int requestNum;
     private int requesterThreadId;
     private Queue<Exception> exceptions;
 
-    public BroadcastResponseMessage() {
+    public ScatterResponseMessage() {
         super(MessageType.BROADCAST_RESPONSE);
     }
 
-    public BroadcastResponseMessage(int groupId, int requestNum, int requesterThreadId, Queue<Exception> exceptions) {
+    public ScatterResponseMessage(int groupId, int requestNum, int requesterThreadId, Queue<Exception> exceptions) {
         this();
 
         this.groupId = groupId;
@@ -77,8 +77,8 @@ public final class BroadcastResponseMessage extends Message {
         NodeData nodeData = InternalPCJ.getNodeData();
         InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
 
-        BroadcastStates states = commonGroup.getBroadcastStates();
-        BroadcastStates.State state = states.getOrCreate(requestNum, requesterThreadId, commonGroup);
+        ScatterStates states = commonGroup.getScatterStates();
+        ScatterStates.State state = states.getOrCreate(requestNum, requesterThreadId, commonGroup);
         state.upProcessNode(commonGroup, exceptions);
     }
 }

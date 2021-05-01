@@ -8,7 +8,9 @@
  */
 package org.pcj.internal;
 
+import java.lang.reflect.Array;
 import java.nio.channels.SocketChannel;
+import java.util.HashMap;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import org.pcj.AsyncTask;
@@ -31,6 +33,8 @@ import org.pcj.internal.message.peerbarrier.PeerBarrierStates;
 import org.pcj.internal.message.put.ValuePutRequestMessage;
 import org.pcj.internal.message.put.ValuePutStates;
 import org.pcj.internal.message.reduce.ReduceStates;
+import org.pcj.internal.message.scatter.ScatterRequestMessage;
+import org.pcj.internal.message.scatter.ScatterStates;
 import org.pcj.internal.message.splitgroup.SplitGroupStates;
 
 /**
@@ -214,6 +218,47 @@ public final class InternalGroup extends InternalCommonGroup implements Group {
 
         return state.getFuture();
     }
+
+    @Override
+    public <T> PcjFuture<Void> asyncScatter(T newValueArray, Enum<?> variable, int... indices) {
+        ScatterStates states = super.getScatterStates();
+        ScatterStates.State state = states.create(myThreadId, this);
+
+        int length;
+        try {
+            length = Array.getLength(newValueArray);
+            if (length != super.threadCount()) {
+                throw new IllegalArgumentException("Incorrect array size: " + length);
+            }
+        } catch (IllegalArgumentException ex) {
+            Queue<Exception> queue = new ConcurrentLinkedQueue<>();
+            queue.add(ex);
+            state.signal(queue);
+            return state.getFuture();
+        }
+
+        HashMap<Integer, Object> newValueMap = new HashMap<>(length, 1.0f);
+        for (int i = 0; i < length; i++) {
+            newValueMap.put(i, Array.get(newValueArray, i));
+        }
+
+        ScatterRequestMessage message = new ScatterRequestMessage(
+                super.getGroupId(), state.getRequestNum(), myThreadId,
+                variable.getDeclaringClass().getName(), variable.name(), indices, newValueMap);
+
+        NodeData nodeData = InternalPCJ.getNodeData();
+        SocketChannel socket = nodeData.getSocketChannelByPhysicalId(nodeData.getCurrentNodePhysicalId());
+        try {
+            InternalPCJ.getNetworker().send(socket, message);
+        } catch (PcjRuntimeException ex) {
+            Queue<Exception> queue = new ConcurrentLinkedQueue<>();
+            queue.add(ex);
+            state.signal(queue);
+        }
+
+        return state.getFuture();
+    }
+
 
     @Override
     public <T> PcjFuture<T> asyncAt(int threadId, AsyncTask<T> asyncTask) {

@@ -34,7 +34,7 @@ public final class BroadcastBytesMessage extends Message {
     private InputStreamCloner inputStreamCloner;
 
     public BroadcastBytesMessage() {
-        super(MessageType.VALUE_BROADCAST_BYTES);
+        super(MessageType.BROADCAST_BYTES);
     }
 
     public BroadcastBytesMessage(int groupId, int requestNum, int requesterThreadId, String storageName, String variableName, int[] indices, InputStreamCloner inputStreamCloner) {

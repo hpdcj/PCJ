@@ -6,10 +6,11 @@
  *
  * See the file "LICENSE" for the full license governing this code.
  */
-package org.pcj.internal.message.broadcast;
+package org.pcj.internal.message.scatter;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
+import java.util.Map;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.Networker;
@@ -23,7 +24,7 @@ import org.pcj.internal.network.MessageDataOutputStream;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public final class BroadcastRequestMessage extends Message {
+public final class ScatterRequestMessage extends Message {
 
     private int groupId;
     private int requestNum;
@@ -31,13 +32,13 @@ public final class BroadcastRequestMessage extends Message {
     private String sharedEnumClassName;
     private String variableName;
     private int[] indices;
-    private Object newValue;
+    private Object newValueMap;
 
-    public BroadcastRequestMessage() {
-        super(MessageType.BROADCAST_REQUEST);
+    public ScatterRequestMessage() {
+        super(MessageType.SCATTER_REQUEST);
     }
 
-    public BroadcastRequestMessage(int groupId, int requestNum, int requesterThreadId, String storageName, String variableName, int[] indices, Object newValue) {
+    public ScatterRequestMessage(int groupId, int requestNum, int requesterThreadId, String storageName, String variableName, int[] indices, Map<Integer,Object> newValueMap) {
         this();
 
         this.groupId = groupId;
@@ -46,7 +47,7 @@ public final class BroadcastRequestMessage extends Message {
         this.sharedEnumClassName = storageName;
         this.variableName = variableName;
         this.indices = indices;
-        this.newValue = newValue;
+        this.newValueMap = newValueMap;
     }
 
     @Override
@@ -57,7 +58,7 @@ public final class BroadcastRequestMessage extends Message {
         out.writeString(sharedEnumClassName);
         out.writeString(variableName);
         out.writeIntArray(indices);
-        out.writeObject(newValue);
+        out.writeObject(newValueMap);
     }
 
     @Override
@@ -75,6 +76,12 @@ public final class BroadcastRequestMessage extends Message {
         NodeData nodeData = InternalPCJ.getNodeData();
         Networker networker = InternalPCJ.getNetworker();
 
+        try {
+            newValueMap = in.readObject();
+            //storage.put(newValue, sharedEnumClassName, name, indices);
+        } catch (Exception ex) {
+            valuePutResponseMessage.setException(ex);
+        }
         BroadcastBytesMessage broadcastBytesMessage
                 = new BroadcastBytesMessage(groupId, requestNum, requesterThreadId, sharedEnumClassName, variableName, indices, inputStreamCloner);
 
@@ -85,8 +92,8 @@ public final class BroadcastRequestMessage extends Message {
                 .map(nodeData::getSocketChannelByPhysicalId)
                 .forEach(socket -> networker.send(socket, broadcastBytesMessage));
 
-        BroadcastStates states = commonGroup.getBroadcastStates();
-        BroadcastStates.State state = states.getOrCreate(requestNum, requesterThreadId, commonGroup);
+        ScatterStates states = commonGroup.getBroadcastStates();
+        ScatterStates.State state = states.getOrCreate(requestNum, requesterThreadId, commonGroup);
 
         state.downProcessNode(commonGroup, inputStreamCloner, sharedEnumClassName, variableName, indices);
     }

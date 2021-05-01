@@ -40,6 +40,8 @@ import org.pcj.internal.message.put.ValuePutResponseMessage;
 import org.pcj.internal.message.reduce.ReduceRequestMessage;
 import org.pcj.internal.message.reduce.ReduceResponseMessage;
 import org.pcj.internal.message.reduce.ReduceValueMessage;
+import org.pcj.internal.message.scatter.ScatterRequestMessage;
+import org.pcj.internal.message.scatter.ScatterResponseMessage;
 import org.pcj.internal.message.splitgroup.SplitGroupAnswerMessage;
 import org.pcj.internal.message.splitgroup.SplitGroupGoMessage;
 import org.pcj.internal.message.splitgroup.SplitGroupQueryMessage;
@@ -77,9 +79,11 @@ public enum MessageType {
     VALUE_PUT_RESPONSE(ValuePutResponseMessage::new),
     VALUE_ACCUMULATE_REQUEST(ValueAccumulateRequestMessage::new),
     VALUE_ACCUMULATE_RESPONSE(ValueAccumulateResponseMessage::new),
-    VALUE_BROADCAST_REQUEST(BroadcastRequestMessage::new),
-    VALUE_BROADCAST_BYTES(BroadcastBytesMessage::new),
-    VALUE_BROADCAST_RESPONSE(BroadcastResponseMessage::new),
+    BROADCAST_REQUEST(BroadcastRequestMessage::new),
+    BROADCAST_BYTES(BroadcastBytesMessage::new),
+    BROADCAST_RESPONSE(BroadcastResponseMessage::new),
+    SCATTER_REQUEST(ScatterRequestMessage::new),
+    SCATTER_RESPONSE(ScatterResponseMessage::new),
     COLLECT_REQUEST(CollectRequestMessage::new),
     COLLECT_VALUE(CollectValueMessage::new),
     COLLECT_RESPONSE(CollectResponseMessage::new),
