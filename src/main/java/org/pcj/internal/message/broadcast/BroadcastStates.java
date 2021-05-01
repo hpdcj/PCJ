@@ -137,19 +137,15 @@ public class BroadcastStates {
                     BroadcastStates.this.remove(requestNum, requesterThreadId);
                 }
 
-                Message message;
-                SocketChannel socket;
-
                 int parentId = group.getCommunicationTree().getParentNode(requesterPhysicalId);
-                if (parentId>=0) {
-                    message = new BroadcastInformMessage(group.getGroupId(), requestNum, requesterThreadId, exceptions);
-                    socket = nodeData.getSocketChannelByPhysicalId(parentId);
+                if (parentId >= 0) {
+                    Message message = new BroadcastResponseMessage(group.getGroupId(), requestNum, requesterThreadId, exceptions);
+                    SocketChannel socket = nodeData.getSocketChannelByPhysicalId(parentId);
+                    InternalPCJ.getNetworker().send(socket, message);
                 } else {
-                    message = new BroadcastResponseMessage(group.getGroupId(), requestNum, requesterThreadId, exceptions);
-                    socket = nodeData.getSocketChannelByPhysicalId(requesterPhysicalId);
+                    BroadcastStates.State state = BroadcastStates.this.remove(requestNum, requesterThreadId);
+                    state.signal(exceptions);
                 }
-
-                InternalPCJ.getNetworker().send(socket, message);
             }
         }
 

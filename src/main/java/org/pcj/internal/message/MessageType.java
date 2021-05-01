@@ -20,9 +20,8 @@ import org.pcj.internal.message.at.AsyncAtResponseMessage;
 import org.pcj.internal.message.barrier.GroupBarrierGoMessage;
 import org.pcj.internal.message.barrier.GroupBarrierWaitingMessage;
 import org.pcj.internal.message.broadcast.BroadcastBytesMessage;
-import org.pcj.internal.message.broadcast.BroadcastInformMessage;
-import org.pcj.internal.message.broadcast.BroadcastRequestMessage;
 import org.pcj.internal.message.broadcast.BroadcastResponseMessage;
+import org.pcj.internal.message.broadcast.BroadcastRequestMessage;
 import org.pcj.internal.message.bye.ByeCompletedMessage;
 import org.pcj.internal.message.bye.ByeNotifyMessage;
 import org.pcj.internal.message.collect.CollectRequestMessage;
@@ -80,7 +79,6 @@ public enum MessageType {
     VALUE_ACCUMULATE_RESPONSE(ValueAccumulateResponseMessage::new),
     VALUE_BROADCAST_REQUEST(BroadcastRequestMessage::new),
     VALUE_BROADCAST_BYTES(BroadcastBytesMessage::new),
-    VALUE_BROADCAST_INFORM(BroadcastInformMessage::new),
     VALUE_BROADCAST_RESPONSE(BroadcastResponseMessage::new),
     COLLECT_REQUEST(CollectRequestMessage::new),
     COLLECT_VALUE(CollectValueMessage::new),
