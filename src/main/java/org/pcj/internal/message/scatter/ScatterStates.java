@@ -122,6 +122,7 @@ public class ScatterStates {
             Map<Integer, Integer> groupIdToGlobalIdMap = group.getThreadsMap();
             for (int childrenNode : childrenNodes) {
                 List<Integer> subTree = group.getCommunicationTree().getSubtree(requesterPhysicalId, childrenNode);
+
                 Map<Integer, Object> subTreeNewValueMap = groupIdToGlobalIdMap.entrySet()
                         .stream()
                         .filter(entry -> subTree.contains(nodeData.getPhysicalId(entry.getValue())))
@@ -131,6 +132,7 @@ public class ScatterStates {
                 ScatterRequestMessage message = new ScatterRequestMessage(
                         group.getGroupId(), requestNum, requesterThreadId,
                         sharedEnumClassName, name, indices, subTreeNewValueMap);
+
                 SocketChannel socket = nodeData.getSocketChannelByPhysicalId(childrenNode);
                 networker.send(socket, message);
             }

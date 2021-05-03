@@ -60,46 +60,50 @@ public class ScatterTest implements StartPoint {
 
     @Override
     public void main() {
-        // value
-        if (PCJ.myId() == 0) {
-            int[] array = IntStream.range(1, PCJ.threadCount() + 1).toArray();
-            PCJ.scatter(array, Communicable.intValue);
-        }
-        for (int i = 0; i < PCJ.threadCount(); ++i) {
-            if (PCJ.myId() == i) {
-                PCJ.waitFor(Communicable.intValue);
-                System.out.println(PCJ.myId() + " -> " + PCJ.getLocal(Communicable.intValue));
-            }
-            PCJ.barrier();
-        }
-        PCJ.barrier();
+        for (int threadId = 0; threadId < PCJ.threadCount(); ++threadId) {
+            // value
+            if (PCJ.myId() == threadId) {
+                System.out.println("--- " + PCJ.myId() + " ---");
 
-        // array
-        if (PCJ.myId() == 0) {
-            int[] array = IntStream.range(1, PCJ.threadCount() + 1).toArray();
-            PCJ.scatter(array, Communicable.intArray, 0);
-        }
-        for (int i = 0; i < PCJ.threadCount(); ++i) {
-            if (PCJ.myId() == i) {
-                PCJ.waitFor(Communicable.intArray);
-                System.out.println(PCJ.myId() + " -> " + Arrays.toString(intArray));
+                int[] array = IntStream.range(1, PCJ.threadCount() + 1).toArray();
+                PCJ.scatter(array, Communicable.intValue);
+            }
+            for (int i = 0; i < PCJ.threadCount(); ++i) {
+                if (PCJ.myId() == i) {
+                    PCJ.waitFor(Communicable.intValue);
+                    System.out.println(PCJ.myId() + " -> " + intValue);
+                }
+                PCJ.barrier();
             }
             PCJ.barrier();
-        }
-        PCJ.barrier();
 
-        // null
-        if (PCJ.myId() == 0) {
-            Serializable[] array = new Serializable[PCJ.threadCount()];
-            PCJ.scatter(array, Communicable.nullObject);
-        }
-        for (int i = 0; i < PCJ.threadCount(); ++i) {
-            if (PCJ.myId() == i) {
-                PCJ.waitFor(Communicable.nullObject);
-                System.out.println(PCJ.myId() + " -> " + nullObject);
+            // array
+            if (PCJ.myId() == threadId) {
+                int[] array = IntStream.range(100*threadId+1,100*threadId+ PCJ.threadCount() + 1).toArray();
+                PCJ.scatter(array, Communicable.intArray, 0);
+            }
+            for (int i = 0; i < PCJ.threadCount(); ++i) {
+                if (PCJ.myId() == i) {
+                    PCJ.waitFor(Communicable.intArray);
+                    System.out.println(PCJ.myId() + " -> " + Arrays.toString(intArray));
+                }
+                PCJ.barrier();
+            }
+            PCJ.barrier();
+
+            // null
+            if (PCJ.myId() == threadId) {
+                Serializable[] array = new Serializable[PCJ.threadCount()];
+                PCJ.scatter(array, Communicable.nullObject);
+            }
+            for (int i = 0; i < PCJ.threadCount(); ++i) {
+                if (PCJ.myId() == i) {
+                    PCJ.waitFor(Communicable.nullObject);
+                    System.out.println(PCJ.myId() + " -> " + nullObject);
+                }
+                PCJ.barrier();
             }
             PCJ.barrier();
         }
-        PCJ.barrier();
     }
 }

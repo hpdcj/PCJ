@@ -206,10 +206,9 @@ public class InternalCommonGroup {
             List<Integer> subTree = new ArrayList<>();
 
             Queue<Integer> queue = new ArrayDeque<>();
-            int index = physicalIds.indexOf(subTreeRootNode);
-            queue.offer((index + shift) % physicalIds.size());
+            queue.offer(physicalIds.indexOf(subTreeRootNode));
             while (!queue.isEmpty()) {
-                index = queue.poll();
+                int index = queue.poll();
                 subTree.add(physicalIds.get(index));
                 int shiftIndex = (index - shift + physicalIds.size()) % physicalIds.size();
                 if (shiftIndex * 2 + 1 < physicalIds.size()) {

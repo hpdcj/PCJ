@@ -386,7 +386,7 @@ public class InternalStorages {
         Class<?> fromClass = getValueClass(value);
 
         if (!isAssignableFrom(targetClass, fromClass)) {
-            throw new ClassCastException("Cannot cast " + fromClass.getName()
+            throw new ClassCastException("Cannot cast " + (fromClass != null ? fromClass.getName() : "<null>")
                                                  + " to the type of variable "
                                                  + "'" + parent + "." + name + (indices.length == 0 ? "" : Arrays.toString(indices)) + "'"
                                                  + ": " + targetClass);
