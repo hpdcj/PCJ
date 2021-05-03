@@ -119,6 +119,13 @@ public class InternalCommonGroup {
                 .forEach(localIds::add);
     }
 
+    /**
+     * Map with current group threads id mapped to the global threads id.
+     * <p>
+     * key: groupThreadId; value: globalThreadId
+     *
+     * @return map with thread mapping
+     */
     public Map<Integer, Integer> getThreadsMap() {
         return Collections.unmodifiableMap(threadsMap);
     }
@@ -220,11 +227,11 @@ public class InternalCommonGroup {
             NodeData nodeData = InternalPCJ.getNodeData();
 
             physicalIds = threadsMap.keySet().stream()
-                                  .sorted()
-                                  .map(threadsMap::get)
-                                  .map(nodeData::getPhysicalId)
-                                  .distinct()
-                                  .collect(Collectors.toList());
+                    .sorted()
+                    .map(threadsMap::get)
+                    .map(nodeData::getPhysicalId)
+                    .distinct()
+                    .collect(Collectors.toList());
 
             currentIndex = physicalIds.indexOf(nodeData.getCurrentNodePhysicalId());
         }

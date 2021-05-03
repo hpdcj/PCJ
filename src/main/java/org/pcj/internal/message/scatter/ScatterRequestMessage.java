@@ -13,11 +13,9 @@ import java.nio.channels.SocketChannel;
 import java.util.Map;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
-import org.pcj.internal.Networker;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.message.Message;
 import org.pcj.internal.message.MessageType;
-import org.pcj.internal.network.InputStreamCloner;
 import org.pcj.internal.network.MessageDataInputStream;
 import org.pcj.internal.network.MessageDataOutputStream;
 
@@ -32,13 +30,13 @@ public final class ScatterRequestMessage extends Message {
     private String sharedEnumClassName;
     private String variableName;
     private int[] indices;
-    private Object newValueMap;
+    private Map<Integer, Object> newValueMap;
 
     public ScatterRequestMessage() {
         super(MessageType.SCATTER_REQUEST);
     }
 
-    public ScatterRequestMessage(int groupId, int requestNum, int requesterThreadId, String storageName, String variableName, int[] indices, Map<Integer,Object> newValueMap) {
+    public ScatterRequestMessage(int groupId, int requestNum, int requesterThreadId, String storageName, String variableName, int[] indices, Map<Integer, Object> newValueMap) {
         this();
 
         this.groupId = groupId;
@@ -61,40 +59,29 @@ public final class ScatterRequestMessage extends Message {
         out.writeObject(newValueMap);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void onReceive(SocketChannel sender, MessageDataInputStream in) throws IOException {
         groupId = in.readInt();
         requestNum = in.readInt();
         requesterThreadId = in.readInt();
-
         sharedEnumClassName = in.readString();
         variableName = in.readString();
         indices = in.readIntArray();
 
-        InputStreamCloner inputStreamCloner = InputStreamCloner.clone(in);
-
         NodeData nodeData = InternalPCJ.getNodeData();
-        Networker networker = InternalPCJ.getNetworker();
-
-        try {
-            newValueMap = in.readObject();
-            //storage.put(newValue, sharedEnumClassName, name, indices);
-        } catch (Exception ex) {
-            valuePutResponseMessage.setException(ex);
-        }
-        BroadcastBytesMessage broadcastBytesMessage
-                = new BroadcastBytesMessage(groupId, requestNum, requesterThreadId, sharedEnumClassName, variableName, indices, inputStreamCloner);
-
         InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
-        int requesterPhysicalId = nodeData.getPhysicalId(commonGroup.getGlobalThreadId(requesterThreadId));
-        commonGroup.getCommunicationTree().getChildrenNodes(requesterPhysicalId)
-                .stream()
-                .map(nodeData::getSocketChannelByPhysicalId)
-                .forEach(socket -> networker.send(socket, broadcastBytesMessage));
 
-        ScatterStates states = commonGroup.getBroadcastStates();
+        ScatterStates states = commonGroup.getScatterStates();
         ScatterStates.State state = states.getOrCreate(requestNum, requesterThreadId, commonGroup);
 
-        state.downProcessNode(commonGroup, inputStreamCloner, sharedEnumClassName, variableName, indices);
+        try {
+            newValueMap = (Map<Integer, Object>) in.readObject();
+            //storage.put(newValue, sharedEnumClassName, name, indices);
+        } catch (Exception ex) {
+            state.addException(ex);
+        }
+
+        state.downProcessNode(commonGroup, sharedEnumClassName, variableName, indices, newValueMap);
     }
 }

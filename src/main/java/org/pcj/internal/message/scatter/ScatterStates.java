@@ -8,10 +8,11 @@
  */
 package org.pcj.internal.message.scatter;
 
-import java.io.ObjectInputStream;
 import java.nio.channels.SocketChannel;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,10 +24,10 @@ import org.pcj.PcjRuntimeException;
 import org.pcj.internal.InternalCommonGroup;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.InternalStorages;
+import org.pcj.internal.Networker;
 import org.pcj.internal.NodeData;
 import org.pcj.internal.PcjThread;
 import org.pcj.internal.message.Message;
-import org.pcj.internal.network.InputStreamCloner;
 
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
@@ -98,7 +99,7 @@ public class ScatterStates {
             return future;
         }
 
-        void downProcessNode(InternalCommonGroup group, InputStreamCloner inputStreamCloner, String sharedEnumClassName, String name, int[] indices) {
+        void downProcessNode(InternalCommonGroup group, String sharedEnumClassName, String name, int[] indices, Map<Integer, Object> newValueMap) {
             NodeData nodeData = InternalPCJ.getNodeData();
             Set<Integer> threadsId = group.getLocalThreadsId();
             for (int threadId : threadsId) {
@@ -107,13 +108,31 @@ public class ScatterStates {
                 InternalStorages storage = pcjThread.getThreadData().getStorages();
 
                 try {
-                    InputStreamCloner.ClonedInputStream clonedInputStream = inputStreamCloner.newInputStream();
-                    Object newValue = new ObjectInputStream(clonedInputStream).readObject();
+                    Object newValue = newValueMap.remove(threadId);
 
                     storage.put(newValue, sharedEnumClassName, name, indices);
                 } catch (Exception ex) {
                     exceptions.add(ex);
                 }
+            }
+
+            Networker networker = InternalPCJ.getNetworker();
+            int requesterPhysicalId = nodeData.getPhysicalId(group.getGlobalThreadId(requesterThreadId));
+            Set<Integer> childrenNodes = group.getCommunicationTree().getChildrenNodes(requesterPhysicalId);
+            Map<Integer, Integer> groupIdToGlobalIdMap = group.getThreadsMap();
+            for (int childrenNode : childrenNodes) {
+                List<Integer> subTree = group.getCommunicationTree().getSubtree(requesterPhysicalId, childrenNode);
+                Map<Integer, Object> subTreeNewValueMap = groupIdToGlobalIdMap.entrySet()
+                        .stream()
+                        .filter(entry -> subTree.contains(nodeData.getPhysicalId(entry.getValue())))
+                        .map(Map.Entry::getKey)
+                        .collect(HashMap::new, (map, key) -> map.put(key, newValueMap.get(key)), HashMap::putAll);
+
+                ScatterRequestMessage message = new ScatterRequestMessage(
+                        group.getGroupId(), requestNum, requesterThreadId,
+                        sharedEnumClassName, name, indices, subTreeNewValueMap);
+                SocketChannel socket = nodeData.getSocketChannelByPhysicalId(childrenNode);
+                networker.send(socket, message);
             }
 
             nodeProcessed(group);
@@ -129,9 +148,8 @@ public class ScatterStates {
 
         private void nodeProcessed(InternalCommonGroup group) {
             int leftPhysical = notificationCount.decrementAndGet();
+            NodeData nodeData = InternalPCJ.getNodeData();
             if (leftPhysical == 0) {
-                NodeData nodeData = InternalPCJ.getNodeData();
-
                 int requesterPhysicalId = nodeData.getPhysicalId(group.getGlobalThreadId(requesterThreadId));
                 if (requesterPhysicalId != nodeData.getCurrentNodePhysicalId()) { // requester will receive response
                     ScatterStates.this.remove(requestNum, requesterThreadId);
@@ -157,6 +175,10 @@ public class ScatterStates {
             } else {
                 future.signalDone();
             }
+        }
+
+        protected void addException(Exception ex) {
+            exceptions.add(ex);
         }
     }
 }

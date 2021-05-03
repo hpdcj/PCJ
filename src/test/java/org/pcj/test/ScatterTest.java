@@ -82,7 +82,7 @@ public class ScatterTest implements StartPoint {
         for (int i = 0; i < PCJ.threadCount(); ++i) {
             if (PCJ.myId() == i) {
                 PCJ.waitFor(Communicable.intArray);
-                System.out.println(PCJ.myId() + " -> " + Arrays.deepToString(PCJ.getLocal(Communicable.intArray)));
+                System.out.println(PCJ.myId() + " -> " + Arrays.toString(intArray));
             }
             PCJ.barrier();
         }
@@ -96,14 +96,10 @@ public class ScatterTest implements StartPoint {
         for (int i = 0; i < PCJ.threadCount(); ++i) {
             if (PCJ.myId() == i) {
                 PCJ.waitFor(Communicable.nullObject);
-                System.out.println(PCJ.myId() + " -> " + PCJ.getLocal(Communicable.nullObject));
+                System.out.println(PCJ.myId() + " -> " + nullObject);
             }
             PCJ.barrier();
         }
         PCJ.barrier();
-    }
-
-    private void printVariable(Enum<?> variable) {
-
     }
 }

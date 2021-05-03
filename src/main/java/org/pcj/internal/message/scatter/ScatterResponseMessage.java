@@ -31,7 +31,7 @@ public final class ScatterResponseMessage extends Message {
     private Queue<Exception> exceptions;
 
     public ScatterResponseMessage() {
-        super(MessageType.BROADCAST_RESPONSE);
+        super(MessageType.SCATTER_RESPONSE);
     }
 
     public ScatterResponseMessage(int groupId, int requestNum, int requesterThreadId, Queue<Exception> exceptions) {
