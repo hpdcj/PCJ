@@ -385,7 +385,7 @@ public final class PCJ {
      * @param indices  (optional) indices for array variable
      * @return {@link org.pcj.PcjFuture} that will contain shareable variable values in form of array
      */
-    public static <T> PcjFuture<T> asyncCollect(Enum<?> variable, int... indices) throws PcjRuntimeException {
+    public static <T> PcjFuture<T> asyncCollect(Enum<?> variable, int... indices) {
         return getGlobalGroup().asyncCollect(variable, indices);
     }
 
@@ -434,8 +434,9 @@ public final class PCJ {
      * @param variable variable name
      * @param indices  (optional) indices for array variable
      * @return {@link org.pcj.PcjFuture} that will contain reduced shareable variable value
+     * @throws PcjRuntimeException contains wrapped exception (eg. ArrayOutOfBoundException).
      */
-    public static <T> T reduce(ReduceOperation<T> function, Enum<?> variable, int... indices) {
+    public static <T> T reduce(ReduceOperation<T> function, Enum<?> variable, int... indices) throws PcjRuntimeException {
         return PCJ.asyncReduce(function, variable, indices).get();
     }
 
@@ -462,7 +463,7 @@ public final class PCJ {
      * Wrapper for {@link #asyncPut(Object, int, Enum, int...)}.
      * <p>
      * It is the equivalent to call:
-     * <blockquote>{@code PCJ.<T>asyncPut(threadId, variable, newValue, indices).get();}</blockquote>
+     * <blockquote>{@code PCJ.<T>asyncPut(newValue, threadId, variable, indices).get();}</blockquote>
      *
      * @param <T>      type of value
      * @param newValue new variable value
@@ -535,23 +536,54 @@ public final class PCJ {
      * Wrapper for {@link #asyncBroadcast(Object, Enum, int...)}.
      * <p>
      * It is the equivalent to call:
-     * <blockquote>{@code PCJ.<T>asyncBroadcast(variable, newValue).get();}</blockquote>
+     * <blockquote>{@code PCJ.<T>asyncBroadcast(newValue, variable, indices).get();}</blockquote>
      *
      * @param <T>      type of value
      * @param newValue new variable value
      * @param variable variable name
      * @param indices  (optional) indices for array variable
+     * @throws PcjRuntimeException contains wrapped exception (eg. ArrayOutOfBoundException).
      */
-    public static <T> void broadcast(T newValue, Enum<?> variable, int... indices) {
+    public static <T> void broadcast(T newValue, Enum<?> variable, int... indices) throws PcjRuntimeException {
         PCJ.asyncBroadcast(newValue, variable, indices).get();
     }
 
-
+    /**
+     * Asynchronous scatter operation.
+     * <p>
+     * Scatter value array into shareable variable of all PCJ Threads from the group.
+     * The array has to be the length of the group size.
+     * <p>
+     * The method maps the value array index to the thread id
+     * and puts a proper element of the array into adequate thread storage.
+     * <p>
+     * Upon successful completion increases modification count of the shareable variable by one.
+     *
+     * @param <T>           has to be array type
+     * @param newValueArray array with new values
+     * @param variable      variable name
+     * @param indices       (optional) indices for array variable
+     * @return {@link org.pcj.PcjFuture}&lt;{@link java.lang.Void}&gt;
+     */
     private static <T> PcjFuture<Void> asyncScatter(T newValueArray, Enum<?> variable, int... indices) {
         return getGlobalGroup().asyncScatter(newValueArray, variable, indices);
     }
 
-    public static <T> void scatter(T newValueArray, Enum<?> variable, int... indices) {
+    /**
+     * Synchronous scatter operation.
+     * <p>
+     * Wrapper for {@link #asyncScatter(Object, Enum, int...)}.
+     * <p>
+     * It is the equivalent to call:
+     * <blockquote>{@code PCJ.<T>asyncScatter(newValueArray, variable, indices).get();}</blockquote>
+     *
+     * @param <T>           has to be array type
+     * @param newValueArray array with new values
+     * @param variable      variable name
+     * @param indices       (optional) indices for array variable
+     * @throws PcjRuntimeException contains wrapped exception (eg. ArrayOutOfBoundException).
+     */
+    public static <T> void scatter(T newValueArray, Enum<?> variable, int... indices) throws PcjRuntimeException {
         PCJ.asyncScatter(newValueArray, variable, indices).get();
     }
 

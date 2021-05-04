@@ -144,6 +144,7 @@ public interface Group {
      * Asynchronous broadcast operation.
      * <p>
      * Broadcasts value into shareable variable of all PCJ Threads from the group.
+     * <p>
      * Upon successful completion increases modification count of the shareable variable by one.
      *
      * @param <T>      type of value
@@ -154,7 +155,25 @@ public interface Group {
      */
     <T> PcjFuture<Void> asyncBroadcast(T newValue, Enum<?> variable, int... indices);
 
+    /**
+     * Asynchronous scatter operation.
+     * <p>
+     * Scatter value array into shareable variable of all PCJ Threads from the group.
+     * The array has to be the length of the group size.
+     * <p>
+     * The method maps the value array index to the thread id
+     * and puts a proper element of the array into adequate thread storage.
+     * <p>
+     * Upon successful completion increases modification count of the shareable variable by one.
+     *
+     * @param <T>           has to be array type
+     * @param newValueArray array with new values
+     * @param variable      variable name
+     * @param indices       (optional) indices for array variable
+     * @return {@link org.pcj.PcjFuture}&lt;{@link java.lang.Void}&gt;
+     */
     <T> PcjFuture<Void> asyncScatter(T newValueArray, Enum<?> variable, int... indices);
+
     /**
      * Asynchronous execution operation.
      * <p>
