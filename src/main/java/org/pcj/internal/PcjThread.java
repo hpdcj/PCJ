@@ -95,7 +95,9 @@ public class PcjThread extends Thread {
         void shutdown() {
             try {
                 asyncTasksWorkers.shutdown();
-                asyncTasksWorkers.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+                if (!asyncTasksWorkers.awaitTermination(8L, TimeUnit.SECONDS)) {
+                    asyncTasksWorkers.shutdownNow();
+                }
             } catch (InterruptedException ex) {
                 throw new PcjRuntimeException("Interrupted exception while shutting down thread pool");
             }
@@ -168,8 +170,15 @@ public class PcjThread extends Thread {
     public PcjThreadData getThreadData() {
         return pcjThreadGroup.getThreadData();
     }
+
     public PcjThreadGroup getPcjThreadGroup() {
         return pcjThreadGroup;
+    }
+
+    public void shutdown() {
+        this.interrupt();
+        pcjThreadGroup.interrupt();
+        asyncWorkers.shutdown();
     }
 
     public AsyncWorkers getAsyncWorkers() {

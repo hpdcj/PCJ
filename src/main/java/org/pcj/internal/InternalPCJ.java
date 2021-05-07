@@ -126,8 +126,8 @@ public abstract class InternalPCJ {
             /* Starting execution */
             if (isCurrentJvmNode0) {
                 LOGGER.log(Level.INFO, "Starting {0}"
-                                + " with {1,number,#} {1,choice,1#thread|1<threads}"
-                                + " (on {2,number,#} {2,choice,1#node|1<nodes})...",
+                                               + " with {1,number,#} {1,choice,1#thread|1<threads}"
+                                               + " (on {2,number,#} {2,choice,1#node|1<nodes})...",
                         new Object[]{startPointClass.getName(),
                                 nodeData.getCommonGroupById(InternalCommonGroup.GLOBAL_GROUP_ID).threadCount(),
                                 nodeData.getTotalNodeCount(),});
@@ -159,7 +159,7 @@ public abstract class InternalPCJ {
                 }
             } catch (InterruptedException ex) {
                 LOGGER.log(Level.SEVERE, "PCJ main thread interrupted. Interrupting all PCJ threads");
-                pcjThreads.values().stream().map(PcjThread::getPcjThreadGroup).forEach(ThreadGroup::interrupt);
+                pcjThreads.values().forEach(PcjThread::shutdown);
 
                 try {
                     LOGGER.log(Level.INFO, "Waiting up to 8 seconds before forcibly stop PCJ threads.");
@@ -168,7 +168,7 @@ public abstract class InternalPCJ {
                     LOGGER.log(Level.SEVERE, "Exception while waiting for joining PCJ Threads", e);
                 }
                 if (pcjThreads.values().stream().map(PcjThread::getPcjThreadGroup)
-                        .mapToInt(PcjThread.PcjThreadGroup::activeCount).count() > 0) {
+                            .mapToInt(PcjThread.PcjThreadGroup::activeCount).count() > 0) {
                     LOGGER.log(Level.INFO, "Forcibly stopping PCJ threads.");
                     pcjThreads.values().stream().map(PcjThread::getPcjThreadGroup).forEach(ThreadGroup::stop);
                 }
@@ -194,9 +194,9 @@ public abstract class InternalPCJ {
                 long s = (timer % 60);
 
                 LOGGER.log(Level.INFO, "{0} {1}"
-                                + " with {2,number,#} {2,choice,1#thread|1<threads}"
-                                + " (on {3,number,#} {3,choice,1#node|1<nodes})"
-                                + " after {4,number,#}h {5,number,#}m {6,number,#}s {7,number,#}ms.",
+                                               + " with {2,number,#} {2,choice,1#thread|1<threads}"
+                                               + " (on {3,number,#} {3,choice,1#node|1<nodes})"
+                                               + " after {4,number,#}h {5,number,#}m {6,number,#}s {7,number,#}ms.",
                         new Object[]{
                                 !aliveState.isAborted() ? "Completed" : "Aborted",
                                 startPointClass.getName(),
@@ -307,7 +307,7 @@ public abstract class InternalPCJ {
                     Throwable t = pcjThread.getThrowable();
                     if (t != null) {
                         LOGGER.log(Level.SEVERE, "Exception occurred in thread: " + pcjThread.getName()
-                                        + " (node: " + nodeData.getCurrentNodePhysicalId() + ")",
+                                                         + " (node-#" + nodeData.getCurrentNodePhysicalId() + ")",
                                 t);
 
                         AliveState aliveState = nodeData.getAliveState();

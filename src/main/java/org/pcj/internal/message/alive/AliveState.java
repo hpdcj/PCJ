@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2021, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -166,7 +166,7 @@ public class AliveState {
                 NodeData nodeData = InternalPCJ.getNodeData();
                 int currentPhysicalId = nodeData.getCurrentNodePhysicalId();
                 int physicalId = nodeData.getPhysicalIdBySocketChannel(socketChannel);
-                LOGGER.log(Level.SEVERE, "Unable to send {0} from {1} to {2}",
+                LOGGER.log(Level.SEVERE, "Unable to send {0} from node-#{1} to node-#{2}",
                         new Object[]{message.getClass().getSimpleName(),
                                 currentPhysicalId,
                                 physicalId});

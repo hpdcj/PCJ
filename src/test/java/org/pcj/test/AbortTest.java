@@ -8,13 +8,13 @@
  */
 package org.pcj.test;
 
+import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.pcj.PCJ;
 import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
-import java.util.Arrays;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)

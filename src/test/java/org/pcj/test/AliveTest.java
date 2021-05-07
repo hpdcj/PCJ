@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2021, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -22,8 +22,9 @@ public class AliveTest implements StartPoint {
     public static void main(String[] args) {
         // -Dpcj.alive.timeout=3 -Dpcj.alive.heartbeat=1
 
-//        Level level = Level.INFO;
-        Level level = Level.CONFIG;
+        Level level = Level.INFO;
+//        Level level = Level.CONFIG;
+//        Level level = Level.FINEST;
         Logger logger = Logger.getLogger("");
         Arrays.stream(logger.getHandlers()).forEach(handler -> handler.setLevel(level));
         logger.setLevel(level);
