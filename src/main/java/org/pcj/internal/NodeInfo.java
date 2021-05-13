@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2021, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -37,15 +37,10 @@ public class NodeInfo implements Serializable {
     private int port;
     private SortedSet<Integer> threadIds;
 
-    NodeInfo(String hostname, int port) {
+    public NodeInfo(String hostname, int port) {
         this.hostname = hostname;
         this.port = port;
         this.threadIds = new ConcurrentSkipListSet<>();
-    }
-
-    public NodeInfo(String hostname, int port, int[] threadIds) {
-        this(hostname, port);
-        Arrays.stream(threadIds).forEach(this.threadIds::add);
     }
 
     @Override
@@ -82,7 +77,7 @@ public class NodeInfo implements Serializable {
         return Collections.unmodifiableSet(threadIds);
     }
 
-    void addThreadId(int i) {
+    public void addThreadId(int i) {
         threadIds.add(i);
     }
 
@@ -140,5 +135,4 @@ public class NodeInfo implements Serializable {
         }
         out.writeInt(-1);
     }
-
 }

@@ -76,6 +76,8 @@ public class HelloState {
 
     public void processInformMessage(SocketChannel sender, int currentPhysicalId, Map<Integer, NodeInfo> nodeInfoByPhysicalId) {
         int nodesCount = nodeInfoByPhysicalId.size();
+        this.nodeInfoByPhysicalId.clear();
+        this.nodeInfoByPhysicalId.putAll(nodeInfoByPhysicalId);
 
         NodeData nodeData = InternalPCJ.getNodeData();
         nodeData.setCurrentNodePhysicalId(currentPhysicalId);

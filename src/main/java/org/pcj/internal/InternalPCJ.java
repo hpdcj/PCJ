@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
@@ -119,7 +120,7 @@ public abstract class InternalPCJ {
             nodeData.setNode0Socket(node0Socket);
 
             /* send HELLO message */
-            helloPhase(currentJvm.getPort(), currentJvm.getThreadIds());
+            currentJvm = helloPhase(currentJvm.getPort(), currentJvm.getThreadIds());
 
             nodeData.setHelloState(null);
 
@@ -241,7 +242,7 @@ public abstract class InternalPCJ {
         return networker.tryToConnectTo(node0.getHostname(), node0.getPort());
     }
 
-    private static void helloPhase(int port, Set<Integer> threadIds) throws UncheckedIOException {
+    private static NodeInfo helloPhase(int port, Set<Integer> threadIds) throws UncheckedIOException {
         try {
             HelloState state = nodeData.getHelloState();
 
@@ -251,6 +252,8 @@ public abstract class InternalPCJ {
 
             /* waiting for HELLO_GO */
             state.await(InternalPCJ.getConfiguration().INIT_MAXTIME);
+
+            return state.getNodeInfoByPhysicalId().get(InternalPCJ.getNodeData().getCurrentNodePhysicalId());
         } catch (InterruptedException ex) {
             throw new PcjRuntimeException("Interruption occurred while waiting for finish HELLO phase");
         } catch (TimeoutException e) {
