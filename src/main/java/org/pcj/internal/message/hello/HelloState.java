@@ -82,11 +82,29 @@ public class HelloState {
             address = ((InetSocketAddress) sender.getRemoteAddress()).getHostString();
         }
 
+        NodeData nodeData = InternalPCJ.getNodeData();
+
+        int currentPhysicalId = (sender == nodeData.getNode0Socket()) ? 0 : -connectedNodeCount.incrementAndGet();
 
         NodeInfo currentNodeInfo = new NodeInfo(address, port);
-        Arrays.stream(threadIds).forEach(currentNodeInfo::addThreadId);
-
-        int currentPhysicalId = -connectedNodeCount.incrementAndGet();
+        if (currentPhysicalId == 0) {
+            // be sure that node0 has thread-#0
+            currentNodeInfo.addThreadId(0);
+            Arrays.stream(threadIds)
+                    .sorted()
+                    .skip(1)
+                    .forEach(currentNodeInfo::addThreadId);
+        } else {
+            // any other node cannot have thread-#0
+            Arrays.stream(threadIds)
+                    .sorted()
+                    .forEach(threadId -> {
+                        if (threadId == 0) {
+                            threadId = 1;
+                        }
+                        currentNodeInfo.addThreadId(threadId);
+                    });
+        }
 
         socketChannelByPhysicalId.put(currentPhysicalId, sender);
         nodeInfoByPhysicalId.put(currentPhysicalId, currentNodeInfo);

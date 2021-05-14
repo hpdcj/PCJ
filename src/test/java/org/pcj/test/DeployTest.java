@@ -31,7 +31,7 @@ public class DeployTest implements StartPoint {
         logger.setLevel(level);
 
         Set<Process> processes = deployPcj(
-                new int[][]{{0, 2, 3}, {1, 2, 4}}
+                new int[][]{{2, 4}, {1, 3, 5}}
         );
 
         for (Process process : processes) {
