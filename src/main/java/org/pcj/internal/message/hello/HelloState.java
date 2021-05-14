@@ -8,9 +8,16 @@
  */
 package org.pcj.internal.message.hello;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
+import java.util.AbstractMap;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -25,6 +32,7 @@ import org.pcj.internal.NodeData;
 import org.pcj.internal.NodeInfo;
 import org.pcj.internal.message.Message;
 import org.pcj.internal.message.bye.ByeState;
+import org.pcj.internal.network.LoopbackSocketChannel;
 
 /*
  * @author Marek Nowicki (faramir@mat.umk.pl)
@@ -58,10 +66,6 @@ public class HelloState {
         future.signalDone();
     }
 
-    public int getNextPhysicalId() {
-        return connectedNodeCount.incrementAndGet();
-    }
-
     public ConcurrentMap<Integer, SocketChannel> getSocketChannelByPhysicalId() {
         return socketChannelByPhysicalId;
     }
@@ -70,11 +74,80 @@ public class HelloState {
         return nodeInfoByPhysicalId;
     }
 
-    public int decrementThreadsLeftToConnect(int threadConnected) {
-        return threadsLeftToConnect.addAndGet(-threadConnected);
+    void processHelloMessage(SocketChannel sender, int port, int[] threadIds) throws IOException {
+        String address;
+        if (sender instanceof LoopbackSocketChannel) {
+            address = null;
+        } else {
+            address = ((InetSocketAddress) sender.getRemoteAddress()).getHostString();
+        }
+
+
+        NodeInfo currentNodeInfo = new NodeInfo(address, port);
+        Arrays.stream(threadIds).forEach(currentNodeInfo::addThreadId);
+
+        int currentPhysicalId = -connectedNodeCount.incrementAndGet();
+
+        socketChannelByPhysicalId.put(currentPhysicalId, sender);
+        nodeInfoByPhysicalId.put(currentPhysicalId, currentNodeInfo);
+
+        if (threadsLeftToConnect.addAndGet(-threadIds.length) == 0) {
+            AtomicInteger atomicInteger = new AtomicInteger(0);
+            Map<Integer, Queue<Integer>> givenThreadIds = nodeInfoByPhysicalId
+                                                                  .values()
+                                                                  .stream()
+                                                                  .map(NodeInfo::getThreadIds)
+                                                                  .flatMap(Set::stream)
+                                                                  .sorted()
+                                                                  .collect(HashMap::new,
+                                                                          (map, key) -> map.compute(key,
+                                                                                  (k, v) -> {
+                                                                                      if (v == null) {
+                                                                                          v = new LinkedList<>();
+                                                                                      }
+
+                                                                                      v.add(atomicInteger.getAndIncrement());
+                                                                                      return v;
+                                                                                  }),
+                                                                          Map::putAll);
+
+            for (Map.Entry<Integer, NodeInfo> entry : nodeInfoByPhysicalId.entrySet()) {
+                NodeInfo givenNodeInfo = entry.getValue();
+                NodeInfo newNodeInfo = new NodeInfo(givenNodeInfo.getHostname(), givenNodeInfo.getPort());
+                for (int givenThreadId : givenNodeInfo.getThreadIds()) {
+                    int newThreadId = givenThreadIds.get(givenThreadId).remove();
+                    newNodeInfo.addThreadId(newThreadId);
+                }
+                entry.setValue(newNodeInfo);
+            }
+
+            int[] sortedPhysicalIds = nodeInfoByPhysicalId
+                                              .entrySet()
+                                              .stream()
+                                              .flatMap(entry -> entry.getValue()
+                                                                        .getThreadIds()
+                                                                        .stream()
+                                                                        .map(threadId -> new AbstractMap.SimpleEntry<>(threadId, entry.getKey())))
+                                              .sorted(Map.Entry.comparingByKey())
+                                              .map(Map.Entry::getValue)
+                                              .distinct()
+                                              .mapToInt(Integer::intValue)
+                                              .toArray();
+
+            for (int i = 0; i < sortedPhysicalIds.length; ++i) {
+                int givenPhysicalId = sortedPhysicalIds[i];
+                int newPhysicalId = i;
+
+                nodeInfoByPhysicalId.put(newPhysicalId, nodeInfoByPhysicalId.remove(givenPhysicalId));
+                socketChannelByPhysicalId.put(newPhysicalId, socketChannelByPhysicalId.remove(givenPhysicalId));
+            }
+
+            HelloInformMessage helloInform = new HelloInformMessage(0, nodeInfoByPhysicalId);
+            InternalPCJ.getNetworker().send(InternalPCJ.getNodeData().getNode0Socket(), helloInform);
+        }
     }
 
-    public void processInformMessage(SocketChannel sender, int currentPhysicalId, Map<Integer, NodeInfo> nodeInfoByPhysicalId) {
+    void processInformMessage(SocketChannel sender, int currentPhysicalId, Map<Integer, NodeInfo> nodeInfoByPhysicalId) {
         int nodesCount = nodeInfoByPhysicalId.size();
         this.nodeInfoByPhysicalId.clear();
         this.nodeInfoByPhysicalId.putAll(nodeInfoByPhysicalId);

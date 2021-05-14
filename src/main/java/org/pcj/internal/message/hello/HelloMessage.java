@@ -14,7 +14,6 @@ import java.nio.channels.SocketChannel;
 import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
@@ -62,82 +61,8 @@ public final class HelloMessage extends Message {
         port = in.readInt();
         threadIds = in.readIntArray();
 
-        String address;
-        if (sender instanceof LoopbackSocketChannel) {
-            address = null;
-        } else {
-            address = ((InetSocketAddress) sender.getRemoteAddress()).getHostString();
-        }
-
-        NodeInfo currentNodeInfo = new NodeInfo(address, this.port);
-        Arrays.stream(threadIds).forEach(currentNodeInfo::addThreadId);
-
         NodeData nodeData = InternalPCJ.getNodeData();
         HelloState state = nodeData.getHelloState();
-
-        int currentPhysicalId = -state.getNextPhysicalId();
-
-        ConcurrentMap<Integer, SocketChannel> socketChannelByPhysicalId = state.getSocketChannelByPhysicalId();
-        socketChannelByPhysicalId.put(currentPhysicalId, sender);
-
-        ConcurrentMap<Integer, NodeInfo> nodeInfoByPhysicalId = state.getNodeInfoByPhysicalId();
-        nodeInfoByPhysicalId.put(currentPhysicalId, currentNodeInfo);
-
-        int threadsLeftToConnect = state.decrementThreadsLeftToConnect(threadIds.length);
-
-        if (threadsLeftToConnect == 0) {
-            LOGGER.finest("Received HELLO from all nodes. Ordering physicalIds.");
-
-            int[] sortedPhysicalIds = nodeInfoByPhysicalId
-                                              .entrySet()
-                                              .stream()
-                                              .flatMap(entry -> entry.getValue()
-                                                                        .getThreadIds()
-                                                                        .stream()
-                                                                        .map(threadId -> new AbstractMap.SimpleEntry<>(threadId, entry.getKey())))
-                                              .sorted(Map.Entry.comparingByKey())
-                                              .map(Map.Entry::getValue)
-                                              .distinct()
-                                              .mapToInt(Integer::intValue)
-                                              .toArray();
-
-            AtomicInteger atomicInteger = new AtomicInteger(0);
-            Map<Integer, Queue<Integer>> givenThreadIds = nodeInfoByPhysicalId
-                                                                  .values()
-                                                                  .stream()
-                                                                  .map(NodeInfo::getThreadIds)
-                                                                  .flatMap(Set::stream)
-                                                                  .sorted()
-                                                                  .collect(HashMap::new,
-                                                                          (map, key) -> map.compute(key,
-                                                                                  (k, v) -> {
-                                                                                      if (v == null) {
-                                                                                          v = new LinkedList<>();
-                                                                                      }
-                                                                                      v.add(atomicInteger.getAndIncrement());
-                                                                                      return v;
-                                                                                  }),
-                                                                          Map::putAll);
-
-            // TODO: najpierw przesortowac ThreadId a dopiero pozniej physicalId
-
-            for (int i = 0; i < sortedPhysicalIds.length; ++i) {
-                int givenPhysicalId = sortedPhysicalIds[i];
-                int newPhysicalId = i;
-
-                NodeInfo givenNodeInfo = nodeInfoByPhysicalId.remove(givenPhysicalId);
-                NodeInfo newNodeInfo = new NodeInfo(givenNodeInfo.getHostname(), givenNodeInfo.getPort());
-                for (int givenThreadId : givenNodeInfo.getThreadIds()) {
-                    int newThreadId = givenThreadIds.get(givenThreadId).remove();
-                    newNodeInfo.addThreadId(newThreadId);
-                }
-
-                nodeInfoByPhysicalId.put(newPhysicalId, newNodeInfo);
-                socketChannelByPhysicalId.put(newPhysicalId, socketChannelByPhysicalId.remove(givenPhysicalId));
-            }
-
-            HelloInformMessage helloInform = new HelloInformMessage(0, nodeInfoByPhysicalId);
-            InternalPCJ.getNetworker().send(nodeData.getNode0Socket(), helloInform);
-        }
+        state.processHelloMessage(sender, port, threadIds);
     }
 }
