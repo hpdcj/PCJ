@@ -6,7 +6,7 @@
  *
  * See the file "LICENSE" for the full license governing this code.
  */
-package org.pcj.internal.message.collect;
+package org.pcj.internal.message.gather;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
@@ -24,18 +24,18 @@ import org.pcj.internal.network.MessageDataOutputStream;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public final class CollectResponseMessage<T> extends Message {
+public final class GatherResponseMessage<T> extends Message {
     private int groupId;
     private int requestNum;
     private int requesterThreadId;
     private Map<Integer, T> valueMap;
     private Queue<Exception> exceptions;
 
-    public CollectResponseMessage() {
-        super(MessageType.COLLECT_RESPONSE);
+    public GatherResponseMessage() {
+        super(MessageType.GATHER_RESPONSE);
     }
 
-    CollectResponseMessage(int groupId, int requestNum, int requesterThreadId, Map<Integer, T> valueMap, Queue<Exception> exceptions) {
+    GatherResponseMessage(int groupId, int requestNum, int requesterThreadId, Map<Integer, T> valueMap, Queue<Exception> exceptions) {
         this();
 
         this.groupId = groupId;
@@ -81,8 +81,8 @@ public final class CollectResponseMessage<T> extends Message {
         NodeData nodeData = InternalPCJ.getNodeData();
         InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
 
-        CollectStates states = commonGroup.getCollectStates();
-        CollectStates.State<T> state = states.getOrCreate(requestNum, requesterThreadId, commonGroup);
+        GatherStates states = commonGroup.getGatherStates();
+        GatherStates.State<T> state = states.getOrCreate(requestNum, requesterThreadId, commonGroup);
 
         state.upProcessNode(commonGroup, valueMap, exceptions);
     }

@@ -6,7 +6,7 @@
  *
  * See the file "LICENSE" for the full license governing this code.
  */
-package org.pcj.internal.message.collect;
+package org.pcj.internal.message.gather;
 
 import java.io.IOException;
 import java.io.WriteAbortedException;
@@ -26,7 +26,7 @@ import org.pcj.internal.network.MessageDataOutputStream;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public final class CollectValueMessage<T> extends Message {
+public final class GatherValueMessage<T> extends Message {
 
     private int groupId;
     private int requestNum;
@@ -34,11 +34,11 @@ public final class CollectValueMessage<T> extends Message {
     private Map<Integer, T> valueMap;
     private Queue<Exception> exceptions;
 
-    public CollectValueMessage() {
-        super(MessageType.COLLECT_VALUE);
+    public GatherValueMessage() {
+        super(MessageType.GATHER_VALUE);
     }
 
-    CollectValueMessage(int groupId, int requestNum, int requesterThreadId, Map<Integer, T> valueMap, Queue<Exception> exceptions) {
+    GatherValueMessage(int groupId, int requestNum, int requesterThreadId, Map<Integer, T> valueMap, Queue<Exception> exceptions) {
         this();
         this.groupId = groupId;
         this.requestNum = requestNum;
@@ -86,8 +86,8 @@ public final class CollectValueMessage<T> extends Message {
         NodeData nodeData = InternalPCJ.getNodeData();
         InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
 
-        CollectStates states = commonGroup.getCollectStates();
-        CollectStates.State<T> state = states.remove(requestNum, requesterThreadId);
+        GatherStates states = commonGroup.getGatherStates();
+        GatherStates.State<T> state = states.remove(requestNum, requesterThreadId);
 
         state.signal(valueMap, exceptions);
     }

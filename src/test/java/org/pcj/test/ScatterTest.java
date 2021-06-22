@@ -79,7 +79,7 @@ public class ScatterTest implements StartPoint {
 
             // array
             if (PCJ.myId() == threadId) {
-                int[] array = IntStream.range(100*threadId+1,100*threadId+ PCJ.threadCount() + 1).toArray();
+                int[] array = IntStream.range(100 * threadId + 1, 100 * threadId + 1 + PCJ.threadCount()).toArray();
                 PCJ.scatter(array, Communicable.intArray, 0);
             }
             for (int i = 0; i < PCJ.threadCount(); ++i) {

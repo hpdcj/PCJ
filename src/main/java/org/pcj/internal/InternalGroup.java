@@ -25,7 +25,7 @@ import org.pcj.internal.message.at.AsyncAtStates;
 import org.pcj.internal.message.barrier.BarrierStates;
 import org.pcj.internal.message.broadcast.BroadcastRequestMessage;
 import org.pcj.internal.message.broadcast.BroadcastStates;
-import org.pcj.internal.message.collect.CollectStates;
+import org.pcj.internal.message.gather.GatherStates;
 import org.pcj.internal.message.get.ValueGetRequestMessage;
 import org.pcj.internal.message.get.ValueGetStates;
 import org.pcj.internal.message.peerbarrier.PeerBarrierMessage;
@@ -118,12 +118,12 @@ public final class InternalGroup extends InternalCommonGroup implements Group {
     }
 
     @Override
-    public <T> PcjFuture<T> asyncCollect(Enum<?> variable, int... indices) {
+    public <T> PcjFuture<T> asyncGather(Enum<?> variable, int... indices) {
         String sharedEnumClassName = variable.getDeclaringClass().getName();
         String variableName = variable.name();
 
-        CollectStates states = super.getCollectStates();
-        CollectStates.State<T> state = states.create(myThreadId, this);
+        GatherStates states = super.getGatherStates();
+        GatherStates.State<T> state = states.create(myThreadId, this);
 
         state.downProcessNode(this, sharedEnumClassName, variableName, indices);
 

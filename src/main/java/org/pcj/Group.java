@@ -85,7 +85,7 @@ public interface Group {
     <T> PcjFuture<T> asyncGet(int threadId, Enum<?> variable, int... indices);
 
     /**
-     * Asynchronous collect operation.
+     * Asynchronous gather operation.
      * <p>
      * Gets value of shareable variable from all PCJ Threads from the group.
      *
@@ -94,7 +94,7 @@ public interface Group {
      * @param indices  (optional) indices for array variable
      * @return {@link org.pcj.PcjFuture} that will contain shareable variable values in form of array
      */
-    <T> PcjFuture<T> asyncCollect(Enum<?> variable, int... indices);
+    <T> PcjFuture<T> asyncGather(Enum<?> variable, int... indices);
 
     /**
      * Asynchronous reduce operation.

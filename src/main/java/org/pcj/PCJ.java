@@ -376,7 +376,7 @@ public final class PCJ {
     }
 
     /**
-     * Asynchronous collect operation.
+     * Asynchronous gather operation.
      * <p>
      * Gets value of shareable variable from all PCJ Threads from the global group.
      *
@@ -385,25 +385,25 @@ public final class PCJ {
      * @param indices  (optional) indices for array variable
      * @return {@link org.pcj.PcjFuture} that will contain shareable variable values in form of array
      */
-    public static <T> PcjFuture<T> asyncCollect(Enum<?> variable, int... indices) {
-        return getGlobalGroup().asyncCollect(variable, indices);
+    public static <T> PcjFuture<T> asyncGather(Enum<?> variable, int... indices) {
+        return getGlobalGroup().asyncGather(variable, indices);
     }
 
     /**
-     * Synchronous collect operation.
+     * Synchronous gather operation.
      * <p>
-     * Wrapper for {@link #asyncCollect(Enum, int...)}.
+     * Wrapper for {@link #asyncGather(Enum, int...)}.
      * <p>
      * It is the equivalent to call:
-     * <blockquote>{@code PCJ.<T>asyncCollect(variable, indices).get();}</blockquote>
+     * <blockquote>{@code PCJ.<T>asyncGather(variable, indices).get();}</blockquote>
      *
      * @param <T>      type of value
      * @param variable variable name
      * @param indices  (optional) indices for array variable
      * @return shareable variable values in form of array
      */
-    public static <T> T collect(Enum<?> variable, int... indices) throws PcjRuntimeException {
-        return PCJ.<T>asyncCollect(variable, indices).get();
+    public static <T> T gather(Enum<?> variable, int... indices) throws PcjRuntimeException {
+        return PCJ.<T>asyncGather(variable, indices).get();
     }
 
     /**

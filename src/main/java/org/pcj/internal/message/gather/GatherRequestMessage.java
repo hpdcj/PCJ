@@ -6,7 +6,7 @@
  *
  * See the file "LICENSE" for the full license governing this code.
  */
-package org.pcj.internal.message.collect;
+package org.pcj.internal.message.gather;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
@@ -21,7 +21,7 @@ import org.pcj.internal.network.MessageDataOutputStream;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public final class CollectRequestMessage extends Message {
+public final class GatherRequestMessage extends Message {
 
     private int groupId;
     private int requestNum;
@@ -30,11 +30,11 @@ public final class CollectRequestMessage extends Message {
     private String variableName;
     private int[] indices;
 
-    public CollectRequestMessage() {
-        super(MessageType.COLLECT_REQUEST);
+    public GatherRequestMessage() {
+        super(MessageType.GATHER_REQUEST);
     }
 
-    public CollectRequestMessage(int groupId, int requestNum, int requesterThreadId, String storageName, String variableName, int[] indices) {
+    public GatherRequestMessage(int groupId, int requestNum, int requesterThreadId, String storageName, String variableName, int[] indices) {
         this();
 
         this.groupId = groupId;
@@ -68,8 +68,8 @@ public final class CollectRequestMessage extends Message {
         NodeData nodeData = InternalPCJ.getNodeData();
         InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
 
-        CollectStates states = commonGroup.getCollectStates();
-        CollectStates.State<?> state = states.getOrCreate(requestNum, requesterThreadId, commonGroup);
+        GatherStates states = commonGroup.getGatherStates();
+        GatherStates.State<?> state = states.getOrCreate(requestNum, requesterThreadId, commonGroup);
 
         state.downProcessNode(commonGroup, sharedEnumClassName, variableName, indices);
     }

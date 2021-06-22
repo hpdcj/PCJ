@@ -92,7 +92,7 @@ public class NotSerializableTest implements StartPoint {
                 () -> PCJ.asyncBroadcast(new Object(), Shared.object));
 
         check("PCJ.asyncCollect", "Collecting values failed",
-                () -> PCJ.asyncCollect(Shared.object));
+                () -> PCJ.asyncGather(Shared.object));
 
         check("PCJ.asyncReduce", "Reducing values failed",
                 () -> PCJ.asyncReduce((a, b) -> false, Shared.object));

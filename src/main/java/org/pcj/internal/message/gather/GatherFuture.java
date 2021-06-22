@@ -6,7 +6,7 @@
  *
  * See the file "LICENSE" for the full license governing this code.
  */
-package org.pcj.internal.message.collect;
+package org.pcj.internal.message.gather;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -17,12 +17,12 @@ import org.pcj.internal.InternalFuture;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public class CollectFuture<T> extends InternalFuture<T> implements PcjFuture<T> {
+public class GatherFuture<T> extends InternalFuture<T> implements PcjFuture<T> {
 
     private T valuesArray;
     private PcjRuntimeException exception;
 
-    CollectFuture() {
+    GatherFuture() {
     }
 
     @Override

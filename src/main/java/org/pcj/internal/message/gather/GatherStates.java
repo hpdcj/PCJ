@@ -6,7 +6,7 @@
  *
  * See the file "LICENSE" for the full license governing this code.
  */
-package org.pcj.internal.message.collect;
+package org.pcj.internal.message.gather;
 
 import java.lang.reflect.Array;
 import java.nio.channels.SocketChannel;
@@ -34,12 +34,12 @@ import org.pcj.internal.message.Message;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public class CollectStates {
+public class GatherStates {
 
     private final AtomicInteger counter;
     private final ConcurrentMap<List<Integer>, State<?>> stateMap;
 
-    public CollectStates() {
+    public GatherStates() {
         counter = new AtomicInteger(0);
         stateMap = new ConcurrentHashMap<>();
     }
@@ -49,7 +49,7 @@ public class CollectStates {
 
         NodeData nodeData = InternalPCJ.getNodeData();
 
-        CollectFuture<T> future = new CollectFuture<>();
+        GatherFuture<T> future = new GatherFuture<>();
         State<T> state = new State<>(requestNum, threadId,
                 commonGroup.getCommunicationTree().getChildrenNodes(nodeData.getCurrentNodePhysicalId()).size(),
                 future);
@@ -77,14 +77,14 @@ public class CollectStates {
         private final int requestNum;
         private final int requesterThreadId;
         private final AtomicInteger notificationCount;
-        private final CollectFuture<T> future;
+        private final GatherFuture<T> future;
         private final Queue<Exception> exceptions;
         private final Map<Integer, T> valueMap;
         private String sharedEnumClassName;
         private String variableName;
         private int[] indices;
 
-        private State(int requestNum, int requesterThreadId, int childrenCount, CollectFuture<T> future) {
+        private State(int requestNum, int requesterThreadId, int childrenCount, GatherFuture<T> future) {
             this.requestNum = requestNum;
             this.requesterThreadId = requesterThreadId;
             this.future = future;
@@ -108,7 +108,7 @@ public class CollectStates {
             this.variableName = variableName;
             this.indices = indices;
 
-            CollectRequestMessage message = new CollectRequestMessage(
+            GatherRequestMessage message = new GatherRequestMessage(
                     group.getGroupId(), this.requestNum, this.requesterThreadId,
                     sharedEnumClassName, variableName, indices);
 
@@ -141,7 +141,7 @@ public class CollectStates {
 
                 int requesterPhysicalId = nodeData.getPhysicalId(group.getGlobalThreadId(requesterThreadId));
                 if (requesterPhysicalId != nodeData.getCurrentNodePhysicalId()) { // requester will receive response
-                    CollectStates.this.remove(requestNum, requesterThreadId);
+                    GatherStates.this.remove(requestNum, requesterThreadId);
                 }
 
                 if (exceptions.isEmpty()) {
@@ -157,10 +157,10 @@ public class CollectStates {
 
                 int parentId = group.getCommunicationTree().getParentNode(requesterPhysicalId);
                 if (parentId >= 0) {
-                    message = new CollectResponseMessage<>(group.getGroupId(), requestNum, requesterThreadId, valueMap, exceptions);
+                    message = new GatherResponseMessage<>(group.getGroupId(), requestNum, requesterThreadId, valueMap, exceptions);
                     socket = nodeData.getSocketChannelByPhysicalId(parentId);
                 } else {
-                    message = new CollectValueMessage<>(group.getGroupId(), requestNum, requesterThreadId, valueMap, exceptions);
+                    message = new GatherValueMessage<>(group.getGroupId(), requestNum, requesterThreadId, valueMap, exceptions);
                     socket = nodeData.getSocketChannelByPhysicalId(nodeData.getCurrentNodePhysicalId());
                 }
 
@@ -188,7 +188,7 @@ public class CollectStates {
 
         public void signal(Map<Integer, T> valueMap, Queue<Exception> messageExceptions) {
             if ((messageExceptions != null) && (!messageExceptions.isEmpty())) {
-                PcjRuntimeException ex = new PcjRuntimeException("Collecting values failed", messageExceptions.poll());
+                PcjRuntimeException ex = new PcjRuntimeException("Gathering values failed", messageExceptions.poll());
                 messageExceptions.forEach(ex::addSuppressed);
                 future.signalException(ex);
             } else {

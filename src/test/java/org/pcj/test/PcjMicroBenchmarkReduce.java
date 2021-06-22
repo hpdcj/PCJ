@@ -229,7 +229,7 @@ public class PcjMicroBenchmarkReduce implements StartPoint {
 
     private double pcjCollect() {
         if (PCJ.myId() == 0) {
-            double[] values = PCJ.collect(Vars.value);
+            double[] values = PCJ.gather(Vars.value);
             return Arrays.stream(values).sum();
         }
         return Double.NaN;
