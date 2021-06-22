@@ -560,32 +560,32 @@ public final class PCJ {
      * <p>
      * Upon successful completion increases modification count of the shareable variable by one.
      *
-     * @param <T>           has to be array type
-     * @param newValueArray array with new values
-     * @param variable      variable name
-     * @param indices       (optional) indices for array variable
+     * @param <T>         has to be array type
+     * @param newValueMap map with new values
+     * @param variable    variable name
+     * @param indices     (optional) indices for array variable
      * @return {@link org.pcj.PcjFuture}&lt;{@link java.lang.Void}&gt;
      */
-    private static <T> PcjFuture<Void> asyncScatter(T newValueArray, Enum<?> variable, int... indices) {
-        return getGlobalGroup().asyncScatter(newValueArray, variable, indices);
+    private static <T> PcjFuture<Void> asyncScatter(Map<Integer, T> newValueMap, Enum<?> variable, int... indices) {
+        return getGlobalGroup().asyncScatter(newValueMap, variable, indices);
     }
 
     /**
      * Synchronous scatter operation.
      * <p>
-     * Wrapper for {@link #asyncScatter(Object, Enum, int...)}.
+     * Wrapper for {@link #asyncScatter(Map, Enum, int...)}.
      * <p>
      * It is the equivalent to call:
-     * <blockquote>{@code PCJ.<T>asyncScatter(newValueArray, variable, indices).get();}</blockquote>
+     * <blockquote>{@code PCJ.<T>asyncScatter(newValueMap, variable, indices).get();}</blockquote>
      *
      * @param <T>           has to be array type
-     * @param newValueArray array with new values
+     * @param newValueMap array with new values
      * @param variable      variable name
      * @param indices       (optional) indices for array variable
      * @throws PcjRuntimeException contains wrapped exception (eg. ArrayOutOfBoundException).
      */
-    public static <T> void scatter(T newValueArray, Enum<?> variable, int... indices) throws PcjRuntimeException {
-        PCJ.asyncScatter(newValueArray, variable, indices).get();
+    public static <T> void scatter(Map<Integer, T> newValueMap, Enum<?> variable, int... indices) throws PcjRuntimeException {
+        PCJ.asyncScatter(newValueMap, variable, indices).get();
     }
 
     /**

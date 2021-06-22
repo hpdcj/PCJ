@@ -10,8 +10,12 @@ package org.pcj.test;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.pcj.PCJ;
 import org.pcj.RegisterStorage;
@@ -61,16 +65,27 @@ public class ScatterTest implements StartPoint {
     @Override
     public void main() {
         for (int threadId = 0; threadId < PCJ.threadCount(); ++threadId) {
-            // value
             if (PCJ.myId() == threadId) {
                 System.out.println("--- " + PCJ.myId() + " ---");
+            }
+            PCJ.barrier();
 
-                int[] array = IntStream.range(1, PCJ.threadCount() + 1).toArray();
-                PCJ.scatter(array, Communicable.intValue);
+            // value
+            if (PCJ.myId() == threadId) {
+                int finalThreadId = threadId;
+                Map<Integer, Integer> map = IntStream.range(threadId, PCJ.threadCount())
+                                                    .boxed()
+                                                    .collect(Collectors.toMap(
+                                                            Function.identity(),
+                                                            v -> 10 * finalThreadId + v + 1));
+
+                PCJ.scatter(map, Communicable.intValue);
             }
             for (int i = 0; i < PCJ.threadCount(); ++i) {
                 if (PCJ.myId() == i) {
-                    PCJ.waitFor(Communicable.intValue);
+                    if (i >= threadId) {
+                        PCJ.waitFor(Communicable.intValue);
+                    }
                     System.out.println(PCJ.myId() + " -> " + intValue);
                 }
                 PCJ.barrier();
@@ -79,12 +94,19 @@ public class ScatterTest implements StartPoint {
 
             // array
             if (PCJ.myId() == threadId) {
-                int[] array = IntStream.range(100 * threadId + 1, 100 * threadId + 1 + PCJ.threadCount()).toArray();
-                PCJ.scatter(array, Communicable.intArray, 0);
+                int finalThreadId = threadId;
+                Map<Integer, Integer> map = IntStream.range(finalThreadId, PCJ.threadCount())
+                                                    .boxed()
+                                                    .collect(Collectors.toMap(
+                                                            Function.identity(),
+                                                            v -> 10 * finalThreadId + v + 1));
+                PCJ.scatter(map, Communicable.intArray, 0);
             }
             for (int i = 0; i < PCJ.threadCount(); ++i) {
                 if (PCJ.myId() == i) {
-                    PCJ.waitFor(Communicable.intArray);
+                    if (i >= threadId) {
+                        PCJ.waitFor(Communicable.intArray);
+                    }
                     System.out.println(PCJ.myId() + " -> " + Arrays.toString(intArray));
                 }
                 PCJ.barrier();
@@ -93,12 +115,17 @@ public class ScatterTest implements StartPoint {
 
             // null
             if (PCJ.myId() == threadId) {
-                Serializable[] array = new Serializable[PCJ.threadCount()];
-                PCJ.scatter(array, Communicable.nullObject);
+                Map<Integer, Serializable> map = IntStream.range(threadId, PCJ.threadCount())
+                                                         .boxed()
+                                                         .collect(HashMap::new, (m, v) -> m.put(v, null), HashMap::putAll);
+                PCJ.scatter(map, Communicable.nullObject);
             }
             for (int i = 0; i < PCJ.threadCount(); ++i) {
                 if (PCJ.myId() == i) {
-                    PCJ.waitFor(Communicable.nullObject);
+                    if (i >= threadId) {
+                        PCJ.waitFor(Communicable.nullObject);
+                    }
+
                     System.out.println(PCJ.myId() + " -> " + nullObject);
                 }
                 PCJ.barrier();

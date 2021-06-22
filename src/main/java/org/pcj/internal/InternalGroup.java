@@ -8,7 +8,6 @@
  */
 package org.pcj.internal;
 
-import java.lang.reflect.Array;
 import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.Map;
@@ -221,31 +220,22 @@ public final class InternalGroup extends InternalCommonGroup implements Group {
     }
 
     @Override
-    public <T> PcjFuture<Void> asyncScatter(T newValueArray, Enum<?> variable, int... indices) {
+    public <T> PcjFuture<Void> asyncScatter(Map<Integer, T> newValueMap, Enum<?> variable, int... indices) {
         ScatterStates states = super.getScatterStates();
         ScatterStates.State state = states.create(myThreadId, this);
 
-        int length;
-        try {
-            length = Array.getLength(newValueArray);
-            if (length != super.threadCount()) {
-                throw new IllegalArgumentException("Incorrect array size: " + length);
-            }
-        } catch (IllegalArgumentException ex) {
-            Queue<Exception> queue = new ConcurrentLinkedQueue<>();
-            queue.add(ex);
-            state.signal(queue);
-            return state.getFuture();
-        }
 
-        HashMap<Integer, Object> newValueMap = new HashMap<>(length, 1.0f);
-        for (int i = 0; i < length; i++) {
-            newValueMap.put(i, Array.get(newValueArray, i));
+        int threadCount = super.threadCount();
+        HashMap<Integer, Object> valueMap = new HashMap<>(Math.min(threadCount, newValueMap.size()), 1.0f);
+        for (int i = 0; i < threadCount; i++) {
+            if (newValueMap.containsKey(i)) {
+                valueMap.put(i, newValueMap.get(i));
+            }
         }
 
         ScatterRequestMessage message = new ScatterRequestMessage(
                 super.getGroupId(), state.getRequestNum(), myThreadId,
-                variable.getDeclaringClass().getName(), variable.name(), indices, newValueMap);
+                variable.getDeclaringClass().getName(), variable.name(), indices, valueMap);
 
         NodeData nodeData = InternalPCJ.getNodeData();
         SocketChannel socket = nodeData.getSocketChannelByPhysicalId(nodeData.getCurrentNodePhysicalId());

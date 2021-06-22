@@ -174,7 +174,7 @@ public interface Group {
      * @param indices       (optional) indices for array variable
      * @return {@link org.pcj.PcjFuture}&lt;{@link java.lang.Void}&gt;
      */
-    <T> PcjFuture<Void> asyncScatter(T newValueArray, Enum<?> variable, int... indices);
+    <T> PcjFuture<Void> asyncScatter(Map<Integer, T> newValueArray, Enum<?> variable, int... indices);
 
     /**
      * Asynchronous execution operation.

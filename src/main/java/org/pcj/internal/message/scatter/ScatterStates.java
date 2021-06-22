@@ -103,6 +103,10 @@ public class ScatterStates {
             NodeData nodeData = InternalPCJ.getNodeData();
             Set<Integer> threadsId = group.getLocalThreadsId();
             for (int threadId : threadsId) {
+                if (!newValueMap.containsKey(threadId)) {
+                    continue;
+                }
+
                 int globalThreadId = group.getGlobalThreadId(threadId);
                 PcjThread pcjThread = nodeData.getPcjThread(globalThreadId);
                 InternalStorages storage = pcjThread.getThreadData().getStorages();
@@ -124,10 +128,11 @@ public class ScatterStates {
                 List<Integer> subTree = group.getCommunicationTree().getSubtree(requesterPhysicalId, childrenNode);
 
                 Map<Integer, Object> subTreeNewValueMap = groupIdToGlobalIdMap.entrySet()
-                        .stream()
-                        .filter(entry -> subTree.contains(nodeData.getPhysicalId(entry.getValue())))
-                        .map(Map.Entry::getKey)
-                        .collect(HashMap::new, (map, key) -> map.put(key, newValueMap.get(key)), HashMap::putAll);
+                                                                  .stream()
+                                                                  .filter(entry -> subTree.contains(nodeData.getPhysicalId(entry.getValue())))
+                                                                  .map(Map.Entry::getKey)
+                                                                  .filter(newValueMap::containsKey)
+                                                                  .collect(HashMap::new, (map, key) -> map.put(key, newValueMap.get(key)), HashMap::putAll);
 
                 ScatterRequestMessage message = new ScatterRequestMessage(
                         group.getGroupId(), requestNum, requesterThreadId,
