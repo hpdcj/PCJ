@@ -87,7 +87,7 @@ public final class GatherValueMessage<T> extends Message {
         InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
 
         GatherStates states = commonGroup.getGatherStates();
-        GatherStates.State<T> state = states.remove(requestNum, requesterThreadId);
+        GatherStates.State<T> state = (GatherStates.State<T>) states.remove(requestNum, requesterThreadId);
 
         state.signal(valueMap, exceptions);
     }

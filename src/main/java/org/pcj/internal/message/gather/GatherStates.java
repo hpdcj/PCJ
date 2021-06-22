@@ -68,7 +68,7 @@ public class GatherStates {
                         commonGroup.getCommunicationTree().getChildrenNodes(requesterPhysicalId).size()));
     }
 
-    public State remove(int requestNum, int threadId) {
+    public State<?> remove(int requestNum, int threadId) {
         return stateMap.remove(Arrays.asList(requestNum, threadId));
     }
 

@@ -21,10 +21,10 @@ import org.pcj.Storage;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-@RegisterStorage(CollectTest.Communicable.class)
-public class CollectTest implements StartPoint {
+@RegisterStorage(GatherTest.Communicable.class)
+public class GatherTest implements StartPoint {
 
-    @Storage(CollectTest.class)
+    @Storage(GatherTest.class)
     enum Communicable {
         intArray,
         nullObject
@@ -51,7 +51,7 @@ public class CollectTest implements StartPoint {
                 "localhost:8008",
         };
 
-        PCJ.executionBuilder(CollectTest.class)
+        PCJ.executionBuilder(GatherTest.class)
                 .addNodes(nodes)
                 .deploy();
     }
