@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2021, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -56,7 +56,6 @@ import org.pcj.Storage;
 public class StorageAnnotationProcessor extends javax.annotation.processing.AbstractProcessor {
 
     private Types typeUtils;
-    private Elements elementUtils;
     private Set<Element> notSerializableButTypeFinalStorageFields;
     private Set<Element> notSerializableStorageFields;
     private Set<Element> staticStorageFields;
@@ -97,7 +96,7 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
     public synchronized void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
 
-        elementUtils = processingEnv.getElementUtils();
+        Elements elementUtils = processingEnv.getElementUtils();
         serializableType = elementUtils.getTypeElement(Serializable.class.getCanonicalName());
         startPointType = elementUtils.getTypeElement(StartPoint.class.getCanonicalName());
         storageType = elementUtils.getTypeElement(Storage.class.getCanonicalName());
@@ -135,21 +134,21 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
 
         notSerializableStorageFields.stream()
                 .filter(storageElement -> !notSerializableButTypeFinalStorageFields.contains(storageElement))
-                .filter(storageElement -> isSuppressed(storageElement, "serializable") == false)
+                .filter(storageElement -> !isSuppressed(storageElement, "serializable"))
                 .forEach(element -> warning("[serializable] PCJ shared variable type is not serializable", element));
 
         staticStorageFields.stream()
-                .filter(storageElement -> isSuppressed(storageElement, "static") == false)
+                .filter(storageElement -> !isSuppressed(storageElement, "static"))
                 .forEach(element -> warning("[static] PCJ shared variable is static", element));
 
         finalStorageFields.stream()
-                .filter(storageElement -> isSuppressed(storageElement, "final") == false)
+                .filter(storageElement -> !isSuppressed(storageElement, "final"))
                 .forEach(element -> warning("[final] PCJ shared variable is final", element));
 
         storageUsedFields.values().stream()
                 .flatMap(element -> element.entrySet().stream())
                 .filter(entry -> entry.getValue().size() > 1)
-                .filter(entry -> isSuppressed(entry.getKey(), "multiple") == false)
+                .filter(entry -> !isSuppressed(entry.getKey(), "multiple"))
                 .forEach(entry -> {
                     String enums = entry.getValue().stream().map(Element::toString).collect(Collectors.joining(", "));
                     warning("[multiple] PCJ shared variable used in multiple enums: " + enums, entry.getKey());
@@ -171,7 +170,7 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
     }
 
     private void processStorage(TypeElement enumElement) {
-        if (enumElement.getKind().equals(ElementKind.ENUM) == false) {
+        if (!enumElement.getKind().equals(ElementKind.ENUM)) {
             error("Only enums can be annotated by @Storage", enumElement);
             return;
         }
@@ -205,17 +204,17 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
         }
 
         Set<String> storageNames = ElementFilter.fieldsIn(storageClassElement.getEnclosedElements()).stream()
-                .map(element -> element.toString())
+                .map(Object::toString)
                 .collect(Collectors.toCollection(HashSet::new));
 
         enumElement.getEnclosedElements().stream()
                 .filter(element -> element.getKind().equals(ElementKind.ENUM_CONSTANT))
-                .filter(element -> storageNames.contains(element.toString()) == false)
-                .forEach(element -> error("Field " + element.toString() + " not found in Storage class", element));
+                .filter(element -> !storageNames.contains(element.toString()))
+                .forEach(element -> error("Field " + element + " not found in Storage class", element));
 
         Set<String> enumNames = enumElement.getEnclosedElements().stream()
                 .filter(element -> element.getKind().equals(ElementKind.ENUM_CONSTANT))
-                .map(element -> element.toString())
+                .map(Object::toString)
                 .collect(Collectors.toCollection(HashSet::new));
 
         Set<VariableElement> storageFieldsInEnum
@@ -224,20 +223,20 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
                         .collect(Collectors.toSet());
 
         storageFieldsInEnum.stream()
-                .filter(storageElement -> typeUtils.isAssignable(storageElement.asType(), serializableType.asType()) == false)
+                .filter(storageElement -> !typeUtils.isAssignable(storageElement.asType(), serializableType.asType()))
                 .filter(storageElement -> typeUtils.asElement(storageElement.asType()).getModifiers().contains(Modifier.FINAL))
                 .forEach(notSerializableButTypeFinalStorageFields::add);
 
         storageFieldsInEnum.stream()
-                .filter(storageElement -> typeUtils.isAssignable(storageElement.asType(), serializableType.asType()) == false)
+                .filter(storageElement -> !typeUtils.isAssignable(storageElement.asType(), serializableType.asType()))
                 .forEach(notSerializableStorageFields::add);
 
         storageFieldsInEnum.stream()
-                .filter(storageElement -> storageElement.getModifiers().contains(Modifier.STATIC) == true)
+                .filter(storageElement -> storageElement.getModifiers().contains(Modifier.STATIC))
                 .forEach(staticStorageFields::add);
 
         storageFieldsInEnum.stream()
-                .filter(storageElement -> storageElement.getModifiers().contains(Modifier.FINAL) == true)
+                .filter(storageElement -> storageElement.getModifiers().contains(Modifier.FINAL))
                 .forEach(finalStorageFields::add);
 
         storageFieldsInEnum.stream()
@@ -245,7 +244,7 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
     }
 
     private void processRegisterStorage(TypeElement processedElement) {
-        if (typeUtils.isAssignable(processedElement.asType(), startPointType.asType()) == false) {
+        if (!typeUtils.isAssignable(processedElement.asType(), startPointType.asType())) {
             error("Only classes that implements StartPoint can be annotated by @RegisterStorage", processedElement);
             return;
         }
@@ -267,7 +266,7 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
                 .toArray(TypeElement[]::new);
 
         for (TypeElement typeElement : sharedEnumClassElements) {
-            if (typeElement.getKind().equals(ElementKind.ENUM) == false) {
+            if (!typeElement.getKind().equals(ElementKind.ENUM)) {
                 error(typeElement + ": has to be enum", typeElement);
             }
 
@@ -279,7 +278,7 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
 
     @SuppressWarnings("unchecked")
     private void processRegisterStorageRepeatableContainer(TypeElement processedElement) {
-        if (typeUtils.isAssignable(processedElement.asType(), startPointType.asType()) == false) {
+        if (!typeUtils.isAssignable(processedElement.asType(), startPointType.asType())) {
             error("Only classes that implements StartPoint can be annotated by @RegisterStorage", processedElement);
             return;
         }
@@ -310,7 +309,7 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
                 .toArray(TypeElement[]::new);
 
         for (TypeElement typeElement : sharedEnumClassElements) {
-            if (typeElement.getKind().equals(ElementKind.ENUM) == false) {
+            if (!typeElement.getKind().equals(ElementKind.ENUM)) {
                 error(typeElement + ": has to be enum", typeElement);
             }
 
