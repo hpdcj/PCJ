@@ -21,7 +21,7 @@ static def getDate() {
 defaultTasks 'info'
 
 archivesBaseName = "pcj"
-ext.versionNumber = "5.2"
+ext.versionNumber = "5.3"
 ext.buildNumber = "unknown"
 
 repositories {
