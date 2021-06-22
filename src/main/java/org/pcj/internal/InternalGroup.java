@@ -224,7 +224,6 @@ public final class InternalGroup extends InternalCommonGroup implements Group {
         ScatterStates states = super.getScatterStates();
         ScatterStates.State state = states.create(myThreadId, this);
 
-
         int threadCount = super.threadCount();
         HashMap<Integer, Object> valueMap = new HashMap<>(Math.min(threadCount, newValueMap.size()), 1.0f);
         for (int i = 0; i < threadCount; i++) {

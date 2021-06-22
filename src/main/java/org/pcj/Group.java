@@ -90,11 +90,13 @@ public interface Group {
      * Asynchronous gather operation.
      * <p>
      * Gets value of shareable variable from all PCJ Threads from the group.
+     * <p>
+     * The resulted map keys are thread ids.
      *
      * @param <T>      type of value
      * @param variable variable name
      * @param indices  (optional) indices for array variable
-     * @return {@link org.pcj.PcjFuture} that will contain shareable variable values in form of array
+     * @return {@link org.pcj.PcjFuture} that will contain shareable variable values in form of map
      */
     <T> PcjFuture<Map<Integer, T>> asyncGather(Enum<?> variable, int... indices);
 
@@ -160,21 +162,18 @@ public interface Group {
     /**
      * Asynchronous scatter operation.
      * <p>
-     * Scatter value array into shareable variable of all PCJ Threads from the group.
-     * The array has to be the length of the group size.
+     * Scatter value map into shareable variable of all PCJ Threads from the group.
      * <p>
-     * The method maps the value array index to the thread id
-     * and puts a proper element of the array into adequate thread storage.
-     * <p>
-     * Upon successful completion increases modification count of the shareable variable by one.
+     * The values are stored in thread' storage only on threads that their thread id key exists in the map.
+     * Upon successful completion increases modification count of the shareable variable by one only on these threads.
      *
-     * @param <T>           has to be array type
-     * @param newValueArray array with new values
-     * @param variable      variable name
-     * @param indices       (optional) indices for array variable
+     * @param <T>         type of the scattered variable
+     * @param newValueMap map with new values
+     * @param variable    variable name
+     * @param indices     (optional) indices for array variable
      * @return {@link org.pcj.PcjFuture}&lt;{@link java.lang.Void}&gt;
      */
-    <T> PcjFuture<Void> asyncScatter(Map<Integer, T> newValueArray, Enum<?> variable, int... indices);
+    <T> PcjFuture<Void> asyncScatter(Map<Integer, T> newValueMap, Enum<?> variable, int... indices);
 
     /**
      * Asynchronous execution operation.

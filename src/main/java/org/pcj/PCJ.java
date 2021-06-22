@@ -380,11 +380,13 @@ public final class PCJ {
      * Asynchronous gather operation.
      * <p>
      * Gets value of shareable variable from all PCJ Threads from the global group.
+     * <p>
+     * The resulted map keys are thread ids.
      *
      * @param <T>      type of value
      * @param variable variable name
      * @param indices  (optional) indices for array variable
-     * @return {@link org.pcj.PcjFuture} that will contain shareable variable values in form of array
+     * @return {@link org.pcj.PcjFuture} that will contain shareable variable values in form of map
      */
     public static <T> PcjFuture<Map<Integer, T>> asyncGather(Enum<?> variable, int... indices) {
         return getGlobalGroup().asyncGather(variable, indices);
@@ -401,7 +403,7 @@ public final class PCJ {
      * @param <T>      type of value
      * @param variable variable name
      * @param indices  (optional) indices for array variable
-     * @return shareable variable values in form of array
+     * @return shareable variable values in form of map
      */
     public static <T> Map<Integer, T> gather(Enum<?> variable, int... indices) throws PcjRuntimeException {
         return PCJ.<T>asyncGather(variable, indices).get();
@@ -552,15 +554,12 @@ public final class PCJ {
     /**
      * Asynchronous scatter operation.
      * <p>
-     * Scatter value array into shareable variable of all PCJ Threads from the group.
-     * The array has to be the length of the group size.
+     * Scatter value map into shareable variable of all PCJ Threads from the group.
      * <p>
-     * The method maps the value array index to the thread id
-     * and puts a proper element of the array into adequate thread storage.
-     * <p>
-     * Upon successful completion increases modification count of the shareable variable by one.
+     * The values are stored in thread' storage only on threads that their thread id key exists in the map.
+     * Upon successful completion increases modification count of the shareable variable by one only on these threads.
      *
-     * @param <T>         has to be array type
+     * @param <T>         type of the scattered variable
      * @param newValueMap map with new values
      * @param variable    variable name
      * @param indices     (optional) indices for array variable
@@ -578,10 +577,10 @@ public final class PCJ {
      * It is the equivalent to call:
      * <blockquote>{@code PCJ.<T>asyncScatter(newValueMap, variable, indices).get();}</blockquote>
      *
-     * @param <T>           has to be array type
-     * @param newValueMap array with new values
-     * @param variable      variable name
-     * @param indices       (optional) indices for array variable
+     * @param <T>         type of the scattered variable
+     * @param newValueMap map with new values
+     * @param variable    variable name
+     * @param indices     (optional) indices for array variable
      * @throws PcjRuntimeException contains wrapped exception (eg. ArrayOutOfBoundException).
      */
     public static <T> void scatter(Map<Integer, T> newValueMap, Enum<?> variable, int... indices) throws PcjRuntimeException {
