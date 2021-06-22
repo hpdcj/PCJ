@@ -11,6 +11,7 @@ package org.pcj.internal;
 import java.lang.reflect.Array;
 import java.nio.channels.SocketChannel;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import org.pcj.AsyncTask;
@@ -118,7 +119,7 @@ public final class InternalGroup extends InternalCommonGroup implements Group {
     }
 
     @Override
-    public <T> PcjFuture<T> asyncGather(Enum<?> variable, int... indices) {
+    public <T> PcjFuture<Map<Integer, T>> asyncGather(Enum<?> variable, int... indices) {
         String sharedEnumClassName = variable.getDeclaringClass().getName();
         String variableName = variable.name();
 

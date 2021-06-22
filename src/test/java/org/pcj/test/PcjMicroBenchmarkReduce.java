@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -229,8 +230,8 @@ public class PcjMicroBenchmarkReduce implements StartPoint {
 
     private double pcjCollect() {
         if (PCJ.myId() == 0) {
-            double[] values = PCJ.gather(Vars.value);
-            return Arrays.stream(values).sum();
+            Map<Integer, Double> values = PCJ.gather(Vars.value);
+            return values.values().stream().mapToDouble(Double::doubleValue).sum();
         }
         return Double.NaN;
     }

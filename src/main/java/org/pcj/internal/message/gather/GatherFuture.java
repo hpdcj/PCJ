@@ -8,6 +8,7 @@
  */
 package org.pcj.internal.message.gather;
 
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.pcj.PcjFuture;
@@ -17,9 +18,9 @@ import org.pcj.internal.InternalFuture;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public class GatherFuture<T> extends InternalFuture<T> implements PcjFuture<T> {
+public class GatherFuture<T> extends InternalFuture<Map<Integer, T>> implements PcjFuture<Map<Integer, T>> {
 
-    private T valuesArray;
+    private Map<Integer, T> valuesMap;
     private PcjRuntimeException exception;
 
     GatherFuture() {
@@ -31,8 +32,8 @@ public class GatherFuture<T> extends InternalFuture<T> implements PcjFuture<T> {
     }
 
     @SuppressWarnings("unchecked")
-    protected void signalDone(Object valuesArray) {
-        this.valuesArray = (T) valuesArray;
+    protected void signalDone(Map<Integer, T> valuesArray) {
+        this.valuesMap = valuesArray;
         super.signal();
     }
 
@@ -42,7 +43,7 @@ public class GatherFuture<T> extends InternalFuture<T> implements PcjFuture<T> {
     }
 
     @Override
-    public T get() throws PcjRuntimeException {
+    public Map<Integer, T> get() throws PcjRuntimeException {
         try {
             super.await();
         } catch (InterruptedException ex) {
@@ -51,11 +52,11 @@ public class GatherFuture<T> extends InternalFuture<T> implements PcjFuture<T> {
         if (exception != null) {
             throw exception;
         }
-        return valuesArray;
+        return valuesMap;
     }
 
     @Override
-    public T get(long timeout, TimeUnit unit) throws TimeoutException, PcjRuntimeException {
+    public Map<Integer, T> get(long timeout, TimeUnit unit) throws TimeoutException, PcjRuntimeException {
         try {
             super.await(timeout, unit);
         } catch (InterruptedException ex) {
@@ -64,6 +65,6 @@ public class GatherFuture<T> extends InternalFuture<T> implements PcjFuture<T> {
         if (exception != null) {
             throw exception;
         }
-        return valuesArray;
+        return valuesMap;
     }
 }

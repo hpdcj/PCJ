@@ -86,6 +86,4 @@ public final class GatherResponseMessage<T> extends Message {
 
         state.upProcessNode(commonGroup, valueMap, exceptions);
     }
-
-
 }

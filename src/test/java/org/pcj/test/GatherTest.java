@@ -10,8 +10,12 @@ package org.pcj.test;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import org.pcj.PCJ;
 import org.pcj.PcjFuture;
 import org.pcj.RegisterStorage;
@@ -63,16 +67,24 @@ public class GatherTest implements StartPoint {
         for (int i = 0; i < PCJ.threadCount(); ++i) {
             if (PCJ.myId() == i) {
                 System.out.println("--- " + PCJ.myId() + " ---");
-                int[] intSubArray = PCJ.gather(Communicable.intArray, 0);
-                System.out.println(Arrays.toString(intSubArray));
+                Map<Integer, Integer> intSubArrayMap = PCJ.gather(Communicable.intArray, 0);
+                System.out.println(intSubArrayMap);
 
-                int[][] intArray = PCJ.gather(Communicable.intArray);
-                System.out.println(Arrays.deepToString(intArray));
+                Map<Integer, int[]> intArrayMap = PCJ.gather(Communicable.intArray);
+                System.out.println(getStringFromMap(intArrayMap, Arrays::toString));
 
-                PcjFuture<Serializable[]> nullObjectsFuture = PCJ.asyncGather(Communicable.nullObject);
-                System.out.println(Arrays.deepToString(nullObjectsFuture.get()));
+                PcjFuture<Map<Integer, Serializable>> nullObjectsFuture = PCJ.asyncGather(Communicable.nullObject);
+                System.out.println(getStringFromMap(nullObjectsFuture.get(), Objects::toString));
             }
             PCJ.barrier();
         }
+    }
+
+    private <T> String getStringFromMap(Map<Integer, T> intArrayMap, Function<T, String> toString) {
+        return intArrayMap.entrySet()
+                       .stream()
+                       .sorted(Map.Entry.comparingByKey())
+                       .map(e -> e.getKey() + "=" + toString.apply(e.getValue()))
+                       .collect(Collectors.joining(", ", "{", "}"));
     }
 }

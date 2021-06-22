@@ -8,6 +8,8 @@
  */
 package org.pcj;
 
+import java.util.Map;
+
 /**
  * Class that represents group of PCJ Threads.
  *
@@ -94,7 +96,7 @@ public interface Group {
      * @param indices  (optional) indices for array variable
      * @return {@link org.pcj.PcjFuture} that will contain shareable variable values in form of array
      */
-    <T> PcjFuture<T> asyncGather(Enum<?> variable, int... indices);
+    <T> PcjFuture<Map<Integer, T>> asyncGather(Enum<?> variable, int... indices);
 
     /**
      * Asynchronous reduce operation.

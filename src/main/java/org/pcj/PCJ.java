@@ -8,6 +8,7 @@
  */
 package org.pcj;
 
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -385,7 +386,7 @@ public final class PCJ {
      * @param indices  (optional) indices for array variable
      * @return {@link org.pcj.PcjFuture} that will contain shareable variable values in form of array
      */
-    public static <T> PcjFuture<T> asyncGather(Enum<?> variable, int... indices) {
+    public static <T> PcjFuture<Map<Integer, T>> asyncGather(Enum<?> variable, int... indices) {
         return getGlobalGroup().asyncGather(variable, indices);
     }
 
@@ -402,7 +403,7 @@ public final class PCJ {
      * @param indices  (optional) indices for array variable
      * @return shareable variable values in form of array
      */
-    public static <T> T gather(Enum<?> variable, int... indices) throws PcjRuntimeException {
+    public static <T> Map<Integer, T> gather(Enum<?> variable, int... indices) throws PcjRuntimeException {
         return PCJ.<T>asyncGather(variable, indices).get();
     }
 

@@ -99,7 +99,7 @@ public class GatherStates {
             this(requestNum, requesterThreadId, childrenCount, null);
         }
 
-        public PcjFuture<T> getFuture() {
+        public PcjFuture<Map<Integer, T>> getFuture() {
             return future;
         }
 
@@ -192,8 +192,7 @@ public class GatherStates {
                 messageExceptions.forEach(ex::addSuppressed);
                 future.signalException(ex);
             } else {
-                Object array = convertMapToArray(valueMap);
-                future.signalDone(array);
+                future.signalDone(valueMap);
             }
         }
 
