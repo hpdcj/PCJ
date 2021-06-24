@@ -9,7 +9,9 @@
 package org.pcj.test;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -27,10 +29,14 @@ public class CollectTest implements StartPoint {
 
     @Storage(CollectTest.class)
     enum Communicable {
-        intArray,
+        intValue,
+        doubleArray,
+        string
     }
 
-    private int[] intArray = new int[1];
+    private int intValue;
+    private double[] doubleArray = new double[1];
+    private String string;
 
     public static void main(String[] args) {
         Level level = Level.INFO;
@@ -57,24 +63,47 @@ public class CollectTest implements StartPoint {
 
     @Override
     public void main() {
-        intArray[0] = PCJ.myId() + 5;
+        doubleArray[0] = PCJ.myId() + 1;
+        intValue = PCJ.myId() * 10;
+        string = Integer.toString(PCJ.myId());
+
         PCJ.barrier();
 
-        if (PCJ.myId() == 0) {
-            Map<Integer, Long> map = PCJ.collect(
-                    () -> Collectors.filtering(
-                            v -> v % 2 == 0,
-                            Collectors.toMap(Function.identity(), v -> (long) v * v)),
-                    Communicable.intArray,
-                    0
-            );
+        for (int i = 0; i==0 && i < PCJ.threadCount(); ++i) {
+            if (PCJ.myId() == i) {
+                System.out.println("--- " + PCJ.myId() + " ---");
 
-//        Map<Integer, Long> map = IntStream.range(0, 10)
-//                .boxed()
-//                .collect(Collectors.filtering(
-//                        v -> v % 2 == 0,
-//                        Collectors.toMap(Function.identity(), v -> (long)v * v)));
-            System.out.println("map = " + map);
+
+                List<Double> doubleList = PCJ.collect(
+                        () -> Collectors.filtering(
+                                (double[] v) -> ((int) v[0]) % 2 == 0,
+                                Collectors.mapping((double[] v) -> (double) v[0] * v[0],
+                                        Collectors.toList())),
+                        Communicable.doubleArray);
+                System.out.println("doubleList = " + doubleList);
+
+
+                Set<Double> doubleSet = PCJ.collect(
+                        () -> Collectors.mapping((Double v) -> (double) v * v,
+                                Collectors.toSet()),
+                        Communicable.doubleArray, 0);
+                System.out.println("doubleSet = " + doubleSet);
+
+
+                Map<Integer, Long> mapIntValue = PCJ.collect(
+                        () -> Collectors.filtering(
+                                v -> v % 2 == 0,
+                                Collectors.toMap(Function.identity(), v -> (long) v * v)),
+                        Communicable.intValue
+                );
+                System.out.println("mapIntValue = " + mapIntValue);
+
+
+                String stringValue = PCJ.collect(Collectors::joining,
+                        Communicable.string);
+                System.out.println("stringValue = " + stringValue);
+            }
+            PCJ.barrier();
         }
     }
 }

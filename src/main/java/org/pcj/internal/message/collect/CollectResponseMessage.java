@@ -23,22 +23,22 @@ import org.pcj.internal.network.MessageDataOutputStream;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public final class CollectResponseMessage<T,A,R> extends Message {
+public final class CollectResponseMessage<T, R> extends Message {
     private int groupId;
     private int requestNum;
     private int requesterThreadId;
-    private A value;
+    private Object accumulatedValue;
     private Queue<Exception> exceptions;
 
     public CollectResponseMessage() {
         super(MessageType.COLLECT_RESPONSE);
     }
 
-    CollectResponseMessage(int groupId, int requestNum, int requesterThreadId, A value, Queue<Exception> exceptions) {
+    CollectResponseMessage(int groupId, int requestNum, int requesterThreadId, Object accumulatedValue, Queue<Exception> exceptions) {
         this();
 
         this.groupId = groupId;
-        this.value = value;
+        this.accumulatedValue = accumulatedValue;
         this.requestNum = requestNum;
         this.requesterThreadId = requesterThreadId;
         this.exceptions = exceptions;
@@ -54,7 +54,7 @@ public final class CollectResponseMessage<T,A,R> extends Message {
         if (exceptionOccurred) {
             out.writeObject(exceptions);
         } else {
-            out.writeObject(value);
+            out.writeObject(accumulatedValue);
         }
     }
 
@@ -68,7 +68,7 @@ public final class CollectResponseMessage<T,A,R> extends Message {
         boolean exceptionOccurred = in.readBoolean();
         try {
             if (!exceptionOccurred) {
-                value = (A) in.readObject();
+                accumulatedValue = in.readObject();
             } else {
                 exceptions = (Queue<Exception>) in.readObject();
             }
@@ -81,9 +81,9 @@ public final class CollectResponseMessage<T,A,R> extends Message {
         InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
 
         CollectStates states = commonGroup.getCollectStates();
-        CollectStates.State<T,A,R> state = states.getOrCreate(requestNum, requesterThreadId, commonGroup);
+        CollectStates.State<T, R> state = states.getOrCreate(requestNum, requesterThreadId, commonGroup);
 
-        state.upProcessNode(commonGroup, value, exceptions);
+        state.upProcessNode(commonGroup, accumulatedValue, exceptions);
     }
 
 

@@ -38,20 +38,20 @@ import org.pcj.internal.message.Message;
 public class CollectStates {
 
     private final AtomicInteger counter;
-    private final ConcurrentMap<List<Integer>, State<?, ?, ?>> stateMap;
+    private final ConcurrentMap<List<Integer>, State<?, ?>> stateMap;
 
     public CollectStates() {
         counter = new AtomicInteger(0);
         stateMap = new ConcurrentHashMap<>();
     }
 
-    public <T, A, R> State<T, A, R> create(int threadId, InternalCommonGroup commonGroup) {
+    public <T, A, R> State<T, R> create(int threadId, InternalCommonGroup commonGroup) {
         int requestNum = counter.incrementAndGet();
 
         NodeData nodeData = InternalPCJ.getNodeData();
 
         CollectFuture<R> future = new CollectFuture<>();
-        State<T, A, R> state = new State<>(requestNum, threadId,
+        State<T, R> state = new State<>(requestNum, threadId,
                 commonGroup.getCommunicationTree().getChildrenNodes(nodeData.getCurrentNodePhysicalId()).size(),
                 future);
 
@@ -61,25 +61,25 @@ public class CollectStates {
     }
 
     @SuppressWarnings("unchecked")
-    public <T, A, R> State<T, A, R> getOrCreate(int requestNum, int requesterThreadId, InternalCommonGroup commonGroup) {
+    public <T, R> State<T, R> getOrCreate(int requestNum, int requesterThreadId, InternalCommonGroup commonGroup) {
         NodeData nodeData = InternalPCJ.getNodeData();
         int requesterPhysicalId = nodeData.getPhysicalId(commonGroup.getGlobalThreadId(requesterThreadId));
-        return (State<T, A, R>) stateMap.computeIfAbsent(Arrays.asList(requestNum, requesterThreadId),
+        return (State<T, R>) stateMap.computeIfAbsent(Arrays.asList(requestNum, requesterThreadId),
                 key -> new State<>(requestNum, requesterThreadId,
                         commonGroup.getCommunicationTree().getChildrenNodes(requesterPhysicalId).size()));
     }
 
-    public State<?, ?, ?> remove(int requestNum, int threadId) {
+    public State<?, ?> remove(int requestNum, int threadId) {
         return stateMap.remove(Arrays.asList(requestNum, threadId));
     }
 
-    public class State<T, A, R> {
+    public class State<T, R> {
 
         private final int requestNum;
         private final int requesterThreadId;
         private final AtomicInteger notificationCount;
         private final CollectFuture<R> future;
-        private final Queue<A> receivedValues;
+        private final Queue<Object> receivedValues;
         private final Queue<Exception> exceptions;
         private String sharedEnumClassName;
         private String variableName;
@@ -111,7 +111,7 @@ public class CollectStates {
             this.indices = indices;
             this.collectorSupplier = collectorSupplier;
 
-            CollectRequestMessage<T, ?, R> message = new CollectRequestMessage<T, A, R>(
+            CollectRequestMessage<T, R> message = new CollectRequestMessage<>(
                     group.getGroupId(), this.requestNum, this.requesterThreadId,
                     sharedEnumClassName, variableName, indices, collectorSupplier
             );
@@ -128,7 +128,7 @@ public class CollectStates {
             nodeProcessed(group);
         }
 
-        void upProcessNode(InternalCommonGroup group, A receivedValue, Queue<Exception> messageExceptions) {
+        void upProcessNode(InternalCommonGroup group, Object receivedValue, Queue<Exception> messageExceptions) {
             if ((messageExceptions != null) && (!messageExceptions.isEmpty())) {
                 exceptions.addAll(messageExceptions);
             } else {
@@ -148,19 +148,17 @@ public class CollectStates {
                     CollectStates.this.remove(requestNum, requesterThreadId);
                 }
 
+                @SuppressWarnings("unchecked")
                 Collector<T, Object, R> collector = (Collector<T, Object, R>) collectorSupplier.get();
-                A resultContainer = (A) collector.supplier().get();
+                Object resultContainer = collector.supplier().get();
                 if (exceptions.isEmpty()) {
                     try {
-
-
-
-                        BinaryOperator<A> combiner = (BinaryOperator<A>) collector.combiner();
-                        for (A value : receivedValues) {
-                            combiner.apply(resultContainer, value);
+                        BinaryOperator<Object> combiner = collector.combiner();
+                        for (Object value : receivedValues) {
+                            resultContainer = combiner.apply(resultContainer, value);
                         }
 
-                        BiConsumer<A, T> accumulator = (BiConsumer<A, T>) collector.accumulator();
+                        BiConsumer<Object, T> accumulator = collector.accumulator();
                         for (T value : getCurrentNodeValues(group)) {
                             accumulator.accept(resultContainer, value);
                         }

@@ -163,12 +163,12 @@ public final class InternalGroup extends InternalCommonGroup implements Group {
     }
 
     @Override
-    public <T, A, R> PcjFuture<R> asyncCollect(SerializableSupplier<Collector<T, ?, R>> collectorSupplier, Enum<?> variable, int... indices) {
+    public <T, R> PcjFuture<R> asyncCollect(SerializableSupplier<Collector<T, ?, R>> collectorSupplier, Enum<?> variable, int... indices) {
         String sharedEnumClassName = variable.getDeclaringClass().getName();
         String variableName = variable.name();
 
         CollectStates states = super.getCollectStates();
-        CollectStates.State<T, A, R> state = states.create(myThreadId, this);
+        CollectStates.State<T, R> state = states.create(myThreadId, this);
 
         state.downProcessNode(this, sharedEnumClassName, variableName, indices, collectorSupplier);
 

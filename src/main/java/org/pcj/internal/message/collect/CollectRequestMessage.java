@@ -24,7 +24,7 @@ import org.pcj.internal.network.MessageDataOutputStream;
 /**
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
-public final class CollectRequestMessage<T, A, R> extends Message {
+public final class CollectRequestMessage<T, R> extends Message {
 
     private int groupId;
     private int requestNum;
@@ -82,7 +82,7 @@ public final class CollectRequestMessage<T, A, R> extends Message {
         InternalCommonGroup commonGroup = nodeData.getCommonGroupById(groupId);
 
         CollectStates states = commonGroup.getCollectStates();
-        CollectStates.State<T, A, R> state = states.getOrCreate(requestNum, requesterThreadId, commonGroup);
+        CollectStates.State<T, R> state = states.getOrCreate(requestNum, requesterThreadId, commonGroup);
 
         state.downProcessNode(commonGroup, sharedEnumClassName, variableName, indices, collectorSupplier);
     }

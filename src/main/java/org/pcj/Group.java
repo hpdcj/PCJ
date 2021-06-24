@@ -114,7 +114,7 @@ public interface Group {
      */
     <T> PcjFuture<T> asyncReduce(ReduceOperation<T> function, Enum<?> variable, int... indices);
 
-    <T, A, R> PcjFuture<R> asyncCollect(SerializableSupplier<Collector<T, ?, R>> collectorSupplier, Enum<?> variable, int... indices);
+    <T, R> PcjFuture<R> asyncCollect(SerializableSupplier<Collector<T, ?, R>> collectorSupplier, Enum<?> variable, int... indices);
 
     /**
      * Asynchronous put operation.
