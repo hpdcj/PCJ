@@ -147,7 +147,7 @@ public class ReduceStates {
                 T reducedValue = null;
                 if (exceptions.isEmpty()) {
                     try {
-                        reducedValue = getValue(group);
+                        reducedValue = getCurrentNodeReducedValue(group);
                         for (T value : receivedValues) {
                             reducedValue = function.apply(reducedValue, value);
                         }
@@ -178,7 +178,7 @@ public class ReduceStates {
             }
         }
 
-        private T getValue(InternalCommonGroup group) {
+        private T getCurrentNodeReducedValue(InternalCommonGroup group) {
             NodeData nodeData = InternalPCJ.getNodeData();
             Set<Integer> threadsId = group.getLocalThreadsId();
 
