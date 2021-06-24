@@ -67,6 +67,26 @@ public final class InternalGroup extends InternalCommonGroup implements Group {
         return myThreadId;
     }
 
+    public ValueGetStates getValueGetStates() {
+        return valueGetStates;
+    }
+
+    public ValuePutStates getValuePutStates() {
+        return valuePutStates;
+    }
+
+    public ValueAccumulateStates getValueAccumulateStates() {
+        return valueAccumulateStates;
+    }
+
+    public AsyncAtStates getAsyncAtStates() {
+        return asyncAtStates;
+    }
+
+    public PeerBarrierStates getPeerBarrierStates() {
+        return peerBarrierStates;
+    }
+
     @Override
     public PcjFuture<Void> asyncBarrier() {
         BarrierStates states = super.getBarrierStates();
@@ -94,10 +114,6 @@ public final class InternalGroup extends InternalCommonGroup implements Group {
         InternalPCJ.getNetworker().send(socket, message);
 
         return state.doMineBarrier();
-    }
-
-    public PeerBarrierStates getPeerBarrierStates() {
-        return peerBarrierStates;
     }
 
     @Override
@@ -143,10 +159,6 @@ public final class InternalGroup extends InternalCommonGroup implements Group {
         return state.getFuture();
     }
 
-    public ValueGetStates getValueGetStates() {
-        return valueGetStates;
-    }
-
     @Override
     public <T> PcjFuture<Void> asyncPut(T newValue, int threadId, Enum<?> variable, int... indices) {
         ValuePutStates.State state = valuePutStates.create();
@@ -168,10 +180,6 @@ public final class InternalGroup extends InternalCommonGroup implements Group {
         return state.getFuture();
     }
 
-    public ValuePutStates getValuePutStates() {
-        return valuePutStates;
-    }
-
     @Override
     public <T> PcjFuture<Void> asyncAccumulate(ReduceOperation<T> function, T newValue, int threadId, Enum<?> variable, int... indices) {
         ValueAccumulateStates.State state = valueAccumulateStates.create();
@@ -191,10 +199,6 @@ public final class InternalGroup extends InternalCommonGroup implements Group {
         }
 
         return state.getFuture();
-    }
-
-    public ValueAccumulateStates getValueAccumulateStates() {
-        return valueAccumulateStates;
     }
 
     @Override
@@ -249,7 +253,6 @@ public final class InternalGroup extends InternalCommonGroup implements Group {
         return state.getFuture();
     }
 
-
     @Override
     public <T> PcjFuture<T> asyncAt(int threadId, AsyncTask<T> asyncTask) {
         AsyncAtStates.State<T> state = asyncAtStates.create();
@@ -269,10 +272,6 @@ public final class InternalGroup extends InternalCommonGroup implements Group {
         }
 
         return state.getFuture();
-    }
-
-    public AsyncAtStates getAsyncAtStates() {
-        return asyncAtStates;
     }
 
     @Override
