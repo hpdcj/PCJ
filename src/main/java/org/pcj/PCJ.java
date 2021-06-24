@@ -12,7 +12,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Supplier;
 import java.util.stream.Collector;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.PcjThread;
@@ -146,7 +145,7 @@ public final class PCJ {
      * If the object is already created for the PCJ Thread, method returns already associated object.
      *
      * @param storageEnumClass Enum class that represents storage shareable variables
-     * @return Object associated with Storage (type of value from enum annotation)
+     * @return Object associated with Storage (the type of value from enum annotation)
      * @throws PcjRuntimeException thrown when there is problem with registering provided class.
      */
     public static Object registerStorage(Class<? extends Enum<?>> storageEnumClass)
@@ -169,7 +168,7 @@ public final class PCJ {
      * @param storageEnumClass Enum class that represents storage shareable
      *                         variables
      * @param storageObject    object that stores the shareable variables
-     * @return Object associated with Storage (type of value from enum annotation)
+     * @return Object associated with Storage (the type of value from enum annotation)
      * @throws PcjRuntimeException thrown when there is problem with registering provided class.
      */
     public static Object registerStorage(Class<? extends Enum<?>> storageEnumClass, Object storageObject)
@@ -181,7 +180,7 @@ public final class PCJ {
      * Get object associated with registered storage.
      *
      * @param storageEnumClass Enum class that represents storage shareable variables
-     * @return Object associated with Storage (type of value from enum annotation)
+     * @return Object associated with Storage (the type of value from enum annotation)
      */
     public static Object getStorageObject(Class<? extends Enum<?>> storageEnumClass) {
         return PcjThread.getCurrentThreadData().getStorages().getStorage(storageEnumClass);
@@ -296,12 +295,12 @@ public final class PCJ {
     /**
      * Gets reference to shareable variable of current PCJ Thread.
      *
-     * @param <T>      type of variable
+     * @param <R>      the type of variable
      * @param variable variable name
      * @param indices  (optional) indices for array variable
      * @return value (reference)
      */
-    public static <T> T getLocal(Enum<?> variable, int... indices) {
+    public static <R> R getLocal(Enum<?> variable, int... indices) {
         return PcjThread.getCurrentThreadData().getStorages().get(variable, indices);
     }
 
@@ -310,7 +309,7 @@ public final class PCJ {
      * <p>
      * Upon successful completion increases modification count of the shareable variable by one.
      *
-     * @param <T>      type of variable
+     * @param <T>      the type of variable
      * @param newValue value (reference)
      * @param variable variable name
      * @param indices  (optional) indices for array variable
@@ -329,7 +328,7 @@ public final class PCJ {
      * <p>
      * This function increases modification count for shareable variable.
      *
-     * @param <T>      type of variable
+     * @param <T>      the type of variable
      * @param function reduce function
      * @param newValue value (reference)
      * @param variable variable name
@@ -349,7 +348,7 @@ public final class PCJ {
      * <p>
      * Gets value of shareable variable from PCJ Thread from the global group.
      *
-     * @param <T>      type of value
+     * @param <T>      the type of value
      * @param threadId global PCJ Thread id
      * @param variable variable name
      * @param indices  (optional) indices for array variable
@@ -367,7 +366,7 @@ public final class PCJ {
      * It is the equivalent to call:
      * <blockquote>{@code PCJ.<T>asyncGet(threadId, variable, indices).get();}</blockquote>
      *
-     * @param <T>      type of value
+     * @param <T>      the type of value
      * @param threadId global PCJ Thread id
      * @param variable variable name
      * @param indices  (optional) indices for array variable
@@ -385,7 +384,7 @@ public final class PCJ {
      * <p>
      * The resulted map keys are thread ids.
      *
-     * @param <T>      type of value
+     * @param <T>      the type of value
      * @param variable variable name
      * @param indices  (optional) indices for array variable
      * @return {@link org.pcj.PcjFuture} that will contain shareable variable values in form of map
@@ -402,13 +401,13 @@ public final class PCJ {
      * It is the equivalent to call:
      * <blockquote>{@code PCJ.<T>asyncGather(variable, indices).get();}</blockquote>
      *
-     * @param <T>      type of value
+     * @param <R>      the type of the result
      * @param variable variable name
      * @param indices  (optional) indices for array variable
      * @return shareable variable values in form of map
      */
-    public static <T> Map<Integer, T> gather(Enum<?> variable, int... indices) throws PcjRuntimeException {
-        return PCJ.<T>asyncGather(variable, indices).get();
+    public static <R> Map<Integer, R> gather(Enum<?> variable, int... indices) throws PcjRuntimeException {
+        return PCJ.<R>asyncGather(variable, indices).get();
     }
 
     /**
@@ -416,13 +415,13 @@ public final class PCJ {
      * <p>
      * Reduces value of shareable variable from all PCJ Threads from the global group.
      *
-     * @param <T>      type of value
+     * @param <R>      the type of the result
      * @param function reduce function
      * @param variable variable name
      * @param indices  (optional) indices for array variable
      * @return {@link org.pcj.PcjFuture} that will contain reduced shareable variable value
      */
-    public static <T> PcjFuture<T> asyncReduce(ReduceOperation<T> function, Enum<?> variable, int... indices) {
+    public static <R> PcjFuture<R> asyncReduce(ReduceOperation<R> function, Enum<?> variable, int... indices) {
         return getGlobalGroup().asyncReduce(function, variable, indices);
     }
 
@@ -434,22 +433,49 @@ public final class PCJ {
      * It is the equivalent to call:
      * <blockquote>{@code PCJ.<T>asyncReduce(function, variable, indices).get();}</blockquote>
      *
-     * @param <T>      type of value
+     * @param <R>      the type of the result
      * @param function reduce function
      * @param variable variable name
      * @param indices  (optional) indices for array variable
-     * @return {@link org.pcj.PcjFuture} that will contain reduced shareable variable value
+     * @return reduced shareable variable value
      * @throws PcjRuntimeException contains wrapped exception (eg. ArrayOutOfBoundException).
      */
-    public static <T> T reduce(ReduceOperation<T> function, Enum<?> variable, int... indices) throws PcjRuntimeException {
+    public static <R> R reduce(ReduceOperation<R> function, Enum<?> variable, int... indices) throws PcjRuntimeException {
         return PCJ.asyncReduce(function, variable, indices).get();
     }
 
-    public static <T,A,R> PcjFuture<R> asyncCollect(SerializableSupplier<Collector<T, ?, R>> collectorSupplier, Enum<?> variable, int... indices) {
+    /**
+     * Asynchronous collect operation.
+     * <p>
+     * Performs mutable reduction operation on value of shareable variable from all PCJ Threads from the group.
+     *
+     * @param <T>               the type of shareable variable value
+     * @param <R>               the type of the result
+     * @param collectorSupplier supplier of collection function
+     * @param variable          variable name
+     * @param indices           (optional) indices for array variable
+     * @return {@link org.pcj.PcjFuture} that will contain collected shareable variable value
+     */
+    public static <T, R> PcjFuture<R> asyncCollect(SerializableSupplier<Collector<T, ?, R>> collectorSupplier, Enum<?> variable, int... indices) {
         return getGlobalGroup().asyncCollect(collectorSupplier, variable, indices);
     }
 
-    public static <T,A,R> R collect(SerializableSupplier<Collector<T, ?, R>> collectorSupplier, Enum<?> variable, int... indices) throws PcjRuntimeException {
+    /**
+     * Synchronous collect operation.
+     * <p>
+     * Wrapper for {@link #asyncCollect(SerializableSupplier, Enum, int...)}.
+     * <p>
+     * It is the equivalent to call:
+     * <blockquote>{@code PCJ.<T,R>asyncCollect(collectorSupplier, variable, indices).get();}</blockquote>
+     *
+     * @param <T>               the type of shareable variable value
+     * @param <R>               the type of the result
+     * @param collectorSupplier supplier of collection function
+     * @param variable          variable name
+     * @param indices           (optional) indices for array variable
+     * @return collected shareable variable value
+     */
+    public static <T, R> R collect(SerializableSupplier<Collector<T, ?, R>> collectorSupplier, Enum<?> variable, int... indices) throws PcjRuntimeException {
         return PCJ.asyncCollect(collectorSupplier, variable, indices).get();
     }
 
@@ -459,7 +485,7 @@ public final class PCJ {
      * Puts value into shareable variable to PCJ Thread from the global group.
      * Upon successful completion increases modification count of the shareable variable by one.
      *
-     * @param <T>      type of value
+     * @param <T>      the type of value
      * @param newValue new variable value
      * @param threadId global PCJ Thread id
      * @param variable variable name
@@ -478,7 +504,7 @@ public final class PCJ {
      * It is the equivalent to call:
      * <blockquote>{@code PCJ.<T>asyncPut(newValue, threadId, variable, indices).get();}</blockquote>
      *
-     * @param <T>      type of value
+     * @param <T>      the type of value
      * @param newValue new variable value
      * @param threadId global PCJ Thread id
      * @param variable variable name
@@ -495,7 +521,7 @@ public final class PCJ {
      * Accumulates value into shareable variable to PCJ thread from the global group.
      * Upon successful completion increases modification count of the shareable variable by one.
      *
-     * @param <T>      type of value
+     * @param <T>      the type of value
      * @param function reduce function
      * @param newValue new variable value
      * @param threadId global PCJ Thread id
@@ -515,7 +541,7 @@ public final class PCJ {
      * It is the equivalent to call:
      * <blockquote>{@code PCJ.<T>asyncAccumulate(function, newValue, threadId, variable, indices).get();}</blockquote>
      *
-     * @param <T>      type of value
+     * @param <T>      the type of value
      * @param function reduce function
      * @param newValue new variable value
      * @param threadId global PCJ Thread id
@@ -533,7 +559,7 @@ public final class PCJ {
      * Broadcasts value into shareable variable of all PCJ Threads from the global group.
      * Upon successful completion increases modification count of the shareable variable by one.
      *
-     * @param <T>      type of value
+     * @param <T>      the type of value
      * @param newValue new variable value
      * @param variable variable name
      * @param indices  (optional) indices for array variable
@@ -551,7 +577,7 @@ public final class PCJ {
      * It is the equivalent to call:
      * <blockquote>{@code PCJ.<T>asyncBroadcast(newValue, variable, indices).get();}</blockquote>
      *
-     * @param <T>      type of value
+     * @param <T>      the type of value
      * @param newValue new variable value
      * @param variable variable name
      * @param indices  (optional) indices for array variable
@@ -569,7 +595,7 @@ public final class PCJ {
      * The values are stored in thread' storage only on threads that their thread id key exists in the map.
      * Upon successful completion increases modification count of the shareable variable by one only on these threads.
      *
-     * @param <T>         type of the scattered variable
+     * @param <T>         the type of the scattered variable
      * @param newValueMap map with new values
      * @param variable    variable name
      * @param indices     (optional) indices for array variable
@@ -587,7 +613,7 @@ public final class PCJ {
      * It is the equivalent to call:
      * <blockquote>{@code PCJ.<T>asyncScatter(newValueMap, variable, indices).get();}</blockquote>
      *
-     * @param <T>         type of the scattered variable
+     * @param <T>         the type of the scattered variable
      * @param newValueMap map with new values
      * @param variable    variable name
      * @param indices     (optional) indices for array variable
@@ -602,12 +628,12 @@ public final class PCJ {
      * <p>
      * Executes associated function on specified PCJ Thread from global group and returns value.
      *
-     * @param <T>       type of returned value
+     * @param <R>       the type of returned value
      * @param threadId  global PCJ Thread id
      * @param asyncTask function to be executed
      * @return {@link PcjFuture} that will contain value returned by the function
      */
-    public static <T> PcjFuture<T> asyncAt(int threadId, AsyncTask<T> asyncTask) throws PcjRuntimeException {
+    public static <R> PcjFuture<R> asyncAt(int threadId, AsyncTask<R> asyncTask) throws PcjRuntimeException {
         return getGlobalGroup().asyncAt(threadId, asyncTask);
     }
 
@@ -619,14 +645,14 @@ public final class PCJ {
      * Wrapper for {@link #asyncAt(int, AsyncTask)}.
      * <p>
      * It is the equivalent to call:
-     * <blockquote>{@code PCJ.<T>asyncAt(threadId, asyncTask).get();}</blockquote>
+     * <blockquote>{@code PCJ.<R>asyncAt(threadId, asyncTask).get();}</blockquote>
      *
-     * @param <T>       type of returned value
+     * @param <R>       the type of returned value
      * @param threadId  global PCJ Thread id
      * @param asyncTask function to be executed
      * @return {@link org.pcj.PcjFuture} that will contain value returned by the function
      */
-    public static <T> T at(int threadId, AsyncTask<T> asyncTask) throws PcjRuntimeException {
+    public static <R> R at(int threadId, AsyncTask<R> asyncTask) throws PcjRuntimeException {
         return PCJ.asyncAt(threadId, asyncTask).get();
     }
 

@@ -69,17 +69,17 @@ public class CollectTest implements StartPoint {
 
         PCJ.barrier();
 
-        for (int i = 0; i==0 && i < PCJ.threadCount(); ++i) {
+        for (int i = 0; i < PCJ.threadCount(); ++i) {
             if (PCJ.myId() == i) {
                 System.out.println("--- " + PCJ.myId() + " ---");
 
 
-                List<Double> doubleList = PCJ.collect(
+                List<Double> doubleList = PCJ.asyncCollect(
                         () -> Collectors.filtering(
                                 (double[] v) -> ((int) v[0]) % 2 == 0,
                                 Collectors.mapping((double[] v) -> (double) v[0] * v[0],
                                         Collectors.toList())),
-                        Communicable.doubleArray);
+                        Communicable.doubleArray).get();
                 System.out.println("doubleList = " + doubleList);
 
 

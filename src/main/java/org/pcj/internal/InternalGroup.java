@@ -120,8 +120,8 @@ public final class InternalGroup extends InternalCommonGroup implements Group {
     }
 
     @Override
-    public <T> PcjFuture<T> asyncGet(int threadId, Enum<?> variable, int... indices) {
-        ValueGetStates.State<T> state = valueGetStates.create();
+    public <R> PcjFuture<R> asyncGet(int threadId, Enum<?> variable, int... indices) {
+        ValueGetStates.State<R> state = valueGetStates.create();
 
         int globalThreadId = super.getGlobalThreadId(threadId);
         int physicalId = InternalPCJ.getNodeData().getPhysicalId(globalThreadId);
@@ -137,12 +137,12 @@ public final class InternalGroup extends InternalCommonGroup implements Group {
     }
 
     @Override
-    public <T> PcjFuture<Map<Integer, T>> asyncGather(Enum<?> variable, int... indices) {
+    public <R> PcjFuture<Map<Integer, R>> asyncGather(Enum<?> variable, int... indices) {
         String sharedEnumClassName = variable.getDeclaringClass().getName();
         String variableName = variable.name();
 
         GatherStates states = super.getGatherStates();
-        GatherStates.State<T> state = states.create(myThreadId, this);
+        GatherStates.State<R> state = states.create(myThreadId, this);
 
         state.downProcessNode(this, sharedEnumClassName, variableName, indices);
 
@@ -150,12 +150,12 @@ public final class InternalGroup extends InternalCommonGroup implements Group {
     }
 
     @Override
-    public <T> PcjFuture<T> asyncReduce(ReduceOperation<T> function, Enum<?> variable, int... indices) {
+    public <R> PcjFuture<R> asyncReduce(ReduceOperation<R> function, Enum<?> variable, int... indices) {
         String sharedEnumClassName = variable.getDeclaringClass().getName();
         String variableName = variable.name();
 
         ReduceStates states = super.getReduceStates();
-        ReduceStates.State<T> state = states.create(myThreadId, this);
+        ReduceStates.State<R> state = states.create(myThreadId, this);
 
         state.downProcessNode(this, sharedEnumClassName, variableName, indices, function);
 
@@ -270,14 +270,14 @@ public final class InternalGroup extends InternalCommonGroup implements Group {
     }
 
     @Override
-    public <T> PcjFuture<T> asyncAt(int threadId, AsyncTask<T> asyncTask) {
-        AsyncAtStates.State<T> state = asyncAtStates.create();
+    public <R> PcjFuture<R> asyncAt(int threadId, AsyncTask<R> asyncTask) {
+        AsyncAtStates.State<R> state = asyncAtStates.create();
 
         int globalThreadId = super.getGlobalThreadId(threadId);
         int physicalId = InternalPCJ.getNodeData().getPhysicalId(globalThreadId);
         SocketChannel socket = InternalPCJ.getNodeData().getSocketChannelByPhysicalId(physicalId);
 
-        AsyncAtRequestMessage<T> message = new AsyncAtRequestMessage<>(
+        AsyncAtRequestMessage<R> message = new AsyncAtRequestMessage<>(
                 super.getGroupId(), state.getRequestNum(), myThreadId,
                 threadId, asyncTask);
 

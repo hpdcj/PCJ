@@ -79,13 +79,13 @@ public interface Group {
      * <p>
      * Gets value of shareable variable from PCJ Thread from the group.
      *
-     * @param <T>      type of value
+     * @param <R>      the type of the result
      * @param threadId current group PCJ Thread id
      * @param variable variable name
      * @param indices  (optional) indices for array variable
      * @return {@link PcjFuture} that will contain shareable variable value
      */
-    <T> PcjFuture<T> asyncGet(int threadId, Enum<?> variable, int... indices);
+    <R> PcjFuture<R> asyncGet(int threadId, Enum<?> variable, int... indices);
 
     /**
      * Asynchronous gather operation.
@@ -94,26 +94,38 @@ public interface Group {
      * <p>
      * The resulted map keys are thread ids.
      *
-     * @param <T>      type of value
+     * @param <R>      the type of the result
      * @param variable variable name
      * @param indices  (optional) indices for array variable
      * @return {@link org.pcj.PcjFuture} that will contain shareable variable values in form of map
      */
-    <T> PcjFuture<Map<Integer, T>> asyncGather(Enum<?> variable, int... indices);
+    <R> PcjFuture<Map<Integer, R>> asyncGather(Enum<?> variable, int... indices);
 
     /**
      * Asynchronous reduce operation.
      * <p>
      * Reduces value of shareable variable from all PCJ Threads from the group.
      *
-     * @param <T>      type of value
+     * @param <R>      the type of the result
      * @param function reduce function
      * @param variable variable name
      * @param indices  (optional) indices for array variable
      * @return {@link org.pcj.PcjFuture} that will contain reduced shareable variable value
      */
-    <T> PcjFuture<T> asyncReduce(ReduceOperation<T> function, Enum<?> variable, int... indices);
+    <R> PcjFuture<R> asyncReduce(ReduceOperation<R> function, Enum<?> variable, int... indices);
 
+    /**
+     * Asynchronous collect operation.
+     * <p>
+     * Performs mutable reduction operation on value of shareable variable from all PCJ Threads from the group.
+     *
+     * @param <T>               the type of shareable variable value
+     * @param <R>               the type of the result
+     * @param collectorSupplier supplier of collection function
+     * @param variable          variable name
+     * @param indices           (optional) indices for array variable
+     * @return {@link org.pcj.PcjFuture} that will contain collected shareable variable value
+     */
     <T, R> PcjFuture<R> asyncCollect(SerializableSupplier<Collector<T, ?, R>> collectorSupplier, Enum<?> variable, int... indices);
 
     /**
@@ -122,7 +134,7 @@ public interface Group {
      * Puts value into shareable variable to PCJ Thread from the group.
      * Upon successful completion increases modification count of the shareable variable by one.
      *
-     * @param <T>      type of value
+     * @param <T>      the type of value
      * @param newValue new variable value
      * @param threadId current group PCJ Thread id
      * @param variable variable name
@@ -137,7 +149,7 @@ public interface Group {
      * Accumulates value into shareable variable to PCJ thread from the group.
      * Upon successful completion increases modification count of the shareable variable by one.
      *
-     * @param <T>      type of value
+     * @param <T>      the type of value
      * @param function reduce function
      * @param newValue new variable value
      * @param threadId current group PCJ Thread id
@@ -154,7 +166,7 @@ public interface Group {
      * <p>
      * Upon successful completion increases modification count of the shareable variable by one.
      *
-     * @param <T>      type of value
+     * @param <T>      the type of value
      * @param newValue new variable value
      * @param variable variable name
      * @param indices  (optional) indices for array variable
@@ -170,7 +182,7 @@ public interface Group {
      * The values are stored in thread' storage only on threads that their thread id key exists in the map.
      * Upon successful completion increases modification count of the shareable variable by one only on these threads.
      *
-     * @param <T>         type of the scattered variable
+     * @param <T>         the type of the scattered variable
      * @param newValueMap map with new values
      * @param variable    variable name
      * @param indices     (optional) indices for array variable
@@ -183,12 +195,12 @@ public interface Group {
      * <p>
      * Executes associated function on specified PCJ Thread from group and returns value.
      *
-     * @param <T>       type of returned value
+     * @param <R>       the type of returned value
      * @param threadId  current group PCJ Thread id
      * @param asyncTask function to be executed
      * @return {@link PcjFuture} that will contain value returned by the function
      */
-    <T> PcjFuture<T> asyncAt(int threadId, AsyncTask<T> asyncTask);
+    <R> PcjFuture<R> asyncAt(int threadId, AsyncTask<R> asyncTask);
 
     /**
      * This function will be removed.
