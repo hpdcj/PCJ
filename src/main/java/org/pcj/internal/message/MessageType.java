@@ -24,6 +24,9 @@ import org.pcj.internal.message.broadcast.BroadcastResponseMessage;
 import org.pcj.internal.message.broadcast.BroadcastRequestMessage;
 import org.pcj.internal.message.bye.ByeCompletedMessage;
 import org.pcj.internal.message.bye.ByeNotifyMessage;
+import org.pcj.internal.message.collect.CollectRequestMessage;
+import org.pcj.internal.message.collect.CollectResponseMessage;
+import org.pcj.internal.message.collect.CollectValueMessage;
 import org.pcj.internal.message.gather.GatherRequestMessage;
 import org.pcj.internal.message.gather.GatherResponseMessage;
 import org.pcj.internal.message.gather.GatherValueMessage;
@@ -90,6 +93,9 @@ public enum MessageType {
     REDUCE_REQUEST(ReduceRequestMessage::new),
     REDUCE_VALUE(ReduceValueMessage::new),
     REDUCE_RESPONSE(ReduceResponseMessage::new),
+    COLLECT_REQUEST(CollectRequestMessage::new),
+    COLLECT_VALUE(CollectValueMessage::new),
+    COLLECT_RESPONSE(CollectResponseMessage::new),
     ASYNC_AT_REQUEST(AsyncAtRequestMessage::new),
     ASYNC_AT_RESPONSE(AsyncAtResponseMessage::new);
     /* **************************************************** */

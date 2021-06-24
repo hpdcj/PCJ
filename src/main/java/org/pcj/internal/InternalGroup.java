@@ -13,11 +13,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.stream.Collector;
 import org.pcj.AsyncTask;
 import org.pcj.Group;
 import org.pcj.PcjFuture;
 import org.pcj.PcjRuntimeException;
 import org.pcj.ReduceOperation;
+import org.pcj.SerializableSupplier;
 import org.pcj.internal.message.accumulate.ValueAccumulateRequestMessage;
 import org.pcj.internal.message.accumulate.ValueAccumulateStates;
 import org.pcj.internal.message.at.AsyncAtRequestMessage;
@@ -25,6 +27,7 @@ import org.pcj.internal.message.at.AsyncAtStates;
 import org.pcj.internal.message.barrier.BarrierStates;
 import org.pcj.internal.message.broadcast.BroadcastRequestMessage;
 import org.pcj.internal.message.broadcast.BroadcastStates;
+import org.pcj.internal.message.collect.CollectStates;
 import org.pcj.internal.message.gather.GatherStates;
 import org.pcj.internal.message.get.ValueGetRequestMessage;
 import org.pcj.internal.message.get.ValueGetStates;
@@ -155,6 +158,19 @@ public final class InternalGroup extends InternalCommonGroup implements Group {
         ReduceStates.State<T> state = states.create(myThreadId, this);
 
         state.downProcessNode(this, sharedEnumClassName, variableName, indices, function);
+
+        return state.getFuture();
+    }
+
+    @Override
+    public <T, A, R> PcjFuture<R> asyncCollect(SerializableSupplier<Collector<T, ?, R>> collectorSupplier, Enum<?> variable, int... indices) {
+        String sharedEnumClassName = variable.getDeclaringClass().getName();
+        String variableName = variable.name();
+
+        CollectStates states = super.getCollectStates();
+        CollectStates.State<T, A, R> state = states.create(myThreadId, this);
+
+        state.downProcessNode(this, sharedEnumClassName, variableName, indices, collectorSupplier);
 
         return state.getFuture();
     }

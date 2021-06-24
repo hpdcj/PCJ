@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.pcj.internal.message.barrier.BarrierStates;
 import org.pcj.internal.message.broadcast.BroadcastStates;
+import org.pcj.internal.message.collect.CollectStates;
 import org.pcj.internal.message.gather.GatherStates;
 import org.pcj.internal.message.reduce.ReduceStates;
 import org.pcj.internal.message.scatter.ScatterStates;
@@ -47,6 +48,7 @@ public class InternalCommonGroup {
     private final ScatterStates scatterStates;
     private final GatherStates gatherStates;
     private final ReduceStates reduceStates;
+    private final CollectStates collectStates;
     private final SplitGroupStates splitGroupStates;
 
     public InternalCommonGroup(InternalCommonGroup g) {
@@ -62,6 +64,7 @@ public class InternalCommonGroup {
         this.scatterStates = g.scatterStates;
         this.gatherStates = g.gatherStates;
         this.reduceStates = g.reduceStates;
+        this.collectStates = g.collectStates;
         this.splitGroupStates = g.splitGroupStates;
     }
 
@@ -78,6 +81,7 @@ public class InternalCommonGroup {
         this.scatterStates = new ScatterStates();
         this.gatherStates = new GatherStates();
         this.reduceStates = new ReduceStates();
+        this.collectStates = new CollectStates();
         this.splitGroupStates = new SplitGroupStates();
     }
 
@@ -148,6 +152,10 @@ public class InternalCommonGroup {
 
     public final ReduceStates getReduceStates() {
         return reduceStates;
+    }
+
+    public CollectStates getCollectStates() {
+        return collectStates;
     }
 
     public SplitGroupStates getSplitGroupStates() {

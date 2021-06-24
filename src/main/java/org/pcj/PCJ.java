@@ -12,6 +12,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
 import org.pcj.internal.InternalPCJ;
 import org.pcj.internal.PcjThread;
 
@@ -441,6 +443,14 @@ public final class PCJ {
      */
     public static <T> T reduce(ReduceOperation<T> function, Enum<?> variable, int... indices) throws PcjRuntimeException {
         return PCJ.asyncReduce(function, variable, indices).get();
+    }
+
+    public static <T,A,R> PcjFuture<R> asyncCollect(SerializableSupplier<Collector<T, ?, R>> collectorSupplier, Enum<?> variable, int... indices) {
+        return getGlobalGroup().asyncCollect(collectorSupplier, variable, indices);
+    }
+
+    public static <T,A,R> R collect(SerializableSupplier<Collector<T, ?, R>> collectorSupplier, Enum<?> variable, int... indices) throws PcjRuntimeException {
+        return PCJ.asyncCollect(collectorSupplier, variable, indices).get();
     }
 
     /**
