@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import org.pcj.AsyncTask;
 import org.pcj.PCJ;
 import org.pcj.PcjFuture;
@@ -41,10 +42,7 @@ public class NotSerializableTest implements StartPoint {
         Arrays.stream(logger.getHandlers()).forEach(handler -> handler.setLevel(level));
         logger.setLevel(level);
 
-        String[] nodes = {"localhost"};
-
         PCJ.executionBuilder(NotSerializableTest.class)
-                .addNodes(nodes)
                 .deploy();
     }
 
@@ -64,7 +62,7 @@ public class NotSerializableTest implements StartPoint {
         } catch (PcjRuntimeException ex) {
             if (exceptionMessage.equals(ex.getMessage())) System.out.println("OK");
             else {
-                System.out.println("ERROR: wrong exception message");
+                System.out.println("ERROR: wrong exception message (" + ex.getMessage() + ")");
                 ex.printStackTrace();
             }
         } catch (Throwable ex) {
@@ -91,8 +89,11 @@ public class NotSerializableTest implements StartPoint {
         check("PCJ.asyncBroadcast", "Broadcasting value failed",
                 () -> PCJ.asyncBroadcast(new Object(), Shared.object));
 
-        check("PCJ.asyncCollect", "Collecting values failed",
+        check("PCJ.asyncGather", "Gathering values failed",
                 () -> PCJ.asyncGather(Shared.object));
+
+        check("PCJ.asyncCollect", "Collecting values failed",
+                () -> PCJ.asyncCollect(Collectors::toSet, Shared.object));
 
         check("PCJ.asyncReduce", "Reducing values failed",
                 () -> PCJ.asyncReduce((a, b) -> false, Shared.object));
