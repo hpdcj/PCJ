@@ -62,7 +62,7 @@ public class NodeInfo implements Serializable {
 
     @Override
     public String toString() {
-        return "NodeInfo[" + threadIds.toString() + "@" + hostname + ":" + port + "]";
+        return "NodeInfo[" + threadIds.toString() + "@" + (hostname == null ? "<loopback>" : hostname) + ":" + port + "]";
     }
 
     public String getHostname() {

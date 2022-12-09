@@ -8,6 +8,8 @@
  */
 package org.pcj.internal;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -94,18 +96,28 @@ public abstract class InternalExecutionBuilder {
     }
 
     private NodeInfo parseNodeString(String node, int defaultPort) {
-        String hostname = node;
-        int port = defaultPort;
+        if (node == null) {
+            return new NodeInfo(null, defaultPort);
+        }
 
-        int index = node.lastIndexOf(':');
-        if (index != -1) {
-            hostname = node.substring(0, index);
+        String hostname;
+        int port;
+        try {
+            URI uri = new URI("pcj://" + node);
 
-            try {
-                port = Integer.parseInt(node.substring(index + 1));
-            } catch (NumberFormatException ex) {
-                /* nothing to do, port already set */
-            }
+            hostname = uri.getHost();
+            port = uri.getPort();
+        } catch (URISyntaxException e) {
+            hostname = null;
+            port = -1;
+        }
+
+        if (hostname == null) {
+            throw new IllegalArgumentException("Invalid node name: '" + node + "'");
+        }
+
+        if (port == -1) {
+            port = defaultPort;
         }
 
         return new NodeInfo(hostname, port);
