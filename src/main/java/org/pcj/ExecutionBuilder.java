@@ -104,17 +104,18 @@ public final class ExecutionBuilder extends InternalExecutionBuilder implements 
     /**
      * Adds node to execution builder configuration.
      * <p>
-     * Hostname can be specified many times, so more than one instance of PCJ (PCJ thread) will be run on node.
-     * Hostname cannot be {@code null}, or empty, or contains only whitespaces.
+     * Node is in form <i>hostname[:port]</i> (e.g. <i>localhost</i>, <i>localhost:8000</i>), where the port (number after colon ':'), is optional.
+     * <br>
+     * Default port number is 8091 ({@link org.pcj.internal.Configuration#DEFAULT_PORT}) and can be modified using {@systemProperty pcj.port} system property value.
+     * <br>
+     * Hostname cannot be {@code null}, empty, or contains only whitespaces.
      * <p>
-     * Hostnames can take port (after colon ':'), eg. <i>localhost:8000</i>.
-     * Default port is 8091 ({@link org.pcj.internal.Configuration#DEFAULT_PORT}) and can be modified using {@systemProperty pcj.port} system property value.
-     * <p>
-     * Hostnames can be specified many times, so more than one instance of PCJ will be run on node (called threads).
+     * Nodes can be specified multiple times, so more than one instance of PCJ will be run on node (called threads).
      * <p>
      *
      * @param node hostname of node
      * @return a reference to this object
+     * @throws IllegalArgumentException - if the hostname is null, empty or contains only whitespaces
      */
     public ExecutionBuilder addNode(String node) {
         if (node == null) {
