@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import org.pcj.PCJ;
 import org.pcj.RegisterStorage;
@@ -77,7 +78,7 @@ public class CollectTest implements StartPoint {
                 List<Double> doubleList = PCJ.asyncCollect(
                         () -> Collectors.filtering(
                                 (double[] v) -> ((int) v[0]) % 2 == 0,
-                                Collectors.mapping((double[] v) -> (double) v[0] * v[0],
+                                Collectors.mapping((double[] v) -> v[0] * v[0],
                                         Collectors.toList())),
                         Communicable.doubleArray).get();
                 System.out.println("doubleList = " + doubleList);
@@ -99,9 +100,30 @@ public class CollectTest implements StartPoint {
                 System.out.println("mapIntValue = " + mapIntValue);
 
 
+                double average = PCJ.collect(
+                        () -> Collectors.averagingDouble(v -> (double) (int) v),
+                        Communicable.intValue
+                );
+                System.out.println("average = " + average);
+
+
                 String stringValue = PCJ.collect(Collectors::joining,
                         Communicable.string);
                 System.out.println("stringValue = " + stringValue);
+
+
+                String joiningString = PCJ.collect(() -> Collector.of(StringBuilder::new,
+                        (StringBuilder a, String b) -> {
+                            if (a.isEmpty()) a.append(b);
+                            else a.append(", ").append(b);
+                        },
+                        (StringBuilder a, StringBuilder b) -> {
+                            if (a.isEmpty()) return a.append(b);
+                            else return a.append(", ").append(b);
+                        },
+                        (StringBuilder a) -> "{" + a.toString() + "}"),
+                        Communicable.string);
+                System.out.println("joiningString = " + joiningString);
             }
             PCJ.barrier();
         }
