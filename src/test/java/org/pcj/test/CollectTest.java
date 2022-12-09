@@ -113,15 +113,15 @@ public class CollectTest implements StartPoint {
 
 
                 String joiningString = PCJ.collect(() -> Collector.of(StringBuilder::new,
-                        (StringBuilder a, String b) -> {
-                            if (a.isEmpty()) a.append(b);
-                            else a.append(", ").append(b);
-                        },
-                        (StringBuilder a, StringBuilder b) -> {
-                            if (a.isEmpty()) return a.append(b);
-                            else return a.append(", ").append(b);
-                        },
-                        (StringBuilder a) -> "{" + a.toString() + "}"),
+                                (StringBuilder a, String b) -> {
+                                    if (a.length() == 0) a.append(b);
+                                    else a.append(", ").append(b);
+                                },
+                                (StringBuilder a, StringBuilder b) -> {
+                                    if (a.length() == 0) return a.append(b);
+                                    else return a.append(", ").append(b);
+                                },
+                                (StringBuilder a) -> "{" + a.toString() + "}"),
                         Communicable.string);
                 System.out.println("joiningString = " + joiningString);
             }
