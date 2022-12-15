@@ -1,6 +1,6 @@
 # PCJ
 
-PCJ is Java library for parallel computing in Java. It is based on the PGAS (Partitioned Global Address Space) paradigm. It allows for easy implementation in Java of any parallel algorithm. PCJ application can be run on laptop, workstation, cluster and HPC system including large supercomputers. It has been demonstrated that PCJ applications scale up to 200&nbsp;000 cores. Examples and more information at <http://pcj.icm.edu.pl>.
+PCJ is Java library for parallel computing in Java. It is based on the PGAS (Partitioned Global Address Space) paradigm. It allows for easy implementation in Java of any parallel algorithm. PCJ application can be run on laptop, workstation, cluster and HPC system including large supercomputers. It has been demonstrated that PCJ applications scale up to 200&nbsp;000 cores. Examples and more information at <https://pcj.icm.edu.pl>.
 
 Library requires at least Java 8, no modifications to Java syntax or JVM are neccessary.
 
@@ -13,13 +13,13 @@ For maven project, just add this dependency to your `pom.xml` file.
     <dependency>
         <groupId>pl.edu.icm.pcj</groupId>
         <artifactId>pcj</artifactId>
-        <version>5.2.0</version>
+        <version>5.3.1</version>
     </dependency>
 
 If you are using gradle, add those lines to your `build.gradle` file:
 
-    implementation 'pl.edu.icm.pcj:pcj:5.2.0'
-    annotationProcessor 'pl.edu.icm.pcj:pcj:5.2.0'
+    implementation 'pl.edu.icm.pcj:pcj:5.3.1'
+    annotationProcessor 'pl.edu.icm.pcj:pcj:5.3.1'
 
 
 ## Building project
