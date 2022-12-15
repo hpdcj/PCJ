@@ -19,7 +19,11 @@ import java.lang.annotation.Target;
  * <p>
  * This annotation has to annotate enum class, which constants will be names of shareable variables.
  * All enum constants has to have field equivalent in class provided as annotation value.
+ * <p>
+ * If the storage class is not provided, the immediately enclosing class of the enum will be taken as the storage class.
+ * <p>
  * Not all fields in the class has to be shareable and exists in enum.
+ * <p>
  * Shareable variables can use any access modifier.
  * <p>
  * Example of usage:

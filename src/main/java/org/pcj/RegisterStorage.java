@@ -22,6 +22,8 @@ import org.pcj.internal.RegisterStorageRepeatableContainer;
  * It tells which storage should be automatically register on start up of class implementing
  * StartPoint interface.
  * <p>
+ * When value is omitted, all enums annotated with {@literal @}Storage in StartPoint class will be registered.
+ * <p>
  * Can be used multiple times per StartPoint class.
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
