@@ -17,21 +17,22 @@ import java.lang.annotation.Target;
 /**
  * Storage annotation is used for selecting class that can be Storage class.
  * <p>
- * This annotation has to annotate enum class, which constants will be names of shared variables.
+ * This annotation has to annotate enum class, which constants will be names of shareable variables.
  * All enum constants has to have field equivalent in class provided as annotation value.
- * Not all fields in the class has to be shared and exists in enum.
+ * Not all fields in the class has to be shareable and exists in enum.
+ * Shareable variables can use any access modifier.
  * <p>
  * Example of usage:
  * <pre>
  * {@code
  * public class StorageClass {
  *     \@Storage(StorageClass.class)
- *     enum Shared {
- *         t, avg
+ *     enum ShareableEnum {
+ *         array, avg,
  *     }
  *
- *     int[] t;
- *     double avg;
+ *     private int[] array;
+ *     public double avg;
  * }
  * }
  * </pre>
@@ -43,5 +44,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Storage {
 
-    Class<?> value();
+    Class<?> value() default Default.class;
+
+    final class Default {}
 }

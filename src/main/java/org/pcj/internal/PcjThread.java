@@ -10,6 +10,7 @@ package org.pcj.internal;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -139,14 +140,31 @@ public class PcjThread extends Thread {
         RegisterStorage[] registerStorages = startPointClass.getAnnotationsByType(RegisterStorage.class);
 
         for (RegisterStorage registerStorage : registerStorages) {
-            for (Class<? extends Enum<?>> sharedEnumClass : registerStorage.value()) {
+            Class<? extends Enum<?>>[] storages = registerStorage.value();
+            if (storages.length == 0) {
+                @SuppressWarnings("unchecked")
+                Class<? extends Enum<?>>[] tmpStorages = Arrays.stream(startPointClass.getDeclaredClasses())
+                                                                 .filter(Class::isEnum)
+                                                                 .filter(clazz -> clazz.isAnnotationPresent(Storage.class))
+                                                                 .toArray(Class[]::new);
+                storages = tmpStorages;
+            }
+
+            for (Class<? extends Enum<?>> sharedEnumClass : storages) {
                 Storage storageAnnotation = sharedEnumClass.getAnnotation(Storage.class);
                 if (storageAnnotation == null) {
                     throw new PcjRuntimeException("Enum is not annotated by @Storage annotation: " + sharedEnumClass.getName());
                 }
 
+                Class<?> storageClass;
+                if (storageAnnotation.value() != Storage.Default.class) {
+                    storageClass = storageAnnotation.value();
+                } else {
+                    storageClass = sharedEnumClass.getEnclosingClass();
+                }
+
                 Object object = PCJ.registerStorage(sharedEnumClass);
-                if (storageAnnotation.value().equals(startPointClass)) {
+                if (storageClass.equals(startPointClass)) {
                     startPoint = (StartPoint) object;
                 }
             }

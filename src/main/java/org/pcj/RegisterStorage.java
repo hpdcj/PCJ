@@ -32,5 +32,5 @@ import org.pcj.internal.RegisterStorageRepeatableContainer;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface RegisterStorage {
 
-    Class<? extends Enum<?>>[] value();
+    Class<? extends Enum<?>>[] value() default {};
 }

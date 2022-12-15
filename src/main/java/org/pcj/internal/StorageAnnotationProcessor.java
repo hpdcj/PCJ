@@ -39,11 +39,11 @@ import org.pcj.StartPoint;
 import org.pcj.Storage;
 
 /**
- * SharedProcessor is Java Annotation Processor to process {@literal @}Storage,
+ * StorageAnnotationProcessor is Java Annotation Processor to process {@literal @}Storage,
  * {@literal @}RegisterStorage and
  * {@literal @}RegisterStorageRepeatableContainer annotations.
  * <p>
- * It looks up for shared fields and checks for proper declaration (field have
+ * It looks up for shareable fields and checks for proper declaration (field have
  * to be non-final, non-static, and Serializable).
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
@@ -130,20 +130,20 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
                 .forEach(this::processRegisterStorageRepeatableContainer);
 
         notSerializableButTypeFinalStorageFields.stream()
-                .forEach(element -> error("PCJ shared variable type is not serializable but final", element));
+                .forEach(element -> error("PCJ shareable variable type is not serializable but final", element));
 
         notSerializableStorageFields.stream()
                 .filter(storageElement -> !notSerializableButTypeFinalStorageFields.contains(storageElement))
                 .filter(storageElement -> !isSuppressed(storageElement, "serializable"))
-                .forEach(element -> warning("[serializable] PCJ shared variable type is not serializable", element));
+                .forEach(element -> warning("[serializable] PCJ shareable variable type is not serializable", element));
 
         staticStorageFields.stream()
                 .filter(storageElement -> !isSuppressed(storageElement, "static"))
-                .forEach(element -> warning("[static] PCJ shared variable is static", element));
+                .forEach(element -> warning("[static] PCJ shareable variable is static", element));
 
         finalStorageFields.stream()
                 .filter(storageElement -> !isSuppressed(storageElement, "final"))
-                .forEach(element -> warning("[final] PCJ shared variable is final", element));
+                .forEach(element -> warning("[final] PCJ shareable variable is final", element));
 
         storageUsedFields.values().stream()
                 .flatMap(element -> element.entrySet().stream())
@@ -151,7 +151,7 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
                 .filter(entry -> !isSuppressed(entry.getKey(), "multiple"))
                 .forEach(entry -> {
                     String enums = entry.getValue().stream().map(Element::toString).collect(Collectors.joining(", "));
-                    warning("[multiple] PCJ shared variable used in multiple enums: " + enums, entry.getKey());
+                    warning("[multiple] PCJ shareable variable used in multiple enums: " + enums, entry.getKey());
                 });
 
         return true;
