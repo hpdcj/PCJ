@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
@@ -175,37 +176,49 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
             return;
         }
 
-        TypeElement storageClassElement = enumElement.getAnnotationMirrors().stream()
-                .filter(element -> element.getAnnotationType().asElement().equals(storageType))
-                .flatMap(element -> element.getElementValues().entrySet().stream())
-                .filter(element -> element.getKey().getSimpleName().contentEquals("value"))
-                .map(Map.Entry::getValue)
-                .filter(element -> element.getValue() instanceof DeclaredType)
-                .map(element -> (DeclaredType) element.getValue())
-                .filter(element -> element.asElement() instanceof TypeElement)
-                .map(element -> (TypeElement) element.asElement())
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException(enumElement + ": Not annotated with storage."));
+        AnnotationMirror storageAnnotation = enumElement.getAnnotationMirrors().stream()
+                                                     .filter(element -> element.getAnnotationType().asElement().equals(storageType))
+                                                     .findFirst()
+                                                     .orElseThrow(() -> new IllegalArgumentException(enumElement + ": Not annotated with @Storage."));
+
+        TypeElement storageClassElement;
+        if (storageAnnotation.getElementValues().isEmpty()) {
+            if (enumElement.getEnclosingElement().getKind() != ElementKind.CLASS) {
+                error("Invalid @Storage annotation value.", enumElement);
+                return;
+            }
+            storageClassElement = (TypeElement) enumElement.getEnclosingElement();
+        } else {
+            storageClassElement = storageAnnotation.getElementValues().entrySet().stream()
+                                          .filter(element -> element.getKey().getSimpleName().contentEquals("value"))
+                                          .map(Map.Entry::getValue)
+                                          .filter(element -> element.getValue() instanceof DeclaredType)
+                                          .map(element -> (DeclaredType) element.getValue())
+                                          .filter(element -> element.asElement() instanceof TypeElement)
+                                          .map(element -> (TypeElement) element.asElement())
+                                          .findFirst()
+                                          .orElseThrow(() -> new IllegalArgumentException(enumElement + ": Invalid annotation."));
+        }
 
         Map<Element, Set<Element>> usedFields
                 = storageUsedFields.computeIfAbsent(storageClassElement, key -> new HashMap<>());
 
         if (storageClassElement.getModifiers().contains(Modifier.ABSTRACT)) {
-            error("Abstract class cannot be Storage", enumElement);
+            error("Abstract class cannot be annotated with @Storage", enumElement);
             return;
         }
 
         if (ElementFilter.constructorsIn(storageClassElement.getEnclosedElements())
-                .stream()
-                .map(ExecutableElement::getParameters)
-                .noneMatch(List::isEmpty)) {
+                    .stream()
+                    .map(ExecutableElement::getParameters)
+                    .noneMatch(List::isEmpty)) {
             error("No-arg constructor not found", enumElement);
             return;
         }
 
         Set<String> storageNames = ElementFilter.fieldsIn(storageClassElement.getEnclosedElements()).stream()
-                .map(Object::toString)
-                .collect(Collectors.toCollection(HashSet::new));
+                                           .map(Object::toString)
+                                           .collect(Collectors.toCollection(HashSet::new));
 
         enumElement.getEnclosedElements().stream()
                 .filter(element -> element.getKind().equals(ElementKind.ENUM_CONSTANT))
@@ -213,14 +226,14 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
                 .forEach(element -> error("Field " + element + " not found in Storage class", element));
 
         Set<String> enumNames = enumElement.getEnclosedElements().stream()
-                .filter(element -> element.getKind().equals(ElementKind.ENUM_CONSTANT))
-                .map(Object::toString)
-                .collect(Collectors.toCollection(HashSet::new));
+                                        .filter(element -> element.getKind().equals(ElementKind.ENUM_CONSTANT))
+                                        .map(Object::toString)
+                                        .collect(Collectors.toCollection(HashSet::new));
 
         Set<VariableElement> storageFieldsInEnum
                 = ElementFilter.fieldsIn(storageClassElement.getEnclosedElements()).stream()
-                        .filter(element -> enumNames.contains(element.toString()))
-                        .collect(Collectors.toSet());
+                          .filter(element -> enumNames.contains(element.toString()))
+                          .collect(Collectors.toSet());
 
         storageFieldsInEnum.stream()
                 .filter(storageElement -> !typeUtils.isAssignable(storageElement.asType(), serializableType.asType()))
@@ -250,20 +263,20 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
         }
 
         TypeElement[] sharedEnumClassElements = processedElement.getAnnotationMirrors().stream()
-                // get only @RegisterStorage
-                .filter(element -> element.getAnnotationType().asElement().equals(registerStorageType))
-                // get value of @RegisterStorage
-                .flatMap(element -> element.getElementValues().entrySet().stream())
-                .filter(element -> element.getKey().getSimpleName().contentEquals("value"))
-                .map(Map.Entry::getValue)
-                // get type object of value
-                .filter(element -> element.getValue() instanceof DeclaredType)
-                .map(element -> (DeclaredType) element.getValue())
-                // get element object of value type
-                .filter(element -> element.asElement() instanceof TypeElement)
-                .map(element -> (TypeElement) element.asElement())
-                // collect values
-                .toArray(TypeElement[]::new);
+                                                        // get only @RegisterStorage
+                                                        .filter(element -> element.getAnnotationType().asElement().equals(registerStorageType))
+                                                        // get value of @RegisterStorage
+                                                        .flatMap(element -> element.getElementValues().entrySet().stream())
+                                                        .filter(element -> element.getKey().getSimpleName().contentEquals("value"))
+                                                        .map(Map.Entry::getValue)
+                                                        // get type object of value
+                                                        .filter(element -> element.getValue() instanceof DeclaredType)
+                                                        .map(element -> (DeclaredType) element.getValue())
+                                                        // get element object of value type
+                                                        .filter(element -> element.asElement() instanceof TypeElement)
+                                                        .map(element -> (TypeElement) element.asElement())
+                                                        // collect values
+                                                        .toArray(TypeElement[]::new);
 
         for (TypeElement typeElement : sharedEnumClassElements) {
             if (!typeElement.getKind().equals(ElementKind.ENUM)) {
@@ -284,29 +297,29 @@ public class StorageAnnotationProcessor extends javax.annotation.processing.Abst
         }
 
         TypeElement[] sharedEnumClassElements = processedElement.getAnnotationMirrors().stream()
-                // get only @RegisterStorageRepeatableContainer
-                .filter(element -> element.getAnnotationType().asElement().equals(registerStorageRepeatableContainerType))
-                // get value of @RegisterStorageRepeatableContainer
-                .flatMap(element -> element.getElementValues().entrySet().stream())
-                .filter(element -> element.getKey().getSimpleName().contentEquals("value"))
-                .map(Map.Entry::getValue)
-                // value is array: RegisterStorage[]
-                .flatMap(element -> ((List<? extends AnnotationValue>) element.getValue()).stream())
-                // treat value as annotation @RegisterStorage
-                .filter(element -> element.getValue() instanceof AnnotationMirror)
-                .map(element -> (AnnotationMirror) element.getValue())
-                // get value of @RegisterStorage
-                .flatMap(element -> element.getElementValues().entrySet().stream())
-                .filter(element -> element.getKey().getSimpleName().contentEquals("value"))
-                .map(Map.Entry::getValue)
-                // get type object of value
-                .filter(element -> element.getValue() instanceof DeclaredType)
-                .map(element -> (DeclaredType) element.getValue())
-                // get element object of value type
-                .filter(element -> element.asElement() instanceof TypeElement)
-                .map(element -> (TypeElement) element.asElement())
-                // collect values
-                .toArray(TypeElement[]::new);
+                                                        // get only @RegisterStorageRepeatableContainer
+                                                        .filter(element -> element.getAnnotationType().asElement().equals(registerStorageRepeatableContainerType))
+                                                        // get value of @RegisterStorageRepeatableContainer
+                                                        .flatMap(element -> element.getElementValues().entrySet().stream())
+                                                        .filter(element -> element.getKey().getSimpleName().contentEquals("value"))
+                                                        .map(Map.Entry::getValue)
+                                                        // value is array: RegisterStorage[]
+                                                        .flatMap(element -> ((List<? extends AnnotationValue>) element.getValue()).stream())
+                                                        // treat value as annotation @RegisterStorage
+                                                        .filter(element -> element.getValue() instanceof AnnotationMirror)
+                                                        .map(element -> (AnnotationMirror) element.getValue())
+                                                        // get value of @RegisterStorage
+                                                        .flatMap(element -> element.getElementValues().entrySet().stream())
+                                                        .filter(element -> element.getKey().getSimpleName().contentEquals("value"))
+                                                        .map(Map.Entry::getValue)
+                                                        // get type object of value
+                                                        .filter(element -> element.getValue() instanceof DeclaredType)
+                                                        .map(element -> (DeclaredType) element.getValue())
+                                                        // get element object of value type
+                                                        .filter(element -> element.asElement() instanceof TypeElement)
+                                                        .map(element -> (TypeElement) element.asElement())
+                                                        // collect values
+                                                        .toArray(TypeElement[]::new);
 
         for (TypeElement typeElement : sharedEnumClassElements) {
             if (!typeElement.getKind().equals(ElementKind.ENUM)) {

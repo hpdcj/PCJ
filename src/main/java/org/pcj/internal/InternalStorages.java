@@ -126,7 +126,7 @@ public class InternalStorages {
         Storage annotation = storageEnumClass.getAnnotation(Storage.class);
         Class<?> storageClass;
 
-        if (annotation.value() != Storage.Default.class) {
+        if (annotation.value() != Storage.EnclosingClass.class) {
             storageClass = annotation.value();
         } else {
             storageClass = storageEnumClass.getEnclosingClass();

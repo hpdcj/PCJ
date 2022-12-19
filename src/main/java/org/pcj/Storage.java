@@ -48,7 +48,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Storage {
 
-    Class<?> value() default Default.class;
+    Class<?> value() default EnclosingClass.class;
 
-    final class Default {}
+    final class EnclosingClass {}
 }

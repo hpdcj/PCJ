@@ -49,3 +49,10 @@ public class StorageSimpleExample implements StartPoint {
                 .start();
     }
 }
+
+class StorageClass {
+}
+
+@Storage(StorageClass.class)
+enum OuterEnum {
+}

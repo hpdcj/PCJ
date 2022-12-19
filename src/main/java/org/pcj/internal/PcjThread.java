@@ -157,7 +157,7 @@ public class PcjThread extends Thread {
                 }
 
                 Class<?> storageClass;
-                if (storageAnnotation.value() != Storage.Default.class) {
+                if (storageAnnotation.value() != Storage.EnclosingClass.class) {
                     storageClass = storageAnnotation.value();
                 } else {
                     storageClass = sharedEnumClass.getEnclosingClass();
