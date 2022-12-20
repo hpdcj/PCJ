@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Marek Nowicki
+ * Copyright (c) 2019-2022, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
