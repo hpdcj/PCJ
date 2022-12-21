@@ -13,13 +13,13 @@ For maven project, just add this dependency to your `pom.xml` file.
     <dependency>
         <groupId>pl.edu.icm.pcj</groupId>
         <artifactId>pcj</artifactId>
-        <version>5.3.1</version>
+        <version>5.3.2</version>
     </dependency>
 
 If you are using gradle, add those lines to your `build.gradle` file:
 
-    implementation 'pl.edu.icm.pcj:pcj:5.3.1'
-    annotationProcessor 'pl.edu.icm.pcj:pcj:5.3.1'
+    implementation 'pl.edu.icm.pcj:pcj:5.3.2'
+    annotationProcessor 'pl.edu.icm.pcj:pcj:5.3.2'
 
 
 ## Building project
