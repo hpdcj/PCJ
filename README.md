@@ -1,6 +1,7 @@
 # PCJ
+[![javadoc](https://javadoc.io/badge2/pl.edu.icm.pcj/pcj/javadoc.svg)](https://javadoc.io/doc/pl.edu.icm.pcj/pcj)
 
-PCJ is Java library for parallel computing in Java. It is based on the PGAS (Partitioned Global Address Space) paradigm. It allows for easy implementation in Java of any parallel algorithm. PCJ application can be run on laptop, workstation, cluster and HPC system including large supercomputers. It has been demonstrated that PCJ applications scale up to 200&nbsp;000 cores. Examples and more information at <http://pcj.icm.edu.pl>.
+PCJ is Java library for parallel computing in Java. It is based on the PGAS (Partitioned Global Address Space) paradigm. It allows for easy implementation in Java of any parallel algorithm. PCJ application can be run on laptop, workstation, cluster and HPC system including large supercomputers. It has been demonstrated that PCJ applications scale up to 200&nbsp;000 cores. Examples and more information at <https://pcj.icm.edu.pl>.
 
 Library requires at least Java 8, no modifications to Java syntax or JVM are neccessary.
 
@@ -34,12 +35,12 @@ If you wish to compile project by your own, use these instructions:
 
 Execute `./gradlew eclipse`, start `eclipse`, and use
 `File -> Import : Existing Projects into Workspace`.  See
-<http://gradle.org/docs/current/userguide/eclipse_plugin.html> for more
+<https://gradle.org/docs/current/userguide/eclipse_plugin.html> for more
 information.
 
 
 ## Reference
-The usage should be acknowledged by reference to the [PCJ web site](http://pcj.icm.edu.pl) and/or reference to the papers:
+The usage should be acknowledged by reference to the [PCJ web site](https://pcj.icm.edu.pl) and/or reference to the papers:
 * M. Nowicki, Ł. Górski, P. Bała. ["PCJ – Java Library for Highly Scalable HPC and Big Data"](https://ieeexplore.ieee.org/abstract/document/8514322) In: W. W. Samari (Ed.) Processing 2018 International Conference on High Performance Computing \& Simulation (HPCS), IEEE 2018, pp:12-20
 * Marek Nowicki, Magdalena Ryczkowska, Łukasz Górski, Michał Szynkiewicz, Piotr Bała. ["PCJ - a Java library for heterogenous parallel computing"](http://www.wseas.us/e-library/conferences/2016/barcelona/SECEA/SECEA-08.pdf) In: X. Zhuang (Ed.) Recent Advances in Information Science (Recent Advances in Computer Engineering Series vol 36) WSEAS Press 2016 pp. 66-72
 * Marek Nowicki, Łukasz Górski, Patryk Grabarczyk, Piotr Bała. ["PCJ - Java library for high performance computing in PGAS model"](https://ieeexplore.ieee.org/abstract/document/6903687/) In: W. W. Samari and V. Zeljkovic (Eds.) 2012 International Conference on High Performance Computing and Simulation (HPCS) IEEE 2014 pp. 202-209
