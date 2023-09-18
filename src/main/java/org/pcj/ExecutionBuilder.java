@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2021, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2022, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -13,8 +13,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Stream;
 import org.pcj.internal.InternalExecutionBuilder;
@@ -24,7 +26,6 @@ import org.pcj.internal.InternalExecutionBuilder;
  */
 public final class ExecutionBuilder extends InternalExecutionBuilder implements Cloneable {
 
-    private static final String[] EMPTY_ARRAY = new String[0];
     private final Class<? extends StartPoint> startPoint;
     private final List<String> nodeList;
     private final Properties properties;
@@ -76,10 +77,10 @@ public final class ExecutionBuilder extends InternalExecutionBuilder implements 
      */
     public void start() {
         String[] nodes;
-        if (nodeList.isEmpty()) {
-            nodes = new String[]{""};
+        if (!nodeList.isEmpty()) {
+            nodes = nodeList.toArray(new String[0]);
         } else {
-            nodes = nodeList.toArray(EMPTY_ARRAY);
+            nodes = new String[]{null};
         }
         super.start(startPoint, nodes, properties);
     }
@@ -92,10 +93,10 @@ public final class ExecutionBuilder extends InternalExecutionBuilder implements 
      */
     public void deploy() {
         String[] nodes;
-        if (nodeList.isEmpty()) {
-            nodes = new String[]{""};
+        if (!nodeList.isEmpty()) {
+            nodes = nodeList.toArray(new String[0]);
         } else {
-            nodes = nodeList.toArray(EMPTY_ARRAY);
+            nodes = new String[]{null};
         }
         super.deploy(startPoint, nodes, properties);
     }
@@ -103,18 +104,29 @@ public final class ExecutionBuilder extends InternalExecutionBuilder implements 
     /**
      * Adds node to execution builder configuration.
      * <p>
-     * Hostname can be specified many times, so more than one instance of PCJ (PCJ thread) will be run on node.
-     * Empty hostnames means current JVM.
+     * Node is in form <i>hostname[:port]</i> (e.g. <i>localhost</i>, <i>localhost:8000</i>), where the port (number after colon ':'), is optional.
+     * <br>
+     * Default port number is 8091 ({@link org.pcj.internal.Configuration#DEFAULT_PORT}) and can be modified using {@systemProperty pcj.port} system property value.
+     * <br>
+     * Hostname cannot be {@code null}, empty, or contains only whitespaces.
      * <p>
-     * Hostnames can take port (after colon ':'), eg. <i>localhost:8000</i>.
-     * Default port is 8091 and can be modified using {@systemProperty pcj.port} system property value.
+     * Nodes can be specified multiple times, so more than one instance of PCJ will be run on node (called threads).
      * <p>
-     * Hostnames can be specified many times, so more than one instance of PCJ will be run on node (called threads).
      *
      * @param node hostname of node
      * @return a reference to this object
+     * @throws IllegalArgumentException - if the hostname is null, empty or contains only whitespaces
      */
     public ExecutionBuilder addNode(String node) {
+        if (node == null) {
+            throw new IllegalArgumentException("node is null");
+        }
+
+        node = node.trim();
+        if (node.isEmpty() || node.lastIndexOf(":") == 0) {
+            throw new IllegalArgumentException("node is empty or contains only whitespaces");
+        }
+
         nodeList.add(node);
         return this;
     }
@@ -122,18 +134,26 @@ public final class ExecutionBuilder extends InternalExecutionBuilder implements 
     /**
      * Adds multiple nodes to execution builder configuration.
      * <p>
+     * Null, empty or blank entries are filtered out from the list.
+     * <p>
      * For description of a single hostname see {@link #addNode(String)}.
      *
      * @param nodes array of hostnames
      * @return a reference to this object
      */
     public ExecutionBuilder addNodes(String[] nodes) {
-        Collections.addAll(nodeList, nodes);
+        Arrays.stream(nodes)
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(node -> !node.isEmpty())
+                .forEach(this::addNode);
         return this;
     }
 
     /**
      * Adds multiple nodes to execution builder configuration using data from file.
+     * <p>
+     * Empty or blank lines are filtered out from the list.
      * <p>
      * For description of a single hostname see {@link #addNode(String)}.
      *
@@ -143,7 +163,7 @@ public final class ExecutionBuilder extends InternalExecutionBuilder implements 
      */
     public ExecutionBuilder addNodes(File nodeFile) throws IOException {
         try (Stream<String> lines = Files.lines(Paths.get(nodeFile.getPath()))) {
-            lines.forEach(nodeList::add);
+            addNodes(lines.toArray(String[]::new));
         }
         return this;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2021, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2022, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -29,7 +29,7 @@ import org.pcj.ReduceOperation;
 import org.pcj.Storage;
 
 /**
- * External class with methods do handle shared variables.
+ * External class with methods do handle shareable variables.
  *
  * @author Marek Nowicki (faramir@mat.umk.pl)
  */
@@ -124,7 +124,13 @@ public class InternalStorages {
         }
 
         Storage annotation = storageEnumClass.getAnnotation(Storage.class);
-        Class<?> storageClass = annotation.value();
+        Class<?> storageClass;
+
+        if (annotation.value() != Storage.EnclosingClass.class) {
+            storageClass = annotation.value();
+        } else {
+            storageClass = storageEnumClass.getEnclosingClass();
+        }
 
         if (storageObject != null && !storageClass.isAssignableFrom(storageObject.getClass())) {
             throw new ClassCastException(storageObject.getClass() + " cannot be cast to " + storageClass);
@@ -150,7 +156,8 @@ public class InternalStorages {
                     Constructor<?> storageConstructor = storageClass.getConstructor();
                     storageConstructor.setAccessible(true);
                     return storageConstructor.newInstance();
-                } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+                } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
+                         InvocationTargetException e) {
                     throw new PcjRuntimeException(e);
                 }
             } else {
@@ -231,7 +238,7 @@ public class InternalStorages {
     /**
      * Returns variable from Storages
      *
-     * @param variable name of shared variable
+     * @param variable name of shareable variable
      * @param indices  (optional) indices into the array
      * @return value of variable[indices] or variable if indices omitted
      * @throws ClassCastException             there is more indices than variable dimension
@@ -276,7 +283,7 @@ public class InternalStorages {
      *
      * @param function accumulate function
      * @param value    new value of variable
-     * @param variable name of shared variable
+     * @param variable name of shareable variable
      * @param indices  (optional) indices into the array
      * @throws ClassCastException             there is more indices than variable dimension
      *                                        or value cannot be assigned to the variable
@@ -359,7 +366,7 @@ public class InternalStorages {
      * variable value if indices omitted
      *
      * @param value    new value of variable
-     * @param variable name of shared variable
+     * @param variable name of shareable variable
      * @param indices  (optional) indices into the array
      * @throws ClassCastException             there is more indices than variable dimension
      *                                        or value cannot be assigned to the variable
@@ -487,7 +494,7 @@ public class InternalStorages {
     /**
      * Tells to monitor variable. Set the variable modification counter to zero.
      *
-     * @param variable name of shared variable
+     * @param variable name of shareable variable
      */
     public final int monitor(Enum<?> variable) {
         return monitor0(getParent(variable), variable.name());
@@ -508,7 +515,7 @@ public class InternalStorages {
      * variable. After modification decreases the variable modification counter
      * by {@code count}.
      *
-     * @param variable name of shared variable
+     * @param variable name of shareable variable
      * @param count    number of modifications. If 0 - the method exits
      *                 immediately.
      */
@@ -542,7 +549,7 @@ public class InternalStorages {
      * variable. After modification decreases the variable modification counter
      * by {@code count}.
      *
-     * @param variable name of shared variable
+     * @param variable name of shareable variable
      * @param count    number of modifications. If 0 - the method exits
      *                 immediately.
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2021, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2022, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -62,7 +62,7 @@ public class NodeInfo implements Serializable {
 
     @Override
     public String toString() {
-        return "NodeInfo[" + threadIds.toString() + "@" + hostname + ":" + port + "]";
+        return "NodeInfo[" + threadIds.toString() + "@" + (hostname == null ? "<loopback>" : hostname) + ":" + port + "]";
     }
 
     public String getHostname() {

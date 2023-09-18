@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2022, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -13,23 +13,23 @@ import org.pcj.PCJ;
 import org.pcj.RegisterStorage;
 import org.pcj.StartPoint;
 import org.pcj.Storage;
-import org.pcj.test.StorageExample.SharedEnum;
+import org.pcj.test.StorageExample.ShareableEnum;
 
 /**
  * @author faramir
  */
-@RegisterStorage(SharedEnum.class)
+@RegisterStorage(ShareableEnum.class)
 public class StorageExample implements StartPoint {
 
     @Storage(StorageExample.class)
-    enum SharedEnum {
+    enum ShareableEnum {
         x, avg;
     }
 
-    int[] x; // Shared bo w Enum
+    int[] x; // Shareable bo w Enum
     final static double[] STATIC_TEST = new double[PCJ.threadCount()];
-    double avg; // Shared bo w Enum
-    float obiekt_nie_w_Enum_wiec_nie_Shared;
+    double avg; // Shareable bo w Enum
+    float obiekt_nie_w_Enum_wiec_nie_Shareable;
 
     @Override
     public void main() throws Throwable {
@@ -39,14 +39,14 @@ public class StorageExample implements StartPoint {
 //            PCJ.putLocal(SharedEnum.x, x);
         }
         PCJ.barrier();
-        PCJ.put(PCJ.myId() + 1, 0, SharedEnum.x, PCJ.myId());
+        PCJ.put(PCJ.myId() + 1, 0, ShareableEnum.x, PCJ.myId());
         PCJ.barrier();
         if (PCJ.myId() == 0) {
 //            avg = Arrays.stream(PCJ.<int[]>getLocal(SharedEnum.x)).average().orElse(Double.NaN);
             avg = Arrays.stream(x).average().orElse(Double.NaN);
-            PCJ.broadcast(avg, SharedEnum.avg);
+            PCJ.broadcast(avg, ShareableEnum.avg);
         }
-        PCJ.waitFor(SharedEnum.avg);
+        PCJ.waitFor(ShareableEnum.avg);
 //        System.out.println(PCJ.myId() + ": avg = " + PCJ.<Double>getLocal(SharedEnum.avg));
         System.out.println(PCJ.myId() + ": avg = " + avg);
     }
