@@ -83,7 +83,7 @@ public class AsyncAtTest implements StartPoint {
         if (PCJ.myId() == 0) {
             try {
                 PCJ.asyncAt(1, () -> {
-                    PCJ.putLocal(PCJ.myId(), Shared.v);
+                    PCJ.localPut(PCJ.myId(), Shared.v);
                     // v = PCJ.myId(); // throws java.io.NotSerializableException: org.pcj.test.ExecuteAsyncAtTest
                     System.out.println("output: " + PCJ.myId());
                     throw new RuntimeException("rzucony wyjatek");

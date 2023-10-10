@@ -293,6 +293,23 @@ public final class PCJ {
     }
 
     /**
+     * This function will be removed.
+     * <p>
+     * Gets reference to shareable variable of current PCJ Thread.
+     *
+     * @param <R>      the type of variable
+     * @param variable variable name
+     * @param indices  (optional) indices for array variable
+     * @return value (reference)
+     *
+     * @deprecated use {@link #localGet(Enum, int...)} instead
+     */
+    @Deprecated
+    public static <R> R getLocal(Enum<?> variable, int... indices) {
+        return localGet(variable,indices);
+    }
+
+    /**
      * Gets reference to shareable variable of current PCJ Thread.
      *
      * @param <R>      the type of variable
@@ -300,9 +317,30 @@ public final class PCJ {
      * @param indices  (optional) indices for array variable
      * @return value (reference)
      */
-    public static <R> R getLocal(Enum<?> variable, int... indices) {
+    public static <R> R localGet(Enum<?> variable, int... indices) {
         return PcjThread.getCurrentThreadData().getStorages().get(variable, indices);
     }
+
+    /**
+     * This function will be removed.
+     * <p>
+     * Puts value to shareable variable of current PCJ Thread.
+     * <p>
+     * Upon successful completion increases modification count of the shareable variable by one.
+     *
+     * @param <T>      the type of variable
+     * @param newValue value (reference)
+     * @param variable variable name
+     * @param indices  (optional) indices for array variable
+     * @throws PcjRuntimeException contains wrapped exception (e.g. ArrayOutOfBoundException).
+     *
+     * @deprecated use {@link #localPut(T, Enum, int...)} instead
+     */
+    @Deprecated
+    public static <T> void putLocal(T newValue, Enum<?> variable, int... indices) throws PcjRuntimeException {
+        localPut(newValue,variable, indices);
+    }
+
 
     /**
      * Puts value to shareable variable of current PCJ Thread.
@@ -313,14 +351,36 @@ public final class PCJ {
      * @param newValue value (reference)
      * @param variable variable name
      * @param indices  (optional) indices for array variable
-     * @throws PcjRuntimeException contains wrapped exception (eg. ArrayOutOfBoundException).
+     * @throws PcjRuntimeException contains wrapped exception (e.g. ArrayOutOfBoundException).
      */
-    public static <T> void putLocal(T newValue, Enum<?> variable, int... indices) throws PcjRuntimeException {
+    public static <T> void localPut(T newValue, Enum<?> variable, int... indices) throws PcjRuntimeException {
         try {
             PcjThread.getCurrentThreadData().getStorages().put(newValue, variable, indices);
         } catch (Exception ex) {
             throw new PcjRuntimeException(ex);
         }
+    }
+
+
+    /**
+     * This function will be removed.
+     * <p>
+     * Accumulates value to shareable variable of current PCJ Thread.
+     * <p>
+     * This function increases modification count for shareable variable.
+     *
+     * @param <T>      the type of variable
+     * @param function reduce function
+     * @param newValue value (reference)
+     * @param variable variable name
+     * @param indices  (optional) indices for array variable
+     * @throws PcjRuntimeException contains wrapped exception (e.g. ArrayOutOfBoundException).
+     *
+     * @deprecated use {@link #localAccumulate(ReduceOperation, T, Enum, int...)} instead
+     */
+    @Deprecated
+    public static <T> void accumulateLocal(ReduceOperation<T> function, T newValue, Enum<?> variable, int... indices) throws PcjRuntimeException {
+        localAccumulate(function,newValue,variable,indices);
     }
 
     /**
@@ -333,16 +393,15 @@ public final class PCJ {
      * @param newValue value (reference)
      * @param variable variable name
      * @param indices  (optional) indices for array variable
-     * @throws PcjRuntimeException contains wrapped exception (eg. ArrayOutOfBoundException).
+     * @throws PcjRuntimeException contains wrapped exception (e.g. ArrayOutOfBoundException).
      */
-    public static <T> void accumulateLocal(ReduceOperation<T> function, T newValue, Enum<?> variable, int... indices) throws PcjRuntimeException {
+    public static <T> void localAccumulate(ReduceOperation<T> function, T newValue, Enum<?> variable, int... indices) throws PcjRuntimeException {
         try {
             PcjThread.getCurrentThreadData().getStorages().accumulate(function, newValue, variable, indices);
         } catch (Exception ex) {
             throw new PcjRuntimeException(ex);
         }
     }
-
     /**
      * Asynchronous get operation.
      * <p>
@@ -371,7 +430,7 @@ public final class PCJ {
      * @param variable variable name
      * @param indices  (optional) indices for array variable
      * @return value of variable
-     * @throws PcjRuntimeException contains wrapped exception (eg. ArrayOutOfBoundException).
+     * @throws PcjRuntimeException contains wrapped exception (e.g. ArrayOutOfBoundException).
      */
     public static <T> T get(int threadId, Enum<?> variable, int... indices) throws PcjRuntimeException {
         return PCJ.<T>asyncGet(threadId, variable, indices).get();
@@ -438,7 +497,7 @@ public final class PCJ {
      * @param variable variable name
      * @param indices  (optional) indices for array variable
      * @return reduced shareable variable value
-     * @throws PcjRuntimeException contains wrapped exception (eg. ArrayOutOfBoundException).
+     * @throws PcjRuntimeException contains wrapped exception (e.g. ArrayOutOfBoundException).
      */
     public static <R> R reduce(ReduceOperation<R> function, Enum<?> variable, int... indices) throws PcjRuntimeException {
         return PCJ.asyncReduce(function, variable, indices).get();
@@ -509,7 +568,7 @@ public final class PCJ {
      * @param threadId global PCJ Thread id
      * @param variable variable name
      * @param indices  (optional) indices for array variable
-     * @throws PcjRuntimeException contains wrapped exception (eg. ArrayOutOfBoundException).
+     * @throws PcjRuntimeException contains wrapped exception (e.g. ArrayOutOfBoundException).
      */
     public static <T> void put(T newValue, int threadId, Enum<?> variable, int... indices) throws PcjRuntimeException {
         PCJ.asyncPut(newValue, threadId, variable, indices).get();
@@ -547,7 +606,7 @@ public final class PCJ {
      * @param threadId global PCJ Thread id
      * @param variable variable name
      * @param indices  (optional) indices for array variable
-     * @throws PcjRuntimeException contains wrapped exception (eg. ArrayOutOfBoundException).
+     * @throws PcjRuntimeException contains wrapped exception (e.g. ArrayOutOfBoundException).
      */
     public static <T> void accumulate(ReduceOperation<T> function, T newValue, int threadId, Enum<?> variable, int... indices) throws PcjRuntimeException {
         PCJ.asyncAccumulate(function, newValue, threadId, variable, indices).get();
@@ -581,7 +640,7 @@ public final class PCJ {
      * @param newValue new variable value
      * @param variable variable name
      * @param indices  (optional) indices for array variable
-     * @throws PcjRuntimeException contains wrapped exception (eg. ArrayOutOfBoundException).
+     * @throws PcjRuntimeException contains wrapped exception (e.g. ArrayOutOfBoundException).
      */
     public static <T> void broadcast(T newValue, Enum<?> variable, int... indices) throws PcjRuntimeException {
         PCJ.asyncBroadcast(newValue, variable, indices).get();
@@ -617,7 +676,7 @@ public final class PCJ {
      * @param newValueMap map with new values
      * @param variable    variable name
      * @param indices     (optional) indices for array variable
-     * @throws PcjRuntimeException contains wrapped exception (eg. ArrayOutOfBoundException).
+     * @throws PcjRuntimeException contains wrapped exception (e.g. ArrayOutOfBoundException).
      */
     public static <T> void scatter(Map<Integer, T> newValueMap, Enum<?> variable, int... indices) throws PcjRuntimeException {
         PCJ.asyncScatter(newValueMap, variable, indices).get();
@@ -783,7 +842,7 @@ public final class PCJ {
      * Hostnames can be specified many times, so more than one PCJ Thread will be run on node.
      * Empty hostnames means current JVM.
      * <p>
-     * Line with hostname can have part with port number (after colon ':'), eg.
+     * Line with hostname can have part with port number (after colon ':'), e.g.
      * ["localhost:8000", "localhost:8001", "localhost", "host2:8001", "host2"].
      * Default port is 8091 and can be modified using {@systemProperty pcj.port} system property value.
      *
