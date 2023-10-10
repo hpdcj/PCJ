@@ -334,7 +334,7 @@ public final class PCJ {
      * @param indices  (optional) indices for array variable
      * @throws PcjRuntimeException contains wrapped exception (e.g. ArrayOutOfBoundException).
      *
-     * @deprecated use {@link #localPut(T, Enum, int...)} instead
+     * @deprecated use {@link #localPut(Object, Enum, int...)} instead
      */
     @Deprecated
     public static <T> void putLocal(T newValue, Enum<?> variable, int... indices) throws PcjRuntimeException {
@@ -376,7 +376,7 @@ public final class PCJ {
      * @param indices  (optional) indices for array variable
      * @throws PcjRuntimeException contains wrapped exception (e.g. ArrayOutOfBoundException).
      *
-     * @deprecated use {@link #localAccumulate(ReduceOperation, T, Enum, int...)} instead
+     * @deprecated use {@link #localAccumulate(ReduceOperation, Object, Enum, int...)} instead
      */
     @Deprecated
     public static <T> void accumulateLocal(ReduceOperation<T> function, T newValue, Enum<?> variable, int... indices) throws PcjRuntimeException {
@@ -795,6 +795,7 @@ public final class PCJ {
      * <p>
      * Use {@link #splitGroup(Integer, int)} instead.
      *
+     * @throws UnsupportedOperationException always throws exception
      * @deprecated use {@link #splitGroup(Integer, int)} instead
      */
     @Deprecated
@@ -810,6 +811,7 @@ public final class PCJ {
      * <p>
      * Use {@link #splitGroup(Integer, int)} instead.
      *
+     * @throws UnsupportedOperationException always throws exception
      * @deprecated use {@link #splitGroup(Integer, int)} instead
      */
     @Deprecated
