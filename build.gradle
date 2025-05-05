@@ -19,46 +19,46 @@ static def getDate() {
 
 defaultTasks 'info'
 
-archivesBaseName = "pcj"
-ext.versionNumber = "5.3"
+base {
+    archivesName = "pcj"
+}
+ext.versionNumber = "5.4"
 ext.buildNumber = "unknown"
 
 repositories {
-    //    mavenCentral()
 }
 
 dependencies {
-    //    testCompile 'junit:junit:4.11'
 }
 
 compileJava {
-    group 'build'
-    description 'Compiling java classes using Java 8'
+    group = 'build'
+    description = 'Compiling java classes using Java 21'
 
     options.compilerArgs = [
-            '--release', '8',
+            '--release', '21',
             '-Xlint:unchecked',
             '-Xlint:deprecation'
     ]
 }
 
 compileTestJava {
-    group 'build'
-    description 'Compiles java test classes using Java 8 disabling StorageAnnotationProcessor'
+    group = 'build'
+    description = 'Compiles java test classes using Java 21 disabling StorageAnnotationProcessor'
 
     options.compilerArgs += '-proc:none' // 'org.pcj.internal.StorageAnnotationProcessor'
 }
 
 task info {
-    group 'other'
-    description 'PCJ -- Parallel Computing in Java build script'
+    group = 'other'
+    description = 'PCJ -- Parallel Computing in Java build script'
 
     println "PCJ -- Parallel Computing in Java build script"
 }
 
 task javadoc(overwrite: true, type: Javadoc) {
-    group 'build'
-    description 'Generates javadoc from sources without internal packages'
+    group = 'build'
+    description = 'Generates javadoc from sources without internal packages'
 
     failOnError = false
     source = sourceSets.main.allJava
@@ -68,8 +68,8 @@ task javadoc(overwrite: true, type: Javadoc) {
 jar.group = 'release'
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
-    group 'release'
-    description 'Generates jar with javadoc'
+    group = 'release'
+    description = 'Generates jar with javadoc'
 
     from 'LICENSE'
     from javadoc.destinationDir
@@ -77,8 +77,8 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
 }
 
 task sourcesJar(type: Jar) {
-    group 'release'
-    description 'Generates jar with sources'
+    group = 'release'
+    description = 'Generates jar with sources'
 
     from 'LICENSE'
     from sourceSets.main.allJava
@@ -87,15 +87,15 @@ task sourcesJar(type: Jar) {
 }
 
 task snapshotBuild {
-    group 'release'
-    description 'Generates snapshot build with jar, javadoc and sources'
+    group = 'release'
+    description = 'Generates snapshot build with jar, javadoc and sources'
 
     snapshotBuild.dependsOn(jar, javadocJar, sourcesJar)
 }
 
 task releaseBuild {
-    group 'release'
-    description 'Generates release build starting with clean with jar, javadoc and sources'
+    group = 'release'
+    description = 'Generates release build starting with clean with jar, javadoc and sources'
 
     outputs.upToDateWhen { false }
     jar.mustRunAfter(clean)
@@ -103,8 +103,8 @@ task releaseBuild {
 }
 
 task publishReleaseBuild {
-    group 'publishing'
-    description 'Publishes release build to Maven Central'
+    group = 'publishing'
+    description = 'Publishes release build to Maven Central'
 
     publishReleaseBuild.dependsOn(releaseBuild, publish)
 }
@@ -133,7 +133,7 @@ publishing {
             artifact javadocJar
             pom {
                 from components.java
-                packaging 'jar'
+                packaging = 'jar'
                 name = 'PCJ'
                 description = 'PCJ is Java library for parallel computing in Java. It is based on the PGAS (Partitioned Global Address Space) paradigm. It allows for easy implementation in Java of any parallel algorithm. PCJ application can be run on laptop, workstation, cluster and HPC system including large supercomputers.'
                 url = 'http://pcj.icm.edu.pl'
@@ -167,8 +167,8 @@ publishing {
 }
 
 signing {
-    group 'publishing'
-    description 'Signs generated jar for publishing'
+    group = 'publishing'
+    description = 'Signs generated jar for publishing'
 
     sign publishing.publications.mavenJava
 }
@@ -224,8 +224,8 @@ gradle.taskGraph.whenReady { taskGraph ->
         publishing.repositories.maven.url = buildNumber.contains('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
         if (publishing.repositories.maven.url.scheme == "https") {
             publishing.repositories.maven.credentials {
-                username sonatypeUsername
-                password sonatypePassword
+                username = sonatypeUsername
+                password = sonatypePassword
             }
         }
     }
