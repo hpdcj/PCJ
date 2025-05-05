@@ -50,5 +50,8 @@ public @interface Storage {
 
     Class<?> value() default EnclosingClass.class;
 
+    /**
+     * Internal class for default value that will search for Storage in enclosing class
+     */
     final class EnclosingClass {}
 }
