@@ -169,9 +169,9 @@ public abstract class InternalPCJ {
                     LOGGER.log(Level.SEVERE, "Exception while waiting for joining PCJ Threads", e);
                 }
                 if (pcjThreads.values().stream().map(PcjThread::getPcjThreadGroup)
-                            .mapToInt(PcjThread.PcjThreadGroup::activeCount).count() > 0) {
+                        .mapToInt(PcjThread.PcjThreadGroup::activeCount).findAny().isPresent()) {
                     LOGGER.log(Level.INFO, "Forcibly stopping PCJ threads.");
-                    pcjThreads.values().stream().map(PcjThread::getPcjThreadGroup).forEach(ThreadGroup::stop);
+                    pcjThreads.values().stream().map(PcjThread::getPcjThreadGroup).forEach(ThreadGroup::interrupt);
                 }
             } finally {
                 aliveState.stop();
