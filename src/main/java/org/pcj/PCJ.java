@@ -31,30 +31,29 @@ public final class PCJ {
     }
 
     /**
-     * Creates execution builder for starting the application using startPoint class.
+     * Creates an {@link ExecutionBuilder} for configuring and starting a PCJ application.
      * <p>
-     * It does not start application.
-     * It is necessary to execute {@link ExecutionBuilder#deploy()} or {@link ExecutionBuilder#start()} method to start
-     * application.
-     * <p>
-     * The example of usage:
+     * This method does not start execution immediately.
+     * To start the application, invoke {@link ExecutionBuilder#deploy()}
+     * or {@link ExecutionBuilder#start()} on the returned builder.
+     *
      * <pre>
      * PCJ.executionBuilder(Hello.class)
      *    .addNodes(new File("nodes.txt"))
      *    .deploy();
      * </pre>
      *
-     * @param startPoint start point class
-     * @return {@link ExecutionBuilder} for chain configuration and starting application
+     * @param startPoint class implementing {@link StartPoint}
+     * @return execution builder for configuring and starting the application
      */
     public static ExecutionBuilder executionBuilder(Class<? extends StartPoint> startPoint) {
         return new ExecutionBuilder(startPoint);
     }
 
     /**
-     * Gets unique node identifier.
+     * Returns the unique identifier of the current node.
      * <p>
-     * Node identifiers are consecutive numbers that starts from 0.
+     * Node identifiers are consecutive integers starting from {@code 0}.
      *
      * @return node identifier
      */
@@ -63,7 +62,7 @@ public final class PCJ {
     }
 
     /**
-     * Gets total number of nodes.
+     * Returns the total number of nodes participating in the computation.
      *
      * @return total number of nodes
      */
@@ -72,7 +71,7 @@ public final class PCJ {
     }
 
     /**
-     * Gets all PCJ properties.
+     * Returns all PCJ properties.
      * <p>
      * Properties can be set using {@link ExecutionBuilder#addProperty(String, String)}
      * or {@link ExecutionBuilder#addProperties(Properties)} methods.
@@ -84,7 +83,7 @@ public final class PCJ {
     }
 
     /**
-     * Gets the PCJ property indicated by the specified key.
+     * Returns the value of the PCJ property identified by the specified key.
      *
      * @param key the name of the PCJ property
      * @return the string value of the PCJ property, or null if there is no property with that key
@@ -94,9 +93,9 @@ public final class PCJ {
     }
 
     /**
-     * Gets the PCJ property indicated by the specified key.
+     * Returns the value of the PCJ property identified by the specified key.
      * <p>
-     * The method returns the default value argument if the key is not found.
+     * If the property is not defined, the provided default value is returned.
      *
      * @param key          the name of the PCJ property
      * @param defaultValue a default value
@@ -107,9 +106,9 @@ public final class PCJ {
     }
 
     /**
-     * Gets identifier of current PCJ Thread in the global group.
+     * Returns the identifier of the current PCJ Thread in the global group.
      * <p>
-     * Identifiers are consecutive numbers that start with 0.
+     * Thread identifiers are consecutive integers starting from {@code 0}.
      *
      * @return current PCJ Thread identifier
      */
@@ -118,28 +117,27 @@ public final class PCJ {
     }
 
     /**
-     * Gets total number of PCJ Thread in the global group.
+     * Returns the total number of PCJ Threads in the global group.
      *
-     * @return total number of PCJ Thread in the global group
+     * @return number of PCJ Threads
      */
     public static int threadCount() {
         return getGlobalGroup().threadCount();
     }
 
     /**
-     * Gets global group.
+     * Returns the global PCJ group.
      * <p>
-     * Static methods of this class and methods of the global group do the same things.
-     * Static methods are wrappers for methods in global group.
+     * Static methods of this class are thin wrappers around methods provided by the global group.
      *
-     * @return global group
+     * @return global PCJ group
      */
     public static Group getGlobalGroup() {
         return PcjThread.getCurrentThreadData().getGlobalGroup();
     }
 
     /**
-     * Register storage as enum' constants.
+     * Registers a storage defined by an enum class.
      * <p>
      * This method, when necessary, creates a object pointed by enum' annotation.
      * If the object is already created for the PCJ Thread, method returns already associated object.
@@ -154,7 +152,7 @@ public final class PCJ {
     }
 
     /**
-     * Register storage as enum' constants.
+     * Registers a storage defined by an enum class.
      * <p>
      * This method associates provided object as storage of shareable variable.
      * If the object is already created for the PCJ Thread, method returns already associated object.
@@ -177,7 +175,7 @@ public final class PCJ {
     }
 
     /**
-     * Get object associated with registered storage.
+     * Returns object associated with registered storage.
      *
      * @param storageEnumClass Enum class that represents storage shareable variables
      * @return Object associated with Storage (the type of value from enum annotation)
@@ -202,7 +200,7 @@ public final class PCJ {
     /**
      * Synchronous barrier.
      * <p>
-     * Wrapper for {@link #asyncBarrier()}.
+     * This is a synchronous wrapper for {@link #asyncBarrier()}.
      * <p>
      * It is the equivalent to call:
      * <blockquote>{@code PCJ.asyncBarrier().get();}</blockquote>
@@ -212,9 +210,9 @@ public final class PCJ {
     }
 
     /**
-     * Starts asynchronous barrier with one peer PCJ Thread.
+     * Starts asynchronous barrier with a single peer PCJ Thread.
      * <p>
-     * Given {@code threadId} should be different from current PCJ Thread id, otherwise the exception will be thrown.
+     * The provided {@code threadId} must be different from the current PCJ Thread id, otherwise the exception will be thrown.
      * <p>
      * PCJ Thread can continue to work and use {@link PcjFuture#isDone()} method to check if peer thread arrive at the barrier.
      * <p>
@@ -230,7 +228,7 @@ public final class PCJ {
     /**
      * Synchronous barrier with one peer PCJ Thread.
      * <p>
-     * Wrapper for {@link #asyncBarrier(int)}.
+     * This is a synchronous wrapper for {@link #asyncBarrier(int)}.
      * <p>
      * It is the equivalent to call:
      * <blockquote>{@code PCJ.asyncBarrier(threadId).get();}</blockquote>
@@ -242,7 +240,7 @@ public final class PCJ {
     }
 
     /**
-     * Clear modification count of the shareable variable.
+     * Clears the modification counter of the specified shareable variable.
      *
      * @param variable shareable variable
      * @return modification count before clearing
@@ -252,8 +250,9 @@ public final class PCJ {
     }
 
     /**
-     * Checks and optionally waits for one modification of the shareable variable.
-     * Decrease number of modification count by one.
+     * Checks and optionally waits for at least one modification of the specified shareable variable.
+     * <p>
+     * Upon return, the modification counter is decreased by one.
      *
      * @param variable shareable variable
      * @return remaining modification count
@@ -263,9 +262,9 @@ public final class PCJ {
     }
 
     /**
-     * Checks and optionally waits for many ({@code count}) modifications of the shareable variable.
+     * Checks and optionally waits for at least {@code count} modifications of the specified shareable variable.
      * <p>
-     * Decrease number of modification count.
+     * Upon return, the modification counter is decreased by one.
      *
      * @param variable shareable variable
      * @param count    number of modifications
@@ -276,16 +275,17 @@ public final class PCJ {
     }
 
     /**
-     * Checks and optionally waits for many ({@code count}) modifications of the shareable variable.
+     * Checks and optionally waits for at least {@code count} modifications of the specified shareable variable,
+     * subject to a timeout.
      * <p>
-     * Decrease number of modification count.
+     * Upon return, the modification counter is decreased by one.
      *
      * @param variable shareable variable
      * @param count    number of modifications
      * @param timeout  timeout
      * @param unit     unit of time
      * @return remaining modification count
-     * @throws TimeoutException when not so much modifications occurs till timeout
+     * @throws TimeoutException if the timeout expires before enough modifications occur
      */
     public static int waitFor(Enum<?> variable, int count,
                               long timeout, TimeUnit unit) throws TimeoutException {
@@ -293,7 +293,7 @@ public final class PCJ {
     }
 
     /**
-     * This function will be removed.
+     * This function will be removed: use {@link #localGet(Enum, int...)} instead.
      * <p>
      * Gets reference to shareable variable of current PCJ Thread.
      *
@@ -301,16 +301,15 @@ public final class PCJ {
      * @param variable variable name
      * @param indices  (optional) indices for array variable
      * @return value (reference)
-     *
      * @deprecated use {@link #localGet(Enum, int...)} instead
      */
     @Deprecated
     public static <R> R getLocal(Enum<?> variable, int... indices) {
-        return localGet(variable,indices);
+        return localGet(variable, indices);
     }
 
     /**
-     * Gets reference to shareable variable of current PCJ Thread.
+     * Gets a reference to the specified shareable variable of the current PCJ Thread.
      *
      * @param <R>      the type of variable
      * @param variable variable name
@@ -322,7 +321,7 @@ public final class PCJ {
     }
 
     /**
-     * This function will be removed.
+     * This function will be removed: use {@link #localPut(Object, Enum, int...)} instead.
      * <p>
      * Puts value to shareable variable of current PCJ Thread.
      * <p>
@@ -333,17 +332,16 @@ public final class PCJ {
      * @param variable variable name
      * @param indices  (optional) indices for array variable
      * @throws PcjRuntimeException contains wrapped exception (e.g. ArrayOutOfBoundException).
-     *
      * @deprecated use {@link #localPut(Object, Enum, int...)} instead
      */
     @Deprecated
     public static <T> void putLocal(T newValue, Enum<?> variable, int... indices) throws PcjRuntimeException {
-        localPut(newValue,variable, indices);
+        localPut(newValue, variable, indices);
     }
 
 
     /**
-     * Puts value to shareable variable of current PCJ Thread.
+     * Puts the value to the specified shareable variable of the current PCJ Thread.
      * <p>
      * Upon successful completion increases modification count of the shareable variable by one.
      *
@@ -363,7 +361,7 @@ public final class PCJ {
 
 
     /**
-     * This function will be removed.
+     * This function will be removed: use {@link #localAccumulate(ReduceOperation, Object, Enum, int...)} instead.
      * <p>
      * Accumulates value to shareable variable of current PCJ Thread.
      * <p>
@@ -375,18 +373,17 @@ public final class PCJ {
      * @param variable variable name
      * @param indices  (optional) indices for array variable
      * @throws PcjRuntimeException contains wrapped exception (e.g. ArrayOutOfBoundException).
-     *
      * @deprecated use {@link #localAccumulate(ReduceOperation, Object, Enum, int...)} instead
      */
     @Deprecated
     public static <T> void accumulateLocal(ReduceOperation<T> function, T newValue, Enum<?> variable, int... indices) throws PcjRuntimeException {
-        localAccumulate(function,newValue,variable,indices);
+        localAccumulate(function, newValue, variable, indices);
     }
 
     /**
-     * Accumulates value to shareable variable of current PCJ Thread.
+     * Accumulates the value into the specified shareable variable of the current PCJ Thread.
      * <p>
-     * This function increases modification count for shareable variable.
+     * Upon successful completion increases modification count of the shareable variable by one.
      *
      * @param <T>      the type of variable
      * @param function reduce function
@@ -402,10 +399,11 @@ public final class PCJ {
             throw new PcjRuntimeException(ex);
         }
     }
+
     /**
      * Asynchronous get operation.
      * <p>
-     * Gets value of shareable variable from PCJ Thread from the global group.
+     * Gets a value of the specified shareable variable from PCJ Thread from the global group.
      *
      * @param <T>      the type of value
      * @param threadId global PCJ Thread id
@@ -439,9 +437,9 @@ public final class PCJ {
     /**
      * Asynchronous gather operation.
      * <p>
-     * Gets value of shareable variable from all PCJ Threads from the global group.
+     * Gets values of the specified shareable variable from all PCJ Threads in the global group.
      * <p>
-     * The resulted map keys are thread ids.
+     * The resulting map is indexed by PCJ Thread identifiers.
      *
      * @param <T>      the type of value
      * @param variable variable name
@@ -472,7 +470,7 @@ public final class PCJ {
     /**
      * Asynchronous reduce operation.
      * <p>
-     * Reduces value of shareable variable from all PCJ Threads from the global group.
+     * Reduces values of the specified shareable variable from all PCJ Threads in the global group.
      *
      * @param <R>      the type of the result
      * @param function reduce function
@@ -506,7 +504,7 @@ public final class PCJ {
     /**
      * Asynchronous collect operation.
      * <p>
-     * Performs mutable reduction operation on value of shareable variable from all PCJ Threads from the group.
+     * Performs mutable reduction on values of the specified shareable variable from all PCJ Threads in the global group.
      *
      * @param <T>               the type of shareable variable value
      * @param <R>               the type of the result
@@ -541,7 +539,7 @@ public final class PCJ {
     /**
      * Asynchronous put operation.
      * <p>
-     * Puts value into shareable variable to PCJ Thread from the global group.
+     * Puts the value to the specified shareable variable of a target PCJ Thread from the global group.
      * Upon successful completion increases modification count of the shareable variable by one.
      *
      * @param <T>      the type of value
@@ -577,7 +575,7 @@ public final class PCJ {
     /**
      * Asynchronous accumulate operation.
      * <p>
-     * Accumulates value into shareable variable to PCJ thread from the global group.
+     * Accumulates value into the specified shareable variable of a target PCJ thread from the global group.
      * Upon successful completion increases modification count of the shareable variable by one.
      *
      * @param <T>      the type of value
@@ -615,7 +613,7 @@ public final class PCJ {
     /**
      * Asynchronous broadcast operation.
      * <p>
-     * Broadcasts value into shareable variable of all PCJ Threads from the global group.
+     * Broadcasts value into the specified shareable variable of all PCJ Threads from the global group.
      * Upon successful completion increases modification count of the shareable variable by one.
      *
      * @param <T>      the type of value
@@ -649,9 +647,9 @@ public final class PCJ {
     /**
      * Asynchronous scatter operation.
      * <p>
-     * Scatter value map into shareable variable of all PCJ Threads from the group.
+     * Scatter value map into the specified shareable variable of all PCJ Threads from the group.
      * <p>
-     * The values are stored in thread' storage only on threads that their thread id key exists in the map.
+     * Values are stored only on PCJ Threads whose thread identifiers are present as keys in the value map.
      * Upon successful completion increases modification count of the shareable variable by one only on these threads.
      *
      * @param <T>         the type of the scattered variable
@@ -660,7 +658,7 @@ public final class PCJ {
      * @param indices     (optional) indices for array variable
      * @return {@link org.pcj.PcjFuture}&lt;{@link java.lang.Void}&gt;
      */
-    private static <T> PcjFuture<Void> asyncScatter(Map<Integer, T> newValueMap, Enum<?> variable, int... indices) {
+    public static <T> PcjFuture<Void> asyncScatter(Map<Integer, T> newValueMap, Enum<?> variable, int... indices) {
         return getGlobalGroup().asyncScatter(newValueMap, variable, indices);
     }
 
@@ -685,7 +683,7 @@ public final class PCJ {
     /**
      * Asynchronous execution operation.
      * <p>
-     * Executes associated function on specified PCJ Thread from global group and returns value.
+     * Executes the provided function on the specified PCJ Thread in the global group and returns a value.
      *
      * @param <R>       the type of returned value
      * @param threadId  global PCJ Thread id
@@ -698,8 +696,6 @@ public final class PCJ {
 
     /**
      * Synchronous execution operation.
-     * <p>
-     * Executes associated function on specified thread from global group and returns value.
      * <p>
      * Wrapper for {@link #asyncAt(int, AsyncTask)}.
      * <p>
@@ -718,7 +714,7 @@ public final class PCJ {
     /**
      * Asynchronous execution operation.
      * <p>
-     * Executes associated function on specified PCJ Thread from global group without returning value.
+     * Executes the provided function on the specified PCJ Thread in the global group without returning a value.
      *
      * @param threadId  global PCJ Thread id
      * @param asyncTask function to be executed
@@ -730,8 +726,6 @@ public final class PCJ {
 
     /**
      * Synchronous execution operation.
-     * <p>
-     * Executes associated function on specified thread from global group without returning value.
      * <p>
      * Wrapper for {@link #asyncAt(int, AsyncTask.VoidTask)}.
      * <p>
@@ -746,22 +740,24 @@ public final class PCJ {
     }
 
     /**
-     * Asynchronous collective split group operation. This method has to be invoked by all threads in a group.
+     * Asynchronous collective group-splitting operation.
+     * This method must be invoked by all PCJ Threads in the group.
      * <p>
-     * Splits global group into subgroups based on the split and ordering parameters.
+     * Splits the global group into subgroups based on the {@code split} and {@code ordering} parameters.
      * <p>
-     * Split parameter can be {@code null} which means the thread would not be included in any of new group.
-     * Threads with the same split parameter value are in the same new group.
+     * Threads with the same {@code split} value are placed in the same subgroup.
+     * The {@code split} parameter may be {@code null}, which means that
+     * the thread will not be included in any new subgroup.
      * <p>
-     * Ordering determines the PCJ Thread id in new group.
-     * The smaller number of ordering means smaller PCJ Thread id in subgroup.
-     * When multiple PCJ Threads gives the same ordering value,
-     * the original group PCJ Thread id will be used to break a tie.
+     * The {@code ordering} parameter determines the PCJ Thread identifier within the new subgroup.
+     * A smaller {@code ordering} value results in a smaller PCJ Thread identifier in the subgroup.
+     * If multiple PCJ Threads provide the same {@code ordering} value,
+     * the original PCJ Thread identifier in the parent group is used to break ties.
      *
      * @param split    control of subgroup assignment
      *                 or {@code null} if the thread would not be included in any of new group
      * @param ordering control of PCJ Thread id assignment
-     * @return {@link org.pcj.PcjFuture} that will contains {@link org.pcj.Group} of subgroup
+     * @return {@link org.pcj.PcjFuture} that will contain {@link org.pcj.Group} of subgroup
      * or {@code null} if the thread would not be included in any of new group
      */
     public static PcjFuture<Group> asyncSplitGroup(Integer split, int ordering) {
@@ -770,8 +766,6 @@ public final class PCJ {
 
     /**
      * Synchronous collective split group operation. This method has to be invoked by all threads in a group.
-     * <p>
-     * Splits global group into subgroups based on the split and ordering parameters.
      * <p>
      * Wrapper for {@link #asyncSplitGroup(Integer, int)}.
      * <p>
@@ -788,7 +782,7 @@ public final class PCJ {
     }
 
     /**
-     * This function will be removed.
+     * This function will be removed: use {@link #splitGroup(Integer, int)} instead.
      * <p>
      * This operation is no longer supported.
      * Throws {@link UnsupportedOperationException}
@@ -804,7 +798,7 @@ public final class PCJ {
     }
 
     /**
-     * This function will be removed.
+     * This function will be removed: use {@link #splitGroup(Integer, int)} instead.
      * <p>
      * This operation is no longer supported.
      * Throws {@link UnsupportedOperationException}
@@ -820,7 +814,7 @@ public final class PCJ {
     }
 
     /**
-     * This function will be removed.
+     * This function will be removed: use {@link #executionBuilder(Class)} instead.
      * <p>
      * Starts PCJ calculations on local node using specified {@link StartPoint}.
      * {@link NodesDescription} contains list of all hostnames used in calculations.
@@ -837,7 +831,7 @@ public final class PCJ {
     }
 
     /**
-     * This function will be removed.
+     * This function will be removed: use {@link #executionBuilder(Class)} instead.
      * <p>
      * Deploys and starts PCJ calculations on nodes using specified {@link StartPoint} class.
      * {@link NodesDescription} contains list of all hostnames used in calculations.
