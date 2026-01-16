@@ -658,7 +658,7 @@ public final class PCJ {
      * @param indices     (optional) indices for array variable
      * @return {@link org.pcj.PcjFuture}&lt;{@link java.lang.Void}&gt;
      */
-    private static <T> PcjFuture<Void> asyncScatter(Map<Integer, T> newValueMap, Enum<?> variable, int... indices) {
+    public static <T> PcjFuture<Void> asyncScatter(Map<Integer, T> newValueMap, Enum<?> variable, int... indices) {
         return getGlobalGroup().asyncScatter(newValueMap, variable, indices);
     }
 
