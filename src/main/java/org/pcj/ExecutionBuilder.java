@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2022, PCJ Library, Marek Nowicki
+ * Copyright (c) 2011-2026, PCJ Library, Marek Nowicki
  * All rights reserved.
  *
  * Licensed under New BSD License (3-clause license).
@@ -111,7 +111,6 @@ public final class ExecutionBuilder extends InternalExecutionBuilder implements 
      * Hostname cannot be {@code null}, empty, or contains only whitespaces.
      * <p>
      * Nodes can be specified multiple times, so more than one instance of PCJ will be run on node (called threads).
-     * <p>
      *
      * @param node hostname of node
      * @return a reference to this object
