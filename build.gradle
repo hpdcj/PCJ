@@ -22,7 +22,7 @@ defaultTasks 'info'
 base {
     archivesName = "pcj"
 }
-ext.versionNumber = "5.4"
+ext.versionNumber = "5.3"
 ext.buildNumber = "unknown"
 
 repositories {
@@ -33,10 +33,10 @@ dependencies {
 
 compileJava {
     group = 'build'
-    description = 'Compiling java classes using Java 21'
+    description = 'Compiling java classes using Java 8'
 
     options.compilerArgs = [
-            '--release', '21',
+            '--release', '8',
             '-Xlint:unchecked',
             '-Xlint:deprecation'
     ]
