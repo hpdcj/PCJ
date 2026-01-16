@@ -29,5 +29,9 @@ hs_err_pid*
 .classpath
 /.settings/
 /bin/
-/secring.gpg
+
+# Other ignored files
 /gradle.properties
+
+# JReleaser directory
+/.jreleaser

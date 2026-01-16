@@ -136,7 +136,7 @@ publishing {
                 packaging = 'jar'
                 name = 'PCJ'
                 description = 'PCJ is Java library for parallel computing in Java. It is based on the PGAS (Partitioned Global Address Space) paradigm. It allows for easy implementation in Java of any parallel algorithm. PCJ application can be run on laptop, workstation, cluster and HPC system including large supercomputers.'
-                url = 'http://pcj.icm.edu.pl'
+                url = 'https://pcj.icm.edu.pl'
                 licenses {
                     license {
                         name = 'The 3-Clause BSD License'
@@ -219,8 +219,8 @@ gradle.taskGraph.whenReady { taskGraph ->
     if (taskGraph.hasTask(publish)) {
 //        def snapshotsRepoUrl = "$buildDir/repos/snapshots"
 //        def releasesRepoUrl = "$buildDir/repos/releases"
-        def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots"
-        def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2"
+        def snapshotsRepoUrl = "https://ossrh-staging-api.central.sonatype.com/content/repositories/snapshots"
+        def releasesRepoUrl = "https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2"
         publishing.repositories.maven.url = buildNumber.contains('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
         if (publishing.repositories.maven.url.scheme == "https") {
             publishing.repositories.maven.credentials {
