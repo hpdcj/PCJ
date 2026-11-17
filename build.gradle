@@ -49,25 +49,32 @@ compileTestJava {
     options.compilerArgs += '-proc:none' // 'org.pcj.internal.StorageAnnotationProcessor'
 }
 
-task info {
+tasks.register('info') {
     group = 'other'
     description = 'PCJ -- Parallel Computing in Java build script'
 
     println "PCJ -- Parallel Computing in Java build script"
 }
 
-task javadoc(overwrite: true, type: Javadoc) {
+tasks.named('javadoc', Javadoc) {
     group = 'build'
     description = 'Generates javadoc from sources without internal packages'
 
     failOnError = false
     source = sourceSets.main.allJava
     exclude "org/pcj/internal/**"
+
+    options.addStringOption('-release', '8')
+}
+
+tasks.withType(Test).configureEach {
+    failOnNoDiscoveredTests = false
 }
 
 jar.group = 'release'
 
-task javadocJar(type: Jar, dependsOn: javadoc) {
+tasks.register('javadocJar', Jar) {
+    dependsOn javadoc
     group = 'release'
     description = 'Generates jar with javadoc'
 
@@ -76,7 +83,7 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
     archiveClassifier = 'javadoc'
 }
 
-task sourcesJar(type: Jar) {
+tasks.register('sourcesJar', Jar) {
     group = 'release'
     description = 'Generates jar with sources'
 
@@ -86,14 +93,14 @@ task sourcesJar(type: Jar) {
     archiveClassifier = 'sources'
 }
 
-task snapshotBuild {
+tasks.register('snapshotBuild') {
     group = 'release'
     description = 'Generates snapshot build with jar, javadoc and sources'
 
     snapshotBuild.dependsOn(jar, javadocJar, sourcesJar)
 }
 
-task releaseBuild {
+tasks.register('releaseBuild') {
     group = 'release'
     description = 'Generates release build starting with clean with jar, javadoc and sources'
 
@@ -102,7 +109,7 @@ task releaseBuild {
     releaseBuild.dependsOn(clean, build, javadocJar, sourcesJar)
 }
 
-task publishReleaseBuild {
+tasks.register('publishReleaseBuild') {
     group = 'publishing'
     description = 'Publishes release build to Maven Central'
 
