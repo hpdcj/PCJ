@@ -46,6 +46,7 @@ public class ByteBufferInputStream extends InputStream {
             try {
                 currentPooledByteBuffer = deque.take();
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new PcjRuntimeException(e);
             }
         }
